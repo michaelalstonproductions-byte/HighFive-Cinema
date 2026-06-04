@@ -71,37 +71,44 @@ struct HomeView: View {
 
             HFColors.heroGradient
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+                .allowsHitTesting(false)
 
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 Spacer()
-                Text("FEATURED PREMIERE")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                    .kerning(1.6)
 
-                Text(heroMovie.title)
-                    .font(HFTypography.heroTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.72)
-
-                Text(heroMovie.subtitle + "\n" + heroMovie.synopsis)
-                    .font(HFTypography.body)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: HFSpacing.xs) {
-                    ForEach(["4K HDR", "HighFive Original", "Cinematic Cut"], id: \.self) { badge in
-                        Text(badge)
+                NavigationLink(value: heroMovie) {
+                    VStack(alignment: .leading, spacing: HFSpacing.md) {
+                        Text("FEATURED PREMIERE")
                             .font(HFTypography.caption)
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, HFSpacing.sm)
-                            .frame(height: 30)
-                            .background(HFColors.goldGradient)
-                            .clipShape(Capsule())
+                            .foregroundStyle(HFColors.gold)
+                            .kerning(1.6)
+
+                        Text(heroMovie.title)
+                            .font(HFTypography.heroTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Text(heroMovie.subtitle + "\n" + heroMovie.synopsis)
+                            .font(HFTypography.body)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(4)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: HFSpacing.xs) {
+                            ForEach(["4K HDR", "HighFive Original", "Cinematic Cut"], id: \.self) { badge in
+                                Text(badge)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, HFSpacing.sm)
+                                    .frame(height: 30)
+                                    .background(HFColors.goldGradient)
+                                    .clipShape(Capsule())
+                            }
+                        }
                     }
                 }
+                .buttonStyle(.plain)
 
                 HStack(spacing: HFSpacing.sm) {
                     Button {
