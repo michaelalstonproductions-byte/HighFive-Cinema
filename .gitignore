@@ -1,0 +1,12 @@
+HighFive/wandb/
+HighFive/Tools/*
+!HighFive/Tools/SpatialPeekStress/
+!HighFive/Tools/SpatialPeekStress/**
+wandb/
+Tools/SpatialPeekStress/runs/
+Tools/SpatialPeekStress/__pycache__/
+*.pyc
+
+# Local video files - do not commit
+*.mov
+*.mp4
