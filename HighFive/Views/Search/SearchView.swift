@@ -26,7 +26,7 @@ struct SearchView: View {
         case "Originals":
             base = HFMockData.movies.filter(\.isOriginal)
         case "Downloaded":
-            base = HFMockData.movies.filter(\.isDownloaded)
+            base = HFMockData.movies.filter { streamingStore.isDownloaded($0) }
         default:
             base = HFMockData.movies
         }

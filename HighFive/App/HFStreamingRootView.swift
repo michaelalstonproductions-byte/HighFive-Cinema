@@ -48,7 +48,7 @@ struct HFStreamingRootView: View {
                         ProfileView(selectedProfile: $selectedProfile)
                     }
                 }
-                .padding(.bottom, HFSpacing.tabBarHeight + HFSpacing.sm)
+                .padding(.bottom, HFSpacing.floatingTabClearance)
 
                 HFTabBar(items: tabItems, selection: $selectedTab)
             }
