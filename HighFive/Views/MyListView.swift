@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct MyListView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    var onBrowseDiscover: (() -> Void)?
     @State private var selectedFilter = "Saved"
 
     private let filters = ["Saved", "In Progress", "Downloaded"]
@@ -11,11 +13,11 @@ struct MyListView: View {
     private var savedMovies: [Movie] {
         switch selectedFilter {
         case "In Progress":
-            return HFMockData.movies.filter { $0.progress != nil }
+            return HFMockData.movies.filter { streamingStore.isSaved($0) && $0.progress != nil }
         case "Downloaded":
-            return HFMockData.movies.filter(\.isDownloaded)
+            return HFMockData.movies.filter { streamingStore.isSaved($0) && streamingStore.isDownloaded($0) }
         default:
-            return HFMockData.movies.filter { $0.isDownloaded || $0.progress != nil || $0.isOriginal }
+            return HFMockData.movies.filter { streamingStore.isSaved($0) }
         }
     }
 
@@ -26,14 +28,20 @@ struct MyListView: View {
                 filterChips
 
                 if savedMovies.isEmpty {
-                    emptyState
+                    HFEmptyState(
+                        title: "Your list is empty",
+                        message: "Save movies from Home, Search, or Movie Detail and they will appear here.",
+                        systemImage: "bookmark",
+                        actionTitle: "Browse Discover",
+                        action: onBrowseDiscover
+                    )
                         .padding(.horizontal, HFSpacing.screenHorizontal)
                 } else {
                     savedGrid
                 }
             }
             .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.xxl)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
@@ -76,21 +84,6 @@ struct MyListView: View {
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var emptyState: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text("Empty state")
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("When no saved titles exist, suggest browsing Discover.")
-                    .font(HFTypography.body)
-                    .foregroundStyle(HFColors.textSecondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(HFSpacing.lg)
         }
     }
 }

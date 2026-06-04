@@ -1,8 +1,11 @@
 import SwiftUI
 
 struct DownloadsView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    var onFindMore: (() -> Void)?
+
     private var downloads: [Movie] {
-        HFMockData.movies.filter(\.isDownloaded)
+        HFMockData.movies.filter { streamingStore.isDownloaded($0) }
     }
 
     private var usedStorage: Double {
@@ -24,7 +27,7 @@ struct DownloadsView: View {
                 findMoreButton
             }
             .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.xxl)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
@@ -83,10 +86,24 @@ struct DownloadsView: View {
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(downloads) { movie in
-                    NavigationLink(value: movie) {
-                        HFMovieCard(movie: movie)
+                    HStack(spacing: HFSpacing.sm) {
+                        NavigationLink(value: movie) {
+                            HFMovieCard(movie: movie)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            streamingStore.toggleDownload(movie)
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.10))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -94,27 +111,20 @@ struct DownloadsView: View {
     }
 
     private var emptyState: some View {
-        HFGlassPanel {
-            VStack(spacing: HFSpacing.md) {
-                Image(systemName: "arrow.down.circle")
-                    .font(.system(size: 42, weight: .semibold))
-                    .foregroundStyle(HFColors.gold)
-                Text("No Downloads Yet")
-                    .font(HFTypography.section)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("Downloaded movies will appear here when local media support is wired.")
-                    .font(HFTypography.body)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(HFSpacing.xl)
-            .frame(maxWidth: .infinity)
-        }
+        HFEmptyState(
+            title: "No Downloads Yet",
+            message: "Download a local mock title from the available slate and it will appear here.",
+            systemImage: "arrow.down.circle",
+            actionTitle: "Find More To Download",
+            action: onFindMore
+        )
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var findMoreButton: some View {
-        Button {} label: {
+        Button {
+            onFindMore?()
+        } label: {
             HStack(spacing: HFSpacing.xs) {
                 Image(systemName: "plus.circle.fill")
                 Text("Find More To Download")

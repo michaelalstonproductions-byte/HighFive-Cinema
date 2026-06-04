@@ -3,6 +3,8 @@ import SwiftUI
 struct MovieDetailView: View {
     let movie: Movie
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    @State private var previewMovie: Movie?
 
     private var creator: Creator {
         HFMockData.creator(for: movie)
@@ -31,10 +33,16 @@ struct MovieDetailView: View {
                 gallerySection
                 relatedSection
             }
-            .padding(.bottom, HFSpacing.xxl)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            bottomCTA
+        }
+        .sheet(item: $previewMovie) { movie in
+            HFMockPlayerSheet(movie: movie)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -69,9 +77,10 @@ struct MovieDetailView: View {
     private var overview: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             Text(movie.title)
-                .font(HFTypography.heroTitle)
+                .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
                 .lineLimit(2)
+                .minimumScaleFactor(0.72)
 
             Text(movie.metadataLine)
                 .font(HFTypography.body)
@@ -95,8 +104,24 @@ struct MovieDetailView: View {
             }
 
             HStack(spacing: HFSpacing.sm) {
-                HFButton(movie.isComingSoon ? "Setup Required" : "Watch Now", systemImage: movie.isComingSoon ? "exclamationmark.triangle.fill" : "play.fill") {}
-                HFButton("Add To List", systemImage: "plus", style: .secondary) {}
+                HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
+                    previewMovie = movie
+                }
+                HFButton(
+                    streamingStore.isSaved(movie) ? "In My List" : "Add To List",
+                    systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
+                    style: .secondary
+                ) {
+                    streamingStore.toggleSaved(movie)
+                }
+            }
+
+            HFButton(
+                streamingStore.isDownloaded(movie) ? "Remove Download" : "Download",
+                systemImage: streamingStore.isDownloaded(movie) ? "trash" : "arrow.down.circle.fill",
+                style: .outline
+            ) {
+                streamingStore.toggleDownload(movie)
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -166,23 +191,29 @@ struct MovieDetailView: View {
     }
 
     private var gallerySection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Gallery", actionTitle: nil)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.md) {
-                    ForEach(galleryAssets, id: \.self) { assetName in
-                        Image(assetName)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 228, height: 128)
-                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
-                                    .stroke(HFColors.stroke, lineWidth: 1)
-                            )
+        Group {
+            if !galleryAssets.isEmpty {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFSectionHeader(title: "Gallery", actionTitle: nil)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: HFSpacing.md) {
+                            ForEach(galleryAssets, id: \.self) { assetName in
+                                if HFPosterAssetHealth.hasImage(named: assetName) {
+                                    Image(assetName)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 228, height: 128)
+                                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                                                .stroke(HFColors.stroke, lineWidth: 1)
+                                        )
+                                }
+                            }
+                        }
+                        .padding(.horizontal, HFSpacing.screenHorizontal)
                     }
                 }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
     }
@@ -206,16 +237,33 @@ struct MovieDetailView: View {
 
     @ViewBuilder
     private var detailArtwork: some View {
-        if let assetName = movie.backdropAssetName ?? movie.posterAssetName {
+        if HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
+           let assetName = movie.backdropAssetName ?? movie.posterAssetName {
             Image(assetName)
                 .resizable()
                 .scaledToFill()
         } else {
-            LinearGradient(
-                colors: [HFColors.charcoalLight, HFColors.background, HFColors.goldDeep.opacity(0.3)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            HFPosterFallback(title: movie.title)
         }
+    }
+
+    private var bottomCTA: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(spacing: HFSpacing.sm) {
+                HFButton("Watch Now", systemImage: "play.fill") {
+                    previewMovie = movie
+                }
+                HFButton(
+                    streamingStore.isSaved(movie) ? "Saved" : "My List",
+                    systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
+                    style: .secondary
+                ) {
+                    streamingStore.toggleSaved(movie)
+                }
+            }
+            .padding(HFSpacing.sm)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .padding(.bottom, HFSpacing.sm)
     }
 }

@@ -2,7 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     let selectedProfile: UserProfile
-    @State private var savedMovieIDs: Set<String> = ["friendly", "paranormall-s1"]
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    @State private var previewMovie: Movie?
 
     private var heroMovie: Movie {
         HFMockData.movie("friendly") ?? HFMockData.movies[0]
@@ -19,8 +20,12 @@ struct HomeView: View {
                 }
             }
             .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .sheet(item: $previewMovie) { movie in
+            HFMockPlayerSheet(movie: movie)
+        }
     }
 
     private var header: some View {
@@ -99,7 +104,9 @@ struct HomeView: View {
                 }
 
                 HStack(spacing: HFSpacing.sm) {
-                    NavigationLink(value: heroMovie) {
+                    Button {
+                        previewMovie = heroMovie
+                    } label: {
                         HStack(spacing: HFSpacing.xs) {
                             Image(systemName: "play.fill")
                             Text("Watch Now")
@@ -114,11 +121,11 @@ struct HomeView: View {
                     .buttonStyle(.plain)
 
                     HFButton(
-                        savedMovieIDs.contains(heroMovie.id) ? "In My List" : "Add To List",
-                        systemImage: savedMovieIDs.contains(heroMovie.id) ? "checkmark" : "plus",
+                        streamingStore.isSaved(heroMovie) ? "In My List" : "Add To List",
+                        systemImage: streamingStore.isSaved(heroMovie) ? "checkmark" : "plus",
                         style: .secondary
                     ) {
-                        toggleSaved(heroMovie)
+                        streamingStore.toggleSaved(heroMovie)
                     }
                 }
             }
@@ -137,10 +144,19 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(category.movies) { movie in
-                        NavigationLink(value: movie) {
-                            HFPosterCard(movie: movie, width: 132, showProgress: category.id == "continue")
+                        if category.id == "continue-watching" {
+                            Button {
+                                previewMovie = movie
+                            } label: {
+                                HFPosterCard(movie: movie, width: 132, showProgress: true)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink(value: movie) {
+                                HFPosterCard(movie: movie, width: 132, showProgress: category.id == "continue")
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -150,24 +166,13 @@ struct HomeView: View {
 
     @ViewBuilder
     private func heroArtwork(_ movie: Movie) -> some View {
-        if let assetName = movie.backdropAssetName ?? movie.posterAssetName {
+        if HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
+           let assetName = movie.backdropAssetName ?? movie.posterAssetName {
             Image(assetName)
                 .resizable()
                 .scaledToFill()
         } else {
-            LinearGradient(
-                colors: [HFColors.charcoalLight, HFColors.background, HFColors.goldDeep.opacity(0.32)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
-
-    private func toggleSaved(_ movie: Movie) {
-        if savedMovieIDs.contains(movie.id) {
-            savedMovieIDs.remove(movie.id)
-        } else {
-            savedMovieIDs.insert(movie.id)
+            HFPosterFallback(title: movie.title)
         }
     }
 }

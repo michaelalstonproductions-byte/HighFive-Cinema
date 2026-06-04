@@ -11,6 +11,8 @@ enum HFStreamingTab: Hashable {
 struct HFStreamingRootView: View {
     @State private var selectedTab: HFStreamingTab = .home
     @State private var selectedProfile = HFMockData.userProfiles[0]
+    @State private var searchMode: HFSearchHubMode = .search
+    @StateObject private var streamingStore = HFStreamingStore()
 
     private let tabItems: [HFTabItem<HFStreamingTab>] = [
         HFTabItem(value: .home, title: "Home", systemImage: "house.fill"),
@@ -31,11 +33,17 @@ struct HFStreamingRootView: View {
                     case .home:
                         HomeView(selectedProfile: selectedProfile)
                     case .search:
-                        SearchView()
+                        SearchView(mode: $searchMode)
                     case .library:
-                        MyListView()
+                        MyListView(onBrowseDiscover: {
+                            searchMode = .discover
+                            selectedTab = .search
+                        })
                     case .downloads:
-                        DownloadsView()
+                        DownloadsView(onFindMore: {
+                            searchMode = .discover
+                            selectedTab = .search
+                        })
                     case .profile:
                         ProfileView(selectedProfile: $selectedProfile)
                     }
@@ -50,5 +58,6 @@ struct HFStreamingRootView: View {
         }
         .tint(HFColors.gold)
         .preferredColorScheme(.dark)
+        .environmentObject(streamingStore)
     }
 }

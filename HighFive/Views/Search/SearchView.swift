@@ -1,6 +1,13 @@
 import SwiftUI
 
+enum HFSearchHubMode: String, Hashable {
+    case search = "Search"
+    case discover = "Discover"
+}
+
 struct SearchView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    @Binding var mode: HFSearchHubMode
     @State private var query = ""
     @State private var selectedFilter = "All"
 
@@ -40,28 +47,56 @@ struct SearchView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 header
-                filterChips
+                HFSegmentedControl(
+                    items: [
+                        (.search, "Search"),
+                        (.discover, "Discover")
+                    ],
+                    selection: $mode
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
 
-                if query.isEmpty {
-                    recentSearches
+                if mode == .search {
+                    searchContent
+                } else {
+                    DiscoverView(movies: HFMockData.movies, showsHeader: false)
                 }
-
-                resultsGrid
             }
             .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.xxl)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            Text("Search")
+            Text(mode == .search ? "Search" : "Discover")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            HFSearchBar(text: $query, placeholder: "Search movies, genres, creators")
+            if mode == .search {
+                HFSearchBar(text: $query, placeholder: "Search movies, genres, creators")
+                    .onSubmit {
+                        streamingStore.addRecentSearch(query)
+                    }
+            } else {
+                Text("Browse the HighFive slate by genre, originals, and saved recommendations.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var searchContent: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            filterChips
+
+            if query.isEmpty {
+                recentSearches
+            }
+
+            resultsGrid
+        }
     }
 
     private var filterChips: some View {
@@ -74,6 +109,7 @@ struct SearchView: View {
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.trailing, HFSpacing.screenHorizontal)
         }
     }
 
@@ -82,15 +118,16 @@ struct SearchView: View {
             HFSectionHeader(title: "Recent Searches", actionTitle: nil)
 
             VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                ForEach(HFMockData.searchSuggestions.prefix(3)) { suggestion in
+                ForEach(streamingStore.recentSearches, id: \.self) { suggestion in
                     Button {
-                        query = suggestion.title
+                        query = suggestion
+                        streamingStore.addRecentSearch(suggestion)
                     } label: {
                         HStack(spacing: HFSpacing.sm) {
                             Image(systemName: "clock.arrow.circlepath")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(HFColors.gold)
-                            Text(suggestion.title)
+                            Text(suggestion)
                                 .font(HFTypography.body)
                                 .foregroundStyle(HFColors.textSecondary)
                             Spacer()
@@ -110,7 +147,11 @@ struct SearchView: View {
             HFSectionHeader(title: "Results", actionTitle: nil)
 
             if filteredMovies.isEmpty {
-                emptyState
+                HFEmptyState(
+                    title: "No results found",
+                    message: "Try a title, genre, or creator from the HighFive slate.",
+                    systemImage: "magnifyingglass"
+                )
                     .padding(.horizontal, HFSpacing.screenHorizontal)
             } else {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
@@ -123,26 +164,6 @@ struct SearchView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
-        }
-    }
-
-    private var emptyState: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
-            HStack(spacing: HFSpacing.md) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(HFColors.gold)
-                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                    Text("No results yet")
-                        .font(HFTypography.cardTitle)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Try a title, genre, or creator from the HighFive slate.")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(HFSpacing.md)
         }
     }
 }

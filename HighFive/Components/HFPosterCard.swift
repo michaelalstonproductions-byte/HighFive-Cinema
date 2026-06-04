@@ -76,41 +76,13 @@ struct HFPosterCard: View {
 
     @ViewBuilder
     private var posterArtwork: some View {
-        if let assetName = movie.posterAssetName {
+        if HFPosterAssetHealth.hasImage(named: movie.posterAssetName), let assetName = movie.posterAssetName {
             Image(assetName)
                 .resizable()
                 .scaledToFill()
                 .accessibilityLabel(movie.title)
         } else {
-            MissingPosterView(title: movie.title)
-        }
-    }
-}
-
-private struct MissingPosterView: View {
-    let title: String
-
-    var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [HFColors.charcoalLight, HFColors.background, HFColors.goldDeep.opacity(0.25)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            VStack(spacing: HFSpacing.xs) {
-                Image(systemName: "film.stack")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(HFColors.gold)
-                Text("Missing Poster")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                Text(title)
-                    .font(HFTypography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(3)
-            }
-            .padding(HFSpacing.sm)
+            HFPosterFallback(title: movie.title)
         }
     }
 }

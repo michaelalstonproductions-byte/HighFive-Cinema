@@ -2,10 +2,12 @@ import SwiftUI
 
 struct DiscoverView: View {
     let movies: [Movie]
+    var showsHeader: Bool
     @State private var selectedGenre = "All"
 
-    init(movies: [Movie] = HFMockData.movies) {
+    init(movies: [Movie] = HFMockData.movies, showsHeader: Bool = true) {
         self.movies = movies
+        self.showsHeader = showsHeader
     }
 
     private var browseMovies: [Movie] {
@@ -31,20 +33,36 @@ struct DiscoverView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: HFSpacing.lg) {
-            HFSectionHeader(title: "Discover", actionTitle: nil)
+            if showsHeader {
+                HFSectionHeader(title: "Discover", actionTitle: nil)
+            }
 
             spotlight
             genreFilters
+            discoveryGrid
+            recommendationRows
+        }
+    }
 
+    private var discoveryGrid: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: selectedGenre == "All" ? "All Titles" : selectedGenre, actionTitle: nil)
             LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
-                ForEach(browseMovies) { movie in
+                ForEach(browseMovies.prefix(8)) { movie in
                     NavigationLink(value: movie) {
-                        HFPosterCard(movie: movie, width: 142)
+                        HFPosterCard(movie: movie, width: 142, showMetadata: true, showProgress: movie.progress != nil)
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var recommendationRows: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            movieRail(HFMockData.recommended)
+            movieRail(HFMockData.onlyOnHighFive)
         }
     }
 
@@ -91,6 +109,24 @@ struct DiscoverView: View {
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.trailing, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private func movieRail(_ category: Category) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: category.title, actionTitle: nil)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(category.movies) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
         }
     }
 }

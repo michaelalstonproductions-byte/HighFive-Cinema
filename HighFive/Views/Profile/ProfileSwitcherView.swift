@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileSwitcherView: View {
     @Binding var selectedProfile: UserProfile
     var showsHeader = false
+    @State private var mockMessage: String?
 
     private let columns = [
         GridItem(.flexible(), spacing: HFSpacing.md),
@@ -30,7 +31,9 @@ struct ProfileSwitcherView: View {
                 addProfileCard
             }
 
-            Button {} label: {
+            Button {
+                mockMessage = "Profile management is a local placeholder for this streaming phase."
+            } label: {
                 Text("Manage Profiles")
                     .font(HFTypography.smallAction)
                     .foregroundStyle(.black)
@@ -40,6 +43,14 @@ struct ProfileSwitcherView: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+        }
+        .alert("Mock Profile Action", isPresented: Binding(
+            get: { mockMessage != nil },
+            set: { if !$0 { mockMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(mockMessage ?? "")
         }
     }
 
@@ -79,7 +90,9 @@ struct ProfileSwitcherView: View {
     }
 
     private var addProfileCard: some View {
-        Button {} label: {
+        Button {
+            mockMessage = "Add Profile is a local placeholder. No account data is created."
+        } label: {
             VStack(spacing: HFSpacing.sm) {
                 ZStack {
                     Circle()
