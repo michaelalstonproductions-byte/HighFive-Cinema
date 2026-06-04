@@ -1,12 +1,6 @@
 import SwiftUI
 
 struct CreatorEntryView: View {
-    private let featureTiles: [(title: String, subtitle: String, systemImage: String)] = [
-        ("Creator Studio", "Draft, package, and preview releases.", "film.stack.fill"),
-        ("Creator Dashboard", "Track projects and audience signals.", "chart.bar.xaxis"),
-        ("Creator Marketplace", "Future collaboration and services hub.", "storefront.fill")
-    ]
-
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -38,13 +32,29 @@ struct CreatorEntryView: View {
 
     private var featureGrid: some View {
         VStack(spacing: HFSpacing.md) {
-            ForEach(featureTiles, id: \.title) { tile in
+            NavigationLink {
+                CreatorStudioPreviewView()
+            } label: {
                 CreatorFeatureTile(
-                    title: tile.title,
-                    subtitle: tile.subtitle,
-                    systemImage: tile.systemImage
+                    title: "Creator Studio",
+                    subtitle: "Draft, package, and preview releases.",
+                    systemImage: "film.stack.fill",
+                    isLocked: false
                 )
             }
+            .buttonStyle(.plain)
+
+            CreatorFeatureTile(
+                title: "Creator Dashboard",
+                subtitle: "Track projects and audience signals.",
+                systemImage: "chart.bar.xaxis"
+            )
+
+            CreatorFeatureTile(
+                title: "Creator Marketplace",
+                subtitle: "Future collaboration and services hub.",
+                systemImage: "storefront.fill"
+            )
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -72,6 +82,7 @@ private struct CreatorFeatureTile: View {
     let title: String
     let subtitle: String
     let systemImage: String
+    var isLocked = true
 
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
@@ -95,13 +106,7 @@ private struct CreatorFeatureTile: View {
 
                         Spacer(minLength: HFSpacing.xs)
 
-                        Text("Coming Soon")
-                            .font(HFTypography.micro)
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, HFSpacing.xs)
-                            .padding(.vertical, 5)
-                            .background(HFColors.gold)
-                            .clipShape(Capsule())
+                        statusBadge
                     }
 
                     Text(subtitle)
@@ -112,5 +117,19 @@ private struct CreatorFeatureTile: View {
             }
             .padding(HFSpacing.md)
         }
+    }
+
+    private var statusBadge: some View {
+        HStack(spacing: HFSpacing.xxs) {
+            Image(systemName: isLocked ? "lock.fill" : "arrow.right")
+                .font(.system(size: 9, weight: .black))
+            Text(isLocked ? "Coming Soon" : "Open")
+                .font(HFTypography.micro)
+        }
+        .foregroundStyle(.black)
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 5)
+        .background(HFColors.gold)
+        .clipShape(Capsule())
     }
 }
