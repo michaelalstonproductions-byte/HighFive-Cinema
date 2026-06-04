@@ -10,3 +10,11 @@ Tools/SpatialPeekStress/__pycache__/
 # Local video files - do not commit
 *.mov
 *.mp4
+
+# macOS local files
+.DS_Store
+**/.DS_Store
+
+# Xcode user-local files
+xcuserdata/
+*.xcuserstate
