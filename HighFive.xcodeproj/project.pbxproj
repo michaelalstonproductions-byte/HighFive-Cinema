@@ -28,6 +28,7 @@
 				App/Onboarding/LaunchOnboardingViewController.swift,
 				App/Playback/HKV1_PlaybackController.swift,
 				App/Playback/HKV1_SpatialPeekViewController.swift,
+				App/UI/Assets.xcassets,
 				App/UI/Rendering/HKV1_ControlBar.swift,
 				App/UI/Rendering/HKV1_LensTuningProfile.swift,
 				App/UI/Rendering/HKV1_PlayerLayerView.swift,
