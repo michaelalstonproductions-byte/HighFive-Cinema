@@ -23,6 +23,7 @@ struct ProfileView: View {
                 avatarRow
                 manageProfilesButton
 
+                creatorModeCard
                 menu
                 signOutButton
             }
@@ -77,6 +78,43 @@ struct ProfileView: View {
             }
             .padding(HFSpacing.md)
         }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var creatorModeCard: some View {
+        NavigationLink {
+            CreatorEntryView()
+        } label: {
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                HStack(spacing: HFSpacing.md) {
+                    ZStack {
+                        Circle()
+                            .fill(HFColors.gold.opacity(0.16))
+                        Image(systemName: "wand.and.stars")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(HFColors.gold)
+                    }
+                    .frame(width: 52, height: 52)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Creator Mode")
+                            .font(HFTypography.menu)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Studio tools, drafts, insights")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                }
+                .padding(HFSpacing.md)
+            }
+        }
+        .buttonStyle(.plain)
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
