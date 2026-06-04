@@ -31,7 +31,16 @@ struct HFStreamingRootView: View {
                 Group {
                     switch selectedTab {
                     case .home:
-                        HomeView(selectedProfile: selectedProfile)
+                        HomeView(
+                            selectedProfile: selectedProfile,
+                            onSearch: {
+                                searchMode = .search
+                                selectedTab = .search
+                            },
+                            onProfile: {
+                                selectedTab = .profile
+                            }
+                        )
                     case .search:
                         SearchView(mode: $searchMode)
                     case .library:
@@ -45,7 +54,12 @@ struct HFStreamingRootView: View {
                             selectedTab = .search
                         })
                     case .profile:
-                        ProfileView(selectedProfile: $selectedProfile)
+                        ProfileView(
+                            selectedProfile: $selectedProfile,
+                            onOpenMyList: {
+                                selectedTab = .library
+                            }
+                        )
                     }
                 }
                 .padding(.bottom, HFSpacing.floatingTabClearance)

@@ -2,10 +2,10 @@ import SwiftUI
 
 struct ProfileView: View {
     @Binding var selectedProfile: UserProfile
+    var onOpenMyList: (() -> Void)?
     @State private var showsProfileSwitcher = false
     @State private var showsSignOutAlert = false
-    @State private var showsMockAction = false
-    @State private var mockActionTitle = ""
+    @State private var activeMockSheet: ProfileMockSheet?
 
     private let menuItems: [(title: String, systemImage: String)] = [
         ("Notifications", "bell.fill"),
@@ -35,10 +35,8 @@ struct ProfileView: View {
                 .padding(HFSpacing.lg)
                 .background(HFColors.screenBackground.ignoresSafeArea())
         }
-        .alert("Mock Action", isPresented: $showsMockAction) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("\(mockActionTitle) is a local placeholder for this streaming phase.")
+        .sheet(item: $activeMockSheet) { sheet in
+            ProfileMockSheetView(sheet: sheet)
         }
         .alert("Sign Out?", isPresented: $showsSignOutAlert) {
             Button("Cancel", role: .cancel) {}
@@ -121,12 +119,44 @@ struct ProfileView: View {
         VStack(spacing: HFSpacing.sm) {
             ForEach(menuItems, id: \.title) { item in
                 HFMenuRow(title: item.title, systemImage: item.systemImage) {
-                    mockActionTitle = item.title
-                    showsMockAction = true
+                    handleMenuItem(item.title)
                 }
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func handleMenuItem(_ title: String) {
+        switch title {
+        case "My List":
+            onOpenMyList?()
+        case "Notifications":
+            activeMockSheet = ProfileMockSheet(
+                title: "Notifications",
+                message: "No new notifications. Push notifications are not enabled in this streaming phase.",
+                systemImage: "bell.fill"
+            )
+        case "App Settings":
+            activeMockSheet = ProfileMockSheet(
+                title: "App Settings",
+                message: "Streaming display, download, and playback preferences will live here later.",
+                systemImage: "gearshape.fill"
+            )
+        case "Account":
+            activeMockSheet = ProfileMockSheet(
+                title: "Account",
+                message: "Account management is a local placeholder. No auth or billing is connected.",
+                systemImage: "person.crop.circle.fill"
+            )
+        case "Help":
+            activeMockSheet = ProfileMockSheet(
+                title: "Help",
+                message: "Help content is mocked for now. No support backend is connected.",
+                systemImage: "questionmark.circle.fill"
+            )
+        default:
+            break
+        }
     }
 
     private var signOutButton: some View {
@@ -144,5 +174,73 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+}
+
+private struct ProfileMockSheet: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+    let systemImage: String
+}
+
+private struct ProfileMockSheetView: View {
+    let sheet: ProfileMockSheet
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            HFColors.screenBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: HFSpacing.xl) {
+                HStack {
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(width: 40, height: 40)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
+
+                HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                    VStack(spacing: HFSpacing.lg) {
+                        ZStack {
+                            Circle()
+                                .fill(HFColors.gold.opacity(0.16))
+                            Image(systemName: sheet.systemImage)
+                                .font(.system(size: 34, weight: .bold))
+                                .foregroundStyle(HFColors.gold)
+                        }
+                        .frame(width: 78, height: 78)
+
+                        VStack(spacing: HFSpacing.sm) {
+                            Text(sheet.title)
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .multilineTextAlignment(.center)
+                            Text(sheet.message)
+                                .font(HFTypography.body)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(HFSpacing.xl)
+                }
+
+                Spacer()
+            }
+            .padding(HFSpacing.lg)
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 }

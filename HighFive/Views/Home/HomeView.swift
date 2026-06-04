@@ -2,8 +2,11 @@ import SwiftUI
 
 struct HomeView: View {
     let selectedProfile: UserProfile
+    var onSearch: () -> Void = {}
+    var onProfile: () -> Void = {}
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
+    @State private var showsNotifications = false
 
     private var heroMovie: Movie {
         HFMockData.movie("friendly") ?? HFMockData.movies[0]
@@ -25,6 +28,11 @@ struct HomeView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(item: $previewMovie) { movie in
             HFMockPlayerSheet(movie: movie)
+        }
+        .alert("Notifications", isPresented: $showsNotifications) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("No new notifications. This is a local mock action for the streaming phase.")
         }
     }
 
@@ -50,12 +58,26 @@ struct HomeView: View {
             Spacer()
 
             HStack(spacing: HFSpacing.md) {
-                Image(systemName: "magnifyingglass")
-                Image(systemName: "bell.fill")
-                Image(systemName: selectedProfile.avatarSystemName)
+                Button(action: onSearch) {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Search")
+
+                Button {
+                    showsNotifications = true
+                } label: {
+                    Image(systemName: "bell.fill")
+                }
+                .accessibilityLabel("Notifications")
+
+                Button(action: onProfile) {
+                    Image(systemName: selectedProfile.avatarSystemName)
+                }
+                .accessibilityLabel("Profile")
             }
             .font(.system(size: 25, weight: .bold))
             .foregroundStyle(HFColors.textPrimary)
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
