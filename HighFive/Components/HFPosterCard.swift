@@ -1,0 +1,106 @@
+import SwiftUI
+
+struct HFPosterCard: View {
+    let movie: Movie
+    var width: CGFloat = 132
+    var showTitle: Bool = true
+    var showProgress: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            ZStack(alignment: .bottomLeading) {
+                posterArtwork
+                    .frame(width: width, height: width * 1.5)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.72)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
+                if movie.isComingSoon {
+                    Text("COMING SOON")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .padding(.vertical, HFSpacing.xxs)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                        .padding(HFSpacing.xs)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                }
+
+                if showProgress, let progress = movie.progress {
+                    GeometryReader { proxy in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.18))
+                            Capsule()
+                                .fill(HFColors.goldGradient)
+                                .frame(width: max(0, min(proxy.size.width, proxy.size.width * progress)))
+                        }
+                    }
+                    .frame(height: 5)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .padding(.bottom, HFSpacing.xs)
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(HFColors.stroke, lineWidth: 1)
+            )
+
+            if showTitle {
+                Text(movie.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: width, alignment: .leading)
+            }
+        }
+        .frame(width: width, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var posterArtwork: some View {
+        if let assetName = movie.posterAssetName {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+                .accessibilityLabel(movie.title)
+        } else {
+            MissingPosterView(title: movie.title)
+        }
+    }
+}
+
+private struct MissingPosterView: View {
+    let title: String
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [HFColors.charcoalLight, HFColors.background, HFColors.goldDeep.opacity(0.25)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            VStack(spacing: HFSpacing.xs) {
+                Image(systemName: "film.stack")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(HFColors.gold)
+                Text("Missing Poster")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                Text(title)
+                    .font(HFTypography.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+        }
+    }
+}
