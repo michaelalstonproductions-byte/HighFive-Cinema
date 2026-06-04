@@ -20,7 +20,7 @@ struct HFTabBar<Value: Hashable>: View {
                 } label: {
                     VStack(spacing: HFSpacing.xxs) {
                         Image(systemName: item.systemImage)
-                            .font(.system(size: 23, weight: .semibold))
+                            .font(.system(size: 20, weight: .semibold))
                         Text(item.title)
                             .font(HFTypography.caption)
                             .lineLimit(1)
@@ -28,23 +28,35 @@ struct HFTabBar<Value: Hashable>: View {
                     }
                     .foregroundStyle(selection == item.value ? HFColors.gold : HFColors.textMuted)
                     .frame(maxWidth: .infinity)
-                    .frame(height: HFSpacing.tabBarHeight)
-                    .contentShape(Rectangle())
+                    .frame(height: HFSpacing.tabBarHeight - HFSpacing.sm)
+                    .background {
+                        if selection == item.value {
+                            Capsule()
+                                .fill(HFColors.gold.opacity(0.12))
+                                .padding(.horizontal, HFSpacing.xs)
+                        }
+                    }
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, HFSpacing.xs)
         .background(
-            Rectangle()
+            RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 4, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .overlay(HFColors.background.opacity(0.78))
-                .ignoresSafeArea(edges: .bottom)
+                .overlay(
+                    RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 4, style: .continuous)
+                        .fill(HFColors.background.opacity(0.78))
+                )
         )
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(HFColors.stroke)
-                .frame(height: 1)
-        }
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 4, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
+        .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
+        .padding(.horizontal, HFSpacing.floatingTabHorizontal)
+        .padding(.bottom, HFSpacing.sm)
     }
 }

@@ -4,7 +4,9 @@ struct HFPosterCard: View {
     let movie: Movie
     var width: CGFloat = 132
     var showTitle: Bool = true
+    var showMetadata: Bool = false
     var showProgress: Bool = false
+    var posterOnly: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
@@ -52,13 +54,21 @@ struct HFPosterCard: View {
                     .stroke(HFColors.stroke, lineWidth: 1)
             )
 
-            if showTitle {
+            if showTitle && !posterOnly {
                 Text(movie.title)
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(width: width, alignment: .leading)
+
+                if showMetadata {
+                    Text(movie.metadataLine)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textMuted)
+                        .lineLimit(1)
+                        .frame(width: width, alignment: .leading)
+                }
             }
         }
         .frame(width: width, alignment: .top)

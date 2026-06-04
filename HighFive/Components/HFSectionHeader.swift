@@ -18,7 +18,7 @@ struct HFSectionHeader: View {
             if let actionTitle {
                 Button(action: { action?() }) {
                     Text(actionTitle)
-                        .font(HFTypography.body.weight(.bold))
+                        .font(HFTypography.smallAction)
                         .foregroundStyle(HFColors.gold)
                 }
                 .buttonStyle(.plain)

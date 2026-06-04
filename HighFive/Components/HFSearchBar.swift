@@ -27,11 +27,11 @@ struct HFSearchBar: View {
             }
         }
         .padding(.horizontal, HFSpacing.md)
-        .frame(height: 52)
-        .background(HFColors.charcoal.opacity(0.92))
+        .frame(height: HFSpacing.searchBarHeight)
+        .background(HFColors.surface.opacity(0.94))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(HFColors.stroke, lineWidth: 1)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }

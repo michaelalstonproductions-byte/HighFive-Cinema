@@ -5,6 +5,9 @@ enum HFColors {
     static let backgroundRaised = Color(red: 0.055, green: 0.054, blue: 0.050)
     static let charcoal = Color(red: 0.090, green: 0.088, blue: 0.082)
     static let charcoalLight = Color(red: 0.145, green: 0.140, blue: 0.130)
+    static let surface = Color(red: 0.105, green: 0.098, blue: 0.090)
+    static let surfaceElevated = Color(red: 0.160, green: 0.145, blue: 0.130)
+    static let glassSurface = Color(red: 0.120, green: 0.110, blue: 0.100).opacity(0.72)
     static let gold = Color(red: 0.930, green: 0.705, blue: 0.255)
     static let goldDeep = Color(red: 0.710, green: 0.455, blue: 0.100)
     static let orange = Color(red: 0.950, green: 0.410, blue: 0.115)
@@ -14,7 +17,9 @@ enum HFColors {
     static let textMuted = Color(red: 0.560, green: 0.550, blue: 0.525)
     static let stroke = Color.white.opacity(0.13)
     static let goldStroke = gold.opacity(0.42)
+    static let glassStroke = Color.white.opacity(0.16)
     static let shadow = Color.black.opacity(0.55)
+    static let warmGlow = Color(red: 0.240, green: 0.130, blue: 0.055)
 
     static let heroGradient = LinearGradient(
         colors: [

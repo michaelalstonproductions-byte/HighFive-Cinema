@@ -32,6 +32,26 @@ struct HFMovieCard: View {
                                 .clipShape(Capsule())
                         }
                     }
+
+                    if let progress = movie.progress {
+                        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            GeometryReader { proxy in
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.16))
+                                    Capsule()
+                                        .fill(HFColors.goldGradient)
+                                        .frame(width: proxy.size.width * min(max(progress, 0), 1))
+                                }
+                            }
+                            .frame(height: 5)
+
+                            Text("\(Int(progress * 100))% watched")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.gold)
+                        }
+                        .padding(.top, HFSpacing.xxs)
+                    }
                 }
                 Spacer(minLength: 0)
             }

@@ -3,63 +3,122 @@ import SwiftUI
 struct ProfileView: View {
     @Binding var selectedProfile: UserProfile
 
+    private let menuItems: [(title: String, systemImage: String)] = [
+        ("Notifications", "bell.fill"),
+        ("My List", "bookmark.fill"),
+        ("App Settings", "gearshape.fill"),
+        ("Account", "person.crop.circle.fill"),
+        ("Help", "questionmark.circle.fill")
+    ]
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    Text("Profiles")
-                        .font(HFTypography.display)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Choose a local streaming profile for this session.")
-                        .font(HFTypography.body)
-                        .foregroundStyle(HFColors.textSecondary)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-                .padding(.top, HFSpacing.lg)
+                header
+                avatarRow
 
                 ProfileSwitcherView(selectedProfile: $selectedProfile)
                     .padding(.horizontal, HFSpacing.screenHorizontal)
 
-                HFGlassPanel {
-                    VStack(alignment: .leading, spacing: HFSpacing.md) {
-                        HStack(spacing: HFSpacing.md) {
-                            Image(systemName: selectedProfile.avatarSystemName)
-                                .font(.system(size: 42, weight: .bold))
-                                .foregroundStyle(HFColors.gold)
-                            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                                Text(selectedProfile.name)
-                                    .font(HFTypography.section)
-                                    .foregroundStyle(HFColors.textPrimary)
-                                Text(selectedProfile.isKidsProfile ? "Kids profile" : "Standard profile")
-                                    .font(HFTypography.body)
-                                    .foregroundStyle(HFColors.textSecondary)
-                            }
-                        }
-
-                        Divider()
-                            .overlay(HFColors.stroke)
-
-                        profileRow("Playback", value: "Local preview")
-                        profileRow("Downloads", value: "Mock data only")
-                        profileRow("Privacy", value: "No authentication in Phase 1")
-                    }
-                    .padding(HFSpacing.lg)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
+                menu
+                signOutButton
             }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.xxl)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
-    private func profileRow(_ title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-                .font(HFTypography.body)
+    private var header: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text("Profiles & More")
+                .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Spacer()
-            Text(value)
-                .font(HFTypography.caption)
+            Text("Manage local profiles and streaming preferences.")
+                .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
         }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var avatarRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.md) {
+                ForEach(HFMockData.userProfiles) { profile in
+                    Button {
+                        selectedProfile = profile
+                    } label: {
+                        VStack(spacing: HFSpacing.xs) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                    .fill(selectedProfile.id == profile.id ? HFColors.goldGradient : LinearGradient(colors: [HFColors.surfaceElevated, HFColors.charcoal], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                Image(systemName: profile.avatarSystemName)
+                                    .font(.system(size: 38, weight: .bold))
+                                    .foregroundStyle(selectedProfile.id == profile.id ? .black : HFColors.textPrimary)
+                            }
+                            .frame(width: 100, height: 100)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                    .stroke(selectedProfile.id == profile.id ? HFColors.gold : HFColors.glassStroke, lineWidth: 2)
+                            )
+
+                            Text(profile.name)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var menu: some View {
+        VStack(spacing: HFSpacing.sm) {
+            ForEach(menuItems, id: \.title) { item in
+                profileMenuRow(title: item.title, systemImage: item.systemImage)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func profileMenuRow(title: String, systemImage: String) -> some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
+            HStack(spacing: HFSpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 28)
+
+                Text(title)
+                    .font(HFTypography.menu)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(HFColors.textMuted)
+            }
+            .frame(height: 64)
+            .padding(.horizontal, HFSpacing.md)
+        }
+    }
+
+    private var signOutButton: some View {
+        Button {} label: {
+            Text("Sign Out")
+                .font(HFTypography.menu)
+                .foregroundStyle(HFColors.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+                .background(Color.white.opacity(0.10))
+                .clipShape(Capsule())
+                .overlay(Capsule().stroke(HFColors.glassStroke, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 }

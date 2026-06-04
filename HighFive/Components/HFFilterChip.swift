@@ -16,12 +16,12 @@ struct HFFilterChip: View {
                     if isSelected {
                         HFColors.goldGradient
                     } else {
-                        HFColors.charcoal
+                        HFColors.surfaceElevated.opacity(0.86)
                     }
                 }
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? HFColors.gold.opacity(0.8) : HFColors.stroke, lineWidth: 1)
+                        .stroke(isSelected ? HFColors.gold.opacity(0.82) : HFColors.glassStroke, lineWidth: 1)
                 )
                 .clipShape(Capsule())
         }
