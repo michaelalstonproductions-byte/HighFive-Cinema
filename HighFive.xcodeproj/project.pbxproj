@@ -10,9 +10,38 @@
 		9E515AE72F917769007445DC /* HighFive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HighFive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9E515AF52F917771007445DC /* Exceptions for "HighFive" folder in "HighFive" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Creator/Onboarding/LaunchOnboardingViewController.swift,
+				App/Depth/Onboarding/LaunchOnboardingViewController.swift,
+				"App/Depth/Checkpoint March 23  copy__HKV1_VideoFrameSidecar__869337cc6b.swift",
+				App/Depth/HKV1_DepthGenerator.swift,
+				App/Depth/HKV1_DepthPreviewEngine.swift,
+				App/Depth/HKV1_TemporalDepthFusion.swift,
+				App/Motion/HKV1_LensModel.swift,
+				App/Motion/HKV1_ProMotionCoordinator.swift,
+				App/Motion/HKV1_ProMotionOutput.swift,
+				App/Motion/LaunchOnboardingViewController.swift,
+				App/Motion/Onboarding/LaunchOnboardingViewController.swift,
+				App/Onboarding/LaunchOnboardingViewController.swift,
+				App/Playback/HKV1_PlaybackController.swift,
+				App/Playback/HKV1_SpatialPeekViewController.swift,
+				App/UI/Rendering/HKV1_ControlBar.swift,
+				App/UI/Rendering/HKV1_LensTuningProfile.swift,
+				App/UI/Rendering/HKV1_PlayerLayerView.swift,
+			);
+			target = 9E515AE62F917769007445DC /* HighFive */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9E515AE92F917769007445DC /* HighFive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9E515AF52F917771007445DC /* Exceptions for "HighFive" folder in "HighFive" target */,
+			);
 			path = HighFive;
 			sourceTree = "<group>";
 		};
