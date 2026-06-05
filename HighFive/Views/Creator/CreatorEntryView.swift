@@ -44,11 +44,17 @@ struct CreatorEntryView: View {
             }
             .buttonStyle(.plain)
 
-            CreatorFeatureTile(
-                title: "Creator Dashboard",
-                subtitle: "Track projects and audience signals.",
-                systemImage: "chart.bar.xaxis"
-            )
+            NavigationLink {
+                CreatorDashboardPreviewView()
+            } label: {
+                CreatorFeatureTile(
+                    title: "Creator Dashboard",
+                    subtitle: "Track projects and audience signals.",
+                    systemImage: "chart.bar.xaxis",
+                    isLocked: false
+                )
+            }
+            .buttonStyle(.plain)
 
             CreatorFeatureTile(
                 title: "Creator Marketplace",
