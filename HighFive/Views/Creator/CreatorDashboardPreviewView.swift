@@ -32,6 +32,7 @@ struct CreatorDashboardPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                commandLinksSection
                 snapshotSection
                 performanceSection
                 topProjectsSection
@@ -58,6 +59,29 @@ struct CreatorDashboardPreviewView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var commandLinksSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Creator Intelligence", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    CreatorWorkflowCommandCenterView()
+                } label: {
+                    HFActionTile(title: "Open Command Center", subtitle: "Track workflow, blockers, and recent updates.", systemImage: "command")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    CreatorReleaseReadinessPreviewView()
+                } label: {
+                    HFActionTile(title: "Release Readiness", subtitle: "Preview blockers and launch path progress.", systemImage: "gauge.with.dots.needle.67percent")
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var snapshotSection: some View {

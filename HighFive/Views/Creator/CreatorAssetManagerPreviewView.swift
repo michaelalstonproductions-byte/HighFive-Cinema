@@ -38,6 +38,7 @@ struct CreatorAssetManagerPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                workflowLinksSection
                 assetLibrarySection
                 assetHealthSection
                 packageFoldersSection
@@ -69,6 +70,29 @@ struct CreatorAssetManagerPreviewView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var workflowLinksSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Links", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    CreatorPackageBuilderPreviewView()
+                } label: {
+                    HFActionTile(title: "Package Builder", subtitle: "Return to package steps and readiness.", systemImage: "shippingbox.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    CreatorSubmissionWorkflowPreviewView()
+                } label: {
+                    HFActionTile(title: "Submission Workflow", subtitle: "Check readiness gates after asset review.", systemImage: "paperplane.fill")
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var assetLibrarySection: some View {

@@ -12,6 +12,10 @@ struct SearchView: View {
     @State private var selectedFilter = "All"
 
     private let filters = ["All", "Movies", "Series", "Originals", "Downloaded"]
+    private var suggestedMovies: [Movie] {
+        Array(HFMockData.movies.filter { $0.isOriginal || $0.progress != nil }.prefix(5))
+    }
+
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
@@ -93,6 +97,7 @@ struct SearchView: View {
 
             if query.isEmpty {
                 recentSearches
+                suggestedForYou
             }
 
             resultsGrid
@@ -141,6 +146,25 @@ struct SearchView: View {
         }
     }
 
+    private var suggestedForYou: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Suggested for You", actionTitle: nil)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(suggestedMovies) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 132, showMetadata: true, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .scrollClipDisabled()
+        }
+    }
+
     @ViewBuilder
     private var resultsGrid: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
@@ -149,7 +173,7 @@ struct SearchView: View {
             if filteredMovies.isEmpty {
                 HFEmptyState(
                     title: "No results found",
-                    message: "Try a title, genre, or creator from the HighFive slate.",
+                    message: "No local matches yet. Try a title, genre, creator, or switch filters.",
                     systemImage: "magnifyingglass"
                 )
                     .padding(.horizontal, HFSpacing.screenHorizontal)

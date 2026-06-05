@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CreatorWorkflowCommandCenterView: View {
     @StateObject private var workflowStore = HFCreatorWorkflowStore()
+    @StateObject private var notificationStore = HFNotificationCenterStore()
 
     private let stages = [
         CreatorWorkflowStage(title: "Studio", status: "Active", systemImage: "film.stack.fill", route: .studio),
@@ -12,6 +13,14 @@ struct CreatorWorkflowCommandCenterView: View {
         CreatorWorkflowStage(title: "Version History", status: "Tracking", systemImage: "clock.arrow.circlepath", route: .versionHistory),
         CreatorWorkflowStage(title: "Team Permissions", status: "Preview Only", systemImage: "person.3.sequence.fill", route: .teamPermissions),
         CreatorWorkflowStage(title: "Marketplace", status: "Coming Soon", systemImage: "storefront.fill", route: .marketplace)
+    ]
+
+    private let criticalPath = [
+        CreatorCriticalPathStep(title: "Finish trailer review", status: "Needs Review"),
+        CreatorCriticalPathStep(title: "Confirm credits", status: "In Progress"),
+        CreatorCriticalPathStep(title: "Complete submission notes", status: "Not Started"),
+        CreatorCriticalPathStep(title: "Team sign-off", status: "Pending"),
+        CreatorCriticalPathStep(title: "Marketplace preview", status: "Preview Only")
     ]
 
     private let actions = [
@@ -46,13 +55,17 @@ struct CreatorWorkflowCommandCenterView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 commandSummarySection
+                releaseReadinessSection
                 currentStageSection
                 workflowProgressSection
+                workflowHealthSection
+                criticalPathSection
                 workflowPipelineSection
                 workflowSignalsSection
                 nextBestActionSection
                 priorityActionsSection
                 recentActivitySection
+                notificationFeedSection
                 comingNextSection
             }
             .padding(.top, HFSpacing.lg)
@@ -143,6 +156,51 @@ struct CreatorWorkflowCommandCenterView: View {
         }
     }
 
+    private var releaseReadinessSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Release Readiness", actionTitle: nil)
+
+            NavigationLink {
+                CreatorReleaseReadinessPreviewView()
+            } label: {
+                HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                    VStack(alignment: .leading, spacing: HFSpacing.md) {
+                        HStack(alignment: .top, spacing: HFSpacing.md) {
+                            Image(systemName: "gauge.with.dots.needle.67percent")
+                                .font(.system(size: 28, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 60, height: 60)
+                                .background(HFColors.gold.opacity(0.14))
+                                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous))
+
+                            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                                Text("72% Ready")
+                                    .font(HFTypography.section)
+                                    .foregroundStyle(HFColors.textPrimary)
+
+                                Text("2 blockers, 5 open notes, and marketplace preview still pending.")
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer(minLength: HFSpacing.xs)
+
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                        }
+
+                        HFProgressBar(title: "Overall readiness", value: 0.72)
+                    }
+                    .padding(HFSpacing.md)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
     private var currentStageSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Current Stage", actionTitle: nil)
@@ -178,6 +236,33 @@ struct CreatorWorkflowCommandCenterView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
             .scrollClipDisabled()
+        }
+    }
+
+    private var workflowHealthSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Health", actionTitle: nil)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
+                HFMetricCard(title: "Status", value: "On track", systemImage: "checkmark.seal.fill")
+                HFMetricCard(title: "Blockers", value: "2", systemImage: "exclamationmark.triangle.fill")
+                HFMetricCard(title: "Open notes", value: "\(workflowStore.openReviewNotes)", systemImage: "text.bubble.fill")
+                HFMetricCard(title: "Recent updates", value: "3", systemImage: "sparkles")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var criticalPathSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Critical Path", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(Array(criticalPath.enumerated()), id: \.element.id) { index, step in
+                    HFCriticalPathCard(index: index + 1, title: step.title, status: step.status)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
@@ -272,6 +357,28 @@ struct CreatorWorkflowCommandCenterView: View {
         }
     }
 
+    private var notificationFeedSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Notification Feed", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                VStack(spacing: HFSpacing.sm) {
+                    let creatorNotifications = Array(notificationStore.notifications.filter { $0.category == "Creator" }.prefix(4))
+                    ForEach(Array(creatorNotifications.enumerated()), id: \.element.id) { index, item in
+                        HFTimelineRow(
+                            title: item.title,
+                            detail: item.message,
+                            systemImage: item.systemImage,
+                            isLast: index == creatorNotifications.count - 1
+                        )
+                    }
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
     private var comingNextSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Coming Next", actionTitle: nil)
@@ -316,6 +423,8 @@ struct CreatorWorkflowCommandCenterView: View {
             CreatorTeamPermissionsPreviewView()
         case .marketplace:
             CreatorMarketplacePreviewView()
+        case .releaseReadiness:
+            CreatorReleaseReadinessPreviewView()
         }
     }
 
@@ -365,6 +474,7 @@ private enum CreatorWorkflowRoute {
     case versionHistory
     case teamPermissions
     case marketplace
+    case releaseReadiness
 }
 
 private struct CreatorWorkflowStage: Identifiable {
@@ -388,6 +498,12 @@ private struct CreatorPriorityAction: Identifiable {
     let subtitle: String
     let systemImage: String
     let route: CreatorWorkflowRoute
+}
+
+private struct CreatorCriticalPathStep: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
 }
 
 private struct CreatorWorkflowStageCard: View {

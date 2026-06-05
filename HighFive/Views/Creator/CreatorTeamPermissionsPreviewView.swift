@@ -60,6 +60,7 @@ struct CreatorTeamPermissionsPreviewView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 teamAccessSection
+                commandCenterLink
                 teamMembersSection
                 permissionGroupsSection
                 accessMatrixSection
@@ -159,6 +160,20 @@ struct CreatorTeamPermissionsPreviewView: View {
                 }
                 .padding(HFSpacing.lg)
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var commandCenterLink: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Link", actionTitle: nil)
+
+            NavigationLink {
+                CreatorWorkflowCommandCenterView()
+            } label: {
+                HFActionTile(title: "Command Center", subtitle: "Return to workflow health, blockers, and release readiness.", systemImage: "command")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

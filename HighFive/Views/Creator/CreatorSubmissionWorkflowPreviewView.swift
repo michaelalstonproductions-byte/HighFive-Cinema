@@ -39,6 +39,7 @@ struct CreatorSubmissionWorkflowPreviewView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 submissionSummary
+                workflowLinksSection
                 reviewChecklistSection
                 readinessGatesSection
                 timelineSection
@@ -141,6 +142,20 @@ struct CreatorSubmissionWorkflowPreviewView: View {
                 }
                 .padding(HFSpacing.lg)
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var workflowLinksSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Links", actionTitle: nil)
+
+            NavigationLink {
+                CreatorReleaseReadinessPreviewView()
+            } label: {
+                HFActionTile(title: "Release Readiness", subtitle: "Review blockers before studio handoff.", systemImage: "gauge.with.dots.needle.67percent")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

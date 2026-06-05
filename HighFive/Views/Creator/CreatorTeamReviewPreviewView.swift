@@ -58,6 +58,7 @@ struct CreatorTeamReviewPreviewView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 reviewRoomSection
+                releaseReadinessLink
                 reviewerNotesSection
                 approvalChecklistSection
                 reviewTimelineSection
@@ -206,6 +207,20 @@ struct CreatorTeamReviewPreviewView: View {
                 }
                 .padding(HFSpacing.lg)
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var releaseReadinessLink: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Release Check", actionTitle: nil)
+
+            NavigationLink {
+                CreatorReleaseReadinessPreviewView()
+            } label: {
+                HFActionTile(title: "Release Readiness", subtitle: "See blockers, ready items, and launch path.", systemImage: "gauge.with.dots.needle.67percent")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

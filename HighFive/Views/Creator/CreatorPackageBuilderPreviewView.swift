@@ -39,6 +39,7 @@ struct CreatorPackageBuilderPreviewView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 packageOverview
+                workflowLinksSection
                 packageStepsSection
                 assetPreviewSection
                 submissionReadinessSection
@@ -139,6 +140,29 @@ struct CreatorPackageBuilderPreviewView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var workflowLinksSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Links", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    CreatorWorkflowCommandCenterView()
+                } label: {
+                    HFActionTile(title: "Command Center", subtitle: "Return to the full creator workflow map.", systemImage: "command")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    CreatorReleaseReadinessPreviewView()
+                } label: {
+                    HFActionTile(title: "Release Readiness", subtitle: "Check launch blockers from this package.", systemImage: "gauge.with.dots.needle.67percent")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

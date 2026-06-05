@@ -9,6 +9,7 @@ struct CreatorStudioPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                commandCenterLink
                 activeDraftCard
                 toolSection
                 checklistSection
@@ -35,6 +36,20 @@ struct CreatorStudioPreviewView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var commandCenterLink: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Link", actionTitle: nil)
+
+            NavigationLink {
+                CreatorWorkflowCommandCenterView()
+            } label: {
+                HFActionTile(title: "Command Center", subtitle: "Track package health, release readiness, and next actions.", systemImage: "command")
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var activeDraftCard: some View {

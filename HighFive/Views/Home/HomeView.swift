@@ -17,6 +17,7 @@ struct HomeView: View {
             VStack(spacing: HFSpacing.xl) {
                 header
                 heroSection
+                insightSection
 
                 ForEach(HFMockData.premiumHomeRails) { category in
                     movieRail(category)
@@ -29,10 +30,8 @@ struct HomeView: View {
         .sheet(item: $previewMovie) { movie in
             HFMockPlayerSheet(movie: movie)
         }
-        .alert("Notifications", isPresented: $showsNotifications) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("No new notifications. This is a local mock action for the streaming phase.")
+        .sheet(isPresented: $showsNotifications) {
+            HFNotificationSheet()
         }
     }
 
@@ -80,6 +79,29 @@ struct HomeView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var insightSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "For You", actionTitle: nil)
+
+            HFInsightCard(
+                title: "Your HighFive pulse",
+                message: "You have 2 titles in progress and 3 saved for later.",
+                systemImage: "sparkles"
+            )
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            Button(action: onProfile) {
+                HFInsightCard(
+                    title: "Creator Workflow",
+                    message: "Open Profile to continue the mock creator command flow.",
+                    systemImage: "command"
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var heroSection: some View {

@@ -5,6 +5,7 @@ struct ProfileView: View {
     var onOpenMyList: (() -> Void)?
     @State private var showsProfileSwitcher = false
     @State private var showsSignOutAlert = false
+    @State private var showsNotifications = false
     @State private var activeMockSheet: ProfileMockSheet?
 
     private let menuItems: [(title: String, systemImage: String)] = [
@@ -24,6 +25,7 @@ struct ProfileView: View {
                 manageProfilesButton
 
                 creatorModeCard
+                creatorWorkflowShortcut
                 menu
                 signOutButton
             }
@@ -39,11 +41,14 @@ struct ProfileView: View {
         .sheet(item: $activeMockSheet) { sheet in
             ProfileMockSheetView(sheet: sheet)
         }
+        .sheet(isPresented: $showsNotifications) {
+            HFNotificationSheet()
+        }
         .alert("Sign Out?", isPresented: $showsSignOutAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {}
         } message: {
-            Text("This is a mock confirmation. No account or auth state will change.")
+            Text("This is a mock confirmation. No account state will change.")
         }
     }
 
@@ -118,6 +123,20 @@ struct ProfileView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var creatorWorkflowShortcut: some View {
+        NavigationLink {
+            CreatorWorkflowCommandCenterView()
+        } label: {
+            HFActionTile(
+                title: "Creator Command Center",
+                subtitle: "Track package, review, readiness, and release signals.",
+                systemImage: "command"
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
     private var avatarRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: HFSpacing.md) {
@@ -169,11 +188,7 @@ struct ProfileView: View {
         case "My List":
             onOpenMyList?()
         case "Notifications":
-            activeMockSheet = ProfileMockSheet(
-                title: "Notifications",
-                message: "No new notifications. Push notifications are not enabled in this streaming phase.",
-                systemImage: "bell.fill"
-            )
+            showsNotifications = true
         case "App Settings":
             activeMockSheet = ProfileMockSheet(
                 title: "App Settings",
@@ -183,13 +198,13 @@ struct ProfileView: View {
         case "Account":
             activeMockSheet = ProfileMockSheet(
                 title: "Account",
-                message: "Account management is a local placeholder. No auth or billing is connected.",
+                message: "Account management is a local placeholder. No sign-in or billing is connected.",
                 systemImage: "person.crop.circle.fill"
             )
         case "Help":
             activeMockSheet = ProfileMockSheet(
                 title: "Help",
-                message: "Help content is mocked for now. No support backend is connected.",
+                message: "Help content is mocked for now. No live support service is connected.",
                 systemImage: "questionmark.circle.fill"
             )
         default:

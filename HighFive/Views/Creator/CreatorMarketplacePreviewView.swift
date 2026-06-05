@@ -35,6 +35,7 @@ struct CreatorMarketplacePreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                commandCenterLink
                 featuredPackagesSection
                 categoriesSection
                 marketplaceSignalsSection
@@ -66,6 +67,20 @@ struct CreatorMarketplacePreviewView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var commandCenterLink: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Link", actionTitle: nil)
+
+            NavigationLink {
+                CreatorWorkflowCommandCenterView()
+            } label: {
+                HFActionTile(title: "Command Center", subtitle: "Return to release health and workflow priorities.", systemImage: "command")
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var featuredPackagesSection: some View {
