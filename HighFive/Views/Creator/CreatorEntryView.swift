@@ -20,6 +20,7 @@ struct CreatorEntryView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 activePackageHero
+                commandCenterCard
                 featureGrid
                 quickStatsSection
                 comingNextStrip
@@ -101,6 +102,46 @@ struct CreatorEntryView: View {
             }
             .padding(HFSpacing.lg)
         }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var commandCenterCard: some View {
+        NavigationLink {
+            CreatorWorkflowCommandCenterView()
+        } label: {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                HStack(spacing: HFSpacing.md) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: HFSpacing.md, style: .continuous)
+                            .fill(HFColors.gold.opacity(0.16))
+                        Image(systemName: "command")
+                            .font(.system(size: 28, weight: .black))
+                            .foregroundStyle(HFColors.gold)
+                    }
+                    .frame(width: 64, height: 64)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text("Workflow Command Center")
+                                .font(HFTypography.menu)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            Spacer(minLength: HFSpacing.xs)
+
+                            CreatorStatusBadge(title: "Preview", systemImage: "arrow.right")
+                        }
+
+                        Text("Track package, assets, review, versions, and permissions.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(HFSpacing.md)
+            }
+        }
+        .buttonStyle(.plain)
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
