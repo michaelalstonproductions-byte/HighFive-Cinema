@@ -97,6 +97,7 @@ struct SearchView: View {
 
             if query.isEmpty {
                 recentSearches
+                smartRecommendations
                 suggestedForYou
             }
 
@@ -186,6 +187,25 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
             .scrollClipDisabled()
+        }
+    }
+
+    private var smartRecommendations: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "For You", actionTitle: nil)
+
+            NavigationLink {
+                PersonalizedHubView()
+            } label: {
+                HFActionTile(
+                    title: "Personalized Hub",
+                    subtitle: "Recommended local paths across streaming, creator, launch, and Connect.",
+                    systemImage: "sparkles"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Personalized Hub")
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 

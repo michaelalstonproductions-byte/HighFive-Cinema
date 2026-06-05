@@ -15,6 +15,7 @@ struct ConnectHubView: View {
                 header
                 HFBreadcrumbTrail(items: ["Profile", "Connect Preview"])
                 discoveryRoutesSection
+                recommendedCommunitiesSection
                 featuredCreatorsSection
                 projectUpdatesSection
                 communitySignalsSection
@@ -179,6 +180,43 @@ struct ConnectHubView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open Social Room Detail Preview")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var recommendedCommunitiesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Recommended Communities", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(Array(HFPersonalizationPreviewData.recommendedCommunities.enumerated()), id: \.element) { index, community in
+                        HStack(spacing: HFSpacing.md) {
+                            Text("\(index + 1)")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(.black)
+                                .frame(width: 30, height: 30)
+                                .background(HFColors.gold)
+                                .clipShape(Circle())
+
+                            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                                Text(community)
+                                    .font(HFTypography.body)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text("Local recommendation based on active previews.")
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textSecondary)
+                            }
+
+                            Spacer()
+                            HFStatusBadge(title: "Mock", isProminent: false)
+                        }
+                        .padding(.vertical, HFSpacing.xxs)
+                    }
+                }
+                .padding(HFSpacing.md)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

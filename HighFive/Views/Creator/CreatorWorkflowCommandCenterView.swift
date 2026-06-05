@@ -60,6 +60,7 @@ struct CreatorWorkflowCommandCenterView: View {
                 HFBreadcrumbTrail(items: ["Creator Mode", "Command Center"])
                 commandSummarySection
                 primaryActionSection
+                recommendedNextSection
                 releaseReadinessSection
                 workflowCompletenessSection
                 currentStageSection
@@ -258,6 +259,63 @@ struct CreatorWorkflowCommandCenterView: View {
                 }
             }
             .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var recommendedNextSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Recommended Next", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    CreatorPackageBuilderPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Finish Package Builder",
+                        subtitle: "Complete credits, notes, and package details before review.",
+                        systemImage: "shippingbox.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Finish Package Builder")
+
+                NavigationLink {
+                    CreatorReleaseReadinessPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Open Release Readiness",
+                        subtitle: "Review the 72% launch path and remaining blockers.",
+                        systemImage: "gauge.with.dots.needle.67percent"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Release Readiness")
+
+                NavigationLink {
+                    CreatorTeamPermissionsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Review Team Permissions",
+                        subtitle: "Preview local role clarity before team sign-off.",
+                        systemImage: "person.3.sequence.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Review Team Permissions")
+
+                NavigationLink {
+                    ConnectHubView()
+                } label: {
+                    HFActionTile(
+                        title: "Explore Connect Signals",
+                        subtitle: "Open creator updates, rooms, and project community previews.",
+                        systemImage: "person.2.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Explore Connect Signals")
+            }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

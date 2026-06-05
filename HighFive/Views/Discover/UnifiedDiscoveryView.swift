@@ -31,6 +31,7 @@ struct UnifiedDiscoveryView: View {
         VStack(alignment: .leading, spacing: HFSpacing.xl) {
             header
             discoveryFilters
+            personalizedDiscoverySection
 
             if showMovies {
                 contentDiscoverySection
@@ -79,6 +80,53 @@ struct UnifiedDiscoveryView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
+        }
+    }
+
+    private var personalizedDiscoverySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Personalized for You", actionTitle: nil)
+
+            NavigationLink {
+                PersonalizedHubView()
+            } label: {
+                HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                    VStack(alignment: .leading, spacing: HFSpacing.md) {
+                        HStack(alignment: .top, spacing: HFSpacing.md) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 24, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 54, height: 54)
+                                .background(HFColors.gold.opacity(0.14))
+                                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous))
+
+                            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                                HStack(spacing: HFSpacing.xs) {
+                                    Text("Smart Paths")
+                                        .font(HFTypography.section)
+                                        .foregroundStyle(HFColors.textPrimary)
+                                    Spacer(minLength: HFSpacing.xs)
+                                    HFStatusBadge(title: "Local", isProminent: false)
+                                }
+
+                                Text("Open recommended creator workflows, launch checks, and Connect routes built from local preview data.")
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+
+                        HStack(spacing: HFSpacing.xs) {
+                            HFRouteChip(title: "For You", systemImage: "person.crop.circle.fill")
+                            HFRouteChip(title: "Creator Workflows", systemImage: "shippingbox.fill")
+                        }
+                    }
+                    .padding(HFSpacing.lg)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Personalized Hub")
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 

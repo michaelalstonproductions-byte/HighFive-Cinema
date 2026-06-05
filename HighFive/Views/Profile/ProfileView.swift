@@ -29,6 +29,7 @@ struct ProfileView: View {
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
                 connectPreviewShortcut
+                personalizedHubShortcut
                 previewReleaseSection
                 menu
                 signOutButton
@@ -170,6 +171,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Connect Preview")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var personalizedHubShortcut: some View {
+        NavigationLink {
+            PersonalizedHubView()
+        } label: {
+            HFActionTile(
+                title: "For You",
+                subtitle: "Recommended paths across streaming, creator workflow, launch, and Connect.",
+                systemImage: "sparkles"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Personalized Hub")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

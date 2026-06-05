@@ -21,6 +21,7 @@ struct HomeView: View {
                 header
                 heroSection
                 todaySection
+                smartRecommendationsSection
                 insightSection
                 watchSectionHeader
 
@@ -163,6 +164,42 @@ struct HomeView: View {
                 .accessibilityLabel("View My List")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var smartRecommendationsSection: some View {
+        ecosystemRail(title: "Smart Recommendations") {
+            NavigationLink {
+                PersonalizedHubView()
+            } label: {
+                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[0])
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Personalized Hub")
+
+            NavigationLink {
+                CreatorPackageBuilderPreviewView()
+            } label: {
+                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[1])
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Continue Package Builder")
+
+            NavigationLink {
+                ConnectHubView()
+            } label: {
+                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[2])
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Explore Connect")
+
+            NavigationLink {
+                CreatorLaunchCenterPreviewView()
+            } label: {
+                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[3])
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Launch Center")
         }
     }
 
