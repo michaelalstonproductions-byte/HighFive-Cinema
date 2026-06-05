@@ -28,6 +28,7 @@ struct ActivityFeedPreviewView: View {
                 filterSection
                 projectCommunityRoute
                 socialRoomRoute
+                connectSignalsRoutes
                 activityFeedSection
                 projectUpdatesSection
                 commentsPreviewSection
@@ -107,6 +108,39 @@ struct ActivityFeedPreviewView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Open Social Room Detail Preview")
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var connectSignalsRoutes: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Connect Signals", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    ConnectNotificationsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "View Connect Notifications",
+                        subtitle: "Open grouped mock signals for streaming, creator workflow, and Connect.",
+                        systemImage: "bell.badge.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Connect Notifications Preview")
+
+                NavigationLink {
+                    SocialGraphPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Open Social Graph",
+                        subtitle: "Preview relationship mapping for creators, projects, rooms, and audiences.",
+                        systemImage: "point.3.connected.trianglepath.dotted"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Social Graph Preview")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var activityFeedSection: some View {

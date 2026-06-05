@@ -21,6 +21,8 @@ struct ProjectCommunityPreviewView: View {
                 communityFeedSection
                 socialRoomsSection
                 creatorCirclesSection
+                relatedSocialGraphSection
+                followSuggestionsSection
                 communityActionsSection
                 audienceSignalsSection
                 comingNextSection
@@ -203,6 +205,87 @@ struct ProjectCommunityPreviewView: View {
                 mockAction(title: "Preview Discussion", systemImage: "text.bubble.fill") {}
                 mockAction(title: "Share Package", systemImage: "square.and.arrow.up.fill") {}
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var relatedSocialGraphSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Related Social Graph", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    SocialGraphPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Open Social Graph",
+                        subtitle: "Preview relationships across The Friendly, Watch Room, Team Review, and Marketplace Preview.",
+                        systemImage: "point.3.connected.trianglepath.dotted"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Social Graph Preview")
+
+                NavigationLink {
+                    ConnectNotificationsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "View Project Signals",
+                        subtitle: "Preview Connect notifications tied to rooms, creators, and project updates.",
+                        systemImage: "bell.badge.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Connect Notifications Preview")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var followSuggestionsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Follow Suggestions", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(HFConnectPreviewData.followSuggestions.prefix(3)) { suggestion in
+                        HStack(spacing: HFSpacing.sm) {
+                            Image(systemName: suggestion.systemImage)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                                Text(suggestion.title)
+                                    .font(HFTypography.body)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(suggestion.reason)
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer()
+                            HFStatusBadge(title: suggestion.type, isProminent: false)
+                        }
+                        .padding(.vertical, HFSpacing.xxs)
+                    }
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            NavigationLink {
+                FollowSuggestionsPreviewView()
+            } label: {
+                HFActionTile(
+                    title: "Open Follow Suggestions",
+                    subtitle: "Find local mock recommendations for related creators, projects, and rooms.",
+                    systemImage: "person.crop.circle.badge.plus"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Follow Suggestions Preview")
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

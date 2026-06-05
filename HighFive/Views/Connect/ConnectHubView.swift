@@ -73,6 +73,42 @@ struct ConnectHubView: View {
 
             VStack(spacing: HFSpacing.md) {
                 NavigationLink {
+                    ConnectNotificationsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Connect Notifications",
+                        subtitle: "Preview social signals from creators, rooms, projects, and watch parties.",
+                        systemImage: "bell.badge.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Connect Notifications Preview")
+
+                NavigationLink {
+                    SocialGraphPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Social Graph",
+                        subtitle: "Map mock relationships between creators, projects, rooms, and audiences.",
+                        systemImage: "point.3.connected.trianglepath.dotted"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Social Graph Preview")
+
+                NavigationLink {
+                    FollowSuggestionsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Follow Suggestions",
+                        subtitle: "Preview recommended creators, projects, and rooms with local follow state.",
+                        systemImage: "person.crop.circle.badge.plus"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Follow Suggestions Preview")
+
+                NavigationLink {
                     SocialRoomsPreviewView()
                 } label: {
                     HFActionTile(

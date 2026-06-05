@@ -150,6 +150,67 @@ enum HFConnectPreviewData {
         HFConnectRoomDiscussion(title: "Poster artwork feels ready", author: "Creative Lead", body: "The current one-sheet gives the package a stronger premium signal.", replies: "18", reactions: "132", status: "Resolved Preview"),
         HFConnectRoomDiscussion(title: "Creator notes need one final pass", author: "Studio Review", body: "Submission notes read well, but the rights section should be easier to scan.", replies: "9", reactions: "64", status: "Open Preview")
     ]
+
+    static let priorityNotifications: [HFConnectNotification] = [
+        HFConnectNotification(title: "The Friendly Watch Room posted a trailer discussion.", subtitle: "Room Update", group: "Connect", status: "New", timestamp: "2m ago", systemImage: "bubble.left.and.bubble.right.fill"),
+        HFConnectNotification(title: "Creative Lead shared package notes.", subtitle: "Creator Update", group: "Connect", status: "New", timestamp: "14m ago", systemImage: "person.crop.circle.badge.checkmark"),
+        HFConnectNotification(title: "Poster Artists Circle is trending.", subtitle: "Creator Circle", group: "Connect", status: "Active", timestamp: "32m ago", systemImage: "paintpalette.fill"),
+        HFConnectNotification(title: "Paranormall Fan Room scheduled a watch party.", subtitle: "Watch Party", group: "Connect", status: "Preview", timestamp: "1h ago", systemImage: "play.tv.fill")
+    ]
+
+    static let groupedNotifications: [HFConnectNotification] = [
+        HFConnectNotification(title: "New title added to HighFive", subtitle: "Streaming preview", group: "Streaming", status: "Ready", timestamp: "Today", systemImage: "sparkles"),
+        HFConnectNotification(title: "Continue watching The Friendly", subtitle: "Streaming preview", group: "Streaming", status: "Resume", timestamp: "Today", systemImage: "play.circle.fill"),
+        HFConnectNotification(title: "Downloads are ready offline", subtitle: "Streaming preview", group: "Streaming", status: "Offline", timestamp: "Yesterday", systemImage: "arrow.down.circle.fill"),
+        HFConnectNotification(title: "Trailer cut needs review", subtitle: "Creator workflow", group: "Creator", status: "Open", timestamp: "Today", systemImage: "film.fill"),
+        HFConnectNotification(title: "Submission workflow is 68% ready", subtitle: "Creator workflow", group: "Creator", status: "Draft", timestamp: "Today", systemImage: "checklist"),
+        HFConnectNotification(title: "Marketplace preview generated", subtitle: "Creator workflow", group: "Creator", status: "Preview", timestamp: "Yesterday", systemImage: "storefront.fill"),
+        HFConnectNotification(title: "A creator you follow posted an update", subtitle: "Connect preview", group: "Connect", status: "New", timestamp: "Today", systemImage: "person.2.fill"),
+        HFConnectNotification(title: "A room you saved has new activity", subtitle: "Connect preview", group: "Connect", status: "New", timestamp: "Today", systemImage: "bubble.left.fill"),
+        HFConnectNotification(title: "A watch party preview is ready", subtitle: "Connect preview", group: "Connect", status: "Preview", timestamp: "Tomorrow", systemImage: "play.tv.fill")
+    ]
+
+    static let socialGraphNodes: [HFConnectGraphNode] = [
+        HFConnectGraphNode(title: "HighFive Cinema", subtitle: "Studio hub for The Friendly package.", relationship: "Owner / Studio", metric: "1 project", systemImage: "building.2.fill"),
+        HFConnectGraphNode(title: "Creative Lead", subtitle: "Approves package notes, artwork, and review signals.", relationship: "Reviewer", metric: "5 notes", systemImage: "person.crop.circle.badge.checkmark"),
+        HFConnectGraphNode(title: "Trailer Editor", subtitle: "Tracks preview clips, pacing, and trailer discussion.", relationship: "Contributor", metric: "2 cuts", systemImage: "film.fill"),
+        HFConnectGraphNode(title: "Poster Designer", subtitle: "Linked to artwork passes and poster feedback rooms.", relationship: "Collaborator", metric: "4 assets", systemImage: "paintpalette.fill"),
+        HFConnectGraphNode(title: "Studio Reviewer", subtitle: "Preview access to submission and release readiness.", relationship: "Preview Access", metric: "3 gates", systemImage: "checkmark.seal.fill")
+    ]
+
+    static let projectRelationships: [HFConnectGraphNode] = [
+        HFConnectGraphNode(title: "The Friendly", subtitle: "Linked to Watch Room, Package Builder, Team Review, Marketplace Preview.", relationship: "Creator Package", metric: "72% ready", systemImage: "film.stack.fill"),
+        HFConnectGraphNode(title: "Paranormall", subtitle: "Linked to Fan Room, Watch Party, Creator Updates.", relationship: "Series Preview", metric: "8.1K room", systemImage: "sparkles"),
+        HFConnectGraphNode(title: "Behind the Vision", subtitle: "Linked to Creator Profile, Activity Feed, Launch Center.", relationship: "Short Preview", metric: "18 updates", systemImage: "rectangle.stack.fill")
+    ]
+
+    static let mutualCommunities = [
+        "HighFive Creator Lab",
+        "Indie Film Builders",
+        "Poster Artists Circle",
+        "Studio Review Lounge"
+    ]
+
+    static let followSuggestions: [HFConnectFollowSuggestion] = [
+        HFConnectFollowSuggestion(title: "Creative Lead", subtitle: "Reviewer", reason: "Worked on The Friendly package", type: "Creator", followers: "12.4K", systemImage: "person.crop.circle.fill"),
+        HFConnectFollowSuggestion(title: "Trailer Editor", subtitle: "Contributor", reason: "Active in Creator Launch Lab", type: "Creator", followers: "8.2K", systemImage: "film.fill"),
+        HFConnectFollowSuggestion(title: "Poster Designer", subtitle: "Collaborator", reason: "Trending in Poster Artists Circle", type: "Creator", followers: "5.9K", systemImage: "paintpalette.fill"),
+        HFConnectFollowSuggestion(title: "Studio Reviewer", subtitle: "Reviewer", reason: "Connected to Team Review workflow", type: "Creator", followers: "3.4K", systemImage: "checkmark.seal.fill")
+    ]
+
+    static let suggestedProjects: [HFConnectFollowSuggestion] = [
+        HFConnectFollowSuggestion(title: "The Friendly", subtitle: "Creator Package", reason: "Connected to your review activity", type: "Project", followers: "1.2K", systemImage: "film.stack.fill"),
+        HFConnectFollowSuggestion(title: "Paranormall", subtitle: "Season 1 Preview", reason: "Trending in Fan Room discussions", type: "Project", followers: "8.1K", systemImage: "sparkles"),
+        HFConnectFollowSuggestion(title: "Behind the Vision", subtitle: "Short", reason: "Shared by creators you follow", type: "Project", followers: "924", systemImage: "rectangle.stack.fill"),
+        HFConnectFollowSuggestion(title: "Black Turnip", subtitle: "Limited Series", reason: "Rising marketplace signal", type: "Project", followers: "612", systemImage: "leaf.fill")
+    ]
+
+    static let suggestedRooms: [HFConnectFollowSuggestion] = [
+        HFConnectFollowSuggestion(title: "The Friendly Watch Room", subtitle: "Watch Circle", reason: "Linked to The Friendly package", type: "Room", followers: "2.4K", systemImage: "bubble.left.and.bubble.right.fill"),
+        HFConnectFollowSuggestion(title: "Creator Launch Lab", subtitle: "Creator Circle", reason: "Launch checklist updates are active", type: "Room", followers: "1.7K", systemImage: "hammer.fill"),
+        HFConnectFollowSuggestion(title: "Studio Review Lounge", subtitle: "Review Room", reason: "Team review discussions are active", type: "Room", followers: "318", systemImage: "checklist"),
+        HFConnectFollowSuggestion(title: "Poster Feedback Room", subtitle: "Collaboration", reason: "Poster artwork is trending", type: "Room", followers: "842", systemImage: "paintbrush.pointed.fill")
+    ]
 }
 
 struct HFConnectCreator: Identifiable {
@@ -255,4 +316,33 @@ struct HFConnectRoomDiscussion: Identifiable {
     let replies: String
     let reactions: String
     let status: String
+}
+
+struct HFConnectNotification: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let group: String
+    let status: String
+    let timestamp: String
+    let systemImage: String
+}
+
+struct HFConnectGraphNode: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let relationship: String
+    let metric: String
+    let systemImage: String
+}
+
+struct HFConnectFollowSuggestion: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let reason: String
+    let type: String
+    let followers: String
+    let systemImage: String
 }

@@ -11,6 +11,7 @@ struct CreatorProfilePreviewView: View {
                 HFBreadcrumbTrail(items: ["Connect", creator.name])
                 projectCommunityRoute
                 creatorCirclesRoute
+                graphRoutesSection
                 featuredProjectsSection
                 recentUpdatesSection
                 comingNextSection
@@ -135,6 +136,39 @@ struct CreatorProfilePreviewView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Circles Preview")
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var graphRoutesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Creator Discovery", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    SocialGraphPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "View Creator Connections",
+                        subtitle: "Preview how this creator relates to projects, rooms, reviewers, and collaborators.",
+                        systemImage: "point.3.connected.trianglepath.dotted"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Social Graph Preview")
+
+                NavigationLink {
+                    FollowSuggestionsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Find Related Creators",
+                        subtitle: "Open local suggestions for creators, projects, and rooms connected to this profile.",
+                        systemImage: "person.crop.circle.badge.plus"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Follow Suggestions Preview")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var recentUpdatesSection: some View {
