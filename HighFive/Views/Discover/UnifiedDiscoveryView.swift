@@ -88,6 +88,19 @@ struct UnifiedDiscoveryView: View {
             HFSectionHeader(title: "Personalized for You", actionTitle: nil)
 
             NavigationLink {
+                EcosystemCommandCenterView()
+            } label: {
+                HFActionTile(
+                    title: "HighFive Command Center",
+                    subtitle: "Jump across streaming, creator tools, Connect, launch readiness, access, and For You.",
+                    systemImage: "command"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open HighFive Command Center")
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            NavigationLink {
                 PersonalizedHubView()
             } label: {
                 HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {

@@ -21,6 +21,7 @@ struct HomeView: View {
                 header
                 heroSection
                 todaySection
+                commandCenterSection
                 smartRecommendationsSection
                 insightSection
                 watchSectionHeader
@@ -144,6 +145,59 @@ struct HomeView: View {
     private var todaySection: some View {
         HFTodaySummaryCard(items: HFEcosystemPreviewData.todaySummaryItems)
             .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var commandCenterSection: some View {
+        NavigationLink {
+            EcosystemCommandCenterView()
+        } label: {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "command")
+                            .font(.system(size: 26, weight: .black))
+                            .foregroundStyle(HFColors.gold)
+                            .frame(width: 58, height: 58)
+                            .background(HFColors.gold.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HStack(spacing: HFSpacing.xs) {
+                                Text("HighFive Command Center")
+                                    .font(HFTypography.section)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                Spacer(minLength: HFSpacing.xs)
+
+                                HFStatusBadge(title: "Local", isProminent: false)
+                            }
+
+                            Text("Jump into watching, creator tools, Connect, launch readiness, and access preview.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    HStack(spacing: HFSpacing.xs) {
+                        Text("Open Command Center")
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 13, weight: .black))
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open HighFive Command Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var watchSectionHeader: some View {

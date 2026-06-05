@@ -11,6 +11,7 @@ struct PersonalizedHubView: View {
                 header
                 HFBreadcrumbTrail(items: ["Discover", "For You"])
                 smartSummarySection
+                commandCenterSection
                 recommendedNextSection
                 becauseYouWatchedSection
                 becauseYouCreateSection
@@ -49,6 +50,21 @@ struct PersonalizedHubView: View {
     private var smartSummarySection: some View {
         HFSmartSummaryCard(signals: HFPersonalizationPreviewData.smartSignals)
             .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var commandCenterSection: some View {
+        NavigationLink {
+            EcosystemCommandCenterView()
+        } label: {
+            HFActionTile(
+                title: "Open Command Center",
+                subtitle: "See today's ecosystem path across Watch, Create, Connect, Launch, and Access.",
+                systemImage: "command"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open HighFive Command Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var recommendedNextSection: some View {

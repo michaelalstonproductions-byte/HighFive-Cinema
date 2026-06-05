@@ -26,6 +26,7 @@ struct ProfileView: View {
                 manageProfilesButton
 
                 creatorModeCard
+                ecosystemCommandShortcut
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
                 connectPreviewShortcut
@@ -126,6 +127,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Mode")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var ecosystemCommandShortcut: some View {
+        NavigationLink {
+            EcosystemCommandCenterView()
+        } label: {
+            HFActionTile(
+                title: "HighFive Command Center",
+                subtitle: "Navigate the full HighFive ecosystem.",
+                systemImage: "command"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open HighFive Command Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

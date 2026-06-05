@@ -58,6 +58,7 @@ struct CreatorWorkflowCommandCenterView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 HFBreadcrumbTrail(items: ["Creator Mode", "Command Center"])
+                ecosystemCommandShortcut
                 commandSummarySection
                 primaryActionSection
                 recommendedNextSection
@@ -102,6 +103,21 @@ struct CreatorWorkflowCommandCenterView: View {
                 .foregroundStyle(HFColors.gold)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var ecosystemCommandShortcut: some View {
+        NavigationLink {
+            EcosystemCommandCenterView()
+        } label: {
+            HFActionTile(
+                title: "HighFive Command Center",
+                subtitle: "Return to the full ecosystem dashboard.",
+                systemImage: "command"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open HighFive Command Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
