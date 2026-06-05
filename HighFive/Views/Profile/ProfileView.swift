@@ -28,6 +28,7 @@ struct ProfileView: View {
                 creatorModeCard
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
+                previewReleaseSection
                 menu
                 signOutButton
             }
@@ -153,6 +154,51 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Launch Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var previewReleaseSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Preview & Release", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    AppReleasePresentationView()
+                } label: {
+                    HFActionTile(
+                        title: "HighFive Preview",
+                        subtitle: "Review the local release presentation for partners and testers.",
+                        systemImage: "sparkles"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open HighFive Preview")
+
+                NavigationLink {
+                    AppOnboardingPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Onboarding Preview",
+                        subtitle: "Preview the first-run story without changing app launch.",
+                        systemImage: "rectangle.stack.badge.play.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Onboarding Preview")
+
+                NavigationLink {
+                    AppDemoChecklistView()
+                } label: {
+                    HFActionTile(
+                        title: "Demo Checklist",
+                        subtitle: "Walk through streaming, creator, and safety checks.",
+                        systemImage: "checklist"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Demo Checklist")
+            }
+        }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

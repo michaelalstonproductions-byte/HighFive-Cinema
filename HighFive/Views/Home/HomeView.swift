@@ -100,13 +100,13 @@ struct HomeView: View {
 
             Button(action: onProfile) {
                 HFInsightCard(
-                    title: "Creator launch preview is ready",
-                    message: "Go to Profile for Creator Mode, Launch Center, and the local access preview.",
-                    systemImage: "flag.checkered"
+                    title: "HighFive preview build is ready",
+                    message: "Go to Profile for Creator Mode, Launch Center, Access Preview, and release presentation.",
+                    systemImage: "sparkles"
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator launch preview from Profile")
+            .accessibilityLabel("Open HighFive preview from Profile")
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             Button(action: onMyList) {

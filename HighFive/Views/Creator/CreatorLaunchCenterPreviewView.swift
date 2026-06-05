@@ -28,6 +28,7 @@ struct CreatorLaunchCenterPreviewView: View {
                 header
                 HFBreadcrumbTrail(items: ["Creator Mode", "Launch Center"])
                 launchSummarySection
+                releasePresentationLink
                 launchChecklistSection
                 launchPathSection
                 audiencePreviewSection
@@ -137,6 +138,21 @@ struct CreatorLaunchCenterPreviewView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+    }
+
+    private var releasePresentationLink: some View {
+        NavigationLink {
+            AppReleasePresentationView()
+        } label: {
+            HFActionTile(
+                title: "View Release Presentation",
+                subtitle: "Open the local HighFive preview summary for partners and testers.",
+                systemImage: "sparkles"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("View Release Presentation")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var launchPathSection: some View {
