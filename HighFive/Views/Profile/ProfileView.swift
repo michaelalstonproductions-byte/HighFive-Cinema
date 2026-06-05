@@ -28,6 +28,7 @@ struct ProfileView: View {
                 creatorModeCard
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
+                connectPreviewShortcut
                 previewReleaseSection
                 menu
                 signOutButton
@@ -154,6 +155,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Launch Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var connectPreviewShortcut: some View {
+        NavigationLink {
+            ConnectHubView()
+        } label: {
+            HFActionTile(
+                title: "Connect Preview",
+                subtitle: "Discover creators, project updates, and mock community signals.",
+                systemImage: "person.2.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Connect Preview")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

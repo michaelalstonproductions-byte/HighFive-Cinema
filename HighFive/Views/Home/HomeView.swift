@@ -109,6 +109,17 @@ struct HomeView: View {
             .accessibilityLabel("Open HighFive preview from Profile")
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
+            Button(action: onProfile) {
+                HFInsightCard(
+                    title: "Connect with creators",
+                    message: "Open Profile for the local Connect Preview and community discovery cards.",
+                    systemImage: "person.2.fill"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Connect Preview from Profile")
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
             Button(action: onMyList) {
                 HFInsightCard(
                     title: "View My List",

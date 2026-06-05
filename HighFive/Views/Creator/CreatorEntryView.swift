@@ -27,6 +27,7 @@ struct CreatorEntryView: View {
                 activePackageHero
                 commandCenterCard
                 launchCenterCard
+                connectPreviewCard
                 featureGrid
                 quickStatsSection
                 comingNextStrip
@@ -170,6 +171,21 @@ struct CreatorEntryView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Launch Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var connectPreviewCard: some View {
+        NavigationLink {
+            ConnectHubView()
+        } label: {
+            HFActionTile(
+                title: "Community Discovery",
+                subtitle: "Preview creator profiles, project updates, and community signals.",
+                systemImage: "person.2.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Community Discovery")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
