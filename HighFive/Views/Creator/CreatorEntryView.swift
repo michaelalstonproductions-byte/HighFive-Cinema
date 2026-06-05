@@ -1,12 +1,7 @@
 import SwiftUI
 
 struct CreatorEntryView: View {
-    private let quickStats = [
-        CreatorHubMetric(title: "Draft packages", value: "3", caption: "In progress", systemImage: "shippingbox.fill"),
-        CreatorHubMetric(title: "Ready for review", value: "1", caption: "Package", systemImage: "checkmark.seal.fill"),
-        CreatorHubMetric(title: "Audience saves", value: "1.2K", caption: "Preview signal", systemImage: "bookmark.fill"),
-        CreatorHubMetric(title: "Marketplace interest", value: "48", caption: "Creators", systemImage: "person.2.fill")
-    ]
+    @StateObject private var workflowStore = HFCreatorWorkflowStore()
 
     private let comingNext = [
         "Uploads",
@@ -14,6 +9,15 @@ struct CreatorEntryView: View {
         "Team review",
         "Secure marketplace"
     ]
+
+    private var quickStats: [CreatorHubMetric] {
+        [
+            CreatorHubMetric(title: "Draft packages", value: "3", caption: "In progress", systemImage: "shippingbox.fill"),
+            CreatorHubMetric(title: "Ready for review", value: "1", caption: "Package", systemImage: "checkmark.seal.fill"),
+            CreatorHubMetric(title: "Review notes", value: "\(workflowStore.openReviewNotes)", caption: "Open", systemImage: "text.bubble.fill"),
+            CreatorHubMetric(title: "Marketplace interest", value: "\(workflowStore.marketplaceInterest)", caption: "Preview signal", systemImage: "person.2.fill")
+        ]
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -62,14 +66,14 @@ struct CreatorEntryView: View {
                     .frame(width: 68, height: 68)
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("The Friendly — Creator Package")
+                        Text(workflowStore.currentProjectTitle)
                             .font(HFTypography.section)
                             .foregroundStyle(HFColors.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         HStack(spacing: HFSpacing.xs) {
                             CreatorStatusBadge(title: "Draft", systemImage: "pencil")
-                            Text("68% complete")
+                            Text("\(Int(workflowStore.completionPercent * 100))% complete")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.gold)
                         }
@@ -78,7 +82,7 @@ struct CreatorEntryView: View {
                     Spacer(minLength: HFSpacing.xs)
                 }
 
-                ProgressView(value: 0.68)
+                ProgressView(value: workflowStore.completionPercent)
                     .tint(HFColors.gold)
                     .background(HFColors.glassStroke)
                     .clipShape(Capsule())
@@ -129,7 +133,7 @@ struct CreatorEntryView: View {
 
                             Spacer(minLength: HFSpacing.xs)
 
-                            CreatorStatusBadge(title: "Preview", systemImage: "arrow.right")
+                            CreatorStatusBadge(title: workflowStore.selectedWorkflowStage, systemImage: "arrow.right")
                         }
 
                         Text("Track package, assets, review, versions, and permissions.")
