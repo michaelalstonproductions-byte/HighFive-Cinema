@@ -170,6 +170,24 @@ struct CreatorPackageBuilderPreviewView: View {
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            NavigationLink {
+                CreatorAssetManagerPreviewView()
+            } label: {
+                HStack(spacing: HFSpacing.xs) {
+                    Text("Open Asset Manager")
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .black))
+                }
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(HFColors.goldGradient)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
