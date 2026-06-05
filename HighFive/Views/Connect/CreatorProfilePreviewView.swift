@@ -10,6 +10,7 @@ struct CreatorProfilePreviewView: View {
                 header
                 HFBreadcrumbTrail(items: ["Connect", creator.name])
                 projectCommunityRoute
+                creatorCirclesRoute
                 featuredProjectsSection
                 recentUpdatesSection
                 comingNextSection
@@ -118,6 +119,21 @@ struct CreatorProfilePreviewView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Project Community Preview")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var creatorCirclesRoute: some View {
+        NavigationLink {
+            CreatorCirclesPreviewView()
+        } label: {
+            HFActionTile(
+                title: "Open Creator Circles",
+                subtitle: "Preview creative circles, collaborator roles, and local connect state.",
+                systemImage: "circle.hexagongrid.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Creator Circles Preview")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

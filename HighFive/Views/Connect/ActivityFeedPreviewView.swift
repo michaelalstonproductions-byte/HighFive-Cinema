@@ -27,6 +27,7 @@ struct ActivityFeedPreviewView: View {
                 HFBreadcrumbTrail(items: ["Connect", "Activity Feed"])
                 filterSection
                 projectCommunityRoute
+                socialRoomRoute
                 activityFeedSection
                 projectUpdatesSection
                 commentsPreviewSection
@@ -90,6 +91,21 @@ struct ActivityFeedPreviewView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Project Community Preview")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var socialRoomRoute: some View {
+        NavigationLink {
+            SocialRoomDetailPreviewView()
+        } label: {
+            HFActionTile(
+                title: "Open Social Room Detail",
+                subtitle: "Preview The Friendly Watch Room discussion and room signals.",
+                systemImage: "star.bubble.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Social Room Detail Preview")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

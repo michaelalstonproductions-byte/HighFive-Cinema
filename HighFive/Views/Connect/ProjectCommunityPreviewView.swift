@@ -19,6 +19,8 @@ struct ProjectCommunityPreviewView: View {
                 projectHeader
                 HFBreadcrumbTrail(items: ["Connect", "Project Community"])
                 communityFeedSection
+                socialRoomsSection
+                creatorCirclesSection
                 communityActionsSection
                 audienceSignalsSection
                 comingNextSection
@@ -112,6 +114,75 @@ struct ProjectCommunityPreviewView: View {
                     }
                 }
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var socialRoomsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Social Rooms", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(HFConnectPreviewData.socialRooms.prefix(3)) { room in
+                    NavigationLink {
+                        SocialRoomDetailPreviewView(room: room)
+                    } label: {
+                        HFActionTile(
+                            title: room.name,
+                            subtitle: "\(room.type) • \(room.members) members • \(room.status)",
+                            systemImage: "bubble.left.and.bubble.right.fill"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(room.name) social room detail")
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var creatorCirclesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Creator Circles", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(HFConnectPreviewData.creatorCircles.prefix(3)) { circle in
+                        HStack(spacing: HFSpacing.sm) {
+                            Image(systemName: "circle.hexagongrid.fill")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                                Text(circle.name)
+                                    .font(HFTypography.body)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(circle.focus)
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                            HFStatusBadge(title: "Circle", isProminent: false)
+                        }
+                        .padding(.vertical, HFSpacing.xxs)
+                    }
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            NavigationLink {
+                CreatorCirclesPreviewView()
+            } label: {
+                HFActionTile(
+                    title: "Open Creator Circles",
+                    subtitle: "Preview collaborator circles and local connect actions.",
+                    systemImage: "person.2.wave.2.fill"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Creator Circles Preview")
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

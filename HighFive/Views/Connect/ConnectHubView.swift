@@ -73,6 +73,30 @@ struct ConnectHubView: View {
 
             VStack(spacing: HFSpacing.md) {
                 NavigationLink {
+                    SocialRoomsPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Social Rooms",
+                        subtitle: "Join mock creator-led rooms for watch circles, reviews, and discussions.",
+                        systemImage: "bubble.left.and.bubble.right.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Social Rooms Preview")
+
+                NavigationLink {
+                    CreatorCirclesPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Creator Circles",
+                        subtitle: "Preview collaborator networks, creative teams, and circle follows.",
+                        systemImage: "circle.hexagongrid.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Creator Circles Preview")
+
+                NavigationLink {
                     CommunityDiscoveryPreviewView()
                 } label: {
                     HFActionTile(
@@ -107,6 +131,18 @@ struct ConnectHubView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open Project Community Preview")
+
+                NavigationLink {
+                    SocialRoomDetailPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Room Detail Preview",
+                        subtitle: "Open The Friendly Watch Room discussion preview.",
+                        systemImage: "star.bubble.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Social Room Detail Preview")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

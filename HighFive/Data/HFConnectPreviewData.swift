@@ -106,6 +106,50 @@ enum HFConnectPreviewData {
             HFConnectSignal(title: "Marketplace interest", value: "48", systemImage: "storefront.fill")
         ]
     )
+
+    static let socialRooms: [HFConnectSocialRoom] = [
+        HFConnectSocialRoom(name: "The Friendly Watch Room", type: "Watch Circle", subtitle: "Creator package updates, cast notes, and preview-night planning.", members: "2.4K", activeNow: "37", status: "Live Preview", category: "Watch Circles", reactions: "428", comments: "37"),
+        HFConnectSocialRoom(name: "Creator Launch Lab", type: "Creator Circle", subtitle: "Launch readiness, access preview, and marketplace planning.", members: "1.7K", activeNow: "18", status: "Preview", category: "Creator Labs", reactions: "216", comments: "24"),
+        HFConnectSocialRoom(name: "Poster Design Room", type: "Collaboration Room", subtitle: "Campaign art, visual polish, and creator package feedback.", members: "842", activeNow: "12", status: "Preview", category: "Collaboration", reactions: "184", comments: "19"),
+        HFConnectSocialRoom(name: "Studio Review Lounge", type: "Review Room", subtitle: "Submission notes, readiness blockers, and internal review signals.", members: "318", activeNow: "8", status: "Internal Preview", category: "Review Rooms", reactions: "92", comments: "11")
+    ]
+
+    static let roomCategories = [
+        "Watch Circles",
+        "Creator Labs",
+        "Review Rooms",
+        "Fan Theories",
+        "Marketplace Interest",
+        "Collaboration"
+    ]
+
+    static let roomActivity = [
+        "Trailer cut discussion opened.",
+        "Poster artwork received new reactions.",
+        "Studio Review Lounge added submission notes.",
+        "Creator Launch Lab shared release checklist."
+    ]
+
+    static let creatorCircles: [HFConnectCreatorCircle] = [
+        HFConnectCreatorCircle(name: "Directors Circle", focus: "visual storytelling, packaging, review", members: "4.8K", status: "Preview", suggestedRoles: ["Creative Lead", "Studio Reviewer"]),
+        HFConnectCreatorCircle(name: "Editors Circle", focus: "trailers, preview clips, pacing", members: "3.2K", status: "Preview", suggestedRoles: ["Trailer Editor", "Preview Producer"]),
+        HFConnectCreatorCircle(name: "Poster Artists Circle", focus: "campaign art and package visuals", members: "1.9K", status: "Trending Preview", suggestedRoles: ["Poster Designer", "Creative Lead"]),
+        HFConnectCreatorCircle(name: "Composer Circle", focus: "score, sound, cinematic mood", members: "1.1K", status: "Preview", suggestedRoles: ["Composer", "Sound Designer"]),
+        HFConnectCreatorCircle(name: "Studio Review Circle", focus: "readiness, rights, release planning", members: "620", status: "Internal Preview", suggestedRoles: ["Studio Reviewer", "Producer"])
+    ]
+
+    static let suggestedConnections: [HFConnectSuggestedConnection] = [
+        HFConnectSuggestedConnection(name: "Creative Lead", role: "Reviewer", focus: "package polish and approval notes"),
+        HFConnectSuggestedConnection(name: "Trailer Editor", role: "Contributor", focus: "preview clips and pacing"),
+        HFConnectSuggestedConnection(name: "Poster Designer", role: "Collaborator", focus: "campaign art and key visuals"),
+        HFConnectSuggestedConnection(name: "Studio Reviewer", role: "Reviewer", focus: "readiness, rights, and release planning")
+    ]
+
+    static let roomDiscussions: [HFConnectRoomDiscussion] = [
+        HFConnectRoomDiscussion(title: "What should lead the trailer opening?", author: "HighFive Cinema", body: "The room is comparing a faster hook against a quieter character-first opening.", replies: "37", reactions: "248", status: "Featured"),
+        HFConnectRoomDiscussion(title: "Poster artwork feels ready", author: "Creative Lead", body: "The current one-sheet gives the package a stronger premium signal.", replies: "18", reactions: "132", status: "Resolved Preview"),
+        HFConnectRoomDiscussion(title: "Creator notes need one final pass", author: "Studio Review", body: "Submission notes read well, but the rights section should be easier to scan.", replies: "9", reactions: "64", status: "Open Preview")
+    ]
 }
 
 struct HFConnectCreator: Identifiable {
@@ -172,4 +216,43 @@ struct HFConnectProjectCommunity: Identifiable {
     let status: String
     let feed: [String]
     let signals: [HFConnectSignal]
+}
+
+struct HFConnectSocialRoom: Identifiable {
+    let id = UUID()
+    let name: String
+    let type: String
+    let subtitle: String
+    let members: String
+    let activeNow: String
+    let status: String
+    let category: String
+    let reactions: String
+    let comments: String
+}
+
+struct HFConnectCreatorCircle: Identifiable {
+    let id = UUID()
+    let name: String
+    let focus: String
+    let members: String
+    let status: String
+    let suggestedRoles: [String]
+}
+
+struct HFConnectSuggestedConnection: Identifiable {
+    let id = UUID()
+    let name: String
+    let role: String
+    let focus: String
+}
+
+struct HFConnectRoomDiscussion: Identifiable {
+    let id = UUID()
+    let title: String
+    let author: String
+    let body: String
+    let replies: String
+    let reactions: String
+    let status: String
 }
