@@ -74,6 +74,23 @@ struct CreatorStudioPreviewView: View {
                         .tint(HFColors.gold)
                         .background(HFColors.glassStroke)
                         .clipShape(Capsule())
+
+                    NavigationLink {
+                        CreatorPackageBuilderPreviewView()
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text("Continue Package")
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 13, weight: .black))
+                        }
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(HFSpacing.md)
             }

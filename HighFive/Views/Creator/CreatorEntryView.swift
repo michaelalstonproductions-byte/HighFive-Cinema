@@ -83,7 +83,7 @@ struct CreatorEntryView: View {
                     .clipShape(Capsule())
 
                 NavigationLink {
-                    CreatorStudioPreviewView()
+                    CreatorPackageBuilderPreviewView()
                 } label: {
                     HStack(spacing: HFSpacing.xs) {
                         Text("Continue Studio")
