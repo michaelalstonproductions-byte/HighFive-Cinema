@@ -1,70 +1,70 @@
 import SwiftUI
 
-struct CreatorPackageBuilderPreviewView: View {
-    private let packageSteps = [
-        PackageStep(title: "Artwork", status: "Complete", systemImage: "photo.fill"),
-        PackageStep(title: "Synopsis", status: "Complete", systemImage: "text.alignleft"),
-        PackageStep(title: "Cast / Credits", status: "In Progress", systemImage: "person.2.fill"),
-        PackageStep(title: "Trailer / Preview Clip", status: "Needs Review", systemImage: "play.rectangle.fill"),
-        PackageStep(title: "Depth Preview", status: "Preview Only", systemImage: "square.stack.3d.up.fill"),
-        PackageStep(title: "Submission Notes", status: "Not Started", systemImage: "note.text")
+struct CreatorSubmissionWorkflowPreviewView: View {
+    private let checklist = [
+        SubmissionChecklistItem(title: "Artwork approved", status: "Complete", systemImage: "photo.fill"),
+        SubmissionChecklistItem(title: "Metadata reviewed", status: "Complete", systemImage: "text.badge.checkmark"),
+        SubmissionChecklistItem(title: "Cast / credits verified", status: "In Progress", systemImage: "person.2.fill"),
+        SubmissionChecklistItem(title: "Preview clip checked", status: "Needs Review", systemImage: "play.rectangle.fill"),
+        SubmissionChecklistItem(title: "Submission notes added", status: "Not Started", systemImage: "note.text"),
+        SubmissionChecklistItem(title: "Rights confirmation", status: "Preview Only", systemImage: "checkmark.shield.fill")
     ]
 
-    private let assetTiles = [
-        AssetPreviewTile(title: "Poster", systemImage: "photo.fill"),
-        AssetPreviewTile(title: "Trailer", systemImage: "play.rectangle.fill"),
-        AssetPreviewTile(title: "Scene Stills", systemImage: "rectangle.stack.fill"),
-        AssetPreviewTile(title: "Metadata", systemImage: "text.badge.checkmark"),
-        AssetPreviewTile(title: "Preview Clip", systemImage: "film.fill"),
-        AssetPreviewTile(title: "Notes", systemImage: "note.text")
+    private let readinessGates = [
+        SubmissionReadinessGate(title: "Required fields", value: "8 / 12", systemImage: "checklist"),
+        SubmissionReadinessGate(title: "Assets ready", value: "6 / 10", systemImage: "rectangle.stack.fill"),
+        SubmissionReadinessGate(title: "Review notes", value: "2 open", systemImage: "bubble.left.and.text.bubble.right.fill"),
+        SubmissionReadinessGate(title: "Blocking issues", value: "1", systemImage: "exclamationmark.octagon.fill"),
+        SubmissionReadinessGate(title: "Package score", value: "68%", systemImage: "gauge.with.dots.needle.67percent")
     ]
 
-    private let readinessSignals = [
-        ReadinessSignal(title: "Required fields", value: "8 / 12", systemImage: "checklist"),
-        ReadinessSignal(title: "Preview assets", value: "3 / 5", systemImage: "rectangle.stack.fill"),
-        ReadinessSignal(title: "Review notes", value: "2 open", systemImage: "bubble.left.and.text.bubble.right.fill"),
-        ReadinessSignal(title: "Package score", value: "68%", systemImage: "gauge.with.dots.needle.67percent")
+    private let timeline = [
+        SubmissionTimelineStep(title: "Draft package", status: "Current"),
+        SubmissionTimelineStep(title: "Internal review", status: "Next"),
+        SubmissionTimelineStep(title: "Studio review", status: "Preview"),
+        SubmissionTimelineStep(title: "Marketplace-ready", status: "Preview"),
+        SubmissionTimelineStep(title: "Release planning", status: "Preview")
     ]
 
     private let comingNext = [
-        "Real uploads",
-        "Asset manager",
-        "Team review",
+        "Real submission queue",
+        "Studio reviewer comments",
         "Version history",
-        "Submission workflow"
+        "Approval routing",
+        "Secure delivery"
     ]
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                packageOverview
-                packageStepsSection
-                assetPreviewSection
-                submissionReadinessSection
+                submissionSummary
+                reviewChecklistSection
+                readinessGatesSection
+                timelineSection
                 comingNextSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle("Package Builder")
+        .navigationTitle("Submission")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            Text("Creator Package Builder")
+            Text("Submission Workflow")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.78)
 
-            Text("Assemble artwork, metadata, previews, and submission notes.")
+            Text("Review your package, resolve blockers, and prepare for studio submission.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Preview only. No real files or services are connected.")
+            Text("Preview only. No live services or external review systems are connected.")
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.gold)
                 .fixedSize(horizontal: false, vertical: true)
@@ -72,9 +72,9 @@ struct CreatorPackageBuilderPreviewView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
-    private var packageOverview: some View {
+    private var submissionSummary: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Package Overview", actionTitle: nil)
+            HFSectionHeader(title: "Submission Summary", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -82,7 +82,7 @@ struct CreatorPackageBuilderPreviewView: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: HFSpacing.md, style: .continuous)
                                 .fill(HFColors.gold.opacity(0.16))
-                            Image(systemName: "shippingbox.fill")
+                            Image(systemName: "paperplane.fill")
                                 .font(.system(size: 30, weight: .black))
                                 .foregroundStyle(HFColors.gold)
                         }
@@ -95,10 +95,11 @@ struct CreatorPackageBuilderPreviewView: View {
                                 .fixedSize(horizontal: false, vertical: true)
 
                             HStack(spacing: HFSpacing.xs) {
-                                PackageStatusBadge(title: "Draft")
-                                Text("Last updated: Today")
+                                SubmissionStatusBadge(title: "Draft Review")
+                                Text("Target: HighFive Studio Review")
                                     .font(HFTypography.caption)
                                     .foregroundStyle(HFColors.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
 
@@ -125,7 +126,7 @@ struct CreatorPackageBuilderPreviewView: View {
                     Button {
                     } label: {
                         HStack(spacing: HFSpacing.xs) {
-                            Text("Continue Package")
+                            Text("Prepare Submission")
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 13, weight: .black))
                         }
@@ -144,14 +145,14 @@ struct CreatorPackageBuilderPreviewView: View {
         }
     }
 
-    private var packageStepsSection: some View {
+    private var reviewChecklistSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Package Steps", actionTitle: nil)
+            HFSectionHeader(title: "Review Checklist", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
                 VStack(spacing: HFSpacing.sm) {
-                    ForEach(packageSteps) { step in
-                        PackageChecklistRow(step: step)
+                    ForEach(checklist) { item in
+                        SubmissionChecklistRow(item: item)
                     }
                 }
                 .padding(HFSpacing.md)
@@ -160,64 +161,35 @@ struct CreatorPackageBuilderPreviewView: View {
         }
     }
 
-    private var assetPreviewSection: some View {
+    private var readinessGatesSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Asset Preview", actionTitle: nil)
+            HFSectionHeader(title: "Readiness Gates", actionTitle: nil)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
-                ForEach(assetTiles) { tile in
-                    AssetPreviewCard(tile: tile)
+                ForEach(readinessGates) { gate in
+                    SubmissionReadinessGateCard(gate: gate)
                 }
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            NavigationLink {
-                CreatorAssetManagerPreviewView()
-            } label: {
-                HStack(spacing: HFSpacing.xs) {
-                    Text("Open Asset Manager")
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 13, weight: .black))
-                }
-                .font(HFTypography.smallAction)
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(HFColors.goldGradient)
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
-    private var submissionReadinessSection: some View {
+    private var timelineSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Submission Readiness", actionTitle: nil)
+            HFSectionHeader(title: "Submission Timeline", actionTitle: nil)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
-                ForEach(readinessSignals) { signal in
-                    ReadinessSignalCard(signal: signal)
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(Array(timeline.enumerated()), id: \.element.id) { index, step in
+                        SubmissionTimelineRow(
+                            step: step,
+                            index: index + 1,
+                            isLast: index == timeline.count - 1
+                        )
+                    }
                 }
+                .padding(HFSpacing.md)
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            NavigationLink {
-                CreatorSubmissionWorkflowPreviewView()
-            } label: {
-                HStack(spacing: HFSpacing.xs) {
-                    Text("Open Submission Workflow")
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 13, weight: .black))
-                }
-                .font(HFTypography.smallAction)
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(HFColors.goldGradient)
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
@@ -248,93 +220,68 @@ struct CreatorPackageBuilderPreviewView: View {
     }
 }
 
-private struct PackageStep: Identifiable {
+private struct SubmissionChecklistItem: Identifiable {
     let id = UUID()
     let title: String
     let status: String
     let systemImage: String
 }
 
-private struct AssetPreviewTile: Identifiable {
-    let id = UUID()
-    let title: String
-    let systemImage: String
-}
-
-private struct ReadinessSignal: Identifiable {
+private struct SubmissionReadinessGate: Identifiable {
     let id = UUID()
     let title: String
     let value: String
     let systemImage: String
 }
 
-private struct PackageChecklistRow: View {
-    let step: PackageStep
+private struct SubmissionTimelineStep: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+}
+
+private struct SubmissionChecklistRow: View {
+    let item: SubmissionChecklistItem
 
     var body: some View {
         HStack(spacing: HFSpacing.sm) {
-            Image(systemName: step.systemImage)
+            Image(systemName: item.systemImage)
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(HFColors.gold)
                 .frame(width: 28)
 
-            Text(step.title)
+            Text(item.title)
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textPrimary)
 
             Spacer(minLength: HFSpacing.xs)
 
-            PackageStatusBadge(title: step.status)
+            SubmissionStatusBadge(title: item.status)
         }
         .padding(.vertical, HFSpacing.xxs)
     }
 }
 
-private struct AssetPreviewCard: View {
-    let tile: AssetPreviewTile
-
-    var body: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                Image(systemName: tile.systemImage)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(HFColors.gold)
-                    .frame(width: 42, height: 42)
-                    .background(HFColors.gold.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                Text(tile.title)
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(HFSpacing.md)
-        }
-    }
-}
-
-private struct ReadinessSignalCard: View {
-    let signal: ReadinessSignal
+private struct SubmissionReadinessGateCard: View {
+    let gate: SubmissionReadinessGate
 
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: signal.systemImage)
+                Image(systemName: gate.systemImage)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(HFColors.gold)
                     .frame(width: 36, height: 36)
                     .background(HFColors.gold.opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
-                Text(signal.value)
+                Text(gate.value)
                     .font(HFTypography.section)
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
 
-                Text(signal.title)
+                Text(gate.title)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -345,7 +292,45 @@ private struct ReadinessSignalCard: View {
     }
 }
 
-private struct PackageStatusBadge: View {
+private struct SubmissionTimelineRow: View {
+    let step: SubmissionTimelineStep
+    let index: Int
+    let isLast: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            VStack(spacing: HFSpacing.xs) {
+                Text("\(index)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(.black)
+                    .frame(width: 28, height: 28)
+                    .background(HFColors.gold)
+                    .clipShape(Circle())
+
+                if !isLast {
+                    Rectangle()
+                        .fill(HFColors.glassStroke)
+                        .frame(width: 1, height: 22)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(step.title)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text(step.status)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct SubmissionStatusBadge: View {
     let title: String
 
     var body: some View {
