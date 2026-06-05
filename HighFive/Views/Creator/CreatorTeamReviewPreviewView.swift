@@ -1,70 +1,89 @@
 import SwiftUI
 
-struct CreatorSubmissionWorkflowPreviewView: View {
-    private let checklist = [
-        SubmissionChecklistItem(title: "Artwork approved", status: "Complete", systemImage: "photo.fill"),
-        SubmissionChecklistItem(title: "Metadata reviewed", status: "Complete", systemImage: "text.badge.checkmark"),
-        SubmissionChecklistItem(title: "Cast / credits verified", status: "In Progress", systemImage: "person.2.fill"),
-        SubmissionChecklistItem(title: "Preview clip checked", status: "Needs Review", systemImage: "play.rectangle.fill"),
-        SubmissionChecklistItem(title: "Submission notes added", status: "Not Started", systemImage: "note.text"),
-        SubmissionChecklistItem(title: "Rights confirmation", status: "Preview Only", systemImage: "checkmark.shield.fill")
+struct CreatorTeamReviewPreviewView: View {
+    private let reviewerNotes = [
+        CreatorReviewNote(
+            text: "Poster artwork is approved.",
+            reviewer: "Creative Lead",
+            status: "Resolved",
+            systemImage: "checkmark.seal.fill"
+        ),
+        CreatorReviewNote(
+            text: "Trailer cut needs a tighter opening.",
+            reviewer: "Editor",
+            status: "Open",
+            systemImage: "film.fill"
+        ),
+        CreatorReviewNote(
+            text: "Cast credits need final confirmation.",
+            reviewer: "Producer",
+            status: "In Progress",
+            systemImage: "person.2.fill"
+        ),
+        CreatorReviewNote(
+            text: "Submission notes need one final pass.",
+            reviewer: "Studio Review",
+            status: "Open",
+            systemImage: "note.text"
+        )
     ]
 
-    private let readinessGates = [
-        SubmissionReadinessGate(title: "Required fields", value: "8 / 12", systemImage: "checklist"),
-        SubmissionReadinessGate(title: "Assets ready", value: "6 / 10", systemImage: "rectangle.stack.fill"),
-        SubmissionReadinessGate(title: "Review notes", value: "2 open", systemImage: "bubble.left.and.text.bubble.right.fill"),
-        SubmissionReadinessGate(title: "Blocking issues", value: "1", systemImage: "exclamationmark.octagon.fill"),
-        SubmissionReadinessGate(title: "Package score", value: "68%", systemImage: "gauge.with.dots.needle.67percent")
+    private let approvalChecklist = [
+        CreatorApprovalItem(title: "Artwork approved", status: "Complete", systemImage: "photo.fill"),
+        CreatorApprovalItem(title: "Metadata reviewed", status: "Complete", systemImage: "text.badge.checkmark"),
+        CreatorApprovalItem(title: "Preview clip reviewed", status: "Needs Review", systemImage: "play.rectangle.fill"),
+        CreatorApprovalItem(title: "Rights confirmation", status: "In Progress", systemImage: "checkmark.shield.fill"),
+        CreatorApprovalItem(title: "Team sign-off", status: "Not Started", systemImage: "person.3.fill")
     ]
 
     private let timeline = [
-        SubmissionTimelineStep(title: "Draft package", status: "Current"),
-        SubmissionTimelineStep(title: "Internal review", status: "Next"),
-        SubmissionTimelineStep(title: "Studio review", status: "Preview"),
-        SubmissionTimelineStep(title: "Marketplace-ready", status: "Preview"),
-        SubmissionTimelineStep(title: "Release planning", status: "Preview")
+        CreatorReviewTimelineStep(title: "Package drafted", status: "Complete"),
+        CreatorReviewTimelineStep(title: "Assets organized", status: "Complete"),
+        CreatorReviewTimelineStep(title: "Submission prepared", status: "Current"),
+        CreatorReviewTimelineStep(title: "Team review", status: "Current"),
+        CreatorReviewTimelineStep(title: "Studio approval", status: "Preview"),
+        CreatorReviewTimelineStep(title: "Release planning", status: "Preview")
     ]
 
     private let comingNext = [
-        "Real submission queue",
-        "Studio reviewer comments",
-        "Version history",
+        "Real comments",
+        "Reviewer assignments",
         "Approval routing",
-        "Secure delivery"
+        "Version history",
+        "Team permissions"
     ]
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                submissionSummary
-                reviewChecklistSection
-                readinessGatesSection
-                timelineSection
+                reviewRoomSection
+                reviewerNotesSection
+                approvalChecklistSection
+                reviewTimelineSection
                 comingNextSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle("Submission")
+        .navigationTitle("Team Review")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            Text("Submission Workflow")
+            Text("Team Review")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.78)
 
-            Text("Review your package, resolve blockers, and prepare for studio submission.")
+            Text("Collect notes, resolve blockers, and prepare your package for approval.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Preview only. No live services or external review systems are connected.")
+            Text("Preview only. No live team services or external accounts are connected.")
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.gold)
                 .fixedSize(horizontal: false, vertical: true)
@@ -72,9 +91,9 @@ struct CreatorSubmissionWorkflowPreviewView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
-    private var submissionSummary: some View {
+    private var reviewRoomSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Submission Summary", actionTitle: nil)
+            HFSectionHeader(title: "Review Room", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -82,7 +101,7 @@ struct CreatorSubmissionWorkflowPreviewView: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: HFSpacing.md, style: .continuous)
                                 .fill(HFColors.gold.opacity(0.16))
-                            Image(systemName: "paperplane.fill")
+                            Image(systemName: "person.3.fill")
                                 .font(.system(size: 30, weight: .black))
                                 .foregroundStyle(HFColors.gold)
                         }
@@ -95,29 +114,33 @@ struct CreatorSubmissionWorkflowPreviewView: View {
                                 .fixedSize(horizontal: false, vertical: true)
 
                             HStack(spacing: HFSpacing.xs) {
-                                SubmissionStatusBadge(title: "Draft Review")
-                                Text("Target: HighFive Studio Review")
+                                CreatorReviewStatusBadge(title: "Internal Review")
+                                Text("Approval readiness: 72%")
                                     .font(HFTypography.caption)
                                     .foregroundStyle(HFColors.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
 
                         Spacer(minLength: HFSpacing.xs)
                     }
 
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                        CreatorReviewMetric(title: "Reviewers", value: "3", systemImage: "person.2.fill")
+                        CreatorReviewMetric(title: "Open notes", value: "5", systemImage: "text.bubble.fill")
+                    }
+
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         HStack {
-                            Text("Completion")
+                            Text("Approval readiness")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textSecondary)
                             Spacer()
-                            Text("68%")
+                            Text("72%")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.gold)
                         }
 
-                        ProgressView(value: 0.68)
+                        ProgressView(value: 0.72)
                             .tint(HFColors.gold)
                             .background(HFColors.glassStroke)
                             .clipShape(Capsule())
@@ -126,7 +149,7 @@ struct CreatorSubmissionWorkflowPreviewView: View {
                     Button {
                     } label: {
                         HStack(spacing: HFSpacing.xs) {
-                            Text("Prepare Submission")
+                            Text("Continue Review")
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 13, weight: .black))
                         }
@@ -145,14 +168,27 @@ struct CreatorSubmissionWorkflowPreviewView: View {
         }
     }
 
-    private var reviewChecklistSection: some View {
+    private var reviewerNotesSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Review Checklist", actionTitle: nil)
+            HFSectionHeader(title: "Reviewer Notes", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(reviewerNotes) { note in
+                    CreatorReviewNoteCard(note: note)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var approvalChecklistSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Approval Checklist", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
                 VStack(spacing: HFSpacing.sm) {
-                    ForEach(checklist) { item in
-                        SubmissionChecklistRow(item: item)
+                    ForEach(approvalChecklist) { item in
+                        CreatorApprovalChecklistRow(item: item)
                     }
                 }
                 .padding(HFSpacing.md)
@@ -161,27 +197,14 @@ struct CreatorSubmissionWorkflowPreviewView: View {
         }
     }
 
-    private var readinessGatesSection: some View {
+    private var reviewTimelineSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Readiness Gates", actionTitle: nil)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
-                ForEach(readinessGates) { gate in
-                    SubmissionReadinessGateCard(gate: gate)
-                }
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var timelineSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Submission Timeline", actionTitle: nil)
+            HFSectionHeader(title: "Review Timeline", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
                 VStack(spacing: HFSpacing.sm) {
                     ForEach(Array(timeline.enumerated()), id: \.element.id) { index, step in
-                        SubmissionTimelineRow(
+                        CreatorReviewTimelineRow(
                             step: step,
                             index: index + 1,
                             isLast: index == timeline.count - 1
@@ -190,24 +213,6 @@ struct CreatorSubmissionWorkflowPreviewView: View {
                 }
                 .padding(HFSpacing.md)
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            NavigationLink {
-                CreatorTeamReviewPreviewView()
-            } label: {
-                HStack(spacing: HFSpacing.xs) {
-                    Text("Open Team Review")
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 13, weight: .black))
-                }
-                .font(HFTypography.smallAction)
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(HFColors.goldGradient)
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
@@ -238,28 +243,98 @@ struct CreatorSubmissionWorkflowPreviewView: View {
     }
 }
 
-private struct SubmissionChecklistItem: Identifiable {
+private struct CreatorReviewNote: Identifiable {
+    let id = UUID()
+    let text: String
+    let reviewer: String
+    let status: String
+    let systemImage: String
+}
+
+private struct CreatorApprovalItem: Identifiable {
     let id = UUID()
     let title: String
     let status: String
     let systemImage: String
 }
 
-private struct SubmissionReadinessGate: Identifiable {
+private struct CreatorReviewTimelineStep: Identifiable {
     let id = UUID()
+    let title: String
+    let status: String
+}
+
+private struct CreatorReviewMetric: View {
     let title: String
     let value: String
     let systemImage: String
+
+    var body: some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(HFColors.gold.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.sm)
+        .background(HFColors.glassSurface)
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous))
+    }
 }
 
-private struct SubmissionTimelineStep: Identifiable {
-    let id = UUID()
-    let title: String
-    let status: String
+private struct CreatorReviewNoteCard: View {
+    let note: CreatorReviewNote
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: note.systemImage)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 40, height: 40)
+                    .background(HFColors.gold.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(note.text)
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(note.reviewer)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+
+                    CreatorReviewStatusBadge(title: note.status)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
 }
 
-private struct SubmissionChecklistRow: View {
-    let item: SubmissionChecklistItem
+private struct CreatorApprovalChecklistRow: View {
+    let item: CreatorApprovalItem
 
     var body: some View {
         HStack(spacing: HFSpacing.sm) {
@@ -274,44 +349,14 @@ private struct SubmissionChecklistRow: View {
 
             Spacer(minLength: HFSpacing.xs)
 
-            SubmissionStatusBadge(title: item.status)
+            CreatorReviewStatusBadge(title: item.status)
         }
         .padding(.vertical, HFSpacing.xxs)
     }
 }
 
-private struct SubmissionReadinessGateCard: View {
-    let gate: SubmissionReadinessGate
-
-    var body: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: gate.systemImage)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(HFColors.gold)
-                    .frame(width: 36, height: 36)
-                    .background(HFColors.gold.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                Text(gate.value)
-                    .font(HFTypography.section)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-
-                Text(gate.title)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(HFSpacing.md)
-        }
-    }
-}
-
-private struct SubmissionTimelineRow: View {
-    let step: SubmissionTimelineStep
+private struct CreatorReviewTimelineRow: View {
+    let step: CreatorReviewTimelineStep
     let index: Int
     let isLast: Bool
 
@@ -348,7 +393,7 @@ private struct SubmissionTimelineRow: View {
     }
 }
 
-private struct SubmissionStatusBadge: View {
+private struct CreatorReviewStatusBadge: View {
     let title: String
 
     var body: some View {
