@@ -27,6 +27,7 @@ struct ProfileView: View {
 
                 creatorModeCard
                 creatorWorkflowShortcut
+                creatorLaunchShortcut
                 menu
                 signOutButton
             }
@@ -137,6 +138,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Command Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var creatorLaunchShortcut: some View {
+        NavigationLink {
+            CreatorLaunchCenterPreviewView()
+        } label: {
+            HFActionTile(
+                title: "Creator Launch Center",
+                subtitle: "Preview launch plan, audience interest, and mock access setup.",
+                systemImage: "flag.checkered"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Creator Launch Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

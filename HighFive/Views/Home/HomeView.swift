@@ -100,13 +100,13 @@ struct HomeView: View {
 
             Button(action: onProfile) {
                 HFInsightCard(
-                    title: "Creator Workflow",
-                    message: "Go to Profile for Creator Mode and the local Command Center preview.",
-                    systemImage: "command"
+                    title: "Creator launch preview is ready",
+                    message: "Go to Profile for Creator Mode, Launch Center, and the local access preview.",
+                    systemImage: "flag.checkered"
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Workflow from Profile")
+            .accessibilityLabel("Open Creator launch preview from Profile")
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             Button(action: onMyList) {

@@ -26,6 +26,7 @@ struct CreatorEntryView: View {
                 HFBreadcrumbTrail(items: ["Creator Mode"])
                 activePackageHero
                 commandCenterCard
+                launchCenterCard
                 featureGrid
                 quickStatsSection
                 comingNextStrip
@@ -154,6 +155,21 @@ struct CreatorEntryView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Workflow Command Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var launchCenterCard: some View {
+        NavigationLink {
+            CreatorLaunchCenterPreviewView()
+        } label: {
+            HFActionTile(
+                title: "Creator Launch Center",
+                subtitle: "Prepare audience, marketplace, access, and release readiness previews.",
+                systemImage: "flag.checkered"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Creator Launch Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

@@ -12,6 +12,7 @@ struct CreatorWorkflowCommandCenterView: View {
         CreatorWorkflowStage(title: "Team Review", status: "Internal Review", systemImage: "person.3.fill", route: .teamReview),
         CreatorWorkflowStage(title: "Version History", status: "Tracking", systemImage: "clock.arrow.circlepath", route: .versionHistory),
         CreatorWorkflowStage(title: "Team Permissions", status: "Preview Only", systemImage: "person.3.sequence.fill", route: .teamPermissions),
+        CreatorWorkflowStage(title: "Launch Center", status: "Preview Planning", systemImage: "flag.checkered", route: .launchCenter),
         CreatorWorkflowStage(title: "Marketplace", status: "Coming Soon", systemImage: "storefront.fill", route: .marketplace)
     ]
 
@@ -28,7 +29,8 @@ struct CreatorWorkflowCommandCenterView: View {
         CreatorPriorityAction(title: "Review Assets", subtitle: "Open asset health and preview materials.", systemImage: "rectangle.stack.fill", route: .assetManager),
         CreatorPriorityAction(title: "Open Submission Workflow", subtitle: "Check gates before internal review.", systemImage: "paperplane.fill", route: .submissionWorkflow),
         CreatorPriorityAction(title: "Open Team Review", subtitle: "Resolve open reviewer notes.", systemImage: "person.3.fill", route: .teamReview),
-        CreatorPriorityAction(title: "Check Release Readiness", subtitle: "Preview blockers and launch path.", systemImage: "gauge.with.dots.needle.67percent", route: .releaseReadiness)
+        CreatorPriorityAction(title: "Check Release Readiness", subtitle: "Preview blockers and launch path.", systemImage: "gauge.with.dots.needle.67percent", route: .releaseReadiness),
+        CreatorPriorityAction(title: "Open Launch Center", subtitle: "Preview audience, access, and launch planning.", systemImage: "flag.checkered", route: .launchCenter)
     ]
 
     private let comingNext = [
@@ -46,6 +48,7 @@ struct CreatorWorkflowCommandCenterView: View {
             CreatorCommandSignal(title: "Assets ready", value: "6 / 10", systemImage: "rectangle.stack.fill"),
             CreatorCommandSignal(title: "Team members", value: "\(workflowStore.teamMembersCount)", systemImage: "person.2.fill"),
             CreatorCommandSignal(title: "Version rounds", value: "3", systemImage: "clock.arrow.circlepath"),
+            CreatorCommandSignal(title: "Launch readiness", value: "\(Int(workflowStore.launchReadiness * 100))%", systemImage: "flag.checkered"),
             CreatorCommandSignal(title: "Marketplace interest", value: "\(workflowStore.marketplaceInterest)", systemImage: "storefront.fill")
         ]
     }
@@ -187,6 +190,30 @@ struct CreatorWorkflowCommandCenterView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Continue Package Builder")
+
+            NavigationLink {
+                CreatorLaunchCenterPreviewView()
+            } label: {
+                HFActionTile(
+                    title: "Open Launch Center",
+                    subtitle: "Preview audience interest, access setup, and release planning.",
+                    systemImage: "flag.checkered"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Creator Launch Center")
+
+            NavigationLink {
+                CreatorAccessPreviewView()
+            } label: {
+                HFActionTile(
+                    title: "Access Preview",
+                    subtitle: "Review mock audience unlock models without payment logic.",
+                    systemImage: "lock.shield.fill"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Access Preview")
         }
     }
 
@@ -549,6 +576,10 @@ struct CreatorWorkflowCommandCenterView: View {
             CreatorMarketplacePreviewView()
         case .releaseReadiness:
             CreatorReleaseReadinessPreviewView()
+        case .launchCenter:
+            CreatorLaunchCenterPreviewView()
+        case .accessPreview:
+            CreatorAccessPreviewView()
         }
     }
 
@@ -599,6 +630,8 @@ private enum CreatorWorkflowRoute {
     case teamPermissions
     case marketplace
     case releaseReadiness
+    case launchCenter
+    case accessPreview
 }
 
 private struct CreatorWorkflowStage: Identifiable {

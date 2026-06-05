@@ -81,15 +81,22 @@ struct CreatorMarketplacePreviewView: View {
             }
             .buttonStyle(.plain)
 
-            NavigationLink {
-                CreatorReleaseReadinessPreviewView()
-            } label: {
-                HFActionTile(title: "Release Readiness", subtitle: "Preview launch blockers before marketplace readiness.", systemImage: "gauge.with.dots.needle.67percent")
+                NavigationLink {
+                    CreatorReleaseReadinessPreviewView()
+                } label: {
+                    HFActionTile(title: "Release Readiness", subtitle: "Preview launch blockers before marketplace readiness.", systemImage: "gauge.with.dots.needle.67percent")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    CreatorAccessPreviewView()
+                } label: {
+                    HFActionTile(title: "Access Preview", subtitle: "Preview mock audience unlock models with no purchases connected.", systemImage: "lock.shield.fill")
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
 
     private var featuredPackagesSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {

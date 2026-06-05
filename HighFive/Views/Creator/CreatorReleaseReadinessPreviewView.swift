@@ -15,7 +15,8 @@ struct CreatorReleaseReadinessPreviewView: View {
         ReleasePathItem(title: "Asset manager", systemImage: "rectangle.stack.fill", route: .assetManager),
         ReleasePathItem(title: "Submission workflow", systemImage: "paperplane.fill", route: .submissionWorkflow),
         ReleasePathItem(title: "Team review", systemImage: "person.3.fill", route: .teamReview),
-        ReleasePathItem(title: "Marketplace preview", systemImage: "storefront.fill", route: .marketplace)
+        ReleasePathItem(title: "Marketplace preview", systemImage: "storefront.fill", route: .marketplace),
+        ReleasePathItem(title: "Launch center", systemImage: "flag.checkered", route: .launchCenter)
     ]
 
     private let comingNext = [
@@ -210,6 +211,8 @@ struct CreatorReleaseReadinessPreviewView: View {
             CreatorTeamReviewPreviewView()
         case .marketplace:
             CreatorMarketplacePreviewView()
+        case .launchCenter:
+            CreatorLaunchCenterPreviewView()
         }
     }
 }
@@ -220,6 +223,7 @@ private enum ReleasePathRoute {
     case submissionWorkflow
     case teamReview
     case marketplace
+    case launchCenter
 }
 
 private struct ReleasePathItem: Identifiable {

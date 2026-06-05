@@ -80,6 +80,13 @@ struct CreatorDashboardPreviewView: View {
                     HFActionTile(title: "Release Readiness", subtitle: "Preview blockers and launch path progress.", systemImage: "gauge.with.dots.needle.67percent")
                 }
                 .buttonStyle(.plain)
+
+                NavigationLink {
+                    CreatorLaunchCenterPreviewView()
+                } label: {
+                    HFActionTile(title: "Creator Launch Center", subtitle: "Preview launch planning, access setup, and audience signals.", systemImage: "flag.checkered")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

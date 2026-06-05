@@ -51,6 +51,26 @@ final class HFCreatorWorkflowStore: ObservableObject {
         HFCreatorReleaseBlocker(title: "Submission notes incomplete", status: "Pending", systemImage: "note.text"),
         HFCreatorReleaseBlocker(title: "Team sign-off pending", status: "Pending", systemImage: "person.3.fill")
     ]
+
+    let launchReadiness = 0.72
+    let accessPreviewStatus = "Mock Only"
+    let audienceSaves = "1.2K"
+    let marketplaceFollows = 48
+
+    let launchChecklist: [HFCreatorLaunchChecklistItem] = [
+        HFCreatorLaunchChecklistItem(title: "Package complete", status: "In Progress", systemImage: "shippingbox.fill"),
+        HFCreatorLaunchChecklistItem(title: "Assets reviewed", status: "Needs Review", systemImage: "rectangle.stack.fill"),
+        HFCreatorLaunchChecklistItem(title: "Team sign-off", status: "Pending", systemImage: "person.3.fill"),
+        HFCreatorLaunchChecklistItem(title: "Marketplace preview", status: "Preview Only", systemImage: "storefront.fill"),
+        HFCreatorLaunchChecklistItem(title: "Access setup", status: "Mock Only", systemImage: "lock.shield.fill"),
+        HFCreatorLaunchChecklistItem(title: "Release plan", status: "Not Started", systemImage: "flag.checkered")
+    ]
+
+    let mockAccessPlans: [HFCreatorAccessPlan] = [
+        HFCreatorAccessPlan(title: "Viewer Pass", status: "Preview Only", detail: "Coming soon", systemImage: "ticket.fill"),
+        HFCreatorAccessPlan(title: "Creator Supporter", status: "Preview Only", detail: "Coming soon", systemImage: "heart.fill"),
+        HFCreatorAccessPlan(title: "Studio Review Access", status: "Preview Only", detail: "Coming soon", systemImage: "person.badge.shield.checkmark.fill")
+    ]
 }
 
 struct HFCreatorWorkflowActivity: Identifiable {
@@ -87,5 +107,20 @@ struct HFCreatorReleaseBlocker: Identifiable {
     let id = UUID()
     let title: String
     let status: String
+    let systemImage: String
+}
+
+struct HFCreatorLaunchChecklistItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let systemImage: String
+}
+
+struct HFCreatorAccessPlan: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
     let systemImage: String
 }
