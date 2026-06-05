@@ -161,6 +161,27 @@ struct CreatorTeamReviewPreviewView: View {
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorVersionHistoryPreviewView()
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text("Open Version History")
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 13, weight: .black))
+                        }
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(HFColors.glassSurface)
+                        .overlay(
+                            Capsule()
+                                .stroke(HFColors.goldStroke, lineWidth: 1)
+                        )
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(HFSpacing.lg)
             }
