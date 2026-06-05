@@ -44,6 +44,13 @@ final class HFCreatorWorkflowStore: ObservableObject {
         HFCreatorCriticalAction(title: "Open Team Review", detail: "Resolve open reviewer notes.", systemImage: "person.3.fill"),
         HFCreatorCriticalAction(title: "Check Release Readiness", detail: "Preview blockers and launch path.", systemImage: "gauge.with.dots.needle.67percent")
     ]
+
+    let releaseBlockers: [HFCreatorReleaseBlocker] = [
+        HFCreatorReleaseBlocker(title: "Trailer opening needs review", status: "Blocking", systemImage: "film.fill"),
+        HFCreatorReleaseBlocker(title: "Cast credits need confirmation", status: "Blocking", systemImage: "person.2.fill"),
+        HFCreatorReleaseBlocker(title: "Submission notes incomplete", status: "Pending", systemImage: "note.text"),
+        HFCreatorReleaseBlocker(title: "Team sign-off pending", status: "Pending", systemImage: "person.3.fill")
+    ]
 }
 
 struct HFCreatorWorkflowActivity: Identifiable {
@@ -73,5 +80,12 @@ struct HFCreatorCriticalAction: Identifiable {
     let id = UUID()
     let title: String
     let detail: String
+    let systemImage: String
+}
+
+struct HFCreatorReleaseBlocker: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
     let systemImage: String
 }

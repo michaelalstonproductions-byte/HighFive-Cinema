@@ -30,13 +30,14 @@ struct MyListView: View {
                 if savedMovies.isEmpty {
                     HFEmptyState(
                         title: "Your list is empty",
-                        message: "Save movies from Home, Search, or Movie Detail and they will appear here.",
+                        message: "Save titles from Home, Search, Discover, or Movie Detail and they will appear here for this local preview.",
                         systemImage: "bookmark",
                         actionTitle: "Browse Discover",
                         action: onBrowseDiscover
                     )
                         .padding(.horizontal, HFSpacing.screenHorizontal)
                 } else {
+                    savedSummary
                     savedGrid
                 }
             }
@@ -73,7 +74,7 @@ struct MyListView: View {
 
     private var savedGrid: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Saved Movies", actionTitle: nil)
+            HFSectionHeader(title: "\(selectedFilter) Titles", actionTitle: nil)
 
             LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
                 ForEach(savedMovies) { movie in
@@ -81,9 +82,19 @@ struct MyListView: View {
                         HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(movie.title)")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+    }
+
+    private var savedSummary: some View {
+        HFInsightCard(
+            title: "\(savedMovies.count) local titles",
+            message: selectedFilter == "Saved" ? "Your saved slate is synced across Home, Search, and Movie Detail." : "This filter is based on your local saved and download state.",
+            systemImage: "bookmark.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 }

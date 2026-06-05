@@ -57,6 +57,10 @@ final class HFNotificationCenterStore: ObservableObject {
         notifications.filter { !$0.isRead }.count
     }
 
+    var hasUnread: Bool {
+        unreadCount > 0
+    }
+
     var streamingNotifications: [HFLocalNotificationItem] {
         notifications.filter { $0.category == "Streaming" }
     }

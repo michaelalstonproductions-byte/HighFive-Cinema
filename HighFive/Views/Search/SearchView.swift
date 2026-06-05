@@ -156,6 +156,7 @@ struct SearchView: View {
                         HFRouteChip(title: "Clear Recent Searches", systemImage: "xmark.circle.fill")
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Clear recent searches")
                     .padding(.top, HFSpacing.xs)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -167,6 +168,11 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Suggested for You", actionTitle: nil)
 
+            Text("Local picks based on originals, downloads, and titles already in progress.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(suggestedMovies) { movie in
@@ -174,6 +180,7 @@ struct SearchView: View {
                             HFPosterCard(movie: movie, width: 132, showMetadata: true, showProgress: movie.progress != nil)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Open \(movie.title)")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -190,7 +197,7 @@ struct SearchView: View {
             if filteredMovies.isEmpty {
                 HFEmptyState(
                     title: "No results found",
-                    message: "No local matches yet. Try a title, genre, creator, or switch filters.",
+                    message: "No local matches for this query and filter. Try a title, genre, creator, or switch to Discover.",
                     systemImage: "magnifyingglass"
                 )
                     .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -201,6 +208,7 @@ struct SearchView: View {
                             HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Open \(movie.title)")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)

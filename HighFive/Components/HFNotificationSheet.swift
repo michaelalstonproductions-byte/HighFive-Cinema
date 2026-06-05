@@ -25,7 +25,7 @@ struct HFNotificationSheet: View {
                             HFUnreadBadge(count: store.unreadCount)
                         }
 
-                        Text("Local preview alerts for streaming and creator workflow.")
+                        Text(store.hasUnread ? "Local preview alerts for streaming and creator workflow." : "All local preview notifications are marked read.")
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -37,14 +37,15 @@ struct HFNotificationSheet: View {
                         Button {
                             store.markAllRead()
                         } label: {
-                            Text("Mark Read")
+                            Text(store.hasUnread ? "Mark Read" : "All Read")
                                 .font(HFTypography.micro)
-                                .foregroundStyle(HFColors.gold)
+                                .foregroundStyle(store.hasUnread ? HFColors.gold : HFColors.textMuted)
                                 .padding(.horizontal, HFSpacing.sm)
                                 .frame(height: 36)
                                 .background(Color.white.opacity(0.10))
                                 .clipShape(Capsule())
                         }
+                        .disabled(!store.hasUnread)
 
                         Button {
                             dismiss()
@@ -79,8 +80,16 @@ struct HFNotificationSheet: View {
             HFSectionHeader(title: title, actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
-                ForEach(items) { item in
-                    HFNotificationRow(item: item)
+                if items.isEmpty {
+                    HFEmptyState(
+                        title: "Nothing here",
+                        message: "This local notification group has no preview items.",
+                        systemImage: "bell.slash"
+                    )
+                } else {
+                    ForEach(items) { item in
+                        HFNotificationRow(item: item)
+                    }
                 }
             }
         }

@@ -49,6 +49,11 @@ struct CreatorEntryView: View {
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            Text("Preview mode. All creator tools are local SwiftUI shells.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -104,6 +109,7 @@ struct CreatorEntryView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Continue Studio")
             }
             .padding(HFSpacing.lg)
         }
@@ -147,6 +153,7 @@ struct CreatorEntryView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open Workflow Command Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -166,6 +173,20 @@ struct CreatorEntryView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open Creator Studio")
+
+                NavigationLink {
+                    CreatorPackageBuilderPreviewView()
+                } label: {
+                    CreatorFeatureTile(
+                        title: "Package Builder",
+                        subtitle: "Continue The Friendly package",
+                        status: "In Progress",
+                        systemImage: "shippingbox.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Package Builder")
 
                 NavigationLink {
                     CreatorDashboardPreviewView()
@@ -178,6 +199,7 @@ struct CreatorEntryView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open Creator Dashboard")
 
                 NavigationLink {
                     CreatorMarketplacePreviewView()
@@ -190,6 +212,7 @@ struct CreatorEntryView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Open Creator Marketplace Preview")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

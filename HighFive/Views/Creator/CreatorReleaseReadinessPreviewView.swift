@@ -1,12 +1,7 @@
 import SwiftUI
 
 struct CreatorReleaseReadinessPreviewView: View {
-    private let blockers = [
-        "Trailer opening needs review",
-        "Cast credits need confirmation",
-        "Submission notes incomplete",
-        "Team sign-off pending"
-    ]
+    @StateObject private var workflowStore = HFCreatorWorkflowStore()
 
     private let readyItems = [
         "Poster artwork approved",
@@ -76,10 +71,10 @@ struct CreatorReleaseReadinessPreviewView: View {
             HFSectionHeader(title: "Release Score", actionTitle: nil)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
-                HFReadinessScoreCard(title: "Overall readiness", value: "72%", progress: 0.72)
-                HFReadinessScoreCard(title: "Package", value: "68%", progress: 0.68, systemImage: "shippingbox.fill")
-                HFReadinessScoreCard(title: "Assets", value: "75%", progress: 0.75, systemImage: "rectangle.stack.fill")
-                HFReadinessScoreCard(title: "Team review", value: "72%", progress: 0.72, systemImage: "person.3.fill")
+                HFReadinessScoreCard(title: "Overall readiness", value: "\(Int(workflowStore.releaseReadiness.overall * 100))%", progress: workflowStore.releaseReadiness.overall)
+                HFReadinessScoreCard(title: "Package", value: "\(Int(workflowStore.releaseReadiness.package * 100))%", progress: workflowStore.releaseReadiness.package, systemImage: "shippingbox.fill")
+                HFReadinessScoreCard(title: "Assets", value: "\(Int(workflowStore.releaseReadiness.assets * 100))%", progress: workflowStore.releaseReadiness.assets, systemImage: "rectangle.stack.fill")
+                HFReadinessScoreCard(title: "Team review", value: "\(Int(workflowStore.releaseReadiness.teamReview * 100))%", progress: workflowStore.releaseReadiness.teamReview, systemImage: "person.3.fill")
                 HFReadinessScoreCard(title: "Marketplace", value: "Preview Only", progress: nil, systemImage: "storefront.fill")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -87,7 +82,19 @@ struct CreatorReleaseReadinessPreviewView: View {
     }
 
     private var blockingItemsSection: some View {
-        checklistSection(title: "Blocking Items", items: blockers, isReady: false)
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Release Blockers", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.glassStroke) {
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(workflowStore.releaseBlockers) { blocker in
+                        HFReleaseBlockerRow(title: blocker.title, status: blocker.status, systemImage: blocker.systemImage)
+                    }
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
     }
 
     private var readyItemsSection: some View {
@@ -126,6 +133,7 @@ struct CreatorReleaseReadinessPreviewView: View {
                         HFActionTile(title: item.title, subtitle: "Open preview", systemImage: item.systemImage)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(item.title)")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)

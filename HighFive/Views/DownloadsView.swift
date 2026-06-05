@@ -3,6 +3,7 @@ import SwiftUI
 struct DownloadsView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     var onFindMore: (() -> Void)?
+    @State private var showsRemoveAllAlert = false
 
     private var downloads: [Movie] {
         HFMockData.movies.filter { streamingStore.isDownloaded($0) }
@@ -30,6 +31,14 @@ struct DownloadsView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .alert("Remove All Downloads?", isPresented: $showsRemoveAllAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Remove All", role: .destructive) {
+                streamingStore.removeAllDownloads()
+            }
+        } message: {
+            Text("This clears the local mock download queue only.")
+        }
     }
 
     private var header: some View {
@@ -52,7 +61,7 @@ struct DownloadsView: View {
                         Text("Storage Status")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
-            Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB used")
+                        Text("\(downloads.count) local titles  |  \(usedStorage, specifier: "%.1f") GB mock storage")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                     }
@@ -108,11 +117,12 @@ struct DownloadsView: View {
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Remove \(movie.title) download")
                     }
                 }
 
                 Button {
-                    streamingStore.removeAllDownloads()
+                    showsRemoveAllAlert = true
                 } label: {
                     HStack(spacing: HFSpacing.xs) {
                         Image(systemName: "trash.fill")
@@ -127,6 +137,7 @@ struct DownloadsView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Remove all downloads")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -159,6 +170,7 @@ struct DownloadsView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Find more to download")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 }

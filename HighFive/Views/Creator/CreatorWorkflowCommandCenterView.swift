@@ -56,6 +56,7 @@ struct CreatorWorkflowCommandCenterView: View {
                 header
                 HFBreadcrumbTrail(items: ["Creator Mode", "Command Center"])
                 commandSummarySection
+                primaryActionSection
                 releaseReadinessSection
                 workflowCompletenessSection
                 currentStageSection
@@ -153,10 +154,39 @@ struct CreatorWorkflowCommandCenterView: View {
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Continue Workflow")
                 }
                 .padding(HFSpacing.lg)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var primaryActionSection: some View {
+        HFFooterActionBar(title: "Release Candidate Actions") {
+            NavigationLink {
+                CreatorReleaseReadinessPreviewView()
+            } label: {
+                HFActionTile(
+                    title: "Check Release Readiness",
+                    subtitle: "Review blockers, ready items, and launch path.",
+                    systemImage: "gauge.with.dots.needle.67percent"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Check Release Readiness")
+
+            NavigationLink {
+                CreatorPackageBuilderPreviewView()
+            } label: {
+                HFActionTile(
+                    title: "Continue Package Builder",
+                    subtitle: "Resolve credits and submission notes for the active package.",
+                    systemImage: "shippingbox.fill"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Continue Package Builder")
         }
     }
 
@@ -214,11 +244,12 @@ struct CreatorWorkflowCommandCenterView: View {
             } label: {
                 HFActionTile(
                     title: workflowStore.selectedWorkflowStage,
-                    subtitle: "Internal package review is the active focus.",
+                    subtitle: "Current stage. Open reviewer notes, version history, and permissions from here.",
                     systemImage: "person.3.fill"
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Open current stage Team Review")
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
@@ -322,6 +353,7 @@ struct CreatorWorkflowCommandCenterView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(stage.title)")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -343,6 +375,7 @@ struct CreatorWorkflowCommandCenterView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open \(stage.title)")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -376,6 +409,7 @@ struct CreatorWorkflowCommandCenterView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Continue Package Builder")
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
@@ -392,6 +426,7 @@ struct CreatorWorkflowCommandCenterView: View {
                         HFActionTile(title: action.title, subtitle: action.subtitle, systemImage: action.systemImage)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(action.title)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)

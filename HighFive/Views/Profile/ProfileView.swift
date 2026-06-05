@@ -58,7 +58,7 @@ struct ProfileView: View {
             Text("Profiles & More")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Manage local profiles and streaming preferences.")
+            Text("Your local command hub for streaming, profiles, notifications, and creator previews.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
         }
@@ -106,7 +106,7 @@ struct ProfileView: View {
                         Text("Creator Mode")
                             .font(HFTypography.menu)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("Studio tools, drafts, insights")
+                        Text("Studio, dashboard, marketplace, and workflow previews")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                     }
@@ -121,6 +121,7 @@ struct ProfileView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open Creator Mode")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -135,6 +136,7 @@ struct ProfileView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open Creator Command Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -170,6 +172,7 @@ struct ProfileView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Manage Profiles")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -183,6 +186,7 @@ struct ProfileView: View {
                 ) {
                     handleMenuItem(item.title)
                 }
+                .accessibilityLabel(item.title == "Notifications" ? "Notifications, \(notificationStore.unreadCount) unread" : item.title)
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

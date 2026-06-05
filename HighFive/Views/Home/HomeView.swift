@@ -93,7 +93,7 @@ struct HomeView: View {
 
             HFInsightCard(
                 title: "Your HighFive pulse",
-                message: "You have 2 titles in progress and 3 saved for later.",
+                message: "Two titles are in progress, three are saved, and your local creator workflow is ready to continue.",
                 systemImage: "sparkles"
             )
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -101,11 +101,12 @@ struct HomeView: View {
             Button(action: onProfile) {
                 HFInsightCard(
                     title: "Creator Workflow",
-                    message: "Open Profile to continue the mock creator command flow.",
+                    message: "Go to Profile for Creator Mode and the local Command Center preview.",
                     systemImage: "command"
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Open Creator Workflow from Profile")
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             Button(action: onMyList) {
@@ -116,6 +117,7 @@ struct HomeView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("View My List")
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
@@ -186,6 +188,7 @@ struct HomeView: View {
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Watch Now")
 
                     HFButton(
                         streamingStore.isSaved(heroMovie) ? "In My List" : "Add To List",
@@ -194,6 +197,7 @@ struct HomeView: View {
                     ) {
                         streamingStore.toggleSaved(heroMovie)
                     }
+                    .accessibilityLabel(streamingStore.isSaved(heroMovie) ? "Remove from My List" : "Add to My List")
                 }
             }
             .padding(HFSpacing.xl)
@@ -218,11 +222,13 @@ struct HomeView: View {
                                 HFPosterCard(movie: movie, width: 132, showProgress: true)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Continue watching \(movie.title)")
                         } else {
                             NavigationLink(value: movie) {
                                 HFPosterCard(movie: movie, width: 132, showProgress: category.id == "continue")
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Open \(movie.title)")
                         }
                     }
                 }
