@@ -9,6 +9,7 @@ struct CreatorProfilePreviewView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 HFBreadcrumbTrail(items: ["Connect", creator.name])
+                projectCommunityRoute
                 featuredProjectsSection
                 recentUpdatesSection
                 comingNextSection
@@ -103,6 +104,21 @@ struct CreatorProfilePreviewView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+    }
+
+    private var projectCommunityRoute: some View {
+        NavigationLink {
+            ProjectCommunityPreviewView()
+        } label: {
+            HFActionTile(
+                title: "Open Project Community",
+                subtitle: "Preview follows, update saves, audience signals, and discussion cards.",
+                systemImage: "person.3.sequence.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Project Community Preview")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var recentUpdatesSection: some View {

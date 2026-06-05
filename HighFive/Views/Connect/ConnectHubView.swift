@@ -14,6 +14,7 @@ struct ConnectHubView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 HFBreadcrumbTrail(items: ["Profile", "Connect Preview"])
+                discoveryRoutesSection
                 featuredCreatorsSection
                 projectUpdatesSection
                 communitySignalsSection
@@ -66,6 +67,51 @@ struct ConnectHubView: View {
         }
     }
 
+    private var discoveryRoutesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Community Discovery", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    CommunityDiscoveryPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Community Discovery",
+                        subtitle: "Find creator communities, project circles, and audience conversations.",
+                        systemImage: "person.3.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Community Discovery Preview")
+
+                NavigationLink {
+                    WatchPartyPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Watch Party Preview",
+                        subtitle: "Preview shared viewing rooms without playback sync or live chat.",
+                        systemImage: "play.tv.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Watch Party Preview")
+
+                NavigationLink {
+                    ProjectCommunityPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Project Community",
+                        subtitle: "Follow The Friendly updates, audience signals, and mock discussions.",
+                        systemImage: "film.stack.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Project Community Preview")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
     private var projectUpdatesSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Project Updates", actionTitle: nil)
@@ -85,7 +131,13 @@ struct ConnectHubView: View {
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(HFConnectPreviewData.projectUpdates) { update in
-                    projectUpdateCard(update)
+                    NavigationLink {
+                        ProjectCommunityPreviewView()
+                    } label: {
+                        projectUpdateCard(update)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open project community for \(update.title)")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)

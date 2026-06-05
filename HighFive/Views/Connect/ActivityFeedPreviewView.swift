@@ -1,6 +1,19 @@
 import SwiftUI
 
 struct ActivityFeedPreviewView: View {
+    @State private var selectedFilter = "All"
+    @State private var likedItemIDs: Set<UUID> = []
+    @State private var savedItemIDs: Set<UUID> = []
+
+    private let filters = [
+        "All",
+        "Creators",
+        "Projects",
+        "Following",
+        "Marketplace",
+        "Reviews"
+    ]
+
     private let comingNext = [
         "real comments",
         "accounts",
@@ -12,6 +25,8 @@ struct ActivityFeedPreviewView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 HFBreadcrumbTrail(items: ["Connect", "Activity Feed"])
+                filterSection
+                projectCommunityRoute
                 activityFeedSection
                 projectUpdatesSection
                 commentsPreviewSection
@@ -42,6 +57,39 @@ struct ActivityFeedPreviewView: View {
                 .foregroundStyle(HFColors.gold)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var filterSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Feed Filters", actionTitle: nil)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(filters, id: \.self) { filter in
+                        HFFilterChip(title: filter, isSelected: selectedFilter == filter) {
+                            selectedFilter = filter
+                        }
+                        .accessibilityLabel("Select \(filter) local feed filter")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+    }
+
+    private var projectCommunityRoute: some View {
+        NavigationLink {
+            ProjectCommunityPreviewView()
+        } label: {
+            HFActionTile(
+                title: "Open Project Community",
+                subtitle: "Review The Friendly updates, mock discussion, and local audience signals.",
+                systemImage: "person.3.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Project Community Preview")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -142,8 +190,68 @@ struct ActivityFeedPreviewView: View {
                     HFStatusBadge(title: "\(item.comments) comment previews", isProminent: false)
                     Spacer()
                 }
+
+                Divider()
+                    .overlay(HFColors.glassStroke)
+
+                HStack(spacing: HFSpacing.sm) {
+                    mockFeedAction(
+                        title: likedItemIDs.contains(item.id) ? "Liked" : "Like",
+                        systemImage: likedItemIDs.contains(item.id) ? "hand.thumbsup.fill" : "hand.thumbsup"
+                    ) {
+                        toggleLiked(item.id)
+                    }
+
+                    mockFeedAction(title: "Comment", systemImage: "text.bubble.fill") {}
+
+                    mockFeedAction(
+                        title: savedItemIDs.contains(item.id) ? "Saved" : "Save",
+                        systemImage: savedItemIDs.contains(item.id) ? "bookmark.fill" : "bookmark"
+                    ) {
+                        toggleSaved(item.id)
+                    }
+
+                    mockFeedAction(title: "Share", systemImage: "square.and.arrow.up") {}
+                }
             }
             .padding(HFSpacing.md)
+        }
+    }
+
+    private func mockFeedAction(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: HFSpacing.xxs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, HFSpacing.xs)
+            .background(HFColors.gold.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title) mock activity action")
+    }
+
+    private func toggleLiked(_ id: UUID) {
+        if likedItemIDs.contains(id) {
+            likedItemIDs.remove(id)
+        } else {
+            likedItemIDs.insert(id)
+        }
+    }
+
+    private func toggleSaved(_ id: UUID) {
+        if savedItemIDs.contains(id) {
+            savedItemIDs.remove(id)
+        } else {
+            savedItemIDs.insert(id)
         }
     }
 
