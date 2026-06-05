@@ -35,10 +35,12 @@ struct CreatorReleaseReadinessPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Command Center", "Release Readiness"])
                 releaseScoreSection
                 blockingItemsSection
                 readyItemsSection
                 launchPathSection
+                previewChecklistSection
                 comingNextSection
             }
             .padding(.top, HFSpacing.lg)
@@ -99,7 +101,11 @@ struct CreatorReleaseReadinessPreviewView: View {
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: isReady ? HFColors.goldStroke : HFColors.glassStroke) {
                 VStack(spacing: HFSpacing.sm) {
                     ForEach(items, id: \.self) { item in
-                        HFBlockingItemRow(title: item, isReady: isReady)
+                        if isReady {
+                            HFBlockingItemRow(title: item, isReady: true)
+                        } else {
+                            HFReleaseBlockerRow(title: item, status: item == "Team sign-off pending" ? "Pending" : "Blocking")
+                        }
                     }
                 }
                 .padding(HFSpacing.md)
@@ -121,6 +127,38 @@ struct CreatorReleaseReadinessPreviewView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var previewChecklistSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Preview Launch Checklist", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    Text("Mock checklist only. The future launch flow will collect release calendar, approval, distribution, and marketplace signals.")
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button {
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: "checklist")
+                            Text("Preview Launch Checklist")
+                        }
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(HFSpacing.md)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

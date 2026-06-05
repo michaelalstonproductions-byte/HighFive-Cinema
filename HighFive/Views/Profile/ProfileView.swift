@@ -7,6 +7,7 @@ struct ProfileView: View {
     @State private var showsSignOutAlert = false
     @State private var showsNotifications = false
     @State private var activeMockSheet: ProfileMockSheet?
+    @StateObject private var notificationStore = HFNotificationCenterStore()
 
     private let menuItems: [(title: String, systemImage: String)] = [
         ("Notifications", "bell.fill"),
@@ -42,7 +43,7 @@ struct ProfileView: View {
             ProfileMockSheetView(sheet: sheet)
         }
         .sheet(isPresented: $showsNotifications) {
-            HFNotificationSheet()
+            HFNotificationSheet(store: notificationStore)
         }
         .alert("Sign Out?", isPresented: $showsSignOutAlert) {
             Button("Cancel", role: .cancel) {}
@@ -175,7 +176,11 @@ struct ProfileView: View {
     private var menu: some View {
         VStack(spacing: HFSpacing.sm) {
             ForEach(menuItems, id: \.title) { item in
-                HFMenuRow(title: item.title, systemImage: item.systemImage) {
+                HFMenuRow(
+                    title: item.title,
+                    systemImage: item.systemImage,
+                    badgeCount: item.title == "Notifications" ? notificationStore.unreadCount : 0
+                ) {
                     handleMenuItem(item.title)
                 }
             }

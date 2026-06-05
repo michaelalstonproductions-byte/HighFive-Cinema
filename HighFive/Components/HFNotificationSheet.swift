@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct HFNotificationSheet: View {
-    @StateObject private var store = HFNotificationCenterStore()
+    @ObservedObject var store: HFNotificationCenterStore
     @Environment(\.dismiss) private var dismiss
+
+    init(store: HFNotificationCenterStore = HFNotificationCenterStore()) {
+        self.store = store
+    }
 
     var body: some View {
         ZStack {
@@ -12,10 +16,14 @@ struct HFNotificationSheet: View {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("Notifications")
-                            .font(HFTypography.display)
-                            .foregroundStyle(HFColors.textPrimary)
-                            .minimumScaleFactor(0.82)
+                        HStack(spacing: HFSpacing.sm) {
+                            Text("Notifications")
+                                .font(HFTypography.display)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .minimumScaleFactor(0.82)
+
+                            HFUnreadBadge(count: store.unreadCount)
+                        }
 
                         Text("Local preview alerts for streaming and creator workflow.")
                             .font(HFTypography.body)
@@ -25,24 +33,37 @@ struct HFNotificationSheet: View {
 
                     Spacer()
 
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(HFColors.textPrimary)
-                            .frame(width: 40, height: 40)
-                            .background(Color.white.opacity(0.12))
-                            .clipShape(Circle())
+                    HStack(spacing: HFSpacing.xs) {
+                        Button {
+                            store.markAllRead()
+                        } label: {
+                            Text("Mark Read")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.gold)
+                                .padding(.horizontal, HFSpacing.sm)
+                                .frame(height: 36)
+                                .background(Color.white.opacity(0.10))
+                                .clipShape(Capsule())
+                        }
+
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(HFColors.textPrimary)
+                                .frame(width: 40, height: 40)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
+                        }
                     }
                     .buttonStyle(.plain)
                 }
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: HFSpacing.md) {
-                        ForEach(store.notifications) { item in
-                            HFNotificationRow(item: item)
-                        }
+                    VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                        notificationGroup(title: "Streaming", items: store.streamingNotifications)
+                        notificationGroup(title: "Creator", items: store.creatorNotifications)
                     }
                     .padding(.bottom, HFSpacing.xl)
                 }
@@ -52,13 +73,25 @@ struct HFNotificationSheet: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
+
+    private func notificationGroup(title: String, items: [HFLocalNotificationItem]) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: title, actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(items) { item in
+                    HFNotificationRow(item: item)
+                }
+            }
+        }
+    }
 }
 
-private struct HFNotificationRow: View {
+struct HFNotificationRow: View {
     let item: HFLocalNotificationItem
 
     var body: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: item.isRead ? HFColors.glassStroke : HFColors.goldStroke) {
             HStack(alignment: .top, spacing: HFSpacing.md) {
                 Image(systemName: item.systemImage)
                     .font(.system(size: 20, weight: .bold))
@@ -76,6 +109,13 @@ private struct HFNotificationRow: View {
 
                         Spacer(minLength: HFSpacing.xs)
 
+                        if !item.isRead {
+                            Circle()
+                                .fill(HFColors.gold)
+                                .frame(width: 8, height: 8)
+                                .accessibilityLabel("Unread")
+                        }
+
                         HFStatusBadge(title: item.category, isProminent: false)
                     }
 
@@ -87,5 +127,6 @@ private struct HFNotificationRow: View {
             }
             .padding(HFSpacing.md)
         }
+        .opacity(item.isRead ? 0.72 : 1)
     }
 }

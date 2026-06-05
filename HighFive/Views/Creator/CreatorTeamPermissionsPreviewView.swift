@@ -59,8 +59,10 @@ struct CreatorTeamPermissionsPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Team Review", "Team Permissions"])
                 teamAccessSection
                 commandCenterLink
+                teamReviewLink
                 teamMembersSection
                 permissionGroupsSection
                 accessMatrixSection
@@ -175,6 +177,17 @@ struct CreatorTeamPermissionsPreviewView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var teamReviewLink: some View {
+        HFFooterActionBar(title: "Review Link") {
+            NavigationLink {
+                CreatorTeamReviewPreviewView()
+            } label: {
+                HFActionTile(title: "Open Team Review", subtitle: "Return to notes, approvals, and version history.", systemImage: "person.3.fill")
+            }
+            .buttonStyle(.plain)
         }
     }
 

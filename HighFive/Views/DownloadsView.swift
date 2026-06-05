@@ -52,7 +52,7 @@ struct DownloadsView: View {
                         Text("Storage Status")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB used")
+            Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB used")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                     }
@@ -70,10 +70,15 @@ struct DownloadsView: View {
                             .fill(Color.white.opacity(0.14))
                         Capsule()
                             .fill(HFColors.goldGradient)
-                            .frame(width: min(proxy.size.width, proxy.size.width * 0.42))
+                            .frame(width: min(proxy.size.width, proxy.size.width * min(0.82, usedStorage / 10.0)))
                     }
                 }
                 .frame(height: 7)
+
+                Text("Local offline preview storage. Remove downloads to clear the mock queue.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(HFSpacing.lg)
         }
@@ -105,6 +110,23 @@ struct DownloadsView: View {
                         .buttonStyle(.plain)
                     }
                 }
+
+                Button {
+                    streamingStore.removeAllDownloads()
+                } label: {
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "trash.fill")
+                        Text("Remove All Downloads")
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(HFColors.glassSurface)
+                    .overlay(Capsule().stroke(HFColors.goldStroke, lineWidth: 1))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

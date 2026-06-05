@@ -3,6 +3,7 @@ import SwiftUI
 struct HFMenuRow: View {
     let title: String
     let systemImage: String
+    var badgeCount = 0
     var action: (() -> Void)?
 
     var body: some View {
@@ -21,6 +22,8 @@ struct HFMenuRow: View {
                         .foregroundStyle(HFColors.textPrimary)
 
                     Spacer()
+
+                    HFUnreadBadge(count: badgeCount)
 
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .bold))

@@ -38,6 +38,7 @@ struct CreatorPackageBuilderPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Command Center", "Package Builder"])
                 packageOverview
                 workflowLinksSection
                 packageStepsSection

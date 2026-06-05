@@ -9,10 +9,11 @@ struct CreatorStudioPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                commandCenterLink
+                HFBreadcrumbTrail(items: ["Creator Mode", "Studio"])
                 activeDraftCard
                 toolSection
                 checklistSection
+                footerActionsSection
                 comingNextSection
             }
             .padding(.top, HFSpacing.lg)
@@ -49,6 +50,24 @@ struct CreatorStudioPreviewView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var footerActionsSection: some View {
+        HFFooterActionBar(title: "Next Actions") {
+            NavigationLink {
+                CreatorPackageBuilderPreviewView()
+            } label: {
+                HFActionTile(title: "Continue Package", subtitle: "Open Package Builder for the active draft.", systemImage: "shippingbox.fill")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                CreatorWorkflowCommandCenterView()
+            } label: {
+                HFActionTile(title: "Open Command Center", subtitle: "Return to workflow health and release readiness.", systemImage: "command")
+            }
+            .buttonStyle(.plain)
         }
     }
 

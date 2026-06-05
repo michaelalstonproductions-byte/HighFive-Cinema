@@ -35,6 +35,7 @@ struct CreatorMarketplacePreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Marketplace"])
                 commandCenterLink
                 featuredPackagesSection
                 categoriesSection
@@ -79,8 +80,15 @@ struct CreatorMarketplacePreviewView: View {
                 HFActionTile(title: "Command Center", subtitle: "Return to release health and workflow priorities.", systemImage: "command")
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            NavigationLink {
+                CreatorReleaseReadinessPreviewView()
+            } label: {
+                HFActionTile(title: "Release Readiness", subtitle: "Preview launch blockers before marketplace readiness.", systemImage: "gauge.with.dots.needle.67percent")
+            }
+            .buttonStyle(.plain)
         }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var featuredPackagesSection: some View {

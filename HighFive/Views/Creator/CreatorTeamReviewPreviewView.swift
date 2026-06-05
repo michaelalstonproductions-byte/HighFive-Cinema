@@ -57,6 +57,7 @@ struct CreatorTeamReviewPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Submission Workflow", "Team Review"])
                 reviewRoomSection
                 releaseReadinessLink
                 reviewerNotesSection

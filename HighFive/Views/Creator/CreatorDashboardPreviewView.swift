@@ -32,6 +32,7 @@ struct CreatorDashboardPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Dashboard"])
                 commandLinksSection
                 snapshotSection
                 performanceSection

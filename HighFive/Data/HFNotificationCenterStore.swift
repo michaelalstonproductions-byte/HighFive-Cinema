@@ -52,6 +52,26 @@ final class HFNotificationCenterStore: ObservableObject {
             systemImage: "clock.arrow.circlepath"
         )
     ]
+
+    var unreadCount: Int {
+        notifications.filter { !$0.isRead }.count
+    }
+
+    var streamingNotifications: [HFLocalNotificationItem] {
+        notifications.filter { $0.category == "Streaming" }
+    }
+
+    var creatorNotifications: [HFLocalNotificationItem] {
+        notifications.filter { $0.category == "Creator" }
+    }
+
+    func markAllRead() {
+        notifications = notifications.map { item in
+            var updated = item
+            updated.isRead = true
+            return updated
+        }
+    }
 }
 
 struct HFLocalNotificationItem: Identifiable {
@@ -60,4 +80,5 @@ struct HFLocalNotificationItem: Identifiable {
     let message: String
     let category: String
     let systemImage: String
+    var isRead = false
 }

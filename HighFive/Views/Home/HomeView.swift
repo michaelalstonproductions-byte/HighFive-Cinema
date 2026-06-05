@@ -4,9 +4,11 @@ struct HomeView: View {
     let selectedProfile: UserProfile
     var onSearch: () -> Void = {}
     var onProfile: () -> Void = {}
+    var onMyList: () -> Void = {}
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
     @State private var showsNotifications = false
+    @StateObject private var notificationStore = HFNotificationCenterStore()
 
     private var heroMovie: Movie {
         HFMockData.movie("friendly") ?? HFMockData.movies[0]
@@ -31,7 +33,7 @@ struct HomeView: View {
             HFMockPlayerSheet(movie: movie)
         }
         .sheet(isPresented: $showsNotifications) {
-            HFNotificationSheet()
+            HFNotificationSheet(store: notificationStore)
         }
     }
 
@@ -65,7 +67,11 @@ struct HomeView: View {
                 Button {
                     showsNotifications = true
                 } label: {
-                    Image(systemName: "bell.fill")
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.fill")
+                        HFUnreadBadge(count: notificationStore.unreadCount)
+                            .offset(x: 10, y: -10)
+                    }
                 }
                 .accessibilityLabel("Notifications")
 
@@ -97,6 +103,16 @@ struct HomeView: View {
                     title: "Creator Workflow",
                     message: "Open Profile to continue the mock creator command flow.",
                     systemImage: "command"
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            Button(action: onMyList) {
+                HFInsightCard(
+                    title: "View My List",
+                    message: "Open saved titles and pick up your local watchlist.",
+                    systemImage: "bookmark.fill"
                 )
             }
             .buttonStyle(.plain)

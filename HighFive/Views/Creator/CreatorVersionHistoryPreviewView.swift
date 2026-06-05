@@ -62,8 +62,10 @@ struct CreatorVersionHistoryPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Team Review", "Version History"])
                 currentVersionSection
                 releaseReadinessLink
+                workflowLinksSection
                 versionTimelineSection
                 changeSummarySection
                 comparePreviewSection
@@ -184,6 +186,24 @@ struct CreatorVersionHistoryPreviewView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var workflowLinksSection: some View {
+        HFFooterActionBar(title: "Workflow Links") {
+            NavigationLink {
+                CreatorTeamReviewPreviewView()
+            } label: {
+                HFActionTile(title: "Open Team Review", subtitle: "Return to reviewer notes and approval checklist.", systemImage: "person.3.fill")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                CreatorTeamPermissionsPreviewView()
+            } label: {
+                HFActionTile(title: "Open Team Permissions", subtitle: "Preview role access for review work.", systemImage: "person.3.sequence.fill")
+            }
+            .buttonStyle(.plain)
         }
     }
 

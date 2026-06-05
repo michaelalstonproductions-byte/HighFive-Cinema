@@ -122,27 +122,44 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Recent Searches", actionTitle: nil)
 
-            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                ForEach(streamingStore.recentSearches, id: \.self) { suggestion in
-                    Button {
-                        query = suggestion
-                        streamingStore.addRecentSearch(suggestion)
-                    } label: {
-                        HStack(spacing: HFSpacing.sm) {
-                            Image(systemName: "clock.arrow.circlepath")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(HFColors.gold)
-                            Text(suggestion)
-                                .font(HFTypography.body)
-                                .foregroundStyle(HFColors.textSecondary)
-                            Spacer()
+            if streamingStore.recentSearches.isEmpty {
+                HFInsightCard(
+                    title: "No recent searches",
+                    message: "Search locally by title, genre, or creator and your terms will appear here.",
+                    systemImage: "magnifyingglass"
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            } else {
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.recentSearches, id: \.self) { suggestion in
+                        Button {
+                            query = suggestion
+                            streamingStore.addRecentSearch(suggestion)
+                        } label: {
+                            HStack(spacing: HFSpacing.sm) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(HFColors.gold)
+                                Text(suggestion)
+                                    .font(HFTypography.body)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                Spacer()
+                            }
+                            .padding(.vertical, HFSpacing.xs)
                         }
-                        .padding(.vertical, HFSpacing.xs)
+                        .buttonStyle(.plain)
+                    }
+
+                    Button {
+                        streamingStore.clearRecentSearches()
+                    } label: {
+                        HFRouteChip(title: "Clear Recent Searches", systemImage: "xmark.circle.fill")
                     }
                     .buttonStyle(.plain)
+                    .padding(.top, HFSpacing.xs)
                 }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 

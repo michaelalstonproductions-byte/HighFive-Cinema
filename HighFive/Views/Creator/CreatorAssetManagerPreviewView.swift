@@ -38,6 +38,7 @@ struct CreatorAssetManagerPreviewView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Package Builder", "Asset Manager"])
                 workflowLinksSection
                 assetLibrarySection
                 assetHealthSection

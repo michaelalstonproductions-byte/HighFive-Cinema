@@ -43,12 +43,22 @@ final class HFStreamingStore: ObservableObject {
         persist(downloadedMovieIDs, key: downloadsKey)
     }
 
+    func removeAllDownloads() {
+        downloadedMovieIDs.removeAll()
+        persist(downloadedMovieIDs, key: downloadsKey)
+    }
+
     func addRecentSearch(_ query: String) {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         recentSearches.removeAll { $0.localizedCaseInsensitiveCompare(trimmed) == .orderedSame }
         recentSearches.insert(trimmed, at: 0)
         recentSearches = Array(recentSearches.prefix(6))
+        UserDefaults.standard.set(recentSearches, forKey: recentSearchesKey)
+    }
+
+    func clearRecentSearches() {
+        recentSearches.removeAll()
         UserDefaults.standard.set(recentSearches, forKey: recentSearchesKey)
     }
 

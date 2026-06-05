@@ -39,6 +39,9 @@ struct HFStreamingRootView: View {
                             },
                             onProfile: {
                                 selectedTab = .profile
+                            },
+                            onMyList: {
+                                selectedTab = .library
                             }
                         )
                     case .search:

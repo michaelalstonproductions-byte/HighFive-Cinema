@@ -24,11 +24,11 @@ struct CreatorWorkflowCommandCenterView: View {
     ]
 
     private let actions = [
-        CreatorPriorityAction(title: "Resolve trailer review note", subtitle: "Team Review", systemImage: "film.fill", route: .teamReview),
-        CreatorPriorityAction(title: "Confirm cast credits", subtitle: "Package Builder", systemImage: "person.2.fill", route: .packageBuilder),
-        CreatorPriorityAction(title: "Finish submission notes", subtitle: "Submission Workflow", systemImage: "note.text", route: .submissionWorkflow),
-        CreatorPriorityAction(title: "Review team permissions", subtitle: "Team Permissions", systemImage: "checkmark.shield.fill", route: .teamPermissions),
-        CreatorPriorityAction(title: "Prepare marketplace listing", subtitle: "Marketplace Preview", systemImage: "storefront.fill", route: .marketplace)
+        CreatorPriorityAction(title: "Continue Package Builder", subtitle: "Confirm credits and submission notes.", systemImage: "shippingbox.fill", route: .packageBuilder),
+        CreatorPriorityAction(title: "Review Assets", subtitle: "Open asset health and preview materials.", systemImage: "rectangle.stack.fill", route: .assetManager),
+        CreatorPriorityAction(title: "Open Submission Workflow", subtitle: "Check gates before internal review.", systemImage: "paperplane.fill", route: .submissionWorkflow),
+        CreatorPriorityAction(title: "Open Team Review", subtitle: "Resolve open reviewer notes.", systemImage: "person.3.fill", route: .teamReview),
+        CreatorPriorityAction(title: "Check Release Readiness", subtitle: "Preview blockers and launch path.", systemImage: "gauge.with.dots.needle.67percent", route: .releaseReadiness)
     ]
 
     private let comingNext = [
@@ -54,16 +54,20 @@ struct CreatorWorkflowCommandCenterView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                HFBreadcrumbTrail(items: ["Creator Mode", "Command Center"])
                 commandSummarySection
                 releaseReadinessSection
+                workflowCompletenessSection
                 currentStageSection
                 workflowProgressSection
                 workflowHealthSection
                 criticalPathSection
+                jumpToStageSection
                 workflowPipelineSection
                 workflowSignalsSection
                 nextBestActionSection
                 priorityActionsSection
+                recentlyUpdatedSection
                 recentActivitySection
                 notificationFeedSection
                 comingNextSection
@@ -219,6 +223,41 @@ struct CreatorWorkflowCommandCenterView: View {
         }
     }
 
+    private var workflowCompletenessSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Workflow Completeness", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(spacing: HFSpacing.md) {
+                        Image(systemName: "chart.pie.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(HFColors.gold)
+                            .frame(width: 48, height: 48)
+                            .background(HFColors.gold.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            Text("72% complete")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Team Review is the current stage. Release readiness is close, with two blockers left.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer()
+                    }
+
+                    HFProgressBar(title: "Workflow completeness", value: workflowStore.completionPercent)
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
     private var workflowProgressSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Workflow Progress", actionTitle: nil)
@@ -266,6 +305,29 @@ struct CreatorWorkflowCommandCenterView: View {
         }
     }
 
+    private var jumpToStageSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Jump to Stage", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(stages) { stage in
+                    NavigationLink {
+                        destination(for: stage.route)
+                    } label: {
+                        HFWorkflowStageRow(
+                            title: stage.title,
+                            status: stage.status,
+                            systemImage: stage.systemImage,
+                            isCurrent: stage.title == workflowStore.selectedWorkflowStage
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
     private var workflowPipelineSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Workflow Pipeline", actionTitle: nil)
@@ -305,12 +367,12 @@ struct CreatorWorkflowCommandCenterView: View {
             HFSectionHeader(title: "Next Best Action", actionTitle: nil)
 
             NavigationLink {
-                CreatorTeamReviewPreviewView()
+                CreatorPackageBuilderPreviewView()
             } label: {
                 HFActionTile(
-                    title: "Resolve trailer review note",
-                    subtitle: "Open Team Review and clear the active blocker.",
-                    systemImage: "film.fill"
+                    title: "Continue Package Builder",
+                    subtitle: "Finish credits and notes before the review queue.",
+                    systemImage: "shippingbox.fill"
                 )
             }
             .buttonStyle(.plain)
@@ -331,6 +393,33 @@ struct CreatorWorkflowCommandCenterView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var recentlyUpdatedSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Recently Updated", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(Array(workflowStore.recentActivities.prefix(3))) { activity in
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Image(systemName: activity.systemImage)
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(HFColors.gold)
+
+                            Text(activity.title)
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.78)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(HFSpacing.md)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -363,7 +452,7 @@ struct CreatorWorkflowCommandCenterView: View {
 
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
                 VStack(spacing: HFSpacing.sm) {
-                    let creatorNotifications = Array(notificationStore.notifications.filter { $0.category == "Creator" }.prefix(4))
+                    let creatorNotifications = Array(notificationStore.creatorNotifications.prefix(4))
                     ForEach(Array(creatorNotifications.enumerated()), id: \.element.id) { index, item in
                         HFTimelineRow(
                             title: item.title,
