@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     let selectedProfile: UserProfile
     var onSearch: () -> Void = {}
+    var onDiscover: () -> Void = {}
     var onProfile: () -> Void = {}
     var onMyList: () -> Void = {}
     @EnvironmentObject private var streamingStore: HFStreamingStore
@@ -19,11 +20,17 @@ struct HomeView: View {
             VStack(spacing: HFSpacing.xl) {
                 header
                 heroSection
+                todaySection
                 insightSection
+                watchSectionHeader
 
                 ForEach(HFMockData.premiumHomeRails) { category in
                     movieRail(category)
                 }
+
+                createSection
+                connectSection
+                launchAccessSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -130,6 +137,213 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("View My List")
             .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var todaySection: some View {
+        HFTodaySummaryCard(items: HFEcosystemPreviewData.todaySummaryItems)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var watchSectionHeader: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Watch", actionTitle: nil)
+
+            HStack(spacing: HFSpacing.sm) {
+                Button(action: onDiscover) {
+                    HFRouteChip(title: "Open Discover", systemImage: "sparkles")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Discover")
+
+                Button(action: onMyList) {
+                    HFRouteChip(title: "View My List", systemImage: "bookmark.fill")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View My List")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var createSection: some View {
+        ecosystemRail(title: "Create") {
+            NavigationLink {
+                CreatorWorkflowCommandCenterView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Creator Command Center",
+                    subtitle: "Track package, review, versions, and permissions.",
+                    systemImage: "rectangle.grid.2x2.fill",
+                    status: "72%"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Creator Command Center")
+
+            NavigationLink {
+                CreatorPackageBuilderPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Package Builder",
+                    subtitle: "Continue The Friendly creator package.",
+                    systemImage: "shippingbox.fill",
+                    status: "In Progress"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Package Builder")
+
+            NavigationLink {
+                CreatorLaunchCenterPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Launch Center",
+                    subtitle: "Preview audience, marketplace, and release planning.",
+                    systemImage: "rocket.fill",
+                    status: "Preview"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Launch Center")
+
+            NavigationLink {
+                CreatorReleaseReadinessPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Release Readiness",
+                    subtitle: "Review launch blockers and ready items.",
+                    systemImage: "gauge.with.dots.needle.bottom.50percent",
+                    status: "72%"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Release Readiness")
+        }
+    }
+
+    private var connectSection: some View {
+        ecosystemRail(title: "Connect") {
+            NavigationLink {
+                CommunityDiscoveryPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Community Discovery",
+                    subtitle: "Find creator communities and project circles.",
+                    systemImage: "person.3.fill",
+                    status: "Preview"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Community Discovery")
+
+            NavigationLink {
+                SocialRoomsPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Social Rooms",
+                    subtitle: "Preview rooms for reviews and watch circles.",
+                    systemImage: "bubble.left.and.bubble.right.fill",
+                    status: "Live Mock"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Social Rooms")
+
+            NavigationLink {
+                CreatorCirclesPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Creator Circles",
+                    subtitle: "Explore collaborator networks and creative teams.",
+                    systemImage: "circle.hexagongrid.fill",
+                    status: "Preview"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Creator Circles")
+
+            NavigationLink {
+                WatchPartyPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Watch Party Preview",
+                    subtitle: "Shared viewing preview without playback sync.",
+                    systemImage: "play.tv.fill",
+                    status: "Mock Only"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Watch Party Preview")
+
+            NavigationLink {
+                ActivityFeedPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Activity Feed",
+                    subtitle: "Project updates and community signals.",
+                    systemImage: "text.bubble.fill",
+                    status: "Local"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Activity Feed")
+        }
+    }
+
+    private var launchAccessSection: some View {
+        ecosystemRail(title: "Launch + Access") {
+            NavigationLink {
+                CreatorLaunchCenterPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Launch Center",
+                    subtitle: "Prepare package, audience, and marketplace previews.",
+                    systemImage: "rocket.fill",
+                    status: "Planning"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Launch Center")
+
+            NavigationLink {
+                CreatorAccessPreviewView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Access Preview",
+                    subtitle: "Mock premium access without real purchases.",
+                    systemImage: "lock.shield.fill",
+                    status: "Mock Only"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Access Preview")
+
+            NavigationLink {
+                AppReleasePresentationView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Release Presentation",
+                    subtitle: "Open the HighFive preview overview.",
+                    systemImage: "rectangle.on.rectangle.angled.fill",
+                    status: "Ready"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Release Presentation")
+
+            NavigationLink {
+                AppDemoChecklistView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Demo Checklist",
+                    subtitle: "Walk through the current local preview build.",
+                    systemImage: "checklist.checked",
+                    status: "QA"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Demo Checklist")
         }
     }
 
@@ -245,6 +459,20 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
+        }
+    }
+
+    private func ecosystemRail<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: title, actionTitle: nil)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    content()
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .scrollClipDisabled()
         }
     }
 

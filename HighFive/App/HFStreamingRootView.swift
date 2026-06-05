@@ -37,6 +37,10 @@ struct HFStreamingRootView: View {
                                 searchMode = .search
                                 selectedTab = .search
                             },
+                            onDiscover: {
+                                searchMode = .discover
+                                selectedTab = .search
+                            },
                             onProfile: {
                                 selectedTab = .profile
                             },

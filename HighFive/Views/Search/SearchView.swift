@@ -63,7 +63,7 @@ struct SearchView: View {
                 if mode == .search {
                     searchContent
                 } else {
-                    DiscoverView(movies: HFMockData.movies, showsHeader: false)
+                    UnifiedDiscoveryView()
                 }
             }
             .padding(.top, HFSpacing.lg)
@@ -83,7 +83,7 @@ struct SearchView: View {
                         streamingStore.addRecentSearch(query)
                     }
             } else {
-                Text("Browse the HighFive slate by genre, originals, and saved recommendations.")
+                Text("Browse movies, creators, communities, launch previews, and local ecosystem routes.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
             }
