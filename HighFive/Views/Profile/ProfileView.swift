@@ -63,7 +63,7 @@ struct ProfileView: View {
             Text("Profiles & More")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Your local command hub for streaming, profiles, notifications, and creator previews.")
+            Text("Your local product hub for watching, creator packages, Connect previews, launch readiness, and future export planning.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
         }
@@ -111,7 +111,7 @@ struct ProfileView: View {
                         Text("Creator Mode")
                             .font(HFTypography.menu)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("Studio, dashboard, marketplace, and workflow previews")
+                        Text("Build creator packages with studio, dashboard, and workflow previews")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                     }
@@ -136,7 +136,7 @@ struct ProfileView: View {
         } label: {
             HFActionTile(
                 title: "HighFive Command Center",
-                subtitle: "Navigate the full HighFive ecosystem.",
+                subtitle: "Navigate Watch, Create, Connect, Launch, and future export readiness.",
                 systemImage: "command"
             )
         }
@@ -151,7 +151,7 @@ struct ProfileView: View {
         } label: {
             HFActionTile(
                 title: "Creator Command Center",
-                subtitle: "Track package, review, readiness, and release signals.",
+                subtitle: "Build package, review, readiness, and release signals.",
                 systemImage: "command"
             )
         }
@@ -166,7 +166,7 @@ struct ProfileView: View {
         } label: {
             HFActionTile(
                 title: "Creator Launch Center",
-                subtitle: "Preview launch plan, audience interest, and mock access setup.",
+                subtitle: "Prepare launch plan, audience interest, and mock access setup.",
                 systemImage: "flag.checkered"
             )
         }
@@ -181,7 +181,7 @@ struct ProfileView: View {
         } label: {
             HFActionTile(
                 title: "Connect Preview",
-                subtitle: "Discover creators, project updates, and mock community signals.",
+                subtitle: "Follow creator communities, project updates, and mock signals.",
                 systemImage: "person.2.fill"
             )
         }
@@ -196,7 +196,7 @@ struct ProfileView: View {
         } label: {
             HFActionTile(
                 title: "For You",
-                subtitle: "Recommended paths across streaming, creator workflow, launch, and Connect.",
+                subtitle: "Local paths across Watch, Create, Connect, Launch, and Access.",
                 systemImage: "sparkles"
             )
         }
@@ -215,7 +215,7 @@ struct ProfileView: View {
                 } label: {
                     HFActionTile(
                         title: "HighFive Preview",
-                        subtitle: "Review the local release presentation for partners and testers.",
+                        subtitle: "Review the local product story for partners and testers.",
                         systemImage: "sparkles"
                     )
                 }
@@ -239,7 +239,7 @@ struct ProfileView: View {
                 } label: {
                     HFActionTile(
                         title: "Demo Checklist",
-                        subtitle: "Walk through streaming, creator, and safety checks.",
+                        subtitle: "Walk Watch, Create, Connect, Launch, and safety checks.",
                         systemImage: "checklist"
                     )
                 }

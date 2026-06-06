@@ -39,12 +39,12 @@ struct EcosystemCommandCenterView: View {
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.72)
 
-            Text("A local dashboard for the connected cinema ecosystem: watch stories, build creator packages, connect communities, preview launch readiness, and open personalized recommendations.")
+            Text("The local map for HighFive: watch cinematic stories, build creator packages, connect communities, prepare launch readiness, and keep future export tools disconnected.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Watch stories. Build creator packages. Follow communities. Launch cinematic work.")
+            Text("Watch -> Create -> Connect -> Launch -> Future Export")
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.gold)
                 .fixedSize(horizontal: false, vertical: true)
@@ -62,7 +62,7 @@ struct EcosystemCommandCenterView: View {
                         .font(HFTypography.cardTitle)
                         .foregroundStyle(HFColors.textPrimary)
 
-                    Text("Follow the local demo path from viewing into creation, community, launch readiness, and access preview.")
+                    Text("Follow the product path from viewing into creation, community, launch readiness, access preview, and future share-ready export planning.")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -153,7 +153,7 @@ struct EcosystemCommandCenterView: View {
     private var safetyFooter: some View {
         HFInsightCard(
             title: "Demo shell only",
-            message: "Command Center routes are local SwiftUI previews or safe placeholders. Future backend, payment, upload, capture, playback, and protected depth systems remain disconnected.",
+            message: "Command Center routes are local SwiftUI previews or safe placeholders. Future backend, payment, upload, capture, playback, export/share, and protected depth systems remain disconnected.",
             systemImage: "shield.lefthalf.filled"
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)

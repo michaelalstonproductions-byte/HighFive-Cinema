@@ -3,15 +3,15 @@ import Foundation
 enum HFEcosystemPreviewData {
     static let todaySummaryItems: [HFTodaySummaryItem] = [
         HFTodaySummaryItem(title: "Continue Watching", value: "The Friendly", caption: "Resume your local preview", systemImage: "play.circle.fill"),
-        HFTodaySummaryItem(title: "Creator package", value: "72% ready", caption: "Team review active", systemImage: "checkmark.seal.fill"),
-        HFTodaySummaryItem(title: "Connect activity", value: "5 updates", caption: "Rooms and creators", systemImage: "bell.badge.fill"),
-        HFTodaySummaryItem(title: "Launch status", value: "Preview Planning", caption: "Mock readiness", systemImage: "rocket.fill")
+        HFTodaySummaryItem(title: "Creator package", value: "72% ready", caption: "Build path active", systemImage: "checkmark.seal.fill"),
+        HFTodaySummaryItem(title: "Connect activity", value: "5 updates", caption: "Communities and creators", systemImage: "bell.badge.fill"),
+        HFTodaySummaryItem(title: "Launch status", value: "Preview Planning", caption: "Access path local", systemImage: "rocket.fill")
     ]
 
     static let createHighlights: [HFEcosystemHighlight] = [
-        HFEcosystemHighlight(title: "Creator Command Center", subtitle: "Track package, review, versions, and launch readiness.", category: "Create", status: "72%", systemImage: "rectangle.grid.2x2.fill"),
-        HFEcosystemHighlight(title: "Package Builder", subtitle: "Continue assembling The Friendly creator package.", category: "Create", status: "In Progress", systemImage: "shippingbox.fill"),
-        HFEcosystemHighlight(title: "Launch Center", subtitle: "Preview audience, marketplace, and release planning.", category: "Launch", status: "Preview", systemImage: "rocket.fill"),
+        HFEcosystemHighlight(title: "Creator Command Center", subtitle: "Build package, review, versions, and launch readiness.", category: "Create", status: "72%", systemImage: "rectangle.grid.2x2.fill"),
+        HFEcosystemHighlight(title: "Package Builder", subtitle: "Assemble The Friendly creator package.", category: "Create", status: "In Progress", systemImage: "shippingbox.fill"),
+        HFEcosystemHighlight(title: "Launch Center", subtitle: "Prepare audience, access, and release planning.", category: "Launch", status: "Preview", systemImage: "rocket.fill"),
         HFEcosystemHighlight(title: "Release Readiness", subtitle: "Review blockers, ready items, and launch path.", category: "Launch", status: "72%", systemImage: "gauge.with.dots.needle.bottom.50percent")
     ]
 
@@ -25,9 +25,9 @@ enum HFEcosystemPreviewData {
 
     static let launchHighlights: [HFEcosystemHighlight] = [
         HFEcosystemHighlight(title: "Launch Center", subtitle: "Prepare package, audience, and marketplace previews.", category: "Launch", status: "Planning", systemImage: "rocket.fill"),
-        HFEcosystemHighlight(title: "Access Preview", subtitle: "Mock premium package access without real purchases.", category: "Access", status: "Mock Only", systemImage: "lock.shield.fill"),
-        HFEcosystemHighlight(title: "Release Presentation", subtitle: "Open the HighFive preview overview for demos.", category: "Release", status: "Ready", systemImage: "rectangle.on.rectangle.angled.fill"),
-        HFEcosystemHighlight(title: "Demo Checklist", subtitle: "Walk through the current local preview build.", category: "Release", status: "QA", systemImage: "checklist.checked")
+        HFEcosystemHighlight(title: "Access Preview", subtitle: "Mock package access without purchases or entitlements.", category: "Access", status: "Mock Only", systemImage: "lock.shield.fill"),
+        HFEcosystemHighlight(title: "Release Presentation", subtitle: "Open the local Watch to Launch overview.", category: "Release", status: "Ready", systemImage: "rectangle.on.rectangle.angled.fill"),
+        HFEcosystemHighlight(title: "Demo Checklist", subtitle: "Walk the current local product spine.", category: "Release", status: "QA", systemImage: "checklist.checked")
     ]
 
     static let contentCategories: [HFDiscoveryCategory] = [
@@ -41,8 +41,8 @@ enum HFEcosystemPreviewData {
     static let creatorCategories: [HFDiscoveryCategory] = [
         HFDiscoveryCategory(title: "Creator Studio Preview", subtitle: "Open the local creator studio shell.", category: "Creators", systemImage: "wand.and.stars"),
         HFDiscoveryCategory(title: "Creator Dashboard Preview", subtitle: "Review creator metrics and workflow status.", category: "Creators", systemImage: "chart.bar.fill"),
-        HFDiscoveryCategory(title: "Creator Marketplace Preview", subtitle: "Preview marketplace-ready creator packages.", category: "Marketplace", systemImage: "storefront.fill"),
-        HFDiscoveryCategory(title: "Creator Command Center", subtitle: "Track package, assets, review, and launch state.", category: "Creators", systemImage: "rectangle.grid.2x2.fill"),
+        HFDiscoveryCategory(title: "Creator Marketplace Preview", subtitle: "Preview share-ready package presentation.", category: "Marketplace", systemImage: "storefront.fill"),
+        HFDiscoveryCategory(title: "Creator Command Center", subtitle: "Build package, assets, review, and launch state.", category: "Creators", systemImage: "rectangle.grid.2x2.fill"),
         HFDiscoveryCategory(title: "Launch Center", subtitle: "Prepare release planning and audience previews.", category: "Launch", systemImage: "rocket.fill")
     ]
 
@@ -50,7 +50,7 @@ enum HFEcosystemPreviewData {
         HFDiscoveryCategory(title: "Connect Hub", subtitle: "Open creator discovery and community previews.", category: "Communities", systemImage: "person.2.fill"),
         HFDiscoveryCategory(title: "Social Rooms", subtitle: "Preview rooms for watch circles and reviews.", category: "Communities", systemImage: "bubble.left.and.bubble.right.fill"),
         HFDiscoveryCategory(title: "Creator Circles", subtitle: "Find mock collaborator networks.", category: "Communities", systemImage: "circle.hexagongrid.fill"),
-        HFDiscoveryCategory(title: "Watch Parties", subtitle: "Preview shared viewing rooms.", category: "Watch Parties", systemImage: "play.tv.fill"),
+        HFDiscoveryCategory(title: "Watch Parties", subtitle: "Preview shared viewing rooms without live sync.", category: "Watch Parties", systemImage: "play.tv.fill"),
         HFDiscoveryCategory(title: "Project Communities", subtitle: "Follow project updates and launch signals.", category: "Communities", systemImage: "film.stack.fill")
     ]
 
@@ -58,7 +58,7 @@ enum HFEcosystemPreviewData {
         HFTrendingEcosystemItem(title: "The Friendly — Creator Package", subtitle: "Team review and launch readiness are active.", category: "Creators", status: "72%", systemImage: "shippingbox.fill"),
         HFTrendingEcosystemItem(title: "Paranormall — Fan Room", subtitle: "Community discussion is trending in preview.", category: "Communities", status: "8.1K", systemImage: "sparkles"),
         HFTrendingEcosystemItem(title: "Black Turnip — Coming Soon", subtitle: "Upcoming title with rising local saves.", category: "Movies", status: "Soon", systemImage: "film.fill"),
-        HFTrendingEcosystemItem(title: "Creator Launch Lab", subtitle: "Release planning and marketplace interest.", category: "Launch", status: "Preview", systemImage: "hammer.fill"),
+        HFTrendingEcosystemItem(title: "Creator Launch Lab", subtitle: "Release planning, access, and share-ready export roadmap.", category: "Launch", status: "Preview", systemImage: "hammer.fill"),
         HFTrendingEcosystemItem(title: "Poster Artists Circle", subtitle: "Creator circle focused on campaign art.", category: "Communities", status: "Trending", systemImage: "paintpalette.fill")
     ]
 

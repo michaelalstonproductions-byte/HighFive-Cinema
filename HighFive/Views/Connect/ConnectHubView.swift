@@ -37,7 +37,7 @@ struct ConnectHubView: View {
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("Discover creators, follow projects, and see what’s building on HighFive.")
+            Text("Discover creators, preview communities, follow project signals, and connect work before launch.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -56,7 +56,7 @@ struct ConnectHubView: View {
         } label: {
             HFActionTile(
                 title: "HighFive Command Center",
-                subtitle: "Return to Watch, Create, Connect, Launch, and Access routes.",
+                subtitle: "Return to Watch, Create, Connect, Launch, Access, and future Export routes.",
                 systemImage: "command"
             )
         }
@@ -118,7 +118,7 @@ struct ConnectHubView: View {
                 } label: {
                     HFActionTile(
                         title: "Follow Suggestions",
-                        subtitle: "Preview recommended creators, projects, and rooms with local follow state.",
+                        subtitle: "Preview recommended creators, projects, and rooms with local-only follow state.",
                         systemImage: "person.crop.circle.badge.plus"
                     )
                 }
@@ -130,7 +130,7 @@ struct ConnectHubView: View {
                 } label: {
                     HFActionTile(
                         title: "Social Rooms",
-                        subtitle: "Join mock creator-led rooms for watch circles, reviews, and discussions.",
+                        subtitle: "Open mock creator-led rooms for watch circles, reviews, and discussions.",
                         systemImage: "bubble.left.and.bubble.right.fill"
                     )
                 }
@@ -154,7 +154,7 @@ struct ConnectHubView: View {
                 } label: {
                     HFActionTile(
                         title: "Community Discovery",
-                        subtitle: "Find creator communities, project circles, and audience conversations.",
+                        subtitle: "Find creator communities, project circles, and audience preview conversations.",
                         systemImage: "person.3.fill"
                     )
                 }
@@ -178,7 +178,7 @@ struct ConnectHubView: View {
                 } label: {
                     HFActionTile(
                         title: "Project Community",
-                        subtitle: "Follow The Friendly updates, audience signals, and mock discussions.",
+                        subtitle: "Preview The Friendly updates, audience signals, and mock discussions.",
                         systemImage: "film.stack.fill"
                     )
                 }
@@ -247,7 +247,7 @@ struct ConnectHubView: View {
             } label: {
                 HFActionTile(
                     title: "Open Activity Feed",
-                    subtitle: "Review mock project updates, reactions, and comment previews.",
+                    subtitle: "Review mock project updates, reactions, and comment previews without live social services.",
                     systemImage: "text.bubble.fill"
                 )
             }

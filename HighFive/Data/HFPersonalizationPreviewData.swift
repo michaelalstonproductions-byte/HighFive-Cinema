@@ -11,7 +11,7 @@ enum HFPersonalizationPreviewData {
     static let recommendedNext: [HFPersonalizedRecommendation] = [
         HFPersonalizedRecommendation(title: "Continue Watching", subtitle: "Resume The Friendly from your local progress.", category: "Viewer", reason: "You started this title", destinationType: "watch", systemImage: "play.fill", accentLabel: "Resume"),
         HFPersonalizedRecommendation(title: "Continue Package Builder", subtitle: "Finish credits, notes, and package details.", category: "Creator", reason: "Your package is in progress", destinationType: "packageBuilder", systemImage: "shippingbox.fill", accentLabel: "Next"),
-        HFPersonalizedRecommendation(title: "Open Release Readiness", subtitle: "Review blockers and launch path signals.", category: "Launch", reason: "Readiness is 72%", destinationType: "releaseReadiness", systemImage: "gauge.with.dots.needle.67percent", accentLabel: "72%"),
+        HFPersonalizedRecommendation(title: "Open Release Readiness", subtitle: "Review blockers, access, and launch path signals.", category: "Launch", reason: "Readiness is 72%", destinationType: "releaseReadiness", systemImage: "gauge.with.dots.needle.67percent", accentLabel: "72%"),
         HFPersonalizedRecommendation(title: "Explore Connect", subtitle: "Open creator updates and community previews.", category: "Connect", reason: "5 local updates are waiting", destinationType: "connectHub", systemImage: "person.2.fill", accentLabel: "Local")
     ]
 
@@ -24,14 +24,14 @@ enum HFPersonalizationPreviewData {
 
     static let creatorRecommendations: [HFPersonalizedRecommendation] = [
         HFPersonalizedRecommendation(title: "Package Builder", subtitle: "Continue assembling The Friendly package.", category: "Creator", reason: "Credits need review", destinationType: "packageBuilder", systemImage: "shippingbox.fill", accentLabel: "Active"),
-        HFPersonalizedRecommendation(title: "Asset Manager", subtitle: "Review artwork, trailer, and supporting assets.", category: "Creator", reason: "Assets need review", destinationType: "assetManager", systemImage: "rectangle.stack.fill", accentLabel: "Review"),
+        HFPersonalizedRecommendation(title: "Asset Manager", subtitle: "Review artwork, trailer, and supporting package materials.", category: "Creator", reason: "Assets need review", destinationType: "assetManager", systemImage: "rectangle.stack.fill", accentLabel: "Review"),
         HFPersonalizedRecommendation(title: "Team Review", subtitle: "Open internal reviewer notes and sign-off state.", category: "Creator", reason: "Current stage", destinationType: "teamReview", systemImage: "person.3.fill", accentLabel: "Current"),
         HFPersonalizedRecommendation(title: "Version History", subtitle: "Track local package rounds and changes.", category: "Creator", reason: "3 rounds logged", destinationType: "versionHistory", systemImage: "clock.arrow.circlepath", accentLabel: "Tracking")
     ]
 
     static let launchRecommendations: [HFPersonalizedRecommendation] = [
         HFPersonalizedRecommendation(title: "Open Release Readiness", subtitle: "Check blockers, ready items, and launch path.", category: "Launch", reason: "72% ready", destinationType: "releaseReadiness", systemImage: "gauge.with.dots.needle.67percent", accentLabel: "72%"),
-        HFPersonalizedRecommendation(title: "Review Launch Center", subtitle: "Preview package, audience, and release planning.", category: "Launch", reason: "Planning is active", destinationType: "launchCenter", systemImage: "flag.checkered", accentLabel: "Plan"),
+        HFPersonalizedRecommendation(title: "Review Launch Center", subtitle: "Preview package, audience, access, and release planning.", category: "Launch", reason: "Planning is active", destinationType: "launchCenter", systemImage: "flag.checkered", accentLabel: "Plan"),
         HFPersonalizedRecommendation(title: "Preview Access Model", subtitle: "Review mock unlock paths with local data only.", category: "Access", reason: "Access setup is mock-only", destinationType: "accessPreview", systemImage: "lock.shield.fill", accentLabel: "Mock"),
         HFPersonalizedRecommendation(title: "View Demo Checklist", subtitle: "Walk the current preview build route list.", category: "Release", reason: "QA path is ready", destinationType: "demoChecklist", systemImage: "checklist.checked", accentLabel: "QA")
     ]
@@ -44,8 +44,8 @@ enum HFPersonalizationPreviewData {
     ]
 
     static let recommendedPath = HFRecommendedPath(
-        title: "Launch The Friendly Package",
-        subtitle: "A local preview path from package work to audience access.",
+        title: "Prepare The Friendly Launch",
+        subtitle: "A local preview path from watching to package work, community signals, and audience access.",
         steps: [
             "Finish Package Builder",
             "Review Assets",
@@ -59,7 +59,7 @@ enum HFPersonalizationPreviewData {
     )
 
     static let homeRecommendations: [HFPersonalizedRecommendation] = [
-        HFPersonalizedRecommendation(title: "Personalized Hub", subtitle: "Open smart local paths across HighFive.", category: "For You", reason: "Built from local preview state", destinationType: "personalizedHub", systemImage: "sparkles", accentLabel: "For You"),
+        HFPersonalizedRecommendation(title: "For You", subtitle: "Open smart local paths across Watch, Create, Connect, and Launch.", category: "For You", reason: "Built from local preview state", destinationType: "personalizedHub", systemImage: "sparkles", accentLabel: "For You"),
         HFPersonalizedRecommendation(title: "Continue Package Builder", subtitle: "Resume The Friendly creator package.", category: "Creator", reason: "In progress", destinationType: "packageBuilder", systemImage: "shippingbox.fill", accentLabel: "Next"),
         HFPersonalizedRecommendation(title: "Explore Connect", subtitle: "Open community and creator signals.", category: "Connect", reason: "5 local updates", destinationType: "connectHub", systemImage: "person.2.fill", accentLabel: "Local"),
         HFPersonalizedRecommendation(title: "Open Launch Center", subtitle: "Preview release and audience planning.", category: "Launch", reason: "Preview Planning", destinationType: "launchCenter", systemImage: "flag.checkered", accentLabel: "Plan")

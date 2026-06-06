@@ -57,7 +57,7 @@ struct UnifiedDiscoveryView: View {
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.78)
 
-            Text("Movies, creators, communities, and launch-ready projects.")
+            Text("Content discovery, creator discovery, community previews, smart paths, and launch-ready projects.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -92,7 +92,7 @@ struct UnifiedDiscoveryView: View {
             } label: {
                 HFActionTile(
                     title: "HighFive Command Center",
-                    subtitle: "Jump across streaming, creator tools, Connect, launch readiness, access, and For You.",
+                    subtitle: "Jump across Watch, Create, Connect, Launch, Access, and For You.",
                     systemImage: "command"
                 )
             }
@@ -122,7 +122,7 @@ struct UnifiedDiscoveryView: View {
                                     HFStatusBadge(title: "Local", isProminent: false)
                                 }
 
-                                Text("Open recommended creator workflows, launch checks, and Connect routes built from local preview data.")
+                                Text("Open smart local paths for titles, creator workflows, Connect routes, and launch checks.")
                                     .font(HFTypography.caption)
                                     .foregroundStyle(HFColors.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -294,7 +294,7 @@ struct UnifiedDiscoveryView: View {
     private var previewNotice: some View {
         HFInsightCard(
             title: "Unified discovery is local",
-            message: "Filters, creator routes, community cards, and launch previews use local mock data only.",
+            message: "Filters, creator routes, community cards, smart paths, and launch previews use local mock data only.",
             systemImage: "lock.shield.fill"
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)

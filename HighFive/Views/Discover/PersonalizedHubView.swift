@@ -34,7 +34,7 @@ struct PersonalizedHubView: View {
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.78)
 
-            Text("Personalized paths across watching, creating, launching, and connecting.")
+            Text("Local smart paths across Watch, Create, Connect, Launch, and future export readiness.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -58,7 +58,7 @@ struct PersonalizedHubView: View {
         } label: {
             HFActionTile(
                 title: "Open Command Center",
-                subtitle: "See today's ecosystem path across Watch, Create, Connect, Launch, and Access.",
+                subtitle: "See today's product path across Watch, Create, Connect, Launch, Access, and future Export.",
                 systemImage: "command"
             )
         }
@@ -152,7 +152,7 @@ struct PersonalizedHubView: View {
     private var previewNotice: some View {
         HFInsightCard(
             title: "Smart paths are local",
-            message: "Recommendations are static preview cards. No accounts, services, or automated decision system is connected.",
+            message: "Recommendations are static preview cards. No accounts, services, analytics, or automated recommendation engine is connected.",
             systemImage: "lock.shield.fill"
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)

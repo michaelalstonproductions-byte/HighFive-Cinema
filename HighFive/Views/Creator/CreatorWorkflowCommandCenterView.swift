@@ -93,7 +93,7 @@ struct CreatorWorkflowCommandCenterView: View {
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.76)
 
-            Text("Track every step from draft package to team review and marketplace readiness.")
+            Text("Build the creator package path from draft materials to team review, launch readiness, and access preview.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -112,7 +112,7 @@ struct CreatorWorkflowCommandCenterView: View {
         } label: {
             HFActionTile(
                 title: "HighFive Command Center",
-                subtitle: "Return to the full ecosystem dashboard.",
+                subtitle: "Return to the full Watch, Create, Connect, Launch product map.",
                 systemImage: "command"
             )
         }
@@ -325,7 +325,7 @@ struct CreatorWorkflowCommandCenterView: View {
                 } label: {
                     HFActionTile(
                         title: "Explore Connect Signals",
-                        subtitle: "Open creator updates, rooms, and project community previews.",
+                        subtitle: "Open creator updates, rooms, and project community previews before launch.",
                         systemImage: "person.2.fill"
                     )
                 }
@@ -505,7 +505,7 @@ struct CreatorWorkflowCommandCenterView: View {
             } label: {
                 HFActionTile(
                     title: "Continue Package Builder",
-                    subtitle: "Finish credits and notes before the review queue.",
+                    subtitle: "Finish credits, notes, and package details before review.",
                     systemImage: "shippingbox.fill"
                 )
             }

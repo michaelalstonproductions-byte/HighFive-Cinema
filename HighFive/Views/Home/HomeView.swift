@@ -101,16 +101,16 @@ struct HomeView: View {
             HFSectionHeader(title: "For You", actionTitle: nil)
 
             HFInsightCard(
-                title: "Your HighFive pulse",
-                message: "Two titles are in progress, three are saved, and your local creator workflow is ready to continue.",
+                title: "Your HighFive spine",
+                message: "Watch stories, build creator packages, connect with communities, and prepare launch previews from local data.",
                 systemImage: "sparkles"
             )
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             Button(action: onProfile) {
                 HFInsightCard(
-                    title: "HighFive preview build is ready",
-                    message: "Go to Profile for Creator Mode, Launch Center, Access Preview, and release presentation.",
+                    title: "Create and launch next",
+                    message: "Open Profile for Creator Mode, Launch Center, Access Preview, and the local release presentation.",
                     systemImage: "sparkles"
                 )
             }
@@ -121,7 +121,7 @@ struct HomeView: View {
             Button(action: onProfile) {
                 HFInsightCard(
                     title: "Connect with creators",
-                    message: "Open Profile for the local Connect Preview and community discovery cards.",
+                    message: "Open Profile for local Connect previews, creator communities, and project signals.",
                     systemImage: "person.2.fill"
                 )
             }
@@ -173,7 +173,7 @@ struct HomeView: View {
                                 HFStatusBadge(title: "Local", isProminent: false)
                             }
 
-                            Text("Jump into watching, creator tools, Connect, launch readiness, and access preview.")
+                            Text("Watch stories, create packages, connect communities, preview launch readiness, and see future export tools stay disconnected.")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -264,7 +264,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Creator Command Center",
-                    subtitle: "Track package, review, versions, and permissions.",
+                    subtitle: "Build creator packages from draft to review.",
                     systemImage: "rectangle.grid.2x2.fill",
                     status: "72%"
                 )
@@ -277,7 +277,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Package Builder",
-                    subtitle: "Continue The Friendly creator package.",
+                    subtitle: "Assemble The Friendly package details.",
                     systemImage: "shippingbox.fill",
                     status: "In Progress"
                 )
@@ -290,7 +290,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Launch Center",
-                    subtitle: "Preview audience, marketplace, and release planning.",
+                    subtitle: "Prepare audience, access, and release planning.",
                     systemImage: "rocket.fill",
                     status: "Preview"
                 )
@@ -333,7 +333,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Social Rooms",
-                    subtitle: "Preview rooms for reviews and watch circles.",
+                    subtitle: "Preview local rooms for reviews and watch circles.",
                     systemImage: "bubble.left.and.bubble.right.fill",
                     status: "Live Mock"
                 )
@@ -389,7 +389,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Launch Center",
-                    subtitle: "Prepare package, audience, and marketplace previews.",
+                    subtitle: "Prepare package, audience, and release previews.",
                     systemImage: "rocket.fill",
                     status: "Planning"
                 )
@@ -415,7 +415,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Release Presentation",
-                    subtitle: "Open the HighFive preview overview.",
+                    subtitle: "Review the local Watch to Launch story.",
                     systemImage: "rectangle.on.rectangle.angled.fill",
                     status: "Ready"
                 )
@@ -428,7 +428,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Demo Checklist",
-                    subtitle: "Walk through the current local preview build.",
+                    subtitle: "Verify Watch, Create, Connect, and Launch routes.",
                     systemImage: "checklist.checked",
                     status: "QA"
                 )
