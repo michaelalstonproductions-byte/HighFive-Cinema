@@ -22,6 +22,10 @@ struct MovieDetailView: View {
         HFMockData.relatedTitles(for: movie)
     }
 
+    private var detailBottomClearance: CGFloat {
+        HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight + HFSpacing.xs
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -32,8 +36,9 @@ struct MovieDetailView: View {
                 castSection
                 gallerySection
                 relatedSection
+                bottomScrollClearance
             }
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.bottom, detailBottomClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
@@ -86,23 +91,6 @@ struct MovieDetailView: View {
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.gold)
 
-            Text(movie.synopsis)
-                .font(HFTypography.body)
-                .foregroundStyle(HFColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: HFSpacing.xs) {
-                ForEach(movie.genres, id: \.self) { genre in
-                    Text(genre)
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.gold)
-                        .padding(.horizontal, HFSpacing.sm)
-                        .frame(height: 32)
-                        .background(HFColors.gold.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-            }
-
             HStack(spacing: HFSpacing.sm) {
                 HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
                     previewMovie = movie
@@ -123,8 +111,41 @@ struct MovieDetailView: View {
             ) {
                 streamingStore.toggleDownload(movie)
             }
+
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Text("Synopsis")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .textCase(.uppercase)
+
+                Text(movie.synopsis)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, HFSpacing.xs)
+
+            genreTags
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var genreTags: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+            ForEach(movie.genres, id: \.self) { genre in
+                Text(genre)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .padding(.horizontal, HFSpacing.sm)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 34)
+                    .background(HFColors.gold.opacity(0.12))
+                    .overlay(Capsule().stroke(HFColors.goldStroke, lineWidth: 1))
+                    .clipShape(Capsule())
+            }
+        }
     }
 
     private var creatorSection: some View {
@@ -235,6 +256,12 @@ struct MovieDetailView: View {
         }
     }
 
+    private var bottomScrollClearance: some View {
+        Color.clear
+            .frame(height: HFSpacing.xxl)
+            .accessibilityHidden(true)
+    }
+
     @ViewBuilder
     private var detailArtwork: some View {
         if HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
@@ -248,22 +275,37 @@ struct MovieDetailView: View {
     }
 
     private var bottomCTA: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
-            HStack(spacing: HFSpacing.sm) {
-                HFButton("Watch Now", systemImage: "play.fill") {
-                    previewMovie = movie
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [
+                    HFColors.background.opacity(0),
+                    HFColors.background.opacity(0.82),
+                    HFColors.background
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: HFSpacing.xl)
+            .allowsHitTesting(false)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                HStack(spacing: HFSpacing.sm) {
+                    HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
+                        previewMovie = movie
+                    }
+                    HFButton(
+                        streamingStore.isSaved(movie) ? "Saved" : "My List",
+                        systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
+                        style: .secondary
+                    ) {
+                        streamingStore.toggleSaved(movie)
+                    }
                 }
-                HFButton(
-                    streamingStore.isSaved(movie) ? "Saved" : "My List",
-                    systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
-                    style: .secondary
-                ) {
-                    streamingStore.toggleSaved(movie)
-                }
+                .padding(HFSpacing.sm)
             }
-            .padding(HFSpacing.sm)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.bottom, HFSpacing.sm)
         }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .padding(.bottom, HFSpacing.sm)
+        .background(HFColors.background.opacity(0.72))
     }
 }
