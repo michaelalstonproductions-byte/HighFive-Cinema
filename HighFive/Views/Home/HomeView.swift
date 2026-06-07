@@ -435,6 +435,19 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Open Demo Checklist")
+
+            NavigationLink {
+                FinalDemoTourView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Final Demo Tour",
+                    subtitle: "Review Watch, Create, Connect, Launch, and Export.",
+                    systemImage: "map.fill",
+                    status: "QA"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Final Demo Tour")
         }
     }
 

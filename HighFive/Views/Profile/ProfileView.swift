@@ -245,6 +245,18 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open Demo Checklist")
+
+                NavigationLink {
+                    FinalDemoTourView()
+                } label: {
+                    HFActionTile(
+                        title: "Final Demo Tour",
+                        subtitle: "Walk through the full HighFive product spine.",
+                        systemImage: "map.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Final Demo Tour")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

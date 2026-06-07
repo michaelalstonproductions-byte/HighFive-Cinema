@@ -20,6 +20,7 @@ struct EcosystemCommandCenterView: View {
                 commandSection(title: "Launch + Access", items: HFEcosystemCommandData.launchItems)
                 commandSection(title: "Personalized", items: HFEcosystemCommandData.personalizedItems)
                 commandSection(title: "Demo / Preview", items: HFEcosystemCommandData.demoItems)
+                finalDemoSection
                 safetyFooter
             }
             .padding(.top, HFSpacing.lg)
@@ -44,7 +45,7 @@ struct EcosystemCommandCenterView: View {
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Watch -> Create -> Connect -> Launch -> Future Export")
+            Text("Watch -> Create -> Connect -> Launch -> Export")
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.gold)
                 .fixedSize(horizontal: false, vertical: true)
@@ -138,6 +139,70 @@ struct EcosystemCommandCenterView: View {
                         }
                         .accessibilityLabel("Open \(item.title)")
                     }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .scrollClipDisabled()
+        }
+    }
+
+    private var finalDemoSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Final Demo / QA", actionTitle: nil)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    NavigationLink {
+                        FinalDemoTourView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Final Demo Tour",
+                            subtitle: "Walk Watch, Create, Connect, Launch, and Export.",
+                            systemImage: "map.fill",
+                            status: "Local",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        DemoReviewChecklistView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Demo Review Checklist",
+                            subtitle: "Review the static product walkthrough checklist.",
+                            systemImage: "checklist.checked",
+                            status: "QA",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        ReleaseCandidatePrepView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Release Candidate Prep",
+                            subtitle: "Lock the local product spine before final QA.",
+                            systemImage: "checkmark.seal.fill",
+                            status: "Prep",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        ProductSpineLockdownView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Product Spine Lockdown",
+                            subtitle: "Verify each pillar is discoverable and separated.",
+                            systemImage: "rectangle.connected.to.line.below",
+                            status: "Local",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
