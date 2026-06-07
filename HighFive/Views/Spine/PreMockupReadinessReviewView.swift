@@ -9,6 +9,7 @@ struct PreMockupReadinessReviewView: View {
                 readinessSection(title: "Pillar Readiness", group: "Pillar Readiness")
                 readinessSection(title: "Safety Readiness", group: "Safety Readiness")
                 readinessSection(title: "What Mockup Parity Handles Later", group: "Mockup Later")
+                finalLockRoutesSection
                 readinessRule
             }
             .padding(.top, HFSpacing.lg)
@@ -43,6 +44,36 @@ struct PreMockupReadinessReviewView: View {
                 ForEach(HFProductSpineRouteQualityData.readinessItems(for: group)) { item in
                     HFPreMockupReadinessCard(item: item)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var finalLockRoutesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Final Lock Routes", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    FinalSpineWalkthroughView()
+                } label: {
+                    HFActionTile(title: "Final Spine Walkthrough", subtitle: "Walk Watch, Create, Connect, Launch, and Export before visual parity.", systemImage: "map.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    MockupReadinessLockView()
+                } label: {
+                    HFActionTile(title: "Mockup Readiness Lock", subtitle: "Confirm the product is ready for visual parity.", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    VisualPassLaunchChecklistView()
+                } label: {
+                    HFActionTile(title: "Visual Pass Launch Checklist", subtitle: "Confirm repo, product, and visual scope requirements before mockup matching.", systemImage: "checklist.checked")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

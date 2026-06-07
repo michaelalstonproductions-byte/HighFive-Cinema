@@ -30,6 +30,7 @@ struct ProfileView: View {
                 productSpineShortcut
                 preVisualLockShortcut
                 preMockupReadinessShortcut
+                mockupReadinessLockShortcut
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
                 connectPreviewShortcut
@@ -190,6 +191,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Pre-Mockup Readiness Review")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var mockupReadinessLockShortcut: some View {
+        NavigationLink {
+            MockupReadinessLockView()
+        } label: {
+            HFActionTile(
+                title: "Mockup Readiness Lock",
+                subtitle: "Confirm the product is ready for visual parity.",
+                systemImage: "checkmark.seal.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Mockup Readiness Lock")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

@@ -10,6 +10,7 @@ struct ProductSpineCompletionView: View {
                 routeCoverageSection
                 spineHardeningSection
                 routeQualitySection
+                finalSpineLockSection
                 completeForNowSection
                 comesLaterSection
                 productSpineRule
@@ -147,6 +148,43 @@ struct ProductSpineCompletionView: View {
                     PreMockupReadinessReviewView()
                 } label: {
                     HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Confirm the spine is stable before visual matching.", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var finalSpineLockSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Final Spine Lock", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    FinalSpineWalkthroughView()
+                } label: {
+                    HFActionTile(title: "Final Spine Walkthrough", subtitle: "Review the full product path before visual matching.", systemImage: "map.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    MockupReadinessLockView()
+                } label: {
+                    HFActionTile(title: "Mockup Readiness Lock", subtitle: "Confirm structure, routes, and locks before Figma/mockup matching.", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    SpineSafetySealView()
+                } label: {
+                    HFActionTile(title: "Spine Safety Seal", subtitle: "Confirm real systems remain locked before the visual pass.", systemImage: "lock.shield.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    VisualPassLaunchChecklistView()
+                } label: {
+                    HFActionTile(title: "Visual Pass Launch Checklist", subtitle: "Confirm the later visual pass stays styling and layout only.", systemImage: "checklist.checked")
                 }
                 .buttonStyle(.plain)
             }

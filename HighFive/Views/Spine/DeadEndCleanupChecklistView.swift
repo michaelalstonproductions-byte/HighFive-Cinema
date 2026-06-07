@@ -8,6 +8,7 @@ struct DeadEndCleanupChecklistView: View {
                 cleanupSection(title: "Tappable Route Check", group: "Route")
                 cleanupSection(title: "Product Copy Check", group: "Copy")
                 cleanupSection(title: "Pillar Clarity Check", group: "Pillar")
+                mockupReadinessRouteSection
                 cleanupRule
             }
             .padding(.top, HFSpacing.lg)
@@ -43,6 +44,20 @@ struct DeadEndCleanupChecklistView: View {
                     HFDeadEndCleanupCard(item: item)
                 }
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var mockupReadinessRouteSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Mockup Readiness", actionTitle: nil)
+
+            NavigationLink {
+                MockupReadinessLockView()
+            } label: {
+                HFActionTile(title: "Mockup Readiness Lock", subtitle: "Confirm no confusing dead ends remain before visual matching.", systemImage: "checkmark.seal.fill")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

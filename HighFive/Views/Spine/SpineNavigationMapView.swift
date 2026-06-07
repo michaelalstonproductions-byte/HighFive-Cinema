@@ -8,6 +8,7 @@ struct SpineNavigationMapView: View {
                 mapSection(title: "Entry Points", status: "Entry Point")
                 mapSection(title: "Spine Review Routes", status: "Spine Review")
                 mapSection(title: "Visual Prep Routes", status: "Visual Prep")
+                finalWalkthroughRouteSection
                 mapNote
             }
             .padding(.top, HFSpacing.lg)
@@ -43,6 +44,20 @@ struct SpineNavigationMapView: View {
                     HFSpineNavigationMapCard(item: item)
                 }
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var finalWalkthroughRouteSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Final Walkthrough Route", actionTitle: nil)
+
+            NavigationLink {
+                FinalSpineWalkthroughView()
+            } label: {
+                HFActionTile(title: "Final Spine Walkthrough", subtitle: "Walk the full local product spine in final review order.", systemImage: "map.fill")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

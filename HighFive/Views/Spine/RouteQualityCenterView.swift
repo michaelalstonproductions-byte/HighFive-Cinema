@@ -13,6 +13,7 @@ struct RouteQualityCenterView: View {
                     qualitySection(title: "\(pillar) Route Quality", pillar: pillar)
                 }
 
+                finalWalkthroughRouteSection
                 routeQualityRule
             }
             .padding(.top, HFSpacing.lg)
@@ -73,6 +74,20 @@ struct RouteQualityCenterView: View {
                     HFRouteQualityCard(item: item)
                 }
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var finalWalkthroughRouteSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Final Walkthrough", actionTitle: nil)
+
+            NavigationLink {
+                FinalSpineWalkthroughView()
+            } label: {
+                HFActionTile(title: "Final Spine Walkthrough", subtitle: "Use the final route order before visual parity begins.", systemImage: "map.fill")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

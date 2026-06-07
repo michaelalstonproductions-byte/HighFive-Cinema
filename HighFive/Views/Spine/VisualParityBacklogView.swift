@@ -68,6 +68,12 @@ struct VisualParityBacklogView: View {
                 systemImage: "checkmark.circle.fill"
             )
 
+            HFInsightCard(
+                title: "Next final lock",
+                message: "Next: run Final Spine Walkthrough and Mockup Readiness Lock before any mockup-matching work.",
+                systemImage: "map.fill"
+            )
+
             NavigationLink {
                 PreVisualLockView()
             } label: {
@@ -79,6 +85,13 @@ struct VisualParityBacklogView: View {
                 PreMockupReadinessReviewView()
             } label: {
                 HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Check route quality, dead-end cleanup, and local-only safety before visual matching.", systemImage: "checkmark.circle.fill")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                VisualPassLaunchChecklistView()
+            } label: {
+                HFActionTile(title: "Visual Pass Launch Checklist", subtitle: "Verify final requirements before styling/layout parity begins.", systemImage: "checklist.checked")
             }
             .buttonStyle(.plain)
         }

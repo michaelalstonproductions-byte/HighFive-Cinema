@@ -36,6 +36,7 @@ struct HomeView: View {
                 productSpineCompletionSection
                 productSpineGapReviewSection
                 routeQualityCenterSection
+                finalSpineWalkthroughSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -496,6 +497,21 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Route Quality Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var finalSpineWalkthroughSection: some View {
+        NavigationLink {
+            FinalSpineWalkthroughView()
+        } label: {
+            HFActionTile(
+                title: "Final Spine Walkthrough",
+                subtitle: "Review the full product path before visual matching.",
+                systemImage: "map.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Final Spine Walkthrough")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

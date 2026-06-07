@@ -346,6 +346,45 @@ struct EcosystemCommandCenterView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    NavigationLink {
+                        FinalSpineWalkthroughView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Final Spine Walkthrough",
+                            subtitle: "Review the full Watch to Export path before visual matching.",
+                            systemImage: "map.fill",
+                            status: "Final",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        MockupReadinessLockView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Mockup Readiness Lock",
+                            subtitle: "Confirm product structure is ready for visual parity.",
+                            systemImage: "checkmark.seal.fill",
+                            status: "Gate",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        VisualPassLaunchChecklistView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Visual Pass Checklist",
+                            subtitle: "Verify final scope before styling and layout work.",
+                            systemImage: "checklist.checked",
+                            status: "Checklist",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
