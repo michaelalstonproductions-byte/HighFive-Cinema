@@ -28,6 +28,7 @@ struct ProfileView: View {
                 creatorModeCard
                 ecosystemCommandShortcut
                 productSpineShortcut
+                preVisualLockShortcut
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
                 connectPreviewShortcut
@@ -158,6 +159,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Product Spine Completion")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var preVisualLockShortcut: some View {
+        NavigationLink {
+            PreVisualLockView()
+        } label: {
+            HFActionTile(
+                title: "Pre-Visual Lock",
+                subtitle: "Confirm the spine is ready before mockup matching.",
+                systemImage: "checkmark.seal.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Pre-Visual Lock")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

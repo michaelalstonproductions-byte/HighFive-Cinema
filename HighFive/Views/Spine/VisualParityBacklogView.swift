@@ -16,6 +16,7 @@ struct VisualParityBacklogView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 backlogNotice
+                preVisualNotice
                 ForEach(groups, id: \.self) { group in
                     backlogSection(title: group, group: group)
                 }
@@ -50,6 +51,24 @@ struct VisualParityBacklogView: View {
             message: "This screen does not modify Figma, sync mockups, change assets, or attempt pixel-perfect work in this phase.",
             systemImage: "rectangle.3.group.fill"
         )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var preVisualNotice: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFInsightCard(
+                title: "Visual parity waits",
+                message: "Visual parity starts after Product Spine Gap Review and Pre-Visual Lock pass QA.",
+                systemImage: "checkmark.seal.fill"
+            )
+
+            NavigationLink {
+                PreVisualLockView()
+            } label: {
+                HFActionTile(title: "Pre-Visual Lock", subtitle: "Confirm structure is stable before mockup matching.", systemImage: "checkmark.seal.fill")
+            }
+            .buttonStyle(.plain)
+        }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

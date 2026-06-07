@@ -6,6 +6,7 @@ struct SpineRouteCoverageView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 coverageSignalsSection
+                hardeningRoutesSection
                 routeSection(title: "Watch Routes", pillar: "Watch")
                 routeSection(title: "Create Routes", pillar: "Create")
                 routeSection(title: "Connect Routes", pillar: "Connect")
@@ -45,6 +46,29 @@ struct SpineRouteCoverageView: View {
                 ForEach(HFProductSpineCompletionData.coverageSignals) { signal in
                     HFSpineCoverageSignalCard(signal: signal)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var hardeningRoutesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Gap + Review Path Checks", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    ProductSpineGapReviewView()
+                } label: {
+                    HFActionTile(title: "Product Spine Gap Review", subtitle: "Check weak local routes and locked placeholders.", systemImage: "exclamationmark.triangle.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    SpineReviewPathsView()
+                } label: {
+                    HFActionTile(title: "Spine Review Paths", subtitle: "Use repeatable QA order for every pillar.", systemImage: "map.fill")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

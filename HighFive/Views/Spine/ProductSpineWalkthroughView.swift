@@ -19,6 +19,7 @@ struct ProductSpineWalkthroughView: View {
                     walkthroughSection(group)
                 }
 
+                beforeVisualPassSection
                 walkthroughRule
             }
             .padding(.top, HFSpacing.lg)
@@ -64,6 +65,36 @@ struct ProductSpineWalkthroughView: View {
         let routes = HFProductSpineCompletionData.routes(for: group.pillar)
         return group.routeTitles.compactMap { title in
             routes.first { $0.title == title }
+        }
+    }
+
+    private var beforeVisualPassSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Before Visual Pass", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    PillarHardeningCenterView()
+                } label: {
+                    HFActionTile(title: "Pillar Hardening Center", subtitle: "Confirm each pillar has a clear review path.", systemImage: "shield.lefthalf.filled")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    SpineReviewPathsView()
+                } label: {
+                    HFActionTile(title: "Spine Review Paths", subtitle: "Walk the product spine in repeatable QA order.", systemImage: "map.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    PreVisualLockView()
+                } label: {
+                    HFActionTile(title: "Pre-Visual Lock", subtitle: "Confirm mockup matching comes after spine QA.", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 

@@ -268,6 +268,45 @@ struct EcosystemCommandCenterView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    NavigationLink {
+                        ProductSpineGapReviewView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Product Spine Gap Review",
+                            subtitle: "Check route gaps before visual parity.",
+                            systemImage: "exclamationmark.triangle.fill",
+                            status: "Hardening",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        PillarHardeningCenterView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Pillar Hardening Center",
+                            subtitle: "Strengthen each product pillar before mockup matching.",
+                            systemImage: "shield.lefthalf.filled",
+                            status: "Local",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        PreVisualLockView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Pre-Visual Lock",
+                            subtitle: "Confirm the spine is stable before visual polish.",
+                            systemImage: "checkmark.seal.fill",
+                            status: "Gate",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }

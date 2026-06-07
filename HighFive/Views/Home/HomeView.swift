@@ -34,6 +34,7 @@ struct HomeView: View {
                 connectSection
                 launchAccessSection
                 productSpineCompletionSection
+                productSpineGapReviewSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -464,6 +465,21 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Product Spine Completion")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var productSpineGapReviewSection: some View {
+        NavigationLink {
+            ProductSpineGapReviewView()
+        } label: {
+            HFActionTile(
+                title: "Product Spine Gap Review",
+                subtitle: "Check route gaps before the visual pass.",
+                systemImage: "exclamationmark.triangle.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Product Spine Gap Review")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

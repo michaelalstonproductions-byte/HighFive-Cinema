@@ -8,6 +8,7 @@ struct ProductSpineCompletionView: View {
                 HFBreadcrumbTrail(items: ["HighFive", "Product Spine", "Completion"])
                 spineSnapshotSection
                 routeCoverageSection
+                spineHardeningSection
                 completeForNowSection
                 comesLaterSection
                 productSpineRule
@@ -73,6 +74,43 @@ struct ProductSpineCompletionView: View {
                         HFProductSpineRouteCard(item: item, showsRouteCue: item.routeType != "static")
                     }
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var spineHardeningSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Spine Hardening", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    ProductSpineGapReviewView()
+                } label: {
+                    HFActionTile(title: "Product Spine Gap Review", subtitle: "Find weak route spots before visual parity.", systemImage: "exclamationmark.triangle.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    PillarHardeningCenterView()
+                } label: {
+                    HFActionTile(title: "Pillar Hardening Center", subtitle: "Strengthen Watch, Create, Connect, Launch, and Export.", systemImage: "shield.lefthalf.filled")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    SpineReviewPathsView()
+                } label: {
+                    HFActionTile(title: "Spine Review Paths", subtitle: "Walk each product pillar in a repeatable QA order.", systemImage: "map.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    PreVisualLockView()
+                } label: {
+                    HFActionTile(title: "Pre-Visual Lock", subtitle: "Confirm the spine is stable before mockup matching.", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
