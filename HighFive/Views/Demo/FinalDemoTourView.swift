@@ -11,6 +11,7 @@ struct FinalDemoTourView: View {
                 header
                 overviewSection
                 guidedStepsSection
+                productSpineCompletionSection
                 demoModesSection
                 provesSection
                 doesNotDoSection
@@ -70,6 +71,36 @@ struct FinalDemoTourView: View {
                 ForEach(Array(HFFinalDemoTourData.steps.enumerated()), id: \.element.id) { index, step in
                     stepRoute(for: step, index: index + 1)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var productSpineCompletionSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Spine Completion", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    ProductSpineCompletionView()
+                } label: {
+                    HFActionTile(title: "Product Spine Completion", subtitle: "Confirm the local product structure before visual polish.", systemImage: "rectangle.connected.to.line.below")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    LockedSystemsMapView()
+                } label: {
+                    HFActionTile(title: "Locked Systems Map", subtitle: "Review future real systems that remain disconnected.", systemImage: "lock.shield.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    VisualParityBacklogView()
+                } label: {
+                    HFActionTile(title: "Visual Parity Backlog", subtitle: "Keep mockup matching parked until the spine is stable.", systemImage: "rectangle.3.group.fill")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

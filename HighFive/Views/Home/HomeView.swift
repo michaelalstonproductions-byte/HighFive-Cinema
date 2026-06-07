@@ -33,6 +33,7 @@ struct HomeView: View {
                 createSection
                 connectSection
                 launchAccessSection
+                productSpineCompletionSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -449,6 +450,21 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Open Final Demo Tour")
         }
+    }
+
+    private var productSpineCompletionSection: some View {
+        NavigationLink {
+            ProductSpineCompletionView()
+        } label: {
+            HFActionTile(
+                title: "Product Spine Completion",
+                subtitle: "Review Watch, Create, Connect, Launch, and Export before visual polish.",
+                systemImage: "rectangle.connected.to.line.below"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Product Spine Completion")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var heroSection: some View {

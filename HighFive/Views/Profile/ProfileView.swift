@@ -27,6 +27,7 @@ struct ProfileView: View {
 
                 creatorModeCard
                 ecosystemCommandShortcut
+                productSpineShortcut
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
                 connectPreviewShortcut
@@ -142,6 +143,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open HighFive Command Center")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var productSpineShortcut: some View {
+        NavigationLink {
+            ProductSpineCompletionView()
+        } label: {
+            HFActionTile(
+                title: "Product Spine Completion",
+                subtitle: "Review the full local product structure.",
+                systemImage: "rectangle.connected.to.line.below"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Product Spine Completion")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

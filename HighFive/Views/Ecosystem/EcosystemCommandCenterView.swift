@@ -14,6 +14,7 @@ struct EcosystemCommandCenterView: View {
                 snapshotSection
                 prioritiesSection
                 smartNextStepSection
+                productSpineSection
                 commandSection(title: "Watch", items: HFEcosystemCommandData.watchItems)
                 commandSection(title: "Create", items: HFEcosystemCommandData.createItems)
                 commandSection(title: "Connect", items: HFEcosystemCommandData.connectItems)
@@ -199,6 +200,70 @@ struct EcosystemCommandCenterView: View {
                             subtitle: "Verify each pillar is discoverable and separated.",
                             systemImage: "rectangle.connected.to.line.below",
                             status: "Local",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .scrollClipDisabled()
+        }
+    }
+
+    private var productSpineSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Product Spine Completion", actionTitle: nil)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    NavigationLink {
+                        ProductSpineCompletionView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Product Spine Completion",
+                            subtitle: "Review Watch, Create, Connect, Launch, and Export before visual parity.",
+                            systemImage: "rectangle.connected.to.line.below",
+                            status: "Local",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        SpineRouteCoverageView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Route Coverage",
+                            subtitle: "Confirm each pillar has a safe local review path.",
+                            systemImage: "arrow.triangle.branch",
+                            status: "Map",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        LockedSystemsMapView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Locked Systems Map",
+                            subtitle: "Keep real backend, payment, capture, share, and protected systems scoped later.",
+                            systemImage: "lock.shield.fill",
+                            status: "Locked",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        VisualParityBacklogView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Visual Parity Backlog",
+                            subtitle: "Track mockup matching for a later visual pass.",
+                            systemImage: "rectangle.3.group.fill",
+                            status: "Later",
                             minWidth: 230
                         )
                     }

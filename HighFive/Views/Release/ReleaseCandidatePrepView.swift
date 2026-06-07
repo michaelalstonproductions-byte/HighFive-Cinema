@@ -15,6 +15,7 @@ struct ReleaseCandidatePrepView: View {
                 header
                 spineSnapshotSection
                 finalDemoSection
+                productSpineCompletionSection
                 finalChecklistSection
                 safetyLocksSection
                 routeReadinessSection
@@ -87,6 +88,36 @@ struct ReleaseCandidatePrepView: View {
                     DemoReviewChecklistView()
                 } label: {
                     HFActionTile(title: "Demo Review Checklist", subtitle: "Review the static final walkthrough checklist.", systemImage: "checklist.checked")
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var productSpineCompletionSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Spine Completion", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    ProductSpineCompletionView()
+                } label: {
+                    HFActionTile(title: "Product Spine Completion", subtitle: "Review the product structure before visual parity.", systemImage: "rectangle.connected.to.line.below")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    LockedSystemsMapView()
+                } label: {
+                    HFActionTile(title: "Locked Systems Map", subtitle: "Confirm real systems remain separately scoped.", systemImage: "lock.shield.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    VisualParityBacklogView()
+                } label: {
+                    HFActionTile(title: "Visual Parity Backlog", subtitle: "Track mockup matching as a later phase.", systemImage: "rectangle.3.group.fill")
                 }
                 .buttonStyle(.plain)
             }
