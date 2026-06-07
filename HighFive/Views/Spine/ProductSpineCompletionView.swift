@@ -9,6 +9,7 @@ struct ProductSpineCompletionView: View {
                 spineSnapshotSection
                 routeCoverageSection
                 spineHardeningSection
+                routeQualitySection
                 completeForNowSection
                 comesLaterSection
                 productSpineRule
@@ -109,6 +110,43 @@ struct ProductSpineCompletionView: View {
                     PreVisualLockView()
                 } label: {
                     HFActionTile(title: "Pre-Visual Lock", subtitle: "Confirm the spine is stable before mockup matching.", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var routeQualitySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Route Quality", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    RouteQualityCenterView()
+                } label: {
+                    HFActionTile(title: "Route Quality Center", subtitle: "Clean up route clarity before the mockup pass.", systemImage: "arrow.triangle.branch")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    DeadEndCleanupChecklistView()
+                } label: {
+                    HFActionTile(title: "Dead-End Cleanup Checklist", subtitle: "Mark missing routes as locked/static instead of confusing paths.", systemImage: "checklist.checked")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    SpineNavigationMapView()
+                } label: {
+                    HFActionTile(title: "Spine Navigation Map", subtitle: "Map how reviewers move through the local product spine.", systemImage: "map.fill")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    PreMockupReadinessReviewView()
+                } label: {
+                    HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Confirm the spine is stable before visual matching.", systemImage: "checkmark.seal.fill")
                 }
                 .buttonStyle(.plain)
             }

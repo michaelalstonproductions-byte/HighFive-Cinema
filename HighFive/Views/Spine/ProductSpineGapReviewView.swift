@@ -13,6 +13,7 @@ struct ProductSpineGapReviewView: View {
                     gapSection(title: "\(pillar) Gaps", pillar: pillar)
                 }
 
+                afterGapReviewSection
                 gapRule
             }
             .padding(.top, HFSpacing.lg)
@@ -72,6 +73,29 @@ struct ProductSpineGapReviewView: View {
                 ForEach(HFProductSpineGapData.gaps(for: pillar)) { item in
                     HFSpineGapCard(item: item)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var afterGapReviewSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "After Gap Review", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    RouteQualityCenterView()
+                } label: {
+                    HFActionTile(title: "Route Quality Center", subtitle: "Confirm live local routes and locked placeholders are clearly labeled.", systemImage: "arrow.triangle.branch")
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    DeadEndCleanupChecklistView()
+                } label: {
+                    HFActionTile(title: "Dead-End Cleanup Checklist", subtitle: "Prevent static cards from reading like broken buttons.", systemImage: "checklist.checked")
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

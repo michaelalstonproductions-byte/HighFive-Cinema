@@ -307,6 +307,45 @@ struct EcosystemCommandCenterView: View {
                         )
                     }
                     .buttonStyle(.plain)
+
+                    NavigationLink {
+                        RouteQualityCenterView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Route Quality Center",
+                            subtitle: "Clean up route clarity before the mockup pass.",
+                            systemImage: "arrow.triangle.branch",
+                            status: "Quality",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        SpineNavigationMapView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Spine Navigation Map",
+                            subtitle: "Map reviewer movement through the local product spine.",
+                            systemImage: "map.fill",
+                            status: "Map",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        PreMockupReadinessReviewView()
+                    } label: {
+                        HFEcosystemCard(
+                            title: "Pre-Mockup Readiness",
+                            subtitle: "Confirm route quality before visual matching.",
+                            systemImage: "checkmark.circle.fill",
+                            status: "Gate",
+                            minWidth: 230
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }

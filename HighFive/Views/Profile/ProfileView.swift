@@ -29,6 +29,7 @@ struct ProfileView: View {
                 ecosystemCommandShortcut
                 productSpineShortcut
                 preVisualLockShortcut
+                preMockupReadinessShortcut
                 creatorWorkflowShortcut
                 creatorLaunchShortcut
                 connectPreviewShortcut
@@ -174,6 +175,21 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Pre-Visual Lock")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var preMockupReadinessShortcut: some View {
+        NavigationLink {
+            PreMockupReadinessReviewView()
+        } label: {
+            HFActionTile(
+                title: "Pre-Mockup Readiness Review",
+                subtitle: "Confirm the spine is stable before visual matching.",
+                systemImage: "checkmark.circle.fill"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Pre-Mockup Readiness Review")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

@@ -8,6 +8,7 @@ struct PreVisualLockView: View {
                 structureBeforeStyleSection
                 visualParityLaterSection
                 doesNotDoSection
+                preMockupReadinessSection
                 preVisualRule
             }
             .padding(.top, HFSpacing.lg)
@@ -77,6 +78,20 @@ struct PreVisualLockView: View {
                     HFPreVisualLockCard(title: item, subtitle: "Locked until a separate scoped phase.", status: "Locked", systemImage: "lock.fill")
                 }
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var preMockupReadinessSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Pre-Mockup Readiness", actionTitle: nil)
+
+            NavigationLink {
+                PreMockupReadinessReviewView()
+            } label: {
+                HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Confirm route quality and dead-end cleanup before visual parity.", systemImage: "checkmark.seal.fill")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }

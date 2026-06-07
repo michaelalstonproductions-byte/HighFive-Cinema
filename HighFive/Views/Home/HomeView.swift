@@ -35,6 +35,7 @@ struct HomeView: View {
                 launchAccessSection
                 productSpineCompletionSection
                 productSpineGapReviewSection
+                routeQualityCenterSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -480,6 +481,21 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Product Spine Gap Review")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var routeQualityCenterSection: some View {
+        NavigationLink {
+            RouteQualityCenterView()
+        } label: {
+            HFActionTile(
+                title: "Route Quality Center",
+                subtitle: "Clean up route clarity before the mockup pass.",
+                systemImage: "arrow.triangle.branch"
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open Route Quality Center")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

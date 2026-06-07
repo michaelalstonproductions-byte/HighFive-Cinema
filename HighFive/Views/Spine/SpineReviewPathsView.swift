@@ -9,6 +9,8 @@ struct SpineReviewPathsView: View {
                 ForEach(HFProductSpineGapData.reviewPaths) { path in
                     reviewPathSection(path)
                 }
+
+                deadEndCleanupSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -40,6 +42,20 @@ struct SpineReviewPathsView: View {
 
             HFSpineReviewPathCard(path: path)
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var deadEndCleanupSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Dead-End Check", actionTitle: nil)
+
+            NavigationLink {
+                DeadEndCleanupChecklistView()
+            } label: {
+                HFActionTile(title: "Dead-End Cleanup Checklist", subtitle: "Confirm missing optional routes are static locked cards, not broken paths.", systemImage: "checklist.checked")
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 }

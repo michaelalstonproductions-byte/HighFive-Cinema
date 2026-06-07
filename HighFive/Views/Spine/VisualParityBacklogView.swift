@@ -62,10 +62,23 @@ struct VisualParityBacklogView: View {
                 systemImage: "checkmark.seal.fill"
             )
 
+            HFInsightCard(
+                title: "Run readiness first",
+                message: "Before visual parity starts, run Pre-Mockup Readiness Review.",
+                systemImage: "checkmark.circle.fill"
+            )
+
             NavigationLink {
                 PreVisualLockView()
             } label: {
                 HFActionTile(title: "Pre-Visual Lock", subtitle: "Confirm structure is stable before mockup matching.", systemImage: "checkmark.seal.fill")
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                PreMockupReadinessReviewView()
+            } label: {
+                HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Check route quality, dead-end cleanup, and local-only safety before visual matching.", systemImage: "checkmark.circle.fill")
             }
             .buttonStyle(.plain)
         }

@@ -13,6 +13,7 @@ struct PillarHardeningCenterView: View {
                     hardeningSection(title: "\(pillar) Hardening", pillar: pillar)
                 }
 
+                navigationMapSection
                 hardeningRule
             }
             .padding(.top, HFSpacing.lg)
@@ -48,6 +49,20 @@ struct PillarHardeningCenterView: View {
                     HFPillarHardeningCard(item: item)
                 }
             }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var navigationMapSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Route Map", actionTitle: nil)
+
+            NavigationLink {
+                SpineNavigationMapView()
+            } label: {
+                HFActionTile(title: "Spine Navigation Map", subtitle: "Review how Home, Profile, Command Center, and spine screens connect.", systemImage: "map.fill")
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
