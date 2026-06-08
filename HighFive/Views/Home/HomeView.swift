@@ -21,22 +21,18 @@ struct HomeView: View {
                 header
                 heroSection
                 todaySection
-                commandCenterSection
                 smartRecommendationsSection
-                insightSection
                 watchSectionHeader
 
                 ForEach(HFMockData.premiumHomeRails) { category in
                     movieRail(category)
                 }
 
+                insightSection
+                commandCenterSection
                 createSection
                 connectSection
                 launchAccessSection
-                productSpineCompletionSection
-                productSpineGapReviewSection
-                routeQualityCenterSection
-                finalSpineWalkthroughSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -104,17 +100,17 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "For You", actionTitle: nil)
 
-            HFInsightCard(
-                title: "Your HighFive spine",
-                message: "Watch stories, build creator packages, connect with communities, and prepare launch previews from local data.",
+                HFInsightCard(
+                title: "Your next HighFive path",
+                message: "Pick up a story, explore creator packages, or find community previews from one connected product path.",
                 systemImage: "sparkles"
             )
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             Button(action: onProfile) {
                 HFInsightCard(
-                    title: "Create and launch next",
-                    message: "Open Profile for Creator Mode, Launch Center, Access Preview, and the local release presentation.",
+                    title: "Build the story package",
+                    message: "Open Creator Mode for package building, studio previews, and launch planning.",
                     systemImage: "sparkles"
                 )
             }
@@ -124,8 +120,8 @@ struct HomeView: View {
 
             Button(action: onProfile) {
                 HFInsightCard(
-                    title: "Connect with creators",
-                    message: "Open Profile for local Connect previews, creator communities, and project signals.",
+                    title: "Explore the community layer",
+                    message: "Open Connect previews for creator circles, project rooms, and audience signals.",
                     systemImage: "person.2.fill"
                 )
             }
@@ -177,7 +173,7 @@ struct HomeView: View {
                                 HFStatusBadge(title: "Local", isProminent: false)
                             }
 
-                            Text("Watch stories, create packages, connect communities, preview launch readiness, and see future export tools stay disconnected.")
+                            Text("A clean map for Watch, Create, Connect, Launch, and future Export planning.")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -426,32 +422,6 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Open Release Presentation")
-
-            NavigationLink {
-                AppDemoChecklistView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Demo Checklist",
-                    subtitle: "Verify Watch, Create, Connect, and Launch routes.",
-                    systemImage: "checklist.checked",
-                    status: "QA"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Demo Checklist")
-
-            NavigationLink {
-                FinalDemoTourView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Final Demo Tour",
-                    subtitle: "Review Watch, Create, Connect, Launch, and Export.",
-                    systemImage: "map.fill",
-                    status: "QA"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Final Demo Tour")
         }
     }
 

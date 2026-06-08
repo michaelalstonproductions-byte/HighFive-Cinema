@@ -26,13 +26,13 @@ struct RouteQualityCenterView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Route clarity", isProminent: true)
+            HFStatusBadge(title: "Internal review", isProminent: true)
 
             Text("Route Quality Center")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("Clean up route clarity before the final mockup pass.")
+            Text("Internal route review for local SwiftUI screens. It does not connect backend, accounts, payments, uploads, capture, share, render, or export systems.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

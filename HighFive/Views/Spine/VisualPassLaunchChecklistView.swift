@@ -24,13 +24,13 @@ struct VisualPassLaunchChecklistView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Before visual pass", isProminent: true)
+            HFStatusBadge(title: "Internal checklist", isProminent: true)
 
             Text("Visual Pass Launch Checklist")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("What must be true before making the app match the mockups.")
+            Text("Internal checklist for the visual pass. It is not a customer-facing screen and must not change product scope.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

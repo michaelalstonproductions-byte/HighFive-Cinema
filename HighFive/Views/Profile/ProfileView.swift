@@ -27,15 +27,9 @@ struct ProfileView: View {
 
                 creatorModeCard
                 ecosystemCommandShortcut
-                productSpineShortcut
-                preVisualLockShortcut
-                preMockupReadinessShortcut
-                mockupReadinessLockShortcut
-                creatorWorkflowShortcut
-                creatorLaunchShortcut
-                connectPreviewShortcut
-                personalizedHubShortcut
+                productRoutesSection
                 previewReleaseSection
+                buildQAToolsSection
                 menu
                 signOutButton
             }
@@ -67,7 +61,7 @@ struct ProfileView: View {
             Text("Profiles & More")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Your local product hub for watching, creator packages, Connect previews, launch readiness, and future export planning.")
+            Text("Manage profiles, continue watching, build creator packages, explore communities, and prepare launch previews.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
         }
@@ -140,72 +134,12 @@ struct ProfileView: View {
         } label: {
             HFActionTile(
                 title: "HighFive Command Center",
-                subtitle: "Navigate Watch, Create, Connect, Launch, and future export readiness.",
+                subtitle: "Open the connected map for Watch, Create, Connect, Launch, and future Export.",
                 systemImage: "command"
             )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open HighFive Command Center")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var productSpineShortcut: some View {
-        NavigationLink {
-            ProductSpineCompletionView()
-        } label: {
-            HFActionTile(
-                title: "Product Spine Completion",
-                subtitle: "Review the full local product structure.",
-                systemImage: "rectangle.connected.to.line.below"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Product Spine Completion")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var preVisualLockShortcut: some View {
-        NavigationLink {
-            PreVisualLockView()
-        } label: {
-            HFActionTile(
-                title: "Pre-Visual Lock",
-                subtitle: "Confirm the spine is ready before mockup matching.",
-                systemImage: "checkmark.seal.fill"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Pre-Visual Lock")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var preMockupReadinessShortcut: some View {
-        NavigationLink {
-            PreMockupReadinessReviewView()
-        } label: {
-            HFActionTile(
-                title: "Pre-Mockup Readiness Review",
-                subtitle: "Confirm the spine is stable before visual matching.",
-                systemImage: "checkmark.circle.fill"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Pre-Mockup Readiness Review")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var mockupReadinessLockShortcut: some View {
-        NavigationLink {
-            MockupReadinessLockView()
-        } label: {
-            HFActionTile(
-                title: "Mockup Readiness Lock",
-                subtitle: "Confirm the product is ready for visual parity.",
-                systemImage: "checkmark.seal.fill"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Mockup Readiness Lock")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -221,7 +155,6 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Command Center")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var creatorLaunchShortcut: some View {
@@ -236,7 +169,6 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Launch Center")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var connectPreviewShortcut: some View {
@@ -251,7 +183,6 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Connect Preview")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var personalizedHubShortcut: some View {
@@ -266,20 +197,33 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Personalized Hub")
+    }
+
+    private var productRoutesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Product Paths", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                creatorWorkflowShortcut
+                connectPreviewShortcut
+                creatorLaunchShortcut
+                personalizedHubShortcut
+            }
+        }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var previewReleaseSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Preview & Release", actionTitle: nil)
+            HFSectionHeader(title: "Launch & Release Preview", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 NavigationLink {
                     AppReleasePresentationView()
                 } label: {
                     HFActionTile(
-                        title: "HighFive Preview",
-                        subtitle: "Review the local product story for partners and testers.",
+                        title: "Release Presentation",
+                        subtitle: "Review the Watch, Create, Connect, and Launch story.",
                         systemImage: "sparkles"
                     )
                 }
@@ -291,7 +235,7 @@ struct ProfileView: View {
                 } label: {
                     HFActionTile(
                         title: "Onboarding Preview",
-                        subtitle: "Preview the first-run story without changing app launch.",
+                        subtitle: "Preview the first-run story without changing app launch behavior.",
                         systemImage: "rectangle.stack.badge.play.fill"
                     )
                 }
@@ -299,28 +243,103 @@ struct ProfileView: View {
                 .accessibilityLabel("Open Onboarding Preview")
 
                 NavigationLink {
-                    AppDemoChecklistView()
+                    CreatorAccessPreviewView()
                 } label: {
                     HFActionTile(
-                        title: "Demo Checklist",
-                        subtitle: "Walk Watch, Create, Connect, Launch, and safety checks.",
-                        systemImage: "checklist"
+                        title: "Access Preview",
+                        subtitle: "Review future audience access without purchases or entitlements.",
+                        systemImage: "lock.shield.fill"
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Open Demo Checklist")
+                .accessibilityLabel("Open Access Preview")
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var buildQAToolsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFSectionHeader(title: "Build & QA Tools", actionTitle: nil)
+                Text("Internal local preview tools for spine review, route quality, mockup readiness, and final demo checks.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    ProductSpineCompletionView()
+                } label: {
+                    HFActionTile(
+                        title: "Product Spine Completion",
+                        subtitle: "Internal review of Watch, Create, Connect, Launch, and Export.",
+                        systemImage: "rectangle.connected.to.line.below"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Product Spine Completion")
 
                 NavigationLink {
                     FinalDemoTourView()
                 } label: {
                     HFActionTile(
                         title: "Final Demo Tour",
-                        subtitle: "Walk through the full HighFive product spine.",
+                        subtitle: "Internal route walkthrough for the local product spine.",
                         systemImage: "map.fill"
                     )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open Final Demo Tour")
+
+                NavigationLink {
+                    RouteQualityCenterView()
+                } label: {
+                    HFActionTile(
+                        title: "Route Quality Center",
+                        subtitle: "Internal route clarity and dead-end review.",
+                        systemImage: "arrow.triangle.branch"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Route Quality Center")
+
+                NavigationLink {
+                    MockupReadinessLockView()
+                } label: {
+                    HFActionTile(
+                        title: "Mockup Readiness Lock",
+                        subtitle: "Internal gate before visual parity work.",
+                        systemImage: "checkmark.seal.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Mockup Readiness Lock")
+
+                NavigationLink {
+                    SpineSafetySealView()
+                } label: {
+                    HFActionTile(
+                        title: "Spine Safety Seal",
+                        subtitle: "Internal check that real systems remain disconnected.",
+                        systemImage: "shield.lefthalf.filled"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Spine Safety Seal")
+
+                NavigationLink {
+                    VisualPassLaunchChecklistView()
+                } label: {
+                    HFActionTile(
+                        title: "Visual Pass Launch Checklist",
+                        subtitle: "Internal checklist for the next visual pass.",
+                        systemImage: "checklist.checked"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Visual Pass Launch Checklist")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

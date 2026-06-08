@@ -7,7 +7,7 @@ enum HFEcosystemCommandData {
         HFEcosystemMetric(title: "Connect", value: "8 previews", caption: "Communities and rooms", systemImage: "person.2.fill"),
         HFEcosystemMetric(title: "Launch", value: "72%", caption: "Readiness preview", systemImage: "flag.checkered"),
         HFEcosystemMetric(title: "Access", value: "Mock only", caption: "No purchases connected", systemImage: "lock.shield.fill"),
-        HFEcosystemMetric(title: "Personalized", value: "Local paths", caption: "Export roadmap included", systemImage: "sparkles")
+        HFEcosystemMetric(title: "Export", value: "Locked", caption: "Future planning only", systemImage: "square.and.arrow.up")
     ]
 
     static let priorities: [HFEcosystemPriority] = [
@@ -60,7 +60,6 @@ enum HFEcosystemCommandData {
         HFEcosystemCommandItem(title: "Launch Center", subtitle: "Preview launch planning.", category: "Launch", status: "Plan", systemImage: "flag.checkered", destinationType: "launchCenter"),
         HFEcosystemCommandItem(title: "Access Preview", subtitle: "Review mock unlock paths.", category: "Access", status: "Mock", systemImage: "lock.shield.fill", destinationType: "accessPreview"),
         HFEcosystemCommandItem(title: "Release Presentation", subtitle: "Open the local product story.", category: "Release", status: "Ready", systemImage: "rectangle.on.rectangle.angled.fill", destinationType: "releasePresentation"),
-        HFEcosystemCommandItem(title: "Demo Checklist", subtitle: "Walk Watch, Create, Connect, and Launch routes.", category: "Release", status: "QA", systemImage: "checklist.checked", destinationType: "demoChecklist"),
         HFEcosystemCommandItem(title: "Onboarding Preview", subtitle: "Preview first-run story.", category: "Release", status: "Preview", systemImage: "rectangle.stack.badge.play.fill", destinationType: "onboardingPreview")
     ]
 
@@ -79,13 +78,34 @@ enum HFEcosystemCommandData {
         HFEcosystemCommandItem(title: "Onboarding Preview", subtitle: "Preview first-run story copy with no account setup.", category: "Demo", status: "Preview", systemImage: "rectangle.stack.badge.play.fill", destinationType: "onboardingPreview")
     ]
 
+    static let exportFutureItems: [HFEcosystemCommandItem] = [
+        HFEcosystemCommandItem(title: "Social Export Hub", subtitle: "Future planning surface only; no sharing or rendering connected.", category: "Export", status: "Future", systemImage: "square.and.arrow.up", destinationType: "productSpineCompletion"),
+        HFEcosystemCommandItem(title: "Export Composer", subtitle: "Future composer planning remains locked until scoped.", category: "Export", status: "Locked", systemImage: "rectangle.and.pencil.and.ellipsis", destinationType: "productSpineCompletion"),
+        HFEcosystemCommandItem(title: "Export Queue", subtitle: "Future queue planning only; no files are generated.", category: "Export", status: "Future", systemImage: "tray.full.fill", destinationType: "productSpineCompletion"),
+        HFEcosystemCommandItem(title: "Export Safety Center", subtitle: "Review locked export and share boundaries.", category: "Export", status: "Protected", systemImage: "lock.shield.fill", destinationType: "lockedSystemsMap"),
+        HFEcosystemCommandItem(title: "Protected Capture Roadmap", subtitle: "Future capture scope stays protected and disconnected.", category: "Export", status: "Protected", systemImage: "video.slash.fill", destinationType: "lockedSystemsMap")
+    ]
+
+    static let internalToolItems: [HFEcosystemCommandItem] = [
+        HFEcosystemCommandItem(title: "Product Spine Completion", subtitle: "Internal review of Watch, Create, Connect, Launch, and Export.", category: "Build & QA", status: "Internal", systemImage: "rectangle.connected.to.line.below", destinationType: "productSpineCompletion"),
+        HFEcosystemCommandItem(title: "Final Demo Tour", subtitle: "Internal route walkthrough for the local product spine.", category: "Build & QA", status: "Internal", systemImage: "map.fill", destinationType: "finalDemoTour"),
+        HFEcosystemCommandItem(title: "Route Quality Center", subtitle: "Internal route clarity and dead-end review.", category: "Build & QA", status: "Internal", systemImage: "arrow.triangle.branch", destinationType: "routeQualityCenter"),
+        HFEcosystemCommandItem(title: "Dead-End Cleanup Checklist", subtitle: "Internal check for accidental route gaps.", category: "Build & QA", status: "Internal", systemImage: "checklist", destinationType: "deadEndCleanup"),
+        HFEcosystemCommandItem(title: "Spine Navigation Map", subtitle: "Internal map of reviewer movement through the product spine.", category: "Build & QA", status: "Internal", systemImage: "map.circle.fill", destinationType: "spineNavigationMap"),
+        HFEcosystemCommandItem(title: "Pre-Mockup Readiness", subtitle: "Internal gate before Figma visual matching.", category: "Build & QA", status: "Gate", systemImage: "checkmark.circle.fill", destinationType: "preMockupReadiness"),
+        HFEcosystemCommandItem(title: "Visual Parity Backlog", subtitle: "Internal backlog for later visual matching.", category: "Build & QA", status: "Later", systemImage: "rectangle.3.group.fill", destinationType: "visualParityBacklog"),
+        HFEcosystemCommandItem(title: "Mockup Readiness Lock", subtitle: "Internal structure lock before visual work.", category: "Build & QA", status: "Gate", systemImage: "checkmark.seal.fill", destinationType: "mockupReadinessLock"),
+        HFEcosystemCommandItem(title: "Spine Safety Seal", subtitle: "Internal safety check that real systems remain disconnected.", category: "Build & QA", status: "Safety", systemImage: "shield.lefthalf.filled", destinationType: "spineSafetySeal"),
+        HFEcosystemCommandItem(title: "Visual Pass Launch Checklist", subtitle: "Internal checklist for the next visual pass.", category: "Build & QA", status: "Checklist", systemImage: "checklist.checked", destinationType: "visualPassChecklist")
+    ]
+
     static let smartNextStepPath: [HFEcosystemPathStep] = [
         HFEcosystemPathStep(title: "Home", systemImage: "house.fill"),
         HFEcosystemPathStep(title: "For You", systemImage: "sparkles"),
         HFEcosystemPathStep(title: "Creator Command Center", systemImage: "command"),
         HFEcosystemPathStep(title: "Connect Hub", systemImage: "person.2.fill"),
         HFEcosystemPathStep(title: "Launch Center", systemImage: "flag.checkered"),
-        HFEcosystemPathStep(title: "Access Preview", systemImage: "lock.shield.fill")
+        HFEcosystemPathStep(title: "Export Locked", systemImage: "square.and.arrow.up")
     ]
 }
 

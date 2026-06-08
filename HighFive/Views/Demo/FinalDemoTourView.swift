@@ -27,13 +27,13 @@ struct FinalDemoTourView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Local walkthrough", isProminent: true)
+            HFStatusBadge(title: "Internal walkthrough", isProminent: true)
 
             Text("Final Demo Tour")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("Walk through HighFive from Watch to Export with local preview routes.")
+            Text("Internal local walkthrough for proving the Watch to Export spine. Product users should start from Home, Search, Library, Downloads, or Profile.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -43,7 +43,7 @@ struct FinalDemoTourView: View {
 
     private var overviewSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Demo Overview", actionTitle: nil)
+            HFSectionHeader(title: "Internal Overview", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -52,7 +52,7 @@ struct FinalDemoTourView: View {
                         .foregroundStyle(HFColors.gold)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Use this local tour to review the product journey before final QA. Active screens open locally; future export and capture systems are clearly marked locked until scoped.")
+                    Text("Use this local tour to review the product journey behind Build & QA Tools. Active screens open locally; future export and capture systems remain locked until scoped.")
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)

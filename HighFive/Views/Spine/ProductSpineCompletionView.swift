@@ -25,13 +25,13 @@ struct ProductSpineCompletionView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Local structure", isProminent: true)
+            HFStatusBadge(title: "Internal review", isProminent: true)
 
             Text("Product Spine Completion")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("Review the local HighFive spine before the final visual pass.")
+            Text("Internal local review tool for proving Watch, Create, Connect, Launch, and locked Export planning. This is not a customer-facing product screen.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

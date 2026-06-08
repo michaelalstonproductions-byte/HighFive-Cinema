@@ -24,13 +24,13 @@ struct MockupReadinessLockView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Structure lock", isProminent: true)
+            HFStatusBadge(title: "Internal gate", isProminent: true)
 
             Text("Mockup Readiness Lock")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("Confirm the structure is ready before Figma/mockup matching.")
+            Text("Internal gate for structure and route readiness before Figma matching. This screen should stay behind Build & QA Tools.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

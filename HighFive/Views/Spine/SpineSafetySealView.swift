@@ -24,13 +24,13 @@ struct SpineSafetySealView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Real systems locked", isProminent: true)
+            HFStatusBadge(title: "Internal safety", isProminent: true)
 
             Text("Spine Safety Seal")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
 
-            Text("Confirm real systems remain locked before the visual pass.")
+            Text("Internal safety review confirming real systems, protected paths, assets, and permission files remain untouched.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
