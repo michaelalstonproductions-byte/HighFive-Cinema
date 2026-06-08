@@ -17,6 +17,7 @@ struct DownloadsView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                downloadHero
                 storageStatus
 
                 if downloads.isEmpty {
@@ -42,15 +43,69 @@ struct DownloadsView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Text("Downloads")
-                .font(HFTypography.display)
-                .foregroundStyle(HFColors.textPrimary)
-            Text("Offline titles available from local mock data.")
-                .font(HFTypography.body)
-                .foregroundStyle(HFColors.textSecondary)
+        HStack(alignment: .center, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Downloads")
+                    .font(HFTypography.display)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Saved titles ready for offline viewing.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onFindMore?()
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .frame(width: 50, height: 50)
+                    .background(Color.white.opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Find more downloads")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var downloadHero: some View {
+        ZStack {
+            Circle()
+                .fill(HFColors.gold.opacity(0.18))
+                .frame(width: 244, height: 244)
+                .blur(radius: 2)
+
+            HStack(spacing: -36) {
+                heroPoster(movie: downloads.dropFirst(1).first ?? HFMockData.movies[2], rotation: -14)
+                heroPoster(movie: downloads.first ?? HFMockData.movies[0], rotation: 0)
+                    .zIndex(1)
+                heroPoster(movie: downloads.dropFirst(2).first ?? HFMockData.movies[3], rotation: 14)
+            }
+            .padding(.top, HFSpacing.sm)
+
+            VStack(spacing: HFSpacing.xs) {
+                Spacer()
+                Text(downloads.isEmpty ? "No titles downloaded" : "\(downloads.count) titles downloaded")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(downloads.isEmpty ? "Find more to fill your offline shelf." : "Ready when you are.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+            .padding(.bottom, HFSpacing.sm)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 278)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func heroPoster(movie: Movie, rotation: Double) -> some View {
+        HFPosterCard(movie: movie, width: 142, showTitle: false, posterOnly: true)
+            .rotationEffect(.degrees(rotation))
+            .shadow(color: HFColors.shadow, radius: 18, x: 0, y: 12)
     }
 
     private var storageStatus: some View {
@@ -61,7 +116,7 @@ struct DownloadsView: View {
                         Text("Storage Status")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("\(downloads.count) local titles  |  \(usedStorage, specifier: "%.1f") GB mock storage")
+                        Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB saved")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                     }
@@ -84,7 +139,7 @@ struct DownloadsView: View {
                 }
                 .frame(height: 7)
 
-                Text("Local offline preview storage. Remove downloads to clear the mock queue.")
+                Text("Manage saved titles and make space for more movies.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -146,7 +201,7 @@ struct DownloadsView: View {
     private var emptyState: some View {
         HFEmptyState(
             title: "No Downloads Yet",
-            message: "Download a local mock title from the available slate and it will appear here.",
+            message: "Download a title from the available slate and it will appear here.",
             systemImage: "arrow.down.circle",
             actionTitle: "Find More To Download",
             action: onFindMore

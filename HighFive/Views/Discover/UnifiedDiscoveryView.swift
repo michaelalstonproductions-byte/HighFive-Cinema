@@ -7,57 +7,47 @@ struct UnifiedDiscoveryView: View {
         selectedFilter == "All" || selectedFilter == "Movies"
     }
 
-    private var showCreators: Bool {
-        selectedFilter == "All" || selectedFilter == "Creators" || selectedFilter == "Marketplace" || selectedFilter == "Launch"
-    }
-
-    private var showCommunities: Bool {
-        selectedFilter == "All" || selectedFilter == "Communities" || selectedFilter == "Watch Parties"
-    }
-
-    private var filteredTrendingItems: [HFTrendingEcosystemItem] {
-        guard selectedFilter != "All" else {
-            return HFEcosystemPreviewData.trendingItems
-        }
-
-        return HFEcosystemPreviewData.trendingItems.filter { item in
-            item.category == selectedFilter ||
-            (selectedFilter == "Marketplace" && item.category == "Creators") ||
-            (selectedFilter == "Watch Parties" && item.title.localizedCaseInsensitiveContains("Room"))
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xl) {
             header
             discoveryFilters
-            personalizedDiscoverySection
 
-            if showMovies {
-                contentDiscoverySection
+            ForEach(streamingDiscoveryRails) { category in
+                movieRail(category)
             }
+        }
+    }
 
-            if showCreators {
-                creatorDiscoverySection
-            }
+    private var streamingDiscoveryRails: [Category] {
+        let rails = [
+            HFMockData.categories.first { $0.id == "trending" },
+            HFMockData.categories.first { $0.id == "originals" },
+            HFMockData.categories.first { $0.id == "fresh-finds" },
+            HFMockData.categories.first { $0.id == "coming-soon" },
+            HFMockData.categories.first { $0.id == "my-movies" }
+        ].compactMap { $0 }
 
-            if showCommunities {
-                communityDiscoverySection
-            }
-
-            trendingSection
-            previewNotice
+        switch selectedFilter {
+        case "Originals":
+            return rails.filter { $0.id == "originals" }
+        case "Drama", "Thriller", "Mystery", "Documentary":
+            let movies = HFMockData.movies.filter { $0.genres.contains(selectedFilter) }
+            return [Category(id: selectedFilter.lowercased(), title: "\(selectedFilter) Picks", subtitle: nil, movies: movies)]
+        case "Coming Soon":
+            return rails.filter { $0.id == "coming-soon" }
+        default:
+            return rails
         }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            Text("Discover HighFive")
+            Text("Discover")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.78)
 
-            Text("Content discovery, creator discovery, community previews, smart paths, and launch-ready projects.")
+            Text("Browse cinematic rails, saved titles, originals, and coming soon previews.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -67,15 +57,13 @@ struct UnifiedDiscoveryView: View {
 
     private var discoveryFilters: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Discovery Filters", actionTitle: nil)
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HFSpacing.xs) {
-                    ForEach(HFEcosystemPreviewData.discoveryFilters, id: \.self) { filter in
+                    ForEach(HFMockData.discoveryGenres, id: \.self) { filter in
                         HFFilterChip(title: filter, isSelected: selectedFilter == filter) {
                             selectedFilter = filter
                         }
-                        .accessibilityLabel("Select \(filter) local discovery filter")
+                        .accessibilityLabel("Select \(filter) discovery filter")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -83,274 +71,30 @@ struct UnifiedDiscoveryView: View {
         }
     }
 
-    private var personalizedDiscoverySection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Personalized for You", actionTitle: nil)
+    private func movieRail(_ category: Category) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: category.title, actionTitle: nil)
 
-            NavigationLink {
-                EcosystemCommandCenterView()
-            } label: {
-                HFActionTile(
-                    title: "HighFive Command Center",
-                    subtitle: "Jump across Watch, Create, Connect, Launch, Access, and For You.",
-                    systemImage: "command"
-                )
+            if let subtitle = category.subtitle {
+                Text(subtitle)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open HighFive Command Center")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            NavigationLink {
-                PersonalizedHubView()
-            } label: {
-                HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
-                    VStack(alignment: .leading, spacing: HFSpacing.md) {
-                        HStack(alignment: .top, spacing: HFSpacing.md) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 24, weight: .black))
-                                .foregroundStyle(HFColors.gold)
-                                .frame(width: 54, height: 54)
-                                .background(HFColors.gold.opacity(0.14))
-                                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous))
-
-                            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                                HStack(spacing: HFSpacing.xs) {
-                                    Text("Smart Paths")
-                                        .font(HFTypography.section)
-                                        .foregroundStyle(HFColors.textPrimary)
-                                    Spacer(minLength: HFSpacing.xs)
-                                    HFStatusBadge(title: "Local", isProminent: false)
-                                }
-
-                                Text("Open smart local paths for titles, creator workflows, Connect routes, and launch checks.")
-                                    .font(HFTypography.caption)
-                                    .foregroundStyle(HFColors.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-
-                        HStack(spacing: HFSpacing.xs) {
-                            HFRouteChip(title: "For You", systemImage: "person.crop.circle.fill")
-                            HFRouteChip(title: "Creator Workflows", systemImage: "shippingbox.fill")
-                        }
-                    }
-                    .padding(HFSpacing.lg)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Personalized Hub")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var contentDiscoverySection: some View {
-        discoveryGrid(title: "Content Discovery") {
-            NavigationLink(value: HFMockData.movie("friendly") ?? HFMockData.movies[0]) {
-                discoveryCard(HFEcosystemPreviewData.contentCategories[0], status: "Watch")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open movie discovery preview")
-
-            NavigationLink(value: HFMockData.onlyOnHighFive.movies.first ?? HFMockData.movies[0]) {
-                discoveryCard(HFEcosystemPreviewData.contentCategories[1], status: "Originals")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open originals discovery preview")
-
-            NavigationLink(value: HFMockData.movies.first(where: \.isComingSoon) ?? HFMockData.movies[0]) {
-                discoveryCard(HFEcosystemPreviewData.contentCategories[2], status: "Soon")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open coming soon title preview")
-
-            NavigationLink {
-                DownloadsView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.contentCategories[3], status: "Local")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Downloads preview")
-
-            NavigationLink {
-                MyListView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.contentCategories[4], status: "Saved")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open My List preview")
-        }
-    }
-
-    private var creatorDiscoverySection: some View {
-        discoveryGrid(title: "Creator Discovery") {
-            NavigationLink {
-                CreatorStudioPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.creatorCategories[0], status: "Preview")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Studio Preview")
-
-            NavigationLink {
-                CreatorDashboardPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.creatorCategories[1], status: "Mock")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Dashboard Preview")
-
-            NavigationLink {
-                CreatorMarketplacePreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.creatorCategories[2], status: "Preview")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Marketplace Preview")
-
-            NavigationLink {
-                CreatorWorkflowCommandCenterView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.creatorCategories[3], status: "72%")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Command Center")
-
-            NavigationLink {
-                CreatorLaunchCenterPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.creatorCategories[4], status: "Launch")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Launch Center")
-        }
-    }
-
-    private var communityDiscoverySection: some View {
-        discoveryGrid(title: "Community Discovery") {
-            NavigationLink {
-                ConnectHubView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.communityCategories[0], status: "Connect")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Connect Hub")
-
-            NavigationLink {
-                SocialRoomsPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.communityCategories[1], status: "Rooms")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Social Rooms")
-
-            NavigationLink {
-                CreatorCirclesPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.communityCategories[2], status: "Circles")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Circles")
-
-            NavigationLink {
-                WatchPartyPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.communityCategories[3], status: "Mock")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Watch Party Preview")
-
-            NavigationLink {
-                ProjectCommunityPreviewView()
-            } label: {
-                discoveryCard(HFEcosystemPreviewData.communityCategories[4], status: "Project")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Project Community")
-        }
-    }
-
-    private var trendingSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Trending Now", actionTitle: nil)
-
-            if filteredTrendingItems.isEmpty {
-                HFEmptyState(
-                    title: "No local matches",
-                    message: "Switch filters to browse more movies, creators, communities, and launch previews.",
-                    systemImage: "sparkles"
-                )
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-            } else {
-                VStack(spacing: HFSpacing.md) {
-                    ForEach(filteredTrendingItems) { item in
-                        trendingCard(item)
-                    }
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-            }
-        }
-    }
-
-    private var previewNotice: some View {
-        HFInsightCard(
-            title: "Unified discovery is local",
-            message: "Filters, creator routes, community cards, smart paths, and launch previews use local mock data only.",
-            systemImage: "lock.shield.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private func discoveryGrid<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: title, actionTitle: nil)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-                    content()
+                    ForEach(category.movies) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 140, showMetadata: false, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open \(movie.title)")
+                    }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
             .scrollClipDisabled()
-        }
-    }
-
-    private func discoveryCard(_ category: HFDiscoveryCategory, status: String) -> some View {
-        HFEcosystemCard(
-            title: category.title,
-            subtitle: category.subtitle,
-            systemImage: category.systemImage,
-            status: status,
-            minWidth: 214
-        )
-    }
-
-    private func trendingCard(_ item: HFTrendingEcosystemItem) -> some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
-                Image(systemName: item.systemImage)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(HFColors.gold)
-                    .frame(width: 42, height: 42)
-                    .background(HFColors.gold.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    HStack(spacing: HFSpacing.xs) {
-                        Text(item.title)
-                            .font(HFTypography.body)
-                            .foregroundStyle(HFColors.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: HFSpacing.xs)
-                        HFStatusBadge(title: item.status, isProminent: false)
-                    }
-
-                    Text(item.subtitle)
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(HFSpacing.md)
         }
     }
 }

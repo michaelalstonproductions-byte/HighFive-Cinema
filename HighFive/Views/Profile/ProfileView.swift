@@ -21,16 +21,11 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                selectedProfilePanel
                 avatarRow
                 manageProfilesButton
 
-                creatorModeCard
-                ecosystemCommandShortcut
-                productRoutesSection
-                previewReleaseSection
-                buildQAToolsSection
                 menu
+                buildQAToolsSection
                 signOutButton
             }
             .padding(.top, HFSpacing.lg)
@@ -61,9 +56,33 @@ struct ProfileView: View {
             Text("Profiles & More")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Manage profiles, continue watching, build creator packages, explore communities, and prepare launch previews.")
+            Text("Switch profiles, manage your list, adjust settings, and get help.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var profileShortcutsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "HighFive Preview", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.md) {
+                creatorModeCard
+                ecosystemCommandShortcut
+                connectPreviewShortcut
+                NavigationLink {
+                    CreatorAccessPreviewView()
+                } label: {
+                    HFActionTile(
+                        title: "Access Preview",
+                        subtitle: "Review future audience access locally.",
+                        systemImage: "lock.shield.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Access Preview")
+            }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -247,7 +266,7 @@ struct ProfileView: View {
                 } label: {
                     HFActionTile(
                         title: "Access Preview",
-                        subtitle: "Review future audience access without purchases or entitlements.",
+                        subtitle: "Review future audience access without enabling live services.",
                         systemImage: "lock.shield.fill"
                     )
                 }
@@ -260,86 +279,20 @@ struct ProfileView: View {
 
     private var buildQAToolsSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                HFSectionHeader(title: "Build & QA Tools", actionTitle: nil)
-                Text("Internal local preview tools for spine review, route quality, mockup readiness, and final demo checks.")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            HFSectionHeader(title: "Developer / QA", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 NavigationLink {
-                    ProductSpineCompletionView()
+                    DeveloperQAHubView()
                 } label: {
                     HFActionTile(
-                        title: "Product Spine Completion",
-                        subtitle: "Internal review of Watch, Create, Connect, Launch, and Export.",
-                        systemImage: "rectangle.connected.to.line.below"
+                        title: "Developer / QA Hub",
+                        subtitle: "Internal route checks and spine tools are grouped here.",
+                        systemImage: "hammer.fill"
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Open Product Spine Completion")
-
-                NavigationLink {
-                    FinalDemoTourView()
-                } label: {
-                    HFActionTile(
-                        title: "Final Demo Tour",
-                        subtitle: "Internal route walkthrough for the local product spine.",
-                        systemImage: "map.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Final Demo Tour")
-
-                NavigationLink {
-                    RouteQualityCenterView()
-                } label: {
-                    HFActionTile(
-                        title: "Route Quality Center",
-                        subtitle: "Internal route clarity and dead-end review.",
-                        systemImage: "arrow.triangle.branch"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Route Quality Center")
-
-                NavigationLink {
-                    MockupReadinessLockView()
-                } label: {
-                    HFActionTile(
-                        title: "Mockup Readiness Lock",
-                        subtitle: "Internal gate before visual parity work.",
-                        systemImage: "checkmark.seal.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Mockup Readiness Lock")
-
-                NavigationLink {
-                    SpineSafetySealView()
-                } label: {
-                    HFActionTile(
-                        title: "Spine Safety Seal",
-                        subtitle: "Internal check that real systems remain disconnected.",
-                        systemImage: "shield.lefthalf.filled"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Spine Safety Seal")
-
-                NavigationLink {
-                    VisualPassLaunchChecklistView()
-                } label: {
-                    HFActionTile(
-                        title: "Visual Pass Launch Checklist",
-                        subtitle: "Internal checklist for the next visual pass.",
-                        systemImage: "checklist.checked"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Visual Pass Launch Checklist")
+                .accessibilityLabel("Open Developer QA Hub")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -509,5 +462,108 @@ private struct ProfileMockSheetView: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+    }
+}
+
+private struct DeveloperQAHubView: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Developer / QA Hub")
+                        .font(HFTypography.display)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Internal review tools for the local product spine.")
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+                VStack(spacing: HFSpacing.md) {
+                    NavigationLink {
+                        ProductSpineCompletionView()
+                    } label: {
+                        HFActionTile(title: "Product Spine Completion", subtitle: "Review the full local spine.", systemImage: "rectangle.connected.to.line.below")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        FinalDemoTourView()
+                    } label: {
+                        HFActionTile(title: "Final Demo Tour", subtitle: "Walk through internal demo routes.", systemImage: "map.fill")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        RouteQualityCenterView()
+                    } label: {
+                        HFActionTile(title: "Route Quality Center", subtitle: "Review route clarity and dead ends.", systemImage: "arrow.triangle.branch")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        MockupReadinessLockView()
+                    } label: {
+                        HFActionTile(title: "Mockup Readiness Lock", subtitle: "Check readiness before visual parity.", systemImage: "checkmark.seal.fill")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        SpineSafetySealView()
+                    } label: {
+                        HFActionTile(title: "Spine Safety Seal", subtitle: "Confirm protected systems stay untouched.", systemImage: "shield.lefthalf.filled")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        VisualPassLaunchChecklistView()
+                    } label: {
+                        HFActionTile(title: "Visual Pass Launch Checklist", subtitle: "Track the next visual pass.", systemImage: "checklist.checked")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        DeadEndCleanupChecklistView()
+                    } label: {
+                        HFActionTile(title: "Dead-End Cleanup Checklist", subtitle: "Audit local-only route exits.", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        SpineNavigationMapView()
+                    } label: {
+                        HFActionTile(title: "Spine Navigation Map", subtitle: "Review the internal route map.", systemImage: "map")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        PreMockupReadinessReviewView()
+                    } label: {
+                        HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Check source readiness before parity work.", systemImage: "doc.text.magnifyingglass")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        VisualParityBacklogView()
+                    } label: {
+                        HFActionTile(title: "Visual Parity Backlog", subtitle: "Track visual backlog items away from consumer Home.", systemImage: "rectangle.stack.badge.plus")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        ProductSpineGapReviewView()
+                    } label: {
+                        HFActionTile(title: "Product Spine Gap Review", subtitle: "Review remaining local spine gaps.", systemImage: "exclamationmark.triangle.fill")
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationTitle("Developer / QA")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

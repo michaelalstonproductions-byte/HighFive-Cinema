@@ -6,7 +6,7 @@ struct HFMovieCard: View {
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
             HStack(spacing: HFSpacing.md) {
-                HFPosterCard(movie: movie, width: 88, showTitle: false, showProgress: movie.progress != nil)
+                HFPosterCard(movie: movie, width: 102, showTitle: false, showProgress: movie.progress != nil)
 
                 VStack(alignment: .leading, spacing: HFSpacing.xs) {
                     Text(movie.title)

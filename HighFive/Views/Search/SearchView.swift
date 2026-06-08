@@ -78,12 +78,12 @@ struct SearchView: View {
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
             if mode == .search {
-                HFSearchBar(text: $query, placeholder: "Search movies, genres, creators")
+                HFSearchBar(text: $query, placeholder: "Search movies, genres, titles")
                     .onSubmit {
                         streamingStore.addRecentSearch(query)
                     }
             } else {
-                Text("Browse movies, creators, communities, launch previews, and local ecosystem routes.")
+                Text("Browse movies, genres, originals, saved titles, and coming soon previews.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -97,7 +97,6 @@ struct SearchView: View {
 
             if query.isEmpty {
                 recentSearches
-                smartRecommendations
                 suggestedForYou
             }
 
@@ -126,7 +125,7 @@ struct SearchView: View {
             if streamingStore.recentSearches.isEmpty {
                 HFInsightCard(
                     title: "No recent searches",
-                    message: "Search locally by title, genre, or creator and your terms will appear here.",
+                    message: "Search locally by title or genre and your terms will appear here.",
                     systemImage: "magnifyingglass"
                 )
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -190,25 +189,6 @@ struct SearchView: View {
         }
     }
 
-    private var smartRecommendations: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "For You", actionTitle: nil)
-
-            NavigationLink {
-                PersonalizedHubView()
-            } label: {
-                HFActionTile(
-                    title: "Personalized Hub",
-                    subtitle: "Recommended local paths across streaming, creator, launch, and Connect.",
-                    systemImage: "sparkles"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Personalized Hub")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
     @ViewBuilder
     private var resultsGrid: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
@@ -217,7 +197,7 @@ struct SearchView: View {
             if filteredMovies.isEmpty {
                 HFEmptyState(
                     title: "No results found",
-                    message: "No local matches for this query and filter. Try a title, genre, creator, or switch to Discover.",
+                    message: "No local matches for this query and filter. Try a title, genre, or switch to Discover.",
                     systemImage: "magnifyingglass"
                 )
                     .padding(.horizontal, HFSpacing.screenHorizontal)

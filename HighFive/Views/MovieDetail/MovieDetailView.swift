@@ -42,9 +42,6 @@ struct MovieDetailView: View {
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
-        .safeAreaInset(edge: .bottom) {
-            bottomCTA
-        }
         .sheet(item: $previewMovie) { movie in
             HFMockPlayerSheet(movie: movie)
         }
@@ -64,54 +61,54 @@ struct MovieDetailView: View {
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
             detailArtwork
-                .frame(height: 500)
+                .frame(height: 590)
                 .clipped()
 
             LinearGradient(
-                colors: [.clear, HFColors.background.opacity(0.72), HFColors.background],
+                colors: [.clear, HFColors.background.opacity(0.34), HFColors.background.opacity(0.88), HFColors.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
 
-            HFPosterCard(movie: movie, width: 150, showTitle: false, showProgress: movie.progress != nil)
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-                .padding(.bottom, HFSpacing.lg)
+            HStack(alignment: .bottom, spacing: HFSpacing.md) {
+                HFPosterCard(movie: movie, width: 126, showTitle: false, showProgress: movie.progress != nil)
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text(movie.title)
+                        .font(HFTypography.heroTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.68)
+
+                    Text(movie.metadataLine)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+
+                    HStack(spacing: HFSpacing.xs) {
+                        HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
+                            previewMovie = movie
+                        }
+
+                        HFButton(
+                            streamingStore.isSaved(movie) ? "Saved" : "Save",
+                            systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
+                            style: .secondary
+                        ) {
+                            streamingStore.toggleSaved(movie)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.bottom, HFSpacing.xl)
         }
     }
 
     private var overview: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            Text(movie.title)
-                .font(HFTypography.display)
-                .foregroundStyle(HFColors.textPrimary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
-
-            Text(movie.metadataLine)
-                .font(HFTypography.body)
-                .foregroundStyle(HFColors.gold)
-
-            HStack(spacing: HFSpacing.sm) {
-                HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
-                    previewMovie = movie
-                }
-                HFButton(
-                    streamingStore.isSaved(movie) ? "In My List" : "Add To List",
-                    systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
-                    style: .secondary
-                ) {
-                    streamingStore.toggleSaved(movie)
-                }
-            }
-
-            HFButton(
-                streamingStore.isDownloaded(movie) ? "Remove Download" : "Download",
-                systemImage: streamingStore.isDownloaded(movie) ? "trash" : "arrow.down.circle.fill",
-                style: .outline
-            ) {
-                streamingStore.toggleDownload(movie)
-            }
-
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
                 Text("Synopsis")
                     .font(HFTypography.caption)
@@ -244,12 +241,12 @@ struct MovieDetailView: View {
             HFSectionHeader(title: "Related Titles", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(relatedTitles) { related in
-                        NavigationLink(value: related) {
-                            HFPosterCard(movie: related, width: 132, showProgress: related.progress != nil)
-                        }
-                        .buttonStyle(.plain)
-                    }
+            ForEach(relatedTitles) { related in
+                NavigationLink(value: related) {
+                    HFPosterCard(movie: related, width: 140, showProgress: related.progress != nil)
+                }
+                .buttonStyle(.plain)
+            }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }

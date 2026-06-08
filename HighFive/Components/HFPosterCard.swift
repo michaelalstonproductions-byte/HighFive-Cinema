@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HFPosterCard: View {
     let movie: Movie
-    var width: CGFloat = 132
+    var width: CGFloat = 140
     var showTitle: Bool = true
     var showMetadata: Bool = false
     var showProgress: Bool = false

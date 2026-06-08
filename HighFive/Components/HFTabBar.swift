@@ -20,15 +20,15 @@ struct HFTabBar<Value: Hashable>: View {
                 } label: {
                     VStack(spacing: HFSpacing.xxs) {
                         Image(systemName: item.systemImage)
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: 22, weight: .semibold))
                         Text(item.title)
-                            .font(HFTypography.caption)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
                     }
                     .foregroundStyle(selection == item.value ? HFColors.gold : HFColors.textMuted)
                     .frame(maxWidth: .infinity)
-                    .frame(height: HFSpacing.tabBarHeight - HFSpacing.sm)
+                    .frame(height: HFSpacing.tabBarHeight - HFSpacing.xs)
                     .background {
                         if selection == item.value {
                             Capsule()
@@ -45,18 +45,19 @@ struct HFTabBar<Value: Hashable>: View {
                 .buttonStyle(.plain)
             }
         }
+        .frame(maxWidth: 467)
         .padding(.horizontal, HFSpacing.xs)
         .padding(.vertical, HFSpacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 4, style: .continuous)
+            RoundedRectangle(cornerRadius: 27, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 4, style: .continuous)
-                        .fill(HFColors.background.opacity(0.78))
+                    RoundedRectangle(cornerRadius: 27, style: .continuous)
+                        .fill(Color.black.opacity(0.86))
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 4, style: .continuous)
+            RoundedRectangle(cornerRadius: 27, style: .continuous)
                 .stroke(HFColors.glassStroke, lineWidth: 1)
         )
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)

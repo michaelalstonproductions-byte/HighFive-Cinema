@@ -28,10 +28,6 @@ struct HomeView: View {
                 }
 
                 smartRecommendationsSection
-                createSection
-                connectSection
-                launchAccessSection
-                commandCenterSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -54,13 +50,15 @@ struct HomeView: View {
                     .font(.system(size: 22, weight: .black))
                     .foregroundStyle(.black)
             }
-            .frame(width: 52, height: 52)
+            .frame(width: 50, height: 50)
 
-            VStack(alignment: .leading, spacing: 0) {
-                Text("HIGHFIVE")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
-                Text("CINEMA")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text("HIGHFIVE CINEMA")
+                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .kerning(0.8)
+                Text("Premium stories, ready to watch")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
             }
             .foregroundStyle(HFColors.gold)
 
@@ -100,59 +98,6 @@ struct HomeView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
-    private var commandCenterSection: some View {
-        NavigationLink {
-            EcosystemCommandCenterView()
-        } label: {
-            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
-                VStack(alignment: .leading, spacing: HFSpacing.md) {
-                    HStack(alignment: .top, spacing: HFSpacing.md) {
-                        Image(systemName: "command")
-                            .font(.system(size: 26, weight: .black))
-                            .foregroundStyle(HFColors.gold)
-                            .frame(width: 58, height: 58)
-                            .background(HFColors.gold.opacity(0.14))
-                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.sm, style: .continuous))
-
-                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                            HStack(spacing: HFSpacing.xs) {
-                                Text("HighFive Command Center")
-                                    .font(HFTypography.section)
-                                    .foregroundStyle(HFColors.textPrimary)
-                                    .fixedSize(horizontal: false, vertical: true)
-
-                                Spacer(minLength: HFSpacing.xs)
-
-                                HFStatusBadge(title: "Local", isProminent: false)
-                            }
-
-                            Text("Open the full Watch, Create, Connect, Launch, and locked Export map.")
-                                .font(HFTypography.caption)
-                                .foregroundStyle(HFColors.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    HStack(spacing: HFSpacing.xs) {
-                        Text("Open Full Map")
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 13, weight: .black))
-                    }
-                    .font(HFTypography.smallAction)
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 46)
-                    .background(HFColors.goldGradient)
-                    .clipShape(Capsule())
-                }
-                .padding(HFSpacing.lg)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open HighFive Command Center")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
     private var watchSectionHeader: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Watch", actionTitle: nil)
@@ -175,206 +120,19 @@ struct HomeView: View {
     }
 
     private var smartRecommendationsSection: some View {
-        ecosystemRail(title: "Smart Recommendations") {
-            NavigationLink {
-                PersonalizedHubView()
-            } label: {
-                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[0])
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Personalized Hub")
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "For You", actionTitle: nil)
 
-            NavigationLink {
-                CreatorPackageBuilderPreviewView()
-            } label: {
-                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[1])
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Continue Package Builder")
-
-            NavigationLink {
-                ConnectHubView()
-            } label: {
-                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[2])
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Explore Connect")
-
-            NavigationLink {
-                CreatorLaunchCenterPreviewView()
-            } label: {
-                HFRecommendationCard(recommendation: HFPersonalizationPreviewData.homeRecommendations[3])
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Launch Center")
-        }
-    }
-
-    private var createSection: some View {
-        ecosystemRail(title: "Create") {
-            NavigationLink {
-                CreatorEntryView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Creator Mode",
-                    subtitle: "Build creator packages.",
-                    systemImage: "wand.and.stars",
-                    status: "Preview"
+            Button(action: onDiscover) {
+                HFActionTile(
+                    title: "Smart Recommendations",
+                    subtitle: "Continue The Friendly and browse more cinematic picks.",
+                    systemImage: "sparkles"
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Mode")
-
-            NavigationLink {
-                CreatorWorkflowCommandCenterView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Creator Command Center",
-                    subtitle: "Move from story package to review.",
-                    systemImage: "rectangle.grid.2x2.fill",
-                    status: "Local"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Command Center")
-
-            NavigationLink {
-                CreatorPackageBuilderPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Package Builder",
-                    subtitle: "Assemble The Friendly package.",
-                    systemImage: "shippingbox.fill",
-                    status: "Active"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Package Builder")
-
-            NavigationLink {
-                CreatorReleaseReadinessPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Release Readiness",
-                    subtitle: "Prepare launch previews.",
-                    systemImage: "gauge.with.dots.needle.bottom.50percent",
-                    status: "Preview"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Release Readiness")
-        }
-    }
-
-    private var connectSection: some View {
-        ecosystemRail(title: "Connect") {
-            NavigationLink {
-                ConnectHubView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Connect Hub",
-                    subtitle: "Explore communities.",
-                    systemImage: "person.2.fill",
-                    status: "Local"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Connect Hub")
-
-            NavigationLink {
-                CommunityDiscoveryPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Community Discovery",
-                    subtitle: "Find creator circles and projects.",
-                    systemImage: "person.3.fill",
-                    status: "Preview"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Community Discovery")
-
-            NavigationLink {
-                SocialRoomsPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Social Rooms",
-                    subtitle: "Visit local watch rooms.",
-                    systemImage: "bubble.left.and.bubble.right.fill",
-                    status: "Local"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Social Rooms")
-
-            NavigationLink {
-                CreatorCirclesPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Creator Circles",
-                    subtitle: "Follow creator teams.",
-                    systemImage: "circle.hexagongrid.fill",
-                    status: "Preview"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Creator Circles")
-
-            NavigationLink {
-                ActivityFeedPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Activity Feed",
-                    subtitle: "Catch creator updates.",
-                    systemImage: "text.bubble.fill",
-                    status: "Local"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Activity Feed")
-        }
-    }
-
-    private var launchAccessSection: some View {
-        ecosystemRail(title: "Launch + Access") {
-            NavigationLink {
-                CreatorLaunchCenterPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Launch Center",
-                    subtitle: "Prepare launch previews.",
-                    systemImage: "rocket.fill",
-                    status: "Planning"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Launch Center")
-
-            NavigationLink {
-                CreatorAccessPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Access Preview",
-                    subtitle: "Plan future access locally.",
-                    systemImage: "lock.shield.fill",
-                    status: "Local"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Access Preview")
-
-            NavigationLink {
-                AppReleasePresentationView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Release Presentation",
-                    subtitle: "Show the product story.",
-                    systemImage: "rectangle.on.rectangle.angled.fill",
-                    status: "Ready"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Release Presentation")
+            .accessibilityLabel("Open Discover recommendations")
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
@@ -382,20 +140,20 @@ struct HomeView: View {
         ZStack(alignment: .bottomLeading) {
             NavigationLink(value: heroMovie) {
                 heroArtwork(heroMovie)
-                    .frame(height: 430)
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+                    .frame(height: 520)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
             .buttonStyle(.plain)
 
             HFColors.heroGradient
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .allowsHitTesting(false)
 
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                Spacer()
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    Spacer()
 
                 NavigationLink(value: heroMovie) {
-                    VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.sm) {
                         Text("FEATURED PREMIERE")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.gold)
@@ -407,14 +165,14 @@ struct HomeView: View {
                             .lineLimit(2)
                             .minimumScaleFactor(0.72)
 
-                        Text(heroMovie.subtitle + "\n" + heroMovie.synopsis)
+                        Text(heroMovie.subtitle)
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
-                            .lineLimit(4)
+                            .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
 
                         HStack(spacing: HFSpacing.xs) {
-                            ForEach(["4K HDR", "HighFive Original", "Cinematic Cut"], id: \.self) { badge in
+                            ForEach(["4K HDR", "Original", "Cinematic"], id: \.self) { badge in
                                 Text(badge)
                                     .font(HFTypography.caption)
                                     .foregroundStyle(.black)
@@ -456,10 +214,10 @@ struct HomeView: View {
                     .accessibilityLabel(streamingStore.isSaved(heroMovie) ? "Remove from My List" : "Add to My List")
                 }
             }
-            .padding(HFSpacing.xl)
+            .padding(HFSpacing.lg)
         }
         .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(HFColors.goldStroke, lineWidth: 1)
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -490,20 +248,6 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
-        }
-    }
-
-    private func ecosystemRail<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: title, actionTitle: nil)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
-                    content()
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-            }
-            .scrollClipDisabled()
         }
     }
 
