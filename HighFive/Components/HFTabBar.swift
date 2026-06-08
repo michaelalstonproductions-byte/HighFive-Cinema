@@ -32,7 +32,11 @@ struct HFTabBar<Value: Hashable>: View {
                     .background {
                         if selection == item.value {
                             Capsule()
-                                .fill(HFColors.gold.opacity(0.12))
+                                .fill(HFColors.gold.opacity(0.16))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(HFColors.gold.opacity(0.34), lineWidth: 1)
+                                )
                                 .padding(.horizontal, HFSpacing.xs)
                         }
                     }
@@ -57,6 +61,6 @@ struct HFTabBar<Value: Hashable>: View {
         )
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
         .padding(.horizontal, HFSpacing.floatingTabHorizontal)
-        .padding(.bottom, HFSpacing.sm)
+        .padding(.bottom, HFSpacing.md)
     }
 }

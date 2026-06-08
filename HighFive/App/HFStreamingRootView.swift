@@ -69,7 +69,6 @@ struct HFStreamingRootView: View {
                         )
                     }
                 }
-                .padding(.bottom, HFSpacing.floatingTabClearance)
 
                 HFTabBar(items: tabItems, selection: $selectedTab)
             }

@@ -21,18 +21,17 @@ struct HomeView: View {
                 header
                 heroSection
                 todaySection
-                smartRecommendationsSection
                 watchSectionHeader
 
                 ForEach(HFMockData.premiumHomeRails) { category in
                     movieRail(category)
                 }
 
-                insightSection
-                commandCenterSection
+                smartRecommendationsSection
                 createSection
                 connectSection
                 launchAccessSection
+                commandCenterSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -96,52 +95,6 @@ struct HomeView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
-    private var insightSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "For You", actionTitle: nil)
-
-                HFInsightCard(
-                title: "Your next HighFive path",
-                message: "Pick up a story, explore creator packages, or find community previews from one connected product path.",
-                systemImage: "sparkles"
-            )
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            Button(action: onProfile) {
-                HFInsightCard(
-                    title: "Build the story package",
-                    message: "Open Creator Mode for package building, studio previews, and launch planning.",
-                    systemImage: "sparkles"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open HighFive preview from Profile")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            Button(action: onProfile) {
-                HFInsightCard(
-                    title: "Explore the community layer",
-                    message: "Open Connect previews for creator circles, project rooms, and audience signals.",
-                    systemImage: "person.2.fill"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Connect Preview from Profile")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-
-            Button(action: onMyList) {
-                HFInsightCard(
-                    title: "View My List",
-                    message: "Open saved titles and pick up your local watchlist.",
-                    systemImage: "bookmark.fill"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("View My List")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
     private var todaySection: some View {
         HFTodaySummaryCard(items: HFEcosystemPreviewData.todaySummaryItems)
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -173,7 +126,7 @@ struct HomeView: View {
                                 HFStatusBadge(title: "Local", isProminent: false)
                             }
 
-                            Text("A clean map for Watch, Create, Connect, Launch, and future Export planning.")
+                            Text("Open the full Watch, Create, Connect, Launch, and locked Export map.")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -181,7 +134,7 @@ struct HomeView: View {
                     }
 
                     HStack(spacing: HFSpacing.xs) {
-                        Text("Open Command Center")
+                        Text("Open Full Map")
                         Image(systemName: "arrow.right")
                             .font(.system(size: 13, weight: .black))
                     }
@@ -260,13 +213,26 @@ struct HomeView: View {
     private var createSection: some View {
         ecosystemRail(title: "Create") {
             NavigationLink {
+                CreatorEntryView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Creator Mode",
+                    subtitle: "Build creator packages.",
+                    systemImage: "wand.and.stars",
+                    status: "Preview"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Creator Mode")
+
+            NavigationLink {
                 CreatorWorkflowCommandCenterView()
             } label: {
                 HFEcosystemCard(
                     title: "Creator Command Center",
-                    subtitle: "Build creator packages from draft to review.",
+                    subtitle: "Move from story package to review.",
                     systemImage: "rectangle.grid.2x2.fill",
-                    status: "72%"
+                    status: "Local"
                 )
             }
             .buttonStyle(.plain)
@@ -277,35 +243,22 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Package Builder",
-                    subtitle: "Assemble The Friendly package details.",
+                    subtitle: "Assemble The Friendly package.",
                     systemImage: "shippingbox.fill",
-                    status: "In Progress"
+                    status: "Active"
                 )
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Open Package Builder")
 
             NavigationLink {
-                CreatorLaunchCenterPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Launch Center",
-                    subtitle: "Prepare audience, access, and release planning.",
-                    systemImage: "rocket.fill",
-                    status: "Preview"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Launch Center")
-
-            NavigationLink {
                 CreatorReleaseReadinessPreviewView()
             } label: {
                 HFEcosystemCard(
                     title: "Release Readiness",
-                    subtitle: "Review launch blockers and ready items.",
+                    subtitle: "Prepare launch previews.",
                     systemImage: "gauge.with.dots.needle.bottom.50percent",
-                    status: "72%"
+                    status: "Preview"
                 )
             }
             .buttonStyle(.plain)
@@ -316,11 +269,24 @@ struct HomeView: View {
     private var connectSection: some View {
         ecosystemRail(title: "Connect") {
             NavigationLink {
+                ConnectHubView()
+            } label: {
+                HFEcosystemCard(
+                    title: "Connect Hub",
+                    subtitle: "Explore communities.",
+                    systemImage: "person.2.fill",
+                    status: "Local"
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open Connect Hub")
+
+            NavigationLink {
                 CommunityDiscoveryPreviewView()
             } label: {
                 HFEcosystemCard(
                     title: "Community Discovery",
-                    subtitle: "Find creator communities and project circles.",
+                    subtitle: "Find creator circles and projects.",
                     systemImage: "person.3.fill",
                     status: "Preview"
                 )
@@ -333,9 +299,9 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Social Rooms",
-                    subtitle: "Preview local rooms for reviews and watch circles.",
+                    subtitle: "Visit local watch rooms.",
                     systemImage: "bubble.left.and.bubble.right.fill",
-                    status: "Live Mock"
+                    status: "Local"
                 )
             }
             .buttonStyle(.plain)
@@ -346,7 +312,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Creator Circles",
-                    subtitle: "Explore collaborator networks and creative teams.",
+                    subtitle: "Follow creator teams.",
                     systemImage: "circle.hexagongrid.fill",
                     status: "Preview"
                 )
@@ -355,24 +321,11 @@ struct HomeView: View {
             .accessibilityLabel("Open Creator Circles")
 
             NavigationLink {
-                WatchPartyPreviewView()
-            } label: {
-                HFEcosystemCard(
-                    title: "Watch Party Preview",
-                    subtitle: "Shared viewing preview without playback sync.",
-                    systemImage: "play.tv.fill",
-                    status: "Mock Only"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Watch Party Preview")
-
-            NavigationLink {
                 ActivityFeedPreviewView()
             } label: {
                 HFEcosystemCard(
                     title: "Activity Feed",
-                    subtitle: "Project updates and community signals.",
+                    subtitle: "Catch creator updates.",
                     systemImage: "text.bubble.fill",
                     status: "Local"
                 )
@@ -389,7 +342,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Launch Center",
-                    subtitle: "Prepare package, audience, and release previews.",
+                    subtitle: "Prepare launch previews.",
                     systemImage: "rocket.fill",
                     status: "Planning"
                 )
@@ -402,9 +355,9 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Access Preview",
-                    subtitle: "Mock premium access without real purchases.",
+                    subtitle: "Plan future access locally.",
                     systemImage: "lock.shield.fill",
-                    status: "Mock Only"
+                    status: "Local"
                 )
             }
             .buttonStyle(.plain)
@@ -415,7 +368,7 @@ struct HomeView: View {
             } label: {
                 HFEcosystemCard(
                     title: "Release Presentation",
-                    subtitle: "Review the local Watch to Launch story.",
+                    subtitle: "Show the product story.",
                     systemImage: "rectangle.on.rectangle.angled.fill",
                     status: "Ready"
                 )
@@ -423,66 +376,6 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Open Release Presentation")
         }
-    }
-
-    private var productSpineCompletionSection: some View {
-        NavigationLink {
-            ProductSpineCompletionView()
-        } label: {
-            HFActionTile(
-                title: "Product Spine Completion",
-                subtitle: "Review Watch, Create, Connect, Launch, and Export before visual polish.",
-                systemImage: "rectangle.connected.to.line.below"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Product Spine Completion")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var productSpineGapReviewSection: some View {
-        NavigationLink {
-            ProductSpineGapReviewView()
-        } label: {
-            HFActionTile(
-                title: "Product Spine Gap Review",
-                subtitle: "Check route gaps before the visual pass.",
-                systemImage: "exclamationmark.triangle.fill"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Product Spine Gap Review")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var routeQualityCenterSection: some View {
-        NavigationLink {
-            RouteQualityCenterView()
-        } label: {
-            HFActionTile(
-                title: "Route Quality Center",
-                subtitle: "Clean up route clarity before the mockup pass.",
-                systemImage: "arrow.triangle.branch"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Route Quality Center")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var finalSpineWalkthroughSection: some View {
-        NavigationLink {
-            FinalSpineWalkthroughView()
-        } label: {
-            HFActionTile(
-                title: "Final Spine Walkthrough",
-                subtitle: "Review the full product path before visual matching.",
-                systemImage: "map.fill"
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Open Final Spine Walkthrough")
-        .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var heroSection: some View {
