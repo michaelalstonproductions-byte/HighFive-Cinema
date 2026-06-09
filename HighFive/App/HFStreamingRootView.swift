@@ -113,12 +113,25 @@ private enum HFLaunchIntroStep: Int, CaseIterable {
     case instructions
 
     var page: Int { rawValue }
+
+    static var initialFromLaunchArguments: HFLaunchIntroStep {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-onboarding-intro") { return .intro }
+        if arguments.contains("--hf-onboarding-tilt-peek") { return .motion }
+        if arguments.contains("--hf-onboarding-instructions") { return .instructions }
+        return .intro
+    }
 }
 
 private struct HFLaunchIntroSequenceView: View {
     let onFinish: () -> Void
 
-    @State private var step: HFLaunchIntroStep = .intro
+    @State private var step: HFLaunchIntroStep
+
+    init(onFinish: @escaping () -> Void) {
+        self.onFinish = onFinish
+        _step = State(initialValue: HFLaunchIntroStep.initialFromLaunchArguments)
+    }
 
     var body: some View {
         ZStack {
@@ -316,6 +329,7 @@ private struct HFLaunchMotionInstructionScreen: View {
                         .foregroundStyle(.white.opacity(0.72))
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text("Small movements work best.")
                         .font(.system(size: 12, weight: .semibold))
@@ -341,7 +355,7 @@ private struct HFLaunchInstructionFormatScreen: View {
             onPrimary: onFinish,
             onSecondary: nil
         ) {
-            VStack(spacing: 18) {
+            VStack(spacing: 14) {
                 Text("Before you enter")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(HFColors.gold)
@@ -359,7 +373,8 @@ private struct HFLaunchInstructionFormatScreen: View {
                     .foregroundStyle(.white.opacity(0.74))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
-                    .padding(.bottom, 6)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 4)
 
                 HFLaunchInstructionRow(identifier: "hf.onboarding.row.tilt", number: "1", title: "Tilt", detail: "Gently angle the phone to move through a scene.")
                 HFLaunchInstructionRow(identifier: "hf.onboarding.row.peek", number: "2", title: "Peek", detail: "Lean left or right to reveal more of the frame.")
@@ -395,11 +410,12 @@ private struct HFLaunchInstructionRow: View {
                     .font(.system(size: 14, weight: .regular))
                     .foregroundStyle(.white.opacity(0.70))
                     .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)
         }
-        .padding(16)
+        .padding(14)
         .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -407,7 +423,7 @@ private struct HFLaunchInstructionRow: View {
         )
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier(identifier)
-        .accessibilityLabel("\(title), \(detail)")
+        .accessibilityLabel("\(title) instruction, \(detail)")
     }
 }
 
@@ -451,6 +467,7 @@ private struct HFLaunchScreenFrame<Content: View>: View {
                         .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
                 .accessibilityIdentifier(primaryIdentifier)
+                .accessibilityLabel(primaryTitle == "Next" ? "Continue onboarding" : primaryTitle)
 
                 if let secondaryTitle, let onSecondary {
                     Button(action: onSecondary) {
@@ -462,6 +479,7 @@ private struct HFLaunchScreenFrame<Content: View>: View {
                             .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                     .accessibilityIdentifier(secondaryIdentifier ?? "hf.onboarding.skipButton")
+                    .accessibilityLabel(secondaryTitle)
                 }
             }
             .padding(.horizontal, 28)
