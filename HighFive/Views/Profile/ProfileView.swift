@@ -295,8 +295,8 @@ struct ProfileView: View {
                 } label: {
                     HFActionTile(
                         title: "Developer / QA Hub",
-                        subtitle: "Internal route checks and spine tools are grouped here.",
-                        systemImage: "hammer.fill"
+                        subtitle: "Internal validation, visual parity, route quality, and release readiness.",
+                        systemImage: "wrench.and.screwdriver.fill"
                     )
                 }
                 .buttonStyle(.plain)
@@ -631,6 +631,18 @@ private struct DeveloperQAHubView: View {
                     }
                 }
 
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Known Measurements")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+
+                    LazyVGrid(columns: columns, spacing: HFSpacing.sm) {
+                        ForEach(HFDeveloperQAData.figmaMeasurements) { item in
+                            QAStatusCard(item: item)
+                        }
+                    }
+                }
+
                 QAInfoPanel(
                     icon: "sparkles",
                     title: "Home_Discovery_Gold · 11:9977",
@@ -672,6 +684,12 @@ private struct DeveloperQAHubView: View {
             subtitle: "Manual validation checklist. The app does not execute these commands."
         ) {
             VStack(spacing: HFSpacing.sm) {
+                QAInfoPanel(
+                    icon: "clock.badge.checkmark.fill",
+                    title: "Last Known Handoff Data",
+                    subtitle: "Phase 12.4 · Commit: 201663e · Tag: phase-12-4-consumer-streaming-reconstruction\nPhase 12.5 · Commit: 948738d · Tag: phase-12-5-consumer-ui-visual-parity"
+                )
+
                 ForEach(HFDeveloperQAData.buildChecklist) { item in
                     QAChecklistRow(item: item)
                 }
@@ -698,6 +716,14 @@ private struct DeveloperQAHubView: View {
             subtitle: "Existing local review tools. These do not run live services or automation."
         ) {
             VStack(spacing: HFSpacing.md) {
+                toolLink(
+                    title: "Product Spine",
+                    subtitle: "Open the internal spine map for Watch, Create, Connect, Launch, and Export.",
+                    systemImage: "point.3.connected.trianglepath.dotted"
+                ) {
+                    ProductSpineCompletionView()
+                }
+
                 toolLink(
                     title: "Product Spine Completion",
                     subtitle: "Review the full local Watch, Create, Connect, Launch, Export spine.",
@@ -829,6 +855,7 @@ private enum HFQAStatus {
     case deferred
     case blocked
     case needed
+    case needsManualQA
     case captured
     case reviewed
     case needsFix
@@ -841,6 +868,7 @@ private enum HFQAStatus {
         case .deferred: return "Deferred"
         case .blocked: return "Blocked"
         case .needed: return "Needed"
+        case .needsManualQA: return "Needs Manual QA"
         case .captured: return "Captured"
         case .reviewed: return "Reviewed"
         case .needsFix: return "Needs Fix"
@@ -850,7 +878,7 @@ private enum HFQAStatus {
     var systemImage: String {
         switch self {
         case .passed, .reviewed: return "checkmark.circle.fill"
-        case .needsReview, .needed: return "clock.fill"
+        case .needsReview, .needed, .needsManualQA: return "clock.fill"
         case .protected: return "lock.shield.fill"
         case .deferred: return "pause.circle.fill"
         case .blocked, .needsFix: return "exclamationmark.triangle.fill"
@@ -862,7 +890,7 @@ private enum HFQAStatus {
         switch self {
         case .passed, .reviewed:
             return Color.green
-        case .needsReview, .needed, .captured:
+        case .needsReview, .needed, .needsManualQA, .captured:
             return HFColors.gold
         case .protected:
             return Color.cyan
@@ -922,12 +950,12 @@ private struct HFQAScreenshotReview: Identifiable {
 
 private enum HFDeveloperQAData {
     static let releaseReadiness: [HFQAStatusItem] = [
-        HFQAStatusItem(title: "Build Passed", status: .passed, detail: "Last handoff reports a successful simulator build.", systemImage: "hammer.fill"),
-        HFQAStatusItem(title: "Simulator Launched", status: .passed, detail: "The app launched on the booted simulator during the last visual checkpoint.", systemImage: "iphone.gen3"),
+        HFQAStatusItem(title: "Build Passed", status: .passed, detail: "Last known build completed successfully.", systemImage: "hammer.fill"),
+        HFQAStatusItem(title: "Simulator Launched", status: .passed, detail: "App launched on booted iPhone 17 Pro simulator.", systemImage: "iphone.gen3"),
         HFQAStatusItem(title: "Consumer Shell Locked", status: .protected, detail: "Home, Search, Library, Downloads, and Profile remain the only tabs.", systemImage: "rectangle.bottomthird.inset.filled"),
-        HFQAStatusItem(title: "Protected Systems Safe", status: .protected, detail: "Depth, motion, playback, rendering, store, and assets stay locked.", systemImage: "lock.shield.fill"),
-        HFQAStatusItem(title: "Screenshots Needed", status: .needsReview, detail: "Capture and inspect Home, Discover, Movie Detail, Downloads, and Profile.", systemImage: "camera.viewfinder"),
-        HFQAStatusItem(title: "Visual Assembly In Progress", status: .needsReview, detail: "Phase 12.5A needs visible simulator QA before promotion.", systemImage: "sparkles")
+        HFQAStatusItem(title: "Protected Systems Safe", status: .protected, detail: "No protected systems should be touched during UI passes.", systemImage: "lock.shield.fill"),
+        HFQAStatusItem(title: "Screenshots Needed", status: .needsReview, detail: "Visual review requires screen captures.", systemImage: "camera.viewfinder"),
+        HFQAStatusItem(title: "Visual Assembly In Progress", status: .needsReview, detail: "Figma direction still needs visible screenshot comparison.", systemImage: "sparkles")
     ]
 
     static let screenReviews: [HFQAScreenReview] = [
@@ -939,6 +967,7 @@ private enum HFDeveloperQAData {
             checklist: [
                 "Hero feels cinematic",
                 "Poster rails are visible",
+                "Watch Now CTA is visible",
                 "No dashboard language",
                 "No QA/internal tools exposed",
                 "Bottom tab remains locked"
@@ -998,10 +1027,12 @@ private enum HFDeveloperQAData {
             status: .needsReview,
             reviewFocus: "Cinematic title page with clear Watch and Save actions.",
             checklist: [
-                "Backdrop feels premium",
-                "Title hierarchy is strong",
-                "Metadata row is readable",
-                "Related titles are reachable"
+                "Tall cinematic hero is visible",
+                "Metadata is readable",
+                "Watch Now is primary",
+                "Save/My List is secondary",
+                "Related titles are visible",
+                "No real AVPlayer integration"
             ]
         )
     ]
@@ -1012,6 +1043,16 @@ private enum HFDeveloperQAData {
         HFQAFrameReference(name: "HF_Profile", node: "1:115", purpose: "Profile authority"),
         HFQAFrameReference(name: "HF_Downloads", node: "1:150", purpose: "Downloads authority"),
         HFQAFrameReference(name: "HF_Discover", node: "1:191", purpose: "Discover authority")
+    ]
+
+    static let figmaMeasurements: [HFQAStatusItem] = [
+        HFQAStatusItem(title: "Screen", status: .protected, detail: "500 x 1020", systemImage: "iphone"),
+        HFQAStatusItem(title: "Hero", status: .protected, detail: "500 x 630", systemImage: "rectangle.topthird.inset.filled"),
+        HFQAStatusItem(title: "Hero Radius", status: .protected, detail: "20px", systemImage: "rectangle.roundedtop.fill"),
+        HFQAStatusItem(title: "Poster Cards", status: .protected, detail: "140-152 x 210", systemImage: "photo.fill"),
+        HFQAStatusItem(title: "Poster Radius", status: .protected, detail: "15px", systemImage: "rectangle.portrait.fill"),
+        HFQAStatusItem(title: "Bottom Tab Shelf", status: .protected, detail: "500 x 115", systemImage: "rectangle.bottomthird.inset.filled"),
+        HFQAStatusItem(title: "Inner Tab Group", status: .protected, detail: "467 x 81", systemImage: "rectangle.inset.filled")
     ]
 
     static let protectedSystems: [HFQAProtectedSystem] = [
@@ -1028,19 +1069,20 @@ private enum HFDeveloperQAData {
         HFQAProtectedSystem(name: "Backdrop Mappings", systemImage: "photo.on.rectangle.angled"),
         HFQAProtectedSystem(name: "Info.plist", systemImage: "doc.text.fill"),
         HFQAProtectedSystem(name: "PrivacyInfo", systemImage: "hand.raised.fill"),
-        HFQAProtectedSystem(name: "Entitlements", systemImage: "key.fill")
+        HFQAProtectedSystem(name: "Entitlements", systemImage: "key.fill"),
+        HFQAProtectedSystem(name: "Figma Blueprint", systemImage: "rectangle.3.group.fill")
     ]
 
     static let routeValidations: [HFQARouteValidation] = [
-        HFQARouteValidation(route: "Home -> Movie Detail", expectedBehavior: "Poster and hero routes open a local title page.", status: .needsReview, notes: "Watch path must stay content-first."),
-        HFQARouteValidation(route: "Search -> Movie Detail", expectedBehavior: "Search results open the selected movie detail.", status: .needsReview, notes: "Local search only."),
-        HFQARouteValidation(route: "Discover -> Movie Detail", expectedBehavior: "Discovery rails route into content details.", status: .needsReview, notes: "No module browser behavior."),
-        HFQARouteValidation(route: "Library -> Movie Detail", expectedBehavior: "Saved and in-progress titles remain reachable.", status: .needsReview, notes: "Validate My List behavior."),
-        HFQARouteValidation(route: "Downloads -> Movie Detail", expectedBehavior: "Downloaded local titles can open detail when supported.", status: .needsReview, notes: "No file-system behavior."),
+        HFQARouteValidation(route: "Home -> Movie Detail", expectedBehavior: "Tap a poster or featured title and open Movie Detail.", status: .needsManualQA, notes: "Confirm navigation works without exposing internal tools."),
+        HFQARouteValidation(route: "Search -> Movie Detail", expectedBehavior: "Search results open the selected Movie Detail screen.", status: .needsManualQA, notes: "Local search only."),
+        HFQARouteValidation(route: "Discover -> Movie Detail", expectedBehavior: "Discovery rails route into Movie Detail.", status: .needsManualQA, notes: "No consumer route matrix."),
+        HFQARouteValidation(route: "Library -> Movie Detail", expectedBehavior: "Saved and in-progress titles open Movie Detail.", status: .needsManualQA, notes: "Validate My List behavior."),
+        HFQARouteValidation(route: "Downloads -> Movie Detail", expectedBehavior: "Downloaded local titles open detail where supported.", status: .needsManualQA, notes: "No file-system behavior."),
         HFQARouteValidation(route: "Profile -> Developer / QA Hub", expectedBehavior: "Internal hub is reachable only from Profile.", status: .passed, notes: "No new bottom tab."),
         HFQARouteValidation(route: "Profile -> Settings", expectedBehavior: "Settings opens local preview copy only.", status: .passed, notes: "No live account service."),
-        HFQARouteValidation(route: "Profile -> Creator Preview", expectedBehavior: "Creator preview routes remain secondary.", status: .needsReview, notes: "Do not dominate profile first glance."),
-        HFQARouteValidation(route: "Profile -> Connect Preview", expectedBehavior: "Connect preview routes remain secondary.", status: .needsReview, notes: "Community systems stay local.")
+        HFQARouteValidation(route: "Profile -> Creator Preview", expectedBehavior: "Creator preview routes remain secondary.", status: .needsManualQA, notes: "Do not dominate profile first glance."),
+        HFQARouteValidation(route: "Profile -> Connect Preview", expectedBehavior: "Connect preview routes remain secondary.", status: .needsManualQA, notes: "Community systems stay local.")
     ]
 
     static let buildChecklist: [HFQAStatusItem] = [
@@ -1056,11 +1098,12 @@ private enum HFDeveloperQAData {
     ]
 
     static let screenshotReviews: [HFQAScreenshotReview] = [
-        HFQAScreenshotReview(screen: "Home", expectedName: "highfive-visible-template-assembly-home.png", status: .captured, reviewFocus: "First-glance streaming transformation."),
+        HFQAScreenshotReview(screen: "Home", expectedName: "highfive-visible-template-assembly-home.png", status: .needed, reviewFocus: "Hero scale, gold mood, poster density, no dashboard feel."),
         HFQAScreenshotReview(screen: "Discover/Search", expectedName: "highfive-visible-template-assembly-discover.png", status: .needed, reviewFocus: "Content discovery and filter treatment."),
         HFQAScreenshotReview(screen: "Movie Detail", expectedName: "highfive-visible-template-assembly-movie-detail.png", status: .needed, reviewFocus: "Cinematic title page and actions."),
         HFQAScreenshotReview(screen: "Downloads", expectedName: "highfive-visible-template-assembly-downloads.png", status: .needed, reviewFocus: "Offline shelf and Find More To Download CTA."),
-        HFQAScreenshotReview(screen: "Profile", expectedName: "highfive-visible-template-assembly-profile.png", status: .needed, reviewFocus: "Consumer profile and hidden internal hub entry.")
+        HFQAScreenshotReview(screen: "Profile", expectedName: "highfive-visible-template-assembly-profile.png", status: .needed, reviewFocus: "Consumer-first profile, internal tools hidden lower."),
+        HFQAScreenshotReview(screen: "Developer / QA Hub", expectedName: "highfive-dev-qa-hub.png", status: .needed, reviewFocus: "Internal control room, readable statuses, no live-system execution.")
     ]
 }
 
