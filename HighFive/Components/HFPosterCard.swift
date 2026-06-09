@@ -23,15 +23,22 @@ struct HFPosterCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
 
                 if movie.isComingSoon {
-                    Text("COMING SOON")
-                        .font(HFTypography.micro)
+                    Text("Coming\nSoon")
+                        .font(.system(size: HFResponsiveFit.smallBadgeFontSize(width: width), weight: .black, design: .default))
                         .foregroundStyle(.black)
-                        .padding(.horizontal, HFSpacing.xs)
-                        .padding(.vertical, HFSpacing.xxs)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
+                        .textCase(.uppercase)
+                        .frame(
+                            width: HFResponsiveFit.comingSoonBadgeSize(width: width),
+                            height: HFResponsiveFit.comingSoonBadgeSize(width: width)
+                        )
                         .background(HFColors.goldGradient)
-                        .clipShape(Capsule())
+                        .clipShape(Circle())
                         .padding(HFSpacing.xs)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                        .accessibilityLabel("Coming soon")
                 }
 
                 if showProgress, let progress = movie.progress {

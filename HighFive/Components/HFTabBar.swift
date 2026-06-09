@@ -12,6 +12,10 @@ struct HFTabBar<Value: Hashable>: View {
     let items: [HFTabItem<Value>]
     @Binding var selection: Value
 
+    private var screenWidth: CGFloat {
+        UIScreen.main.bounds.width
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(items) { item in
@@ -20,15 +24,18 @@ struct HFTabBar<Value: Hashable>: View {
                 } label: {
                     VStack(spacing: HFSpacing.xxs) {
                         Image(systemName: item.systemImage)
-                            .font(.system(size: 22, weight: .semibold))
+                            .font(.system(size: HFResponsiveFit.bottomTabIconSize(width: screenWidth), weight: .semibold))
+                            .frame(height: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 2)
                         Text(item.title)
-                            .font(.system(size: 12, weight: .semibold, design: .default))
+                            .font(.system(size: HFResponsiveFit.bottomTabFontSize(width: screenWidth), weight: .semibold, design: .default))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.78)
+                            .minimumScaleFactor(0.72)
+                            .allowsTightening(true)
                     }
                     .foregroundStyle(selection == item.value ? HFColors.gold : HFColors.textMuted)
                     .frame(maxWidth: .infinity)
-                    .frame(height: HFSpacing.tabBarHeight - HFSpacing.xs)
+                    .frame(minHeight: HFResponsiveFit.minimumTapTarget)
+                    .frame(height: HFResponsiveFit.bottomTabItemHeight(width: screenWidth))
                     .background {
                         if selection == item.value {
                             Capsule()
@@ -52,7 +59,7 @@ struct HFTabBar<Value: Hashable>: View {
                 .buttonStyle(.plain)
             }
         }
-        .frame(maxWidth: 467)
+        .frame(maxWidth: min(467, max(320, screenWidth - (HFResponsiveFit.bottomTabHorizontalPadding(width: screenWidth) * 2))))
         .padding(.horizontal, HFSpacing.xs)
         .padding(.vertical, HFSpacing.xs)
         .background(
@@ -77,7 +84,7 @@ struct HFTabBar<Value: Hashable>: View {
         )
         .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 26, x: 0, y: 16)
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
-        .padding(.horizontal, HFSpacing.floatingTabHorizontal)
+        .padding(.horizontal, HFResponsiveFit.bottomTabHorizontalPadding(width: screenWidth))
         .padding(.bottom, HFSpacing.lg)
     }
 }

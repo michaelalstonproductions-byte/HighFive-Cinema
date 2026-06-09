@@ -33,6 +33,7 @@ struct ProfileView: View {
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
+        .accessibilityIdentifier("hf.profile.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(isPresented: $showsProfileSwitcher) {
             ProfileSwitcherView(selectedProfile: $selectedProfile, showsHeader: true)
@@ -302,9 +303,11 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Developer QA Hub, internal validation and release readiness")
+                .accessibilityIdentifier("hf.profile.developerQaButton")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.profile.internalSection")
     }
 
     private var highFiveRoomsSection: some View {
@@ -392,6 +395,7 @@ struct ProfileView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("HighFive Rooms, product spaces for watching, creating, connecting, launching, and export readiness")
+        .accessibilityIdentifier("hf.profile.roomsSection")
     }
 
     private var avatarRow: some View {
@@ -2653,6 +2657,7 @@ private struct DeveloperQAHubView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Developer / QA")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.developerQa.root")
     }
 
     private var header: some View {
@@ -3002,6 +3007,7 @@ private struct DeveloperQAHubView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(title) section")
+        .accessibilityIdentifier(hubSectionIdentifier(for: title))
     }
 
     private func toolLink<Destination: View>(
@@ -3017,6 +3023,45 @@ private struct DeveloperQAHubView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title), \(subtitle)")
+        .accessibilityIdentifier(toolIdentifier(for: title))
+    }
+
+    private func hubSectionIdentifier(for title: String) -> String {
+        switch title {
+        case "Product Spine": "hf.developerQa.productSpineButton"
+        case "Visual Parity Center": "hf.developerQa.visualParityButton"
+        case "Protected Systems Seal": "hf.developerQa.protectedSystemsButton"
+        case "Route Quality Center": "hf.developerQa.routeQualityButton"
+        case "Build + Launch Checklist": "hf.developerQa.buildChecklistButton"
+        case "Screenshot Review": "hf.developerQa.screenshotReviewButton"
+        default: "hf.developerQa.section.\(qaIdentifierSlug(title))"
+        }
+    }
+
+    private func toolIdentifier(for title: String) -> String {
+        switch title {
+        case "Consumer + Rooms Demo Tour": "hf.developerQa.consumerRoomsDemoTourButton"
+        case "Product Spine": "hf.developerQa.productSpineButton"
+        case "Route Quality Center": "hf.developerQa.routeQualityButton"
+        case "Visual Parity Backlog": "hf.developerQa.visualParityButton"
+        case "Spine Safety Seal": "hf.developerQa.protectedSystemsButton"
+        default: "hf.developerQa.tool.\(qaIdentifierSlug(title))"
+        }
+    }
+
+    private func qaIdentifierSlug(_ value: String) -> String {
+        value
+            .lowercased()
+            .map { character in
+                character.isLetter || character.isNumber ? character : "-"
+            }
+            .reduce(into: "") { result, character in
+                if character == "-", result.last == "-" {
+                    return
+                }
+                result.append(character)
+            }
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 }
 

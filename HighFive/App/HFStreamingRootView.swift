@@ -9,7 +9,7 @@ enum HFStreamingTab: Hashable {
 }
 
 struct HFStreamingRootView: View {
-    @State private var selectedTab: HFStreamingTab = .home
+    @State private var selectedTab: HFStreamingTab = Self.initialTab
     @State private var selectedProfile = HFMockData.userProfiles[0]
     @State private var searchMode: HFSearchHubMode = .search
     @StateObject private var streamingStore = HFStreamingStore()
@@ -21,6 +21,10 @@ struct HFStreamingRootView: View {
         HFTabItem(value: .downloads, title: "Downloads", systemImage: "arrow.down.circle.fill"),
         HFTabItem(value: .profile, title: "Profile", systemImage: "person.crop.circle.fill")
     ]
+
+    private static var initialTab: HFStreamingTab {
+        ProcessInfo.processInfo.arguments.contains("--hf-start-profile") ? .profile : .home
+    }
 
     var body: some View {
         NavigationStack {
@@ -71,6 +75,7 @@ struct HFStreamingRootView: View {
                 }
 
                 HFTabBar(items: tabItems, selection: $selectedTab)
+                    .accessibilityIdentifier("hf.profile.bottomTabs")
             }
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)

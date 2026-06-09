@@ -21,6 +21,7 @@ struct FinalDemoTourView: View {
                 .padding(.top, HFSpacing.lg)
                 .padding(.bottom, HFSpacing.floatingTabClearance)
             }
+            .accessibilityIdentifier("hf.demoTour.root")
             .onAppear {
                 DispatchQueue.main.async {
                     proxy.scrollTo("demoTourTop", anchor: .top)
@@ -67,6 +68,7 @@ struct FinalDemoTourView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Consumer and Rooms Demo Tour, internal guided proof path for HighFive Cinema")
+        .accessibilityIdentifier("hf.demoTour.hero")
     }
 
     private var actsSection: some View {
@@ -100,6 +102,7 @@ struct FinalDemoTourView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(act.accessibilityLabel)
+        .accessibilityIdentifier(actIdentifier(for: act.title))
     }
 
     private var screenshotPlanSection: some View {
@@ -115,6 +118,7 @@ struct FinalDemoTourView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Screenshot plan rows for consumer rooms and internal demo tour screenshots")
+        .accessibilityIdentifier("hf.demoTour.screenshotPlan")
     }
 
     private func screenshotPlanRow(_ target: HFDemoScreenshotTarget) -> some View {
@@ -176,6 +180,7 @@ struct FinalDemoTourView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Product Spine, Watch Create Connect Launch Export mapping")
+        .accessibilityIdentifier("hf.demoTour.highFiveStory")
     }
 
     private func storyPillarCard(_ item: HFDemoStoryItem) -> some View {
@@ -239,6 +244,7 @@ struct FinalDemoTourView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Figma Source, HighFive Cinema Master Template production frames and secondary style reference")
+        .accessibilityIdentifier("hf.demoTour.figmaSource")
     }
 
     private var protectedSystemsSection: some View {
@@ -264,6 +270,16 @@ struct FinalDemoTourView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Protected systems summary, protected paths and assets remain disconnected")
+        .accessibilityIdentifier("hf.demoTour.protectedSystemsSummary")
+    }
+
+    private func actIdentifier(for title: String) -> String {
+        switch title {
+        case "Act 1 - Watch First": "hf.demoTour.act1"
+        case "Act 2 - HighFive Rooms": "hf.demoTour.act2"
+        case "Act 3 - Internal Validation": "hf.demoTour.act3"
+        default: "hf.demoTour.act"
+        }
     }
 
     private func metadataRow(label: String, value: String) -> some View {

@@ -3,6 +3,20 @@ import SwiftUI
 struct HFFinalDemoStepCard: View {
     let step: HFFinalDemoStep
     let stepNumber: Int
+    private var stableID: String {
+        step.title
+            .lowercased()
+            .map { character in
+                character.isLetter || character.isNumber ? character : "-"
+            }
+            .reduce(into: "") { result, character in
+                if character == "-", result.last == "-" {
+                    return
+                }
+                result.append(character)
+            }
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    }
 
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
@@ -41,6 +55,7 @@ struct HFFinalDemoStepCard: View {
                     Spacer(minLength: HFSpacing.xs)
 
                     HFStatusBadge(title: step.status, isProminent: step.status == "Ready")
+                        .accessibilityIdentifier("hf.demoStep.status.\(stableID)")
                 }
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
@@ -51,7 +66,7 @@ struct HFFinalDemoStepCard: View {
 
                 VStack(alignment: .leading, spacing: HFSpacing.xs) {
                     detailBlock(label: "Purpose", value: step.purpose)
-                    detailBlock(label: "Expected Proof", value: step.expectedProof)
+                    detailBlock(label: "Expected Proof", value: step.expectedProof, identifier: "hf.demoStep.reviewFocus.\(stableID)")
                     detailBlock(label: "Safety", value: step.safetyNote)
                 }
             }
@@ -59,9 +74,10 @@ struct HFFinalDemoStepCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(step.title), \(step.actName), pillar \(step.pillar), route \(step.routeLabel), purpose \(step.purpose), expected proof \(step.expectedProof), screenshot \(step.screenshotTarget), safety \(step.safetyNote)")
+        .accessibilityIdentifier("hf.demoStep.card.\(stableID)")
     }
 
-    private func detailBlock(label: String, value: String) -> some View {
+    private func detailBlock(label: String, value: String, identifier: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.xxs) {
             Text(label)
                 .font(HFTypography.caption)
@@ -72,5 +88,6 @@ struct HFFinalDemoStepCard: View {
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .accessibilityIdentifier(identifier ?? "hf.demoStep.detail.\(stableID).\(label.lowercased().replacingOccurrences(of: " ", with: "-"))")
     }
 }

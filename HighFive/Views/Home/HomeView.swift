@@ -15,6 +15,14 @@ struct HomeView: View {
         HFMockData.movie("friendly") ?? HFMockData.movies[0]
     }
 
+    private var screenWidth: CGFloat {
+        UIScreen.main.bounds.width
+    }
+
+    private var screenPadding: CGFloat {
+        HFResponsiveFit.safeHorizontalPadding(width: screenWidth)
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: HFSpacing.xl) {
@@ -45,31 +53,41 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        HStack(spacing: HFSpacing.md) {
+        HStack(spacing: HFSpacing.sm) {
             ZStack {
                 Circle()
                     .fill(HFColors.goldGradient)
                 Image(systemName: "film.stack.fill")
-                    .font(.system(size: 22, weight: .black))
+                    .font(.system(size: HFResponsiveFit.headerIconSize(width: screenWidth) - 4, weight: .black))
                     .foregroundStyle(.black)
             }
-            .frame(width: 50, height: 50)
+            .frame(
+                width: HFResponsiveFit.headerLogoSize(width: screenWidth),
+                height: HFResponsiveFit.headerLogoSize(width: screenWidth)
+            )
+            .layoutPriority(1)
 
             VStack(alignment: .leading, spacing: HFSpacing.xxs) {
                 Text("HIGHFIVE CINEMA")
-                    .font(.system(size: 20, weight: .black, design: .default))
-                    .kerning(0.8)
+                    .font(.system(size: HFResponsiveFit.isCompactPhone(width: screenWidth) ? 18 : 20, weight: .black, design: .default))
+                    .kerning(0.4)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
                 Text("Premium stories. Ready now.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .foregroundStyle(HFColors.gold)
+            .layoutPriority(2)
 
-            Spacer()
+            Spacer(minLength: HFSpacing.xs)
 
-            HStack(spacing: HFSpacing.md) {
+            HStack(spacing: HFResponsiveFit.isLargePhone(width: screenWidth) ? HFSpacing.xxs : 0) {
                 Button(action: onSearch) {
                     Image(systemName: "magnifyingglass")
+                        .frame(width: HFResponsiveFit.minimumTapTarget, height: HFResponsiveFit.minimumTapTarget)
                 }
                 .accessibilityLabel("Search")
 
@@ -78,22 +96,24 @@ struct HomeView: View {
                 } label: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "bell.fill")
+                            .frame(width: HFResponsiveFit.minimumTapTarget, height: HFResponsiveFit.minimumTapTarget)
                         HFUnreadBadge(count: notificationStore.unreadCount)
-                            .offset(x: 10, y: -10)
+                            .offset(x: 7, y: -7)
                     }
                 }
                 .accessibilityLabel("Notifications")
 
                 Button(action: onProfile) {
                     Image(systemName: selectedProfile.avatarSystemName)
+                        .frame(width: HFResponsiveFit.minimumTapTarget, height: HFResponsiveFit.minimumTapTarget)
                 }
                 .accessibilityLabel("Profile")
             }
-            .font(.system(size: 25, weight: .bold))
+            .font(.system(size: HFResponsiveFit.headerIconSize(width: screenWidth), weight: .bold))
             .foregroundStyle(HFColors.textPrimary)
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .padding(.horizontal, screenPadding)
     }
 
     private var homeCategoryPills: some View {
@@ -114,7 +134,7 @@ struct HomeView: View {
 
             Spacer()
         }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .padding(.horizontal, screenPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Home categories Movies, Series, Originals")
     }
@@ -172,25 +192,25 @@ struct HomeView: View {
             NavigationLink(value: heroMovie) {
                 ZStack(alignment: .bottomLeading) {
                     heroArtwork(heroMovie)
-                        .frame(height: HFSpacing.heroHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                        .frame(height: HFResponsiveFit.heroImageHeight(width: screenWidth))
+                        .clipShape(RoundedRectangle(cornerRadius: HFResponsiveFit.heroCardCornerRadius(width: screenWidth), style: .continuous))
 
                     HFColors.cinematicGoldScrim
-                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: HFResponsiveFit.heroCardCornerRadius(width: screenWidth), style: .continuous))
 
                     LinearGradient(
                         colors: [.clear, Color.black.opacity(0.18), Color.black.opacity(0.94)],
                         startPoint: .center,
                         endPoint: .bottom
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: HFResponsiveFit.heroCardCornerRadius(width: screenWidth), style: .continuous))
                 }
             }
             .buttonStyle(.plain)
 
             heroPosterStack
                 .padding(.top, HFSpacing.lg)
-                .padding(.trailing, HFSpacing.md)
+                .padding(.trailing, HFSpacing.sm)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .allowsHitTesting(false)
 
@@ -205,16 +225,16 @@ struct HomeView: View {
                             .kerning(1.6)
 
                         Text(heroMovie.title)
-                            .font(HFTypography.heroTitle)
+                            .font(.system(size: HFResponsiveFit.isCompactPhone(width: screenWidth) ? 38 : 44, weight: .black, design: .default))
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(2)
-                            .minimumScaleFactor(0.72)
+                            .minimumScaleFactor(0.66)
 
                         Text(heroMovie.subtitle)
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(1)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .minimumScaleFactor(0.78)
 
                         HStack(spacing: HFSpacing.xs) {
                             ForEach([heroMovie.rating, heroMovie.duration, "Original"], id: \.self) { badge in
@@ -223,6 +243,8 @@ struct HomeView: View {
                                     .foregroundStyle(.black)
                                     .padding(.horizontal, HFSpacing.sm)
                                     .frame(height: 30)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.74)
                                     .background(HFColors.goldGradient)
                                     .clipShape(Capsule())
                             }
@@ -243,6 +265,8 @@ struct HomeView: View {
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                         .background(HFColors.goldGradient)
                         .clipShape(Capsule())
                     }
@@ -261,20 +285,20 @@ struct HomeView: View {
             }
             .padding(.horizontal, HFSpacing.lg)
             .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.lg)
+            .padding(.bottom, HFResponsiveFit.heroContentBottomPadding(width: screenWidth))
         }
         .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: HFResponsiveFit.heroCardCornerRadius(width: screenWidth), style: .continuous)
                 .stroke(HFColors.gold.opacity(0.62), lineWidth: 1.4)
         )
         .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 28, x: 0, y: 18)
-        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .padding(.horizontal, HFResponsiveFit.heroHorizontalInset(width: screenWidth))
     }
 
     private var heroPosterStack: some View {
         VStack(spacing: -18) {
             ForEach(Array(HFMockData.recommended.movies.prefix(3).enumerated()), id: \.element.id) { index, movie in
-                HFPosterCard(movie: movie, width: 72, showTitle: false, posterOnly: true)
+                HFPosterCard(movie: movie, width: HFResponsiveFit.heroPosterWidth(width: screenWidth), showTitle: false, posterOnly: true)
                     .rotationEffect(.degrees(index == 1 ? 7 : -6))
                     .shadow(color: HFColors.shadow, radius: 12, x: 0, y: 10)
             }
@@ -388,13 +412,13 @@ struct HomeView: View {
                             Button {
                                 previewMovie = movie
                             } label: {
-                                HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showProgress: true)
+                                HFPosterCard(movie: movie, width: HFResponsiveFit.posterRailWidth(width: screenWidth), showProgress: true)
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Continue watching \(movie.title)")
                         } else {
                             NavigationLink(value: movie) {
-                                HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showProgress: category.id == "continue")
+                                HFPosterCard(movie: movie, width: HFResponsiveFit.posterRailWidth(width: screenWidth), showProgress: category.id == "continue")
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Open \(movie.title)")
