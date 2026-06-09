@@ -26,6 +26,7 @@ struct ProfileView: View {
                 manageProfilesButton
 
                 menu
+                highFiveRoomsSection
                 buildQAToolsSection
                 signOutButton
             }
@@ -306,6 +307,86 @@ struct ProfileView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var highFiveRoomsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFSectionHeader(title: "HighFive Rooms", actionTitle: nil)
+                Text("Watch, create, connect, launch, and prepare your content ecosystem.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(spacing: HFSpacing.md) {
+                NavigationLink {
+                    WatchRoomView()
+                } label: {
+                    HFProductRoomEntryCard(
+                        title: "Watch",
+                        subtitle: "Your streaming home, saved titles, downloads, and discovery.",
+                        status: "Streaming",
+                        systemImage: "play.rectangle.fill",
+                        accent: HFColors.gold
+                    )
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    CreatorStudioRoomView()
+                } label: {
+                    HFProductRoomEntryCard(
+                        title: "Create",
+                        subtitle: "Build projects, pitches, creator profiles, and studio materials.",
+                        status: "Studio Preview",
+                        systemImage: "wand.and.stars",
+                        accent: Color.orange
+                    )
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    ConnectRoomView()
+                } label: {
+                    HFProductRoomEntryCard(
+                        title: "Connect",
+                        subtitle: "Grow audiences, creator communities, and fan engagement.",
+                        status: "Local Preview",
+                        systemImage: "person.2.fill",
+                        accent: Color.cyan
+                    )
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    LaunchRoomView()
+                } label: {
+                    HFProductRoomEntryCard(
+                        title: "Launch",
+                        subtitle: "Prepare premieres, campaigns, timelines, and release pages.",
+                        status: "Launch Preview",
+                        systemImage: "flag.checkered",
+                        accent: Color.green
+                    )
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    ExportRoomView()
+                } label: {
+                    HFProductRoomEntryCard(
+                        title: "Export",
+                        subtitle: "Organize deliverables, media kits, and distribution readiness.",
+                        status: "Readiness",
+                        systemImage: "shippingbox.fill",
+                        accent: Color.purple
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
     private var avatarRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: HFSpacing.md) {
@@ -470,6 +551,434 @@ private struct ProfileMockSheetView: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+    }
+}
+
+private struct HFProductRoomEntryCard: View {
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.34)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 46, height: 46)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(title)
+                            .font(HFTypography.menu)
+                            .foregroundStyle(HFColors.textPrimary)
+                        HFRoomStatusChip(title: status, accent: accent)
+                    }
+
+                    Text(subtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(accent)
+                    .padding(.top, 4)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct WatchRoomView: View {
+    @State private var searchMode: HFSearchHubMode = .discover
+
+    private var featuredMovie: Movie {
+        HFMockData.movie("the-friendly") ?? HFMockData.movies[0]
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                HFProductRoomHero(
+                    eyebrow: "WATCH",
+                    title: "Watch Room",
+                    subtitle: "The consumer streaming layer of HighFive Cinema.",
+                    status: "Streaming",
+                    systemImage: "play.rectangle.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.md) {
+                    NavigationLink {
+                        MovieDetailView(movie: featuredMovie)
+                    } label: {
+                        HFRoomFeatureCard(title: "Watch Now", subtitle: "Open the featured title path and review the movie detail experience.", status: "Preview", systemImage: "play.fill", accent: HFColors.gold)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        MyListView()
+                    } label: {
+                        HFRoomFeatureCard(title: "My List", subtitle: "Saved titles and in-progress viewing stay in the consumer library.", status: "Local Preview", systemImage: "bookmark.fill", accent: HFColors.gold)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        DownloadsView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Downloads", subtitle: "Offline-ready titles remain local preview content.", status: "Local Preview", systemImage: "arrow.down.circle.fill", accent: HFColors.gold)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        SearchView(mode: $searchMode)
+                    } label: {
+                        HFRoomFeatureCard(title: "Discover", subtitle: "Find films, originals, premieres, and poster-led rails.", status: "Streaming", systemImage: "magnifyingglass", accent: HFColors.gold)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        MovieDetailView(movie: featuredMovie)
+                    } label: {
+                        HFRoomFeatureCard(title: "Featured Titles", subtitle: "The Friendly remains the current hero path for visual QA.", status: "Featured", systemImage: "star.fill", accent: HFColors.gold)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationTitle("Watch Room")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct CreatorStudioRoomView: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                HFProductRoomHero(
+                    eyebrow: "CREATE",
+                    title: "Creator Studio",
+                    subtitle: "Plan, package, and prepare stories for HighFive.",
+                    status: "Studio Preview",
+                    systemImage: "wand.and.stars",
+                    accent: Color.orange
+                )
+
+                VStack(spacing: HFSpacing.md) {
+                    NavigationLink {
+                        CreatorEntryView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Studio Overview", subtitle: "Open the creator entry point and studio preview surface.", status: "Preview", systemImage: "rectangle.3.group.fill", accent: Color.orange)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorDashboardPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Projects", subtitle: "Review project health, drafts, and readiness signals locally.", status: "Local Preview", systemImage: "folder.fill", accent: Color.orange)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorPackageBuilderPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Pitch / Media Kit", subtitle: "Package story materials, pitch notes, and presentation copy.", status: "Studio Preview", systemImage: "shippingbox.fill", accent: Color.orange)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorReleaseReadinessPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Studio Checklist", subtitle: "Track readiness for creator package review.", status: "Readiness", systemImage: "checklist.checked", accent: Color.orange)
+                    }
+                    .buttonStyle(.plain)
+
+                    HFRoomFeatureCard(title: "Drafts", subtitle: "Draft planning stays local and display-only in this room.", status: "Coming Soon", systemImage: "doc.text.fill", accent: Color.orange)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationTitle("Creator Studio")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ConnectRoomView: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                HFProductRoomHero(
+                    eyebrow: "CONNECT",
+                    title: "Connect Room",
+                    subtitle: "Build audience relationships around stories and creators.",
+                    status: "Local Preview",
+                    systemImage: "person.2.fill",
+                    accent: Color.cyan
+                )
+
+                VStack(spacing: HFSpacing.md) {
+                    NavigationLink {
+                        ConnectHubView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Creator Communities", subtitle: "Preview community entry points around projects and creators.", status: "Preview", systemImage: "person.3.fill", accent: Color.cyan)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        ActivityFeedPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Fan Reactions Preview", subtitle: "Review local activity and reaction-style cards.", status: "Local Preview", systemImage: "heart.text.square.fill", accent: Color.cyan)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        FollowSuggestionsPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Following Preview", subtitle: "Explore suggested creators and relationship previews.", status: "Preview", systemImage: "person.badge.plus.fill", accent: Color.cyan)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        SocialRoomsPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Comments Preview", subtitle: "Room discussion previews remain local and display-only.", status: "Local Preview", systemImage: "text.bubble.fill", accent: Color.cyan)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        WatchPartyPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Watch Community", subtitle: "Preview community energy around shared viewing moments.", status: "Coming Soon", systemImage: "play.tv.fill", accent: Color.cyan)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationTitle("Connect Room")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct LaunchRoomView: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                HFProductRoomHero(
+                    eyebrow: "LAUNCH",
+                    title: "Launch Room",
+                    subtitle: "Prepare premieres, campaigns, and release moments.",
+                    status: "Launch Preview",
+                    systemImage: "flag.checkered",
+                    accent: Color.green
+                )
+
+                VStack(spacing: HFSpacing.md) {
+                    NavigationLink {
+                        CreatorLaunchCenterPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Premiere Timeline", subtitle: "Preview the milestone path for a HighFive premiere.", status: "Preview", systemImage: "calendar.badge.clock", accent: Color.green)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        AppReleasePresentationView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Campaign Page Preview", subtitle: "Review the product story for a release moment.", status: "Launch Preview", systemImage: "rectangle.on.rectangle.angled.fill", accent: Color.green)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorAccessPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Audience Waitlist Preview", subtitle: "Audience access planning stays preview-only.", status: "Preview", systemImage: "person.crop.circle.badge.clock", accent: Color.green)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        AppDemoChecklistView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Launch Checklist", subtitle: "Review launch story and demo readiness locally.", status: "Readiness", systemImage: "checklist.checked", accent: Color.green)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        ReleaseCandidatePrepView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Release Status", subtitle: "Track release candidate prep without live release services.", status: "Local Preview", systemImage: "gauge.with.dots.needle.67percent", accent: Color.green)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationTitle("Launch Room")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ExportRoomView: View {
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                HFProductRoomHero(
+                    eyebrow: "EXPORT",
+                    title: "Export Room",
+                    subtitle: "Prepare deliverables, media kits, and platform packages.",
+                    status: "Readiness",
+                    systemImage: "shippingbox.fill",
+                    accent: Color.purple
+                )
+
+                VStack(spacing: HFSpacing.md) {
+                    HFRoomFeatureCard(title: "Deliverables", subtitle: "Plan final package requirements without generating files.", status: "Readiness", systemImage: "checklist.checked", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Poster Package", subtitle: "Review poster package expectations with existing artwork references.", status: "Preview", systemImage: "photo.fill", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Trailer Package", subtitle: "Track trailer package planning without playback or delivery systems.", status: "Coming Soon", systemImage: "film.fill", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Festival Package", subtitle: "Prepare festival-facing materials as a static planning surface.", status: "Readiness", systemImage: "rosette", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Distribution Checklist", subtitle: "Organize platform readiness and delivery notes as local preview data.", status: "Local Preview", systemImage: "list.bullet.rectangle.fill", accent: Color.purple)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+                QAInfoPanel(
+                    icon: "lock.shield.fill",
+                    title: "Export systems remain locked",
+                    subtitle: "This room is planning-only. It does not generate files, open share flows, access photos, or run delivery systems."
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationTitle("Export Room")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct HFProductRoomHero: View {
+    let eyebrow: String
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: 28, strokeColor: accent.opacity(0.38)) {
+            ZStack(alignment: .topTrailing) {
+                LinearGradient(
+                    colors: [accent.opacity(0.22), HFColors.warmGlow.opacity(0.10), Color.clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomStatusChip(title: eyebrow, accent: accent)
+                            Text(title)
+                                .font(HFTypography.display)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(subtitle)
+                                .font(HFTypography.body)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: systemImage)
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 58, height: 58)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+
+                    HFRoomStatusChip(title: status, accent: accent)
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+}
+
+private struct HFRoomFeatureCard: View {
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                        HFRoomStatusChip(title: status, accent: accent)
+                    }
+
+                    Text(subtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct HFRoomStatusChip: View {
+    let title: String
+    let accent: Color
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, HFSpacing.xs)
+            .padding(.vertical, 6)
+            .background(accent.opacity(0.12))
+            .overlay(Capsule().stroke(accent.opacity(0.38), lineWidth: 1))
+            .clipShape(Capsule())
     }
 }
 
