@@ -134,7 +134,7 @@ TMPDIR="/Volumes/Scratch SSD/tmp/" xcodebuild \
 
 xcrun simctl uninstall booted "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install booted "$APP_PATH" || exit 1
-launch_app || exit 1
+launch_app "--hf-skip-onboarding" || exit 1
 
 capture_png "current_booted_home.png" "Immediate Home capture after launch on $BOOTED_NAME."
 

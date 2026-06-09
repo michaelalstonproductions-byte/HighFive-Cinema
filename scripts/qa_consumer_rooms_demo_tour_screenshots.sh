@@ -152,7 +152,7 @@ build_app || exit 1
 xcrun simctl terminate booted "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl uninstall booted "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl install booted "$APP_PATH" || exit 1
-xcrun simctl launch booted "$BUNDLE_ID" || exit 1
+xcrun simctl launch booted "$BUNDLE_ID" --hf-skip-onboarding || exit 1
 sleep 3
 
 capture_png "00-home-launch.png" "Captured immediately after clean install and launch."
