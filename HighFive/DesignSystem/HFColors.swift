@@ -11,6 +11,7 @@ enum HFColors {
     static let gold = Color(red: 0.930, green: 0.705, blue: 0.255)
     static let goldDeep = Color(red: 0.710, green: 0.455, blue: 0.100)
     static let orange = Color(red: 0.950, green: 0.410, blue: 0.115)
+    static let amberGlow = Color(red: 1.000, green: 0.530, blue: 0.120)
     static let cyanGlow = Color(red: 0.270, green: 0.780, blue: 1.000)
     static let textPrimary = Color.white
     static let textSecondary = Color(red: 0.770, green: 0.760, blue: 0.735)
@@ -29,6 +30,16 @@ enum HFColors {
         ],
         startPoint: .top,
         endPoint: .bottom
+    )
+
+    static let cinematicGoldScrim = LinearGradient(
+        colors: [
+            Color.black.opacity(0.05),
+            warmGlow.opacity(0.44),
+            Color.black.opacity(0.92)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
     )
 
     static let goldGradient = LinearGradient(

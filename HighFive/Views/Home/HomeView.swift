@@ -21,6 +21,7 @@ struct HomeView: View {
                 header
                 homeCategoryPills
                 heroSection
+                tonightFeatureSection
                 todaySection
                 watchSectionHeader
 
@@ -28,6 +29,7 @@ struct HomeView: View {
                     movieRail(category)
                 }
 
+                goldDiscoveryRail
                 smartRecommendationsSection
             }
             .padding(.top, HFSpacing.lg)
@@ -162,15 +164,34 @@ struct HomeView: View {
 
     private var heroSection: some View {
         ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+                .fill(HFColors.warmGlow.opacity(0.36))
+                .blur(radius: 24)
+                .offset(y: 26)
+
             NavigationLink(value: heroMovie) {
-                heroArtwork(heroMovie)
-                    .frame(height: HFSpacing.heroHeight)
+                ZStack(alignment: .bottomLeading) {
+                    heroArtwork(heroMovie)
+                        .frame(height: HFSpacing.heroHeight)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+
+                    HFColors.cinematicGoldScrim
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.18), Color.black.opacity(0.94)],
+                        startPoint: .center,
+                        endPoint: .bottom
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                }
             }
             .buttonStyle(.plain)
 
-            HFColors.heroGradient
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+            heroPosterStack
+                .padding(.top, HFSpacing.lg)
+                .padding(.trailing, HFSpacing.md)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .allowsHitTesting(false)
 
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -238,13 +259,123 @@ struct HomeView: View {
                     .accessibilityLabel(streamingStore.isSaved(heroMovie) ? "Remove from My List" : "Add to My List")
                 }
             }
-            .padding(HFSpacing.lg)
+            .padding(.horizontal, HFSpacing.lg)
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.lg)
         }
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
-                .stroke(HFColors.goldStroke, lineWidth: 1)
+                .stroke(HFColors.gold.opacity(0.62), lineWidth: 1.4)
         )
+        .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 28, x: 0, y: 18)
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var heroPosterStack: some View {
+        VStack(spacing: -18) {
+            ForEach(Array(HFMockData.recommended.movies.prefix(3).enumerated()), id: \.element.id) { index, movie in
+                HFPosterCard(movie: movie, width: 72, showTitle: false, posterOnly: true)
+                    .rotationEffect(.degrees(index == 1 ? 7 : -6))
+                    .shadow(color: HFColors.shadow, radius: 12, x: 0, y: 10)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.black.opacity(0.30))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.38), lineWidth: 1)
+        )
+    }
+
+    private var tonightFeatureSection: some View {
+        NavigationLink(value: heroMovie) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.52)) {
+                HStack(spacing: HFSpacing.md) {
+                    ZStack {
+                        ForEach(Array(HFMockData.newThisWeek.movies.prefix(3).enumerated()), id: \.element.id) { index, movie in
+                            HFPosterCard(movie: movie, width: 88, showTitle: false, posterOnly: true)
+                                .rotationEffect(.degrees(Double(index - 1) * 8))
+                                .offset(x: CGFloat(index - 1) * 36, y: CGFloat(abs(index - 1)) * 8)
+                                .zIndex(Double(index))
+                        }
+                    }
+                    .frame(width: 158, height: 142)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("TONIGHT ON HIGHFIVE")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                            .kerning(1.2)
+                        Text("The Friendly leads a slate built for a late-night premiere.")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(3)
+                        Text("Crime, drama, originals")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                        HStack(spacing: HFSpacing.xxs) {
+                            Image(systemName: "play.circle.fill")
+                            Text("Open Premiere")
+                        }
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.gold)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(HFSpacing.lg)
+                .background(
+                    LinearGradient(
+                        colors: [HFColors.warmGlow.opacity(0.32), Color.clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open tonight on HighFive featured premiere")
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var goldDiscoveryRail: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "HighFive Gold Picks", actionTitle: "Discover", action: onDiscover)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(HFMockData.onlyOnHighFive.movies.prefix(8)) { movie in
+                        NavigationLink(value: movie) {
+                            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                                HFPosterCard(movie: movie, width: 152, showTitle: false, showProgress: movie.progress != nil)
+                                Text(movie.title)
+                                    .font(HFTypography.cardTitle)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .lineLimit(1)
+                                    .frame(width: 152, alignment: .leading)
+                                Text(movie.genres.prefix(2).joined(separator: " / "))
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.gold)
+                                    .lineLimit(1)
+                                    .frame(width: 152, alignment: .leading)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .padding(.vertical, HFSpacing.sm)
+            }
+            .background(
+                LinearGradient(
+                    colors: [HFColors.warmGlow.opacity(0.26), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .scrollClipDisabled()
+        }
     }
 
     private func movieRail(_ category: Category) -> some View {

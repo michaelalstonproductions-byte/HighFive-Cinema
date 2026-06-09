@@ -10,6 +10,7 @@ struct UnifiedDiscoveryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xl) {
             header
+            discoverSpotlight
             discoveryFilters
 
             ForEach(streamingDiscoveryRails) { category in
@@ -55,6 +56,56 @@ struct UnifiedDiscoveryView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var discoverSpotlight: some View {
+        let spotlight = HFMockData.movie("paranormall-s1") ?? HFMockData.movies[0]
+
+        return NavigationLink(value: spotlight) {
+            ZStack(alignment: .bottomLeading) {
+                artwork(for: spotlight)
+                    .frame(height: 270)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.50), Color.black.opacity(0.94)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+
+                HStack(alignment: .bottom, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("HIGHFIVE PICKS")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                            .kerning(1.2)
+                        Text("Find something great to watch tonight.")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                        Text("Originals, thrillers, saved titles, and coming soon premieres.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer()
+
+                    HFPosterCard(movie: spotlight, width: 92, showTitle: false, posterOnly: true)
+                        .rotationEffect(.degrees(5))
+                }
+                .padding(HFSpacing.lg)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                    .stroke(HFColors.gold.opacity(0.48), lineWidth: 1)
+            )
+            .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 22, x: 0, y: 14)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityLabel("Open HighFive picks")
+    }
+
     private var discoveryFilters: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             ScrollView(.horizontal, showsIndicators: false) {
@@ -95,6 +146,18 @@ struct UnifiedDiscoveryView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
             .scrollClipDisabled()
+        }
+    }
+
+    @ViewBuilder
+    private func artwork(for movie: Movie) -> some View {
+        if HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
+           let assetName = movie.backdropAssetName ?? movie.posterAssetName {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+        } else {
+            HFPosterFallback(title: movie.title)
         }
     }
 }

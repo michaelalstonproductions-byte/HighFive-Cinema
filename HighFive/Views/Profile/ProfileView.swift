@@ -21,6 +21,7 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                selectedProfilePanel
                 avatarRow
                 manageProfilesButton
 
@@ -104,7 +105,14 @@ struct ProfileView: View {
                 }
                 Spacer()
             }
-            .padding(HFSpacing.md)
+            .padding(HFSpacing.lg)
+            .background(
+                LinearGradient(
+                    colors: [HFColors.warmGlow.opacity(0.24), Color.clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }

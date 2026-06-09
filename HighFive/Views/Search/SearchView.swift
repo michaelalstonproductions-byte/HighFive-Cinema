@@ -96,6 +96,7 @@ struct SearchView: View {
             filterChips
 
             if query.isEmpty {
+                popularSearches
                 recentSearches
                 suggestedForYou
             }
@@ -115,6 +116,47 @@ struct SearchView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
             .padding(.trailing, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var popularSearches: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Popular Searches", actionTitle: "Discover") {
+                mode = .discover
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(HFMockData.categories.first { $0.id == "trending" }?.movies.prefix(6) ?? HFMockData.movies.prefix(6)) { movie in
+                        NavigationLink(value: movie) {
+                            VStack(spacing: HFSpacing.xs) {
+                                HFPosterCard(movie: movie, width: 124, showTitle: false, posterOnly: true)
+                                Circle()
+                                    .fill(HFColors.goldGradient)
+                                    .frame(width: 24, height: 24)
+                                    .overlay(
+                                        Image(systemName: "flame.fill")
+                                            .font(.system(size: 11, weight: .black))
+                                            .foregroundStyle(.black)
+                                    )
+                                    .offset(y: -18)
+                            }
+                            .frame(height: 202)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .padding(.top, HFSpacing.xs)
+            }
+            .background(
+                LinearGradient(
+                    colors: [HFColors.warmGlow.opacity(0.20), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .scrollClipDisabled()
         }
     }
 

@@ -13,8 +13,8 @@ enum HFSpacing {
     static let cardRadius: CGFloat = 15
     static let panelRadius: CGFloat = 24
     static let heroRadius: CGFloat = 20
-    static let heroHeight: CGFloat = 560
-    static let posterRailWidth: CGFloat = 144
+    static let heroHeight: CGFloat = 610
+    static let posterRailWidth: CGFloat = 148
     static let tabBarHeight: CGFloat = 81
     static let floatingTabClearance: CGFloat = 132
     static let floatingTabHorizontal: CGFloat = 16

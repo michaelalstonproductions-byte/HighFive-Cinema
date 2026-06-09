@@ -51,9 +51,10 @@ struct HFPosterCard: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
-                    .stroke(HFColors.stroke, lineWidth: 1)
+                    .stroke(HFColors.gold.opacity(0.24), lineWidth: 1)
             )
-            .shadow(color: HFColors.shadow.opacity(0.72), radius: 13, x: 0, y: 10)
+            .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 16, x: 0, y: 12)
+            .shadow(color: HFColors.shadow.opacity(0.78), radius: 14, x: 0, y: 10)
 
             if showTitle && !posterOnly {
                 Text(movie.title)

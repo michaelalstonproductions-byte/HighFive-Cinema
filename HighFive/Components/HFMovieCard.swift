@@ -57,5 +57,9 @@ struct HFMovieCard: View {
             }
             .padding(HFSpacing.sm)
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
+        )
     }
 }

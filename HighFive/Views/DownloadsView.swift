@@ -74,9 +74,9 @@ struct DownloadsView: View {
     private var downloadHero: some View {
         ZStack {
             Circle()
-                .fill(HFColors.gold.opacity(0.18))
-                .frame(width: 244, height: 244)
-                .blur(radius: 2)
+                .fill(HFColors.amberGlow.opacity(0.22))
+                .frame(width: 300, height: 300)
+                .blur(radius: 5)
 
             HStack(spacing: -36) {
                 heroPoster(movie: downloads.dropFirst(1).first ?? HFMockData.movies[2], rotation: -14)
@@ -88,6 +88,10 @@ struct DownloadsView: View {
 
             VStack(spacing: HFSpacing.xs) {
                 Spacer()
+                Text("OFFLINE SHELF")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.gold)
+                    .kerning(1.3)
                 Text(downloads.isEmpty ? "No titles downloaded" : "\(downloads.count) titles downloaded")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
@@ -98,14 +102,20 @@ struct DownloadsView: View {
             .padding(.bottom, HFSpacing.sm)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 278)
+        .frame(height: 334)
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .background(
+            RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                .fill(HFColors.warmGlow.opacity(0.18))
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .padding(.vertical, HFSpacing.lg)
+        )
     }
 
     private func heroPoster(movie: Movie, rotation: Double) -> some View {
-        HFPosterCard(movie: movie, width: 142, showTitle: false, posterOnly: true)
+        HFPosterCard(movie: movie, width: 164, showTitle: false, posterOnly: true)
             .rotationEffect(.degrees(rotation))
-            .shadow(color: HFColors.shadow, radius: 18, x: 0, y: 12)
+            .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 24, x: 0, y: 16)
     }
 
     private var storageStatus: some View {
@@ -118,7 +128,7 @@ struct DownloadsView: View {
                             .foregroundStyle(HFColors.textPrimary)
                         Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB saved")
                             .font(HFTypography.caption)
-                            .foregroundStyle(HFColors.textSecondary)
+                            .foregroundStyle(HFColors.gold)
                     }
 
                     Spacer()

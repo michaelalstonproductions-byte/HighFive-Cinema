@@ -59,6 +59,11 @@ struct MovieDetailView: View {
 
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+                .fill(HFColors.warmGlow.opacity(0.34))
+                .blur(radius: 28)
+                .offset(y: 32)
+
             detailArtwork
                 .frame(height: 610)
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
@@ -70,6 +75,26 @@ struct MovieDetailView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
+            VStack {
+                HStack {
+                    Text("HIGHFIVE TITLE")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.gold)
+                        .kerning(1.4)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .frame(height: 28)
+                        .background(Color.black.opacity(0.42))
+                        .clipShape(Capsule())
+                    Spacer()
+                    HFPosterCard(movie: movie, width: 84, showTitle: false, posterOnly: true)
+                        .rotationEffect(.degrees(7))
+                        .shadow(color: HFColors.amberGlow.opacity(0.26), radius: 18, x: 0, y: 12)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.top, HFSpacing.xl)
+
             HStack(alignment: .bottom, spacing: HFSpacing.md) {
                 HFPosterCard(movie: movie, width: 126, showTitle: false, showProgress: movie.progress != nil)
 
@@ -80,11 +105,7 @@ struct MovieDetailView: View {
                         .lineLimit(2)
                         .minimumScaleFactor(0.68)
 
-                    Text(movie.metadataLine)
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.gold)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                    detailMetadataChips
 
                     HStack(spacing: HFSpacing.xs) {
                         HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
@@ -109,6 +130,23 @@ struct MovieDetailView: View {
             RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
                 .stroke(HFColors.stroke, lineWidth: 1)
         )
+        .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 24, x: 0, y: 14)
+    }
+
+    private var detailMetadataChips: some View {
+        HStack(spacing: HFSpacing.xs) {
+            ForEach([movie.year, movie.rating, movie.duration], id: \.self) { value in
+                Text(value)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(value == movie.year ? .black : HFColors.textPrimary)
+                    .padding(.horizontal, HFSpacing.sm)
+                    .frame(height: 28)
+                    .background(value == movie.year ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.15)))
+                    .clipShape(Capsule())
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.78)
     }
 
     private var overview: some View {

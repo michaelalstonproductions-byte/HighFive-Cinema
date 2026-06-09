@@ -32,12 +32,19 @@ struct HFTabBar<Value: Hashable>: View {
                     .background {
                         if selection == item.value {
                             Capsule()
-                                .fill(HFColors.gold.opacity(0.16))
+                                .fill(
+                                    LinearGradient(
+                                        colors: [HFColors.gold.opacity(0.28), HFColors.orange.opacity(0.12)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                                 .overlay(
                                     Capsule()
-                                        .stroke(HFColors.gold.opacity(0.34), lineWidth: 1)
+                                        .stroke(HFColors.gold.opacity(0.58), lineWidth: 1)
                                 )
                                 .padding(.horizontal, HFSpacing.xs)
+                                .shadow(color: HFColors.amberGlow.opacity(0.38), radius: 14, x: 0, y: 8)
                         }
                     }
                     .contentShape(Capsule())
@@ -55,11 +62,20 @@ struct HFTabBar<Value: Hashable>: View {
                     RoundedRectangle(cornerRadius: 30, style: .continuous)
                         .fill(Color.black.opacity(0.90))
                 )
+                .overlay(
+                    LinearGradient(
+                        colors: [HFColors.warmGlow.opacity(0.42), Color.clear, Color.black.opacity(0.24)],
+                        startPoint: .bottomLeading,
+                        endPoint: .topTrailing
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(HFColors.glassStroke, lineWidth: 1)
+                .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
         )
+        .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 26, x: 0, y: 16)
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
         .padding(.horizontal, HFSpacing.floatingTabHorizontal)
         .padding(.bottom, HFSpacing.lg)
