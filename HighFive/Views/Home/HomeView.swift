@@ -19,6 +19,7 @@ struct HomeView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: HFSpacing.xl) {
                 header
+                homeCategoryPills
                 heroSection
                 todaySection
                 watchSectionHeader
@@ -54,9 +55,9 @@ struct HomeView: View {
 
             VStack(alignment: .leading, spacing: HFSpacing.xxs) {
                 Text("HIGHFIVE CINEMA")
-                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .font(.system(size: 20, weight: .black, design: .default))
                     .kerning(0.8)
-                Text("Premium stories, ready to watch")
+                Text("Premium stories. Ready now.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -93,6 +94,29 @@ struct HomeView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var homeCategoryPills: some View {
+        HStack(spacing: HFSpacing.sm) {
+            ForEach(["Movies", "Series", "Originals"], id: \.self) { title in
+                Text(title)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(title == "Movies" ? .black : HFColors.textPrimary)
+                    .padding(.horizontal, HFSpacing.md)
+                    .frame(height: 34)
+                    .background(title == "Movies" ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.10)))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(title == "Movies" ? Color.clear : HFColors.glassStroke, lineWidth: 1)
+                    )
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Home categories Movies, Series, Originals")
+    }
+
     private var todaySection: some View {
         HFTodaySummaryCard(items: HFEcosystemPreviewData.todaySummaryItems)
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -125,8 +149,8 @@ struct HomeView: View {
 
             Button(action: onDiscover) {
                 HFActionTile(
-                    title: "Smart Recommendations",
-                    subtitle: "Continue The Friendly and browse more cinematic picks.",
+                    title: "Recommended For You",
+                    subtitle: "More originals, premieres, and saved titles selected for your next watch.",
                     systemImage: "sparkles"
                 )
             }
@@ -140,13 +164,13 @@ struct HomeView: View {
         ZStack(alignment: .bottomLeading) {
             NavigationLink(value: heroMovie) {
                 heroArtwork(heroMovie)
-                    .frame(height: 520)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .frame(height: HFSpacing.heroHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
             }
             .buttonStyle(.plain)
 
             HFColors.heroGradient
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
                 .allowsHitTesting(false)
 
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -168,11 +192,11 @@ struct HomeView: View {
                         Text(heroMovie.subtitle)
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
-                            .lineLimit(2)
+                            .lineLimit(1)
                             .fixedSize(horizontal: false, vertical: true)
 
                         HStack(spacing: HFSpacing.xs) {
-                            ForEach(["4K HDR", "Original", "Cinematic"], id: \.self) { badge in
+                            ForEach([heroMovie.rating, heroMovie.duration, "Original"], id: \.self) { badge in
                                 Text(badge)
                                     .font(HFTypography.caption)
                                     .foregroundStyle(.black)
@@ -194,7 +218,7 @@ struct HomeView: View {
                             Image(systemName: "play.fill")
                             Text("Watch Now")
                         }
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .default))
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
@@ -205,7 +229,7 @@ struct HomeView: View {
                     .accessibilityLabel("Watch Now")
 
                     HFButton(
-                        streamingStore.isSaved(heroMovie) ? "In My List" : "Add To List",
+                        streamingStore.isSaved(heroMovie) ? "In My List" : "Save",
                         systemImage: streamingStore.isSaved(heroMovie) ? "checkmark" : "plus",
                         style: .secondary
                     ) {
@@ -217,7 +241,7 @@ struct HomeView: View {
             .padding(HFSpacing.lg)
         }
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
                 .stroke(HFColors.goldStroke, lineWidth: 1)
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -233,13 +257,13 @@ struct HomeView: View {
                             Button {
                                 previewMovie = movie
                             } label: {
-                                HFPosterCard(movie: movie, width: 132, showProgress: true)
+                                HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showProgress: true)
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Continue watching \(movie.title)")
                         } else {
                             NavigationLink(value: movie) {
-                                HFPosterCard(movie: movie, width: 132, showProgress: category.id == "continue")
+                                HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showProgress: category.id == "continue")
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Open \(movie.title)")
@@ -248,6 +272,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
+            .scrollClipDisabled()
         }
     }
 

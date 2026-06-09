@@ -83,7 +83,7 @@ struct SearchView: View {
                         streamingStore.addRecentSearch(query)
                     }
             } else {
-                Text("Browse movies, genres, originals, saved titles, and coming soon previews.")
+                Text("Browse movies, originals, saved titles, and upcoming premieres.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -125,7 +125,7 @@ struct SearchView: View {
             if streamingStore.recentSearches.isEmpty {
                 HFInsightCard(
                     title: "No recent searches",
-                    message: "Search locally by title or genre and your terms will appear here.",
+                    message: "Search by title or genre and your terms will appear here.",
                     systemImage: "magnifyingglass"
                 )
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -168,7 +168,7 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Suggested for You", actionTitle: nil)
 
-            Text("Local picks based on originals, downloads, and titles already in progress.")
+            Text("Picks based on originals, downloads, and titles already in progress.")
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.textSecondary)
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -177,7 +177,7 @@ struct SearchView: View {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(suggestedMovies) { movie in
                         NavigationLink(value: movie) {
-                            HFPosterCard(movie: movie, width: 132, showMetadata: true, showProgress: movie.progress != nil)
+                            HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showMetadata: true, showProgress: movie.progress != nil)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open \(movie.title)")
@@ -197,7 +197,7 @@ struct SearchView: View {
             if filteredMovies.isEmpty {
                 HFEmptyState(
                     title: "No results found",
-                    message: "No local matches for this query and filter. Try a title, genre, or switch to Discover.",
+                    message: "No matches for this query and filter. Try a title, genre, or switch to Discover.",
                     systemImage: "magnifyingglass"
                 )
                     .padding(.horizontal, HFSpacing.screenHorizontal)

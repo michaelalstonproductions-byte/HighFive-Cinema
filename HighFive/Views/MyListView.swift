@@ -30,7 +30,7 @@ struct MyListView: View {
                 if savedMovies.isEmpty {
                     HFEmptyState(
                         title: "Your list is empty",
-                        message: "Save titles from Home, Search, Discover, or Movie Detail and they will appear here for this local preview.",
+                        message: "Save titles from Home, Search, Discover, or Movie Detail and they will appear here.",
                         systemImage: "bookmark",
                         actionTitle: "Browse Discover",
                         action: onBrowseDiscover
@@ -52,7 +52,7 @@ struct MyListView: View {
             Text("My List")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Saved titles, downloads, and everything you are watching next.")
+            Text("Saved titles, downloads, and what you are watching next.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
         }
@@ -91,8 +91,8 @@ struct MyListView: View {
 
     private var savedSummary: some View {
         HFInsightCard(
-            title: "\(savedMovies.count) local titles",
-            message: selectedFilter == "Saved" ? "Your saved slate is synced across Home, Search, and Movie Detail." : "This filter is based on your local saved and download state.",
+            title: "\(savedMovies.count) titles",
+            message: selectedFilter == "Saved" ? "Your saved slate is available across Home, Search, and Movie Detail." : "This filter reflects your saved and downloaded titles.",
             systemImage: "bookmark.fill"
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)

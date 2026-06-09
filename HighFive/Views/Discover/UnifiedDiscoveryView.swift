@@ -47,7 +47,7 @@ struct UnifiedDiscoveryView: View {
                 .foregroundStyle(HFColors.textPrimary)
                 .minimumScaleFactor(0.78)
 
-            Text("Browse cinematic rails, saved titles, originals, and coming soon previews.")
+            Text("Find movies, originals, saved titles, and upcoming premieres.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -47,7 +47,7 @@ struct ProfileView: View {
             Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {}
         } message: {
-            Text("This is a mock confirmation. No account state will change.")
+            Text("This is a preview confirmation. No account state will change.")
         }
     }
 
@@ -365,13 +365,13 @@ struct ProfileView: View {
         case "Account":
             activeMockSheet = ProfileMockSheet(
                 title: "Account",
-                message: "Account management is a local placeholder. No sign-in or billing is connected.",
+                message: "Account preferences are in preview. No sign-in or billing is connected.",
                 systemImage: "person.crop.circle.fill"
             )
         case "Help":
             activeMockSheet = ProfileMockSheet(
                 title: "Help",
-                message: "Help content is mocked for now. No live support service is connected.",
+                message: "Help content is in preview. No live support service is connected.",
                 systemImage: "questionmark.circle.fill"
             )
         default:

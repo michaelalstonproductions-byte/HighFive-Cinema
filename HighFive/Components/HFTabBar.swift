@@ -22,7 +22,7 @@ struct HFTabBar<Value: Hashable>: View {
                         Image(systemName: item.systemImage)
                             .font(.system(size: 22, weight: .semibold))
                         Text(item.title)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.system(size: 12, weight: .semibold, design: .default))
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
                     }
@@ -49,19 +49,19 @@ struct HFTabBar<Value: Hashable>: View {
         .padding(.horizontal, HFSpacing.xs)
         .padding(.vertical, HFSpacing.xs)
         .background(
-            RoundedRectangle(cornerRadius: 27, style: .continuous)
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 27, style: .continuous)
-                        .fill(Color.black.opacity(0.86))
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(Color.black.opacity(0.90))
                 )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 27, style: .continuous)
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .stroke(HFColors.glassStroke, lineWidth: 1)
         )
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
         .padding(.horizontal, HFSpacing.floatingTabHorizontal)
-        .padding(.bottom, HFSpacing.md)
+        .padding(.bottom, HFSpacing.lg)
     }
 }

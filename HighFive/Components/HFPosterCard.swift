@@ -53,6 +53,7 @@ struct HFPosterCard: View {
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                     .stroke(HFColors.stroke, lineWidth: 1)
             )
+            .shadow(color: HFColors.shadow.opacity(0.72), radius: 13, x: 0, y: 10)
 
             if showTitle && !posterOnly {
                 Text(movie.title)
@@ -72,6 +73,7 @@ struct HFPosterCard: View {
             }
         }
         .frame(width: width, alignment: .top)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder

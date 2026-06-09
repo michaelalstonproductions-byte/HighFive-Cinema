@@ -32,10 +32,9 @@ struct MovieDetailView: View {
                 hero
 
                 overview
-                creatorSection
-                castSection
-                gallerySection
                 relatedSection
+                creatorSection
+                gallerySection
                 bottomScrollClearance
             }
             .padding(.bottom, detailBottomClearance)
@@ -61,14 +60,15 @@ struct MovieDetailView: View {
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
             detailArtwork
-                .frame(height: 590)
-                .clipped()
+                .frame(height: 610)
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
             LinearGradient(
                 colors: [.clear, HFColors.background.opacity(0.34), HFColors.background.opacity(0.88), HFColors.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
             HStack(alignment: .bottom, spacing: HFSpacing.md) {
                 HFPosterCard(movie: movie, width: 126, showTitle: false, showProgress: movie.progress != nil)
@@ -105,6 +105,10 @@ struct MovieDetailView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
             .padding(.bottom, HFSpacing.xl)
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+                .stroke(HFColors.stroke, lineWidth: 1)
+        )
     }
 
     private var overview: some View {
@@ -243,7 +247,7 @@ struct MovieDetailView: View {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
             ForEach(relatedTitles) { related in
                 NavigationLink(value: related) {
-                    HFPosterCard(movie: related, width: 140, showProgress: related.progress != nil)
+                    HFPosterCard(movie: related, width: HFSpacing.posterRailWidth, showProgress: related.progress != nil)
                 }
                 .buttonStyle(.plain)
             }

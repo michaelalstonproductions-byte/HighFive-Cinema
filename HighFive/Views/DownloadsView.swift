@@ -38,7 +38,7 @@ struct DownloadsView: View {
                 streamingStore.removeAllDownloads()
             }
         } message: {
-            Text("This clears the local mock download queue only.")
+            Text("This clears the preview download queue only.")
         }
     }
 
@@ -48,7 +48,7 @@ struct DownloadsView: View {
                 Text("Downloads")
                     .font(HFTypography.display)
                     .foregroundStyle(HFColors.textPrimary)
-                Text("Saved titles ready for offline viewing.")
+                Text("Offline-ready titles for your next watch.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
             }
