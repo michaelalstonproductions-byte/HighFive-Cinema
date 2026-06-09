@@ -288,7 +288,7 @@ struct ProfileView: View {
 
     private var buildQAToolsSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Developer / QA", actionTitle: nil)
+            HFSectionHeader(title: "Internal", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 NavigationLink {
@@ -301,7 +301,7 @@ struct ProfileView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Open Developer QA Hub")
+                .accessibilityLabel("Developer QA Hub, internal validation and release readiness")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -365,14 +365,14 @@ struct ProfileView: View {
                 } label: {
                     HFProductRoomEntryCard(
                         title: "Launch",
-                        subtitle: "Prepare premieres, campaigns, timelines, and release pages.",
+                        subtitle: "Premieres, campaigns, timelines, and release readiness.",
                         status: "Launch Preview",
                         systemImage: "flag.checkered",
-                        accent: Color.green
+                        accent: HFColors.gold
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Launch Room, premiere and campaign preview")
+                .accessibilityLabel("Launch Room, premiere and campaign preview for release readiness")
 
                 NavigationLink {
                     ExportRoomView()
@@ -391,7 +391,7 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("HighFive Rooms section")
+        .accessibilityLabel("HighFive Rooms, product spaces for watching, creating, connecting, launching, and export readiness")
     }
 
     private var avatarRow: some View {
@@ -1378,7 +1378,178 @@ private struct ConnectRoomView: View {
     }
 }
 
+private enum LaunchSection: String, CaseIterable, Identifiable {
+    case overview = "Overview"
+    case timeline = "Timeline"
+    case campaign = "Campaign"
+    case audience = "Audience"
+    case materials = "Materials"
+    case releaseReadiness = "Release Readiness"
+    case safetyBoundary = "Safety Boundary"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .overview: "rectangle.3.group.fill"
+        case .timeline: "calendar.badge.clock"
+        case .campaign: "megaphone.fill"
+        case .audience: "person.3.fill"
+        case .materials: "checklist.checked"
+        case .releaseReadiness: "gauge.with.dots.needle.67percent"
+        case .safetyBoundary: "lock.shield.fill"
+        }
+    }
+
+    var accessibilityName: String {
+        switch self {
+        case .overview: "Launch Room overview section"
+        case .timeline: "Timeline section, local preview of release phases"
+        case .campaign: "Campaign section, preview of campaign page copy and launch materials"
+        case .audience: "Audience section, display-only preview of audience buildup"
+        case .materials: "Materials section, launch material readiness checklist"
+        case .releaseReadiness: "Release Readiness section, local readiness groups"
+        case .safetyBoundary: "Launch Safety Boundary section"
+        }
+    }
+}
+
+private struct LaunchTimelineStep: Identifiable {
+    let id = UUID()
+    let title: String
+    let timing: String
+    let focus: String
+    let status: String
+    let checklist: [String]
+}
+
+private struct LaunchAudienceSignal: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let signal: String
+    let metric: String
+    let systemImage: String
+}
+
+private struct LaunchCampaignItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+}
+
+private struct LaunchReadinessGroup: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
+    let checklist: [String]
+    let systemImage: String
+}
+
+private enum LaunchRoomData {
+    static let overviewItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Premiere Timeline", status: "Preview", detail: "Plan the path from announcement to release.", systemImage: "calendar.badge.clock"),
+        StudioChecklistItem(title: "Campaign Preview", status: "Local Preview", detail: "Shape the public-facing release story.", systemImage: "megaphone.fill"),
+        StudioChecklistItem(title: "Audience Buildup", status: "Coming Soon", detail: "Preview momentum before a title premieres.", systemImage: "person.3.fill"),
+        StudioChecklistItem(title: "Launch Checklist", status: "Preview", detail: "Track posters, trailers, synopsis, creator notes, and release materials.", systemImage: "checklist.checked"),
+        StudioChecklistItem(title: "Release Status", status: "Readiness", detail: "See what is ready, pending, or deferred.", systemImage: "gauge.with.dots.needle.67percent"),
+        StudioChecklistItem(title: "Export Handoff", status: "Protected", detail: "Prepare the title package before export systems are connected.", systemImage: "shippingbox.fill")
+    ]
+
+    static let timelineSteps: [LaunchTimelineStep] = [
+        LaunchTimelineStep(
+            title: "Package Lock",
+            timing: "6 weeks before premiere",
+            focus: "Finalize title, synopsis, creator profile, poster direction, and trailer notes.",
+            status: "In Review",
+            checklist: ["Title package", "Creator profile", "Poster direction"]
+        ),
+        LaunchTimelineStep(
+            title: "Audience Warmup",
+            timing: "4 weeks before premiere",
+            focus: "Prepare community copy, creator updates, and early audience positioning.",
+            status: "Preview",
+            checklist: ["Community copy", "Creator update", "Audience positioning"]
+        ),
+        LaunchTimelineStep(
+            title: "Campaign Page",
+            timing: "3 weeks before premiere",
+            focus: "Preview title page, trailer copy, poster stack, and release hook.",
+            status: "Local Preview",
+            checklist: ["Title page", "Trailer copy", "Release hook"]
+        ),
+        LaunchTimelineStep(
+            title: "Premiere Window",
+            timing: "Launch week",
+            focus: "Coordinate Watch, Connect, and Launch surfaces around the title.",
+            status: "Coming Soon",
+            checklist: ["Watch surface", "Connect preview", "Launch copy"]
+        ),
+        LaunchTimelineStep(
+            title: "Post-Premiere",
+            timing: "After release",
+            focus: "Prepare audience notes, related title rails, and export handoff.",
+            status: "Deferred",
+            checklist: ["Audience notes", "Related titles", "Export handoff"]
+        )
+    ]
+
+    static let campaignItems: [LaunchCampaignItem] = [
+        LaunchCampaignItem(title: "Campaign Header", detail: "The Friendly - Featured Premiere", status: "Preview", systemImage: "rectangle.on.rectangle.angled.fill"),
+        LaunchCampaignItem(title: "Audience Hook", detail: "A cinematic story about an impossible idea becoming a movement.", status: "Local Preview", systemImage: "sparkles"),
+        LaunchCampaignItem(title: "Creator Note", detail: "Built for viewers who love premium indie stories, behind-the-scenes journeys, and character-driven drama.", status: "Preview", systemImage: "person.text.rectangle.fill"),
+        LaunchCampaignItem(title: "Trailer Positioning", detail: "Lead with tone, creator stakes, and the final emotional reveal.", status: "Needs Review", systemImage: "film.fill"),
+        LaunchCampaignItem(title: "Poster Stack", detail: "Use the existing title art direction as the premiere visual anchor.", status: "Readiness", systemImage: "photo.stack.fill"),
+        LaunchCampaignItem(title: "Community Preview", detail: "Connect Room energy prepares the audience context before launch week.", status: "Coming Soon", systemImage: "person.2.fill")
+    ]
+
+    static let audienceSignals: [LaunchAudienceSignal] = [
+        LaunchAudienceSignal(title: "Audience Warmup", detail: "Prepare community energy before the premiere.", signal: "Preview Momentum", metric: "12.4K interested", systemImage: "flame.fill"),
+        LaunchAudienceSignal(title: "Creator Followers Preview", detail: "Audience interest from creator and title communities.", signal: "Local Signal", metric: "8.7K following", systemImage: "person.crop.circle.badge.checkmark"),
+        LaunchAudienceSignal(title: "Waitlist Preview", detail: "A future space for viewers who want release updates.", signal: "Coming Soon", metric: "4.1K preview audience", systemImage: "person.crop.circle.badge.clock"),
+        LaunchAudienceSignal(title: "Premiere Room Preview", detail: "Connect Room energy prepared for launch week.", signal: "Audience Preview", metric: "2.4K room energy", systemImage: "bubble.left.and.bubble.right.fill")
+    ]
+
+    static let materialItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Poster", status: "Ready", detail: "Key art direction is present in the local title package.", systemImage: "photo.fill"),
+        StudioChecklistItem(title: "Backdrop", status: "Needs Review", detail: "Backdrop should support a cinematic release page.", systemImage: "photo.on.rectangle.angled"),
+        StudioChecklistItem(title: "Trailer Notes", status: "Deferred", detail: "Trailer planning remains copy-only with no playback integration.", systemImage: "film.fill"),
+        StudioChecklistItem(title: "Synopsis", status: "Ready", detail: "Short and long synopsis support Watch and Launch surfaces.", systemImage: "doc.text.fill"),
+        StudioChecklistItem(title: "Creator Note", status: "Preview", detail: "Creator perspective frames the launch story.", systemImage: "person.text.rectangle.fill"),
+        StudioChecklistItem(title: "Press Blurb", status: "Deferred", detail: "Press copy remains a planning item.", systemImage: "newspaper.fill"),
+        StudioChecklistItem(title: "Community Copy", status: "Needs Review", detail: "Audience-facing copy should match Connect Room tone.", systemImage: "text.bubble.fill"),
+        StudioChecklistItem(title: "Campaign Hook", status: "Ready", detail: "The premiere hook anchors campaign preview copy.", systemImage: "megaphone.fill"),
+        StudioChecklistItem(title: "Related Titles", status: "Preview", detail: "Related rails support discovery after launch.", systemImage: "rectangle.stack.fill"),
+        StudioChecklistItem(title: "Export Handoff Notes", status: "Protected", detail: "Delivery notes are planning-only until export systems exist.", systemImage: "shippingbox.fill")
+    ]
+
+    static let readinessGroups: [LaunchReadinessGroup] = [
+        LaunchReadinessGroup(title: "Watch Surface", status: "Preview", detail: "Consumer surfaces that make the title watchable.", checklist: ["Movie Detail page", "Watch Now CTA", "Related Titles", "My List routing"], systemImage: "play.rectangle.fill"),
+        LaunchReadinessGroup(title: "Create Package", status: "Readiness", detail: "Creator-side materials prepared before the launch moment.", checklist: ["Creator Profile", "Pitch summary", "Media Kit", "Poster and trailer notes"], systemImage: "wand.and.stars"),
+        LaunchReadinessGroup(title: "Connect Surface", status: "Preview", detail: "Audience energy that supports the release story.", checklist: ["Community preview", "Reactions preview", "Creator updates", "Watch community"], systemImage: "person.2.fill"),
+        LaunchReadinessGroup(title: "Launch Surface", status: "Local Preview", detail: "Planning view for campaign, timeline, and release status.", checklist: ["Campaign preview", "Timeline", "Audience warmup", "Release status"], systemImage: "flag.checkered"),
+        LaunchReadinessGroup(title: "Export Handoff", status: "Protected", detail: "Professional readiness notes before real export systems exist.", checklist: ["Deliverables notes", "Platform checklist", "Distribution package preview"], systemImage: "shippingbox.fill")
+    ]
+
+    static let safetyItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Payments", status: "Deferred", detail: "No commerce system is connected to Launch Room.", systemImage: "creditcard"),
+        StudioChecklistItem(title: "StoreKit", status: "Protected", detail: "StoreKit remains outside this product-room UI pass.", systemImage: "lock.shield.fill"),
+        StudioChecklistItem(title: "Subscriptions", status: "Deferred", detail: "No paid access or subscription flow is introduced.", systemImage: "person.badge.key.fill"),
+        StudioChecklistItem(title: "Campaign Publishing", status: "Deferred", detail: "Campaigns are local previews only.", systemImage: "paperplane.fill"),
+        StudioChecklistItem(title: "Waitlists", status: "Deferred", detail: "Audience interest numbers are display-only.", systemImage: "person.crop.circle.badge.clock"),
+        StudioChecklistItem(title: "Notifications", status: "Deferred", detail: "No reminder or push system is connected.", systemImage: "bell.slash.fill"),
+        StudioChecklistItem(title: "Analytics", status: "Deferred", detail: "Audience signals are static preview copy.", systemImage: "chart.bar.xaxis"),
+        StudioChecklistItem(title: "Backend", status: "Deferred", detail: "Launch Room uses local static SwiftUI data only.", systemImage: "server.rack")
+    ]
+}
+
 private struct LaunchRoomView: View {
+    @State private var selectedLaunchSection: LaunchSection = .overview
+    private let accent = HFColors.gold
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -1387,49 +1558,14 @@ private struct LaunchRoomView: View {
                     title: "Launch Room",
                     subtitle: "Prepare premieres, campaigns, and release moments.",
                     purpose: "This room previews release and campaign planning.",
-                    heroCopy: "A launch command space for premieres, audience buildup, campaign pages, and release readiness.",
+                    heroCopy: "A premium space for premiere timelines, campaign previews, audience buildup, launch checklists, and release readiness.",
                     status: "Launch Preview",
                     systemImage: "flag.checkered",
-                    accent: Color.green
+                    accent: accent
                 )
 
-                VStack(spacing: HFSpacing.md) {
-                    NavigationLink {
-                        CreatorLaunchCenterPreviewView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Premiere Timeline", subtitle: "Plan the path from announcement to release.", status: "Preview", systemImage: "calendar.badge.clock", accent: Color.green)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        AppReleasePresentationView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Campaign Preview", subtitle: "Shape the public-facing launch page.", status: "Launch Preview", systemImage: "rectangle.on.rectangle.angled.fill", accent: Color.green)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        CreatorAccessPreviewView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Audience Waitlist", subtitle: "Preview demand and interest before release.", status: "Preview", systemImage: "person.crop.circle.badge.clock", accent: Color.green)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        AppDemoChecklistView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Launch Checklist", subtitle: "Track posters, trailers, synopsis, and release materials.", status: "Readiness", systemImage: "checklist.checked", accent: Color.green)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        ReleaseCandidatePrepView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Release Status", subtitle: "See what is ready, pending, or deferred.", status: "Local Preview", systemImage: "gauge.with.dots.needle.67percent", accent: Color.green)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
+                launchSectionSelector
+                selectedSectionView
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -1438,9 +1574,571 @@ private struct LaunchRoomView: View {
         .navigationTitle("Launch Room")
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    private var launchSectionSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.sm) {
+                ForEach(LaunchSection.allCases) { section in
+                    Button {
+                        selectedLaunchSection = section
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: section.systemImage)
+                                .font(.system(size: 12, weight: .bold))
+                            Text(section.rawValue)
+                        }
+                        .font(HFTypography.micro)
+                        .foregroundStyle(selectedLaunchSection == section ? .black : HFColors.textSecondary)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .padding(.vertical, 10)
+                        .background(selectedLaunchSection == section ? accent : Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedLaunchSection == section ? accent.opacity(0.78) : HFColors.glassStroke, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(section.accessibilityName)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Room section selector")
+    }
+
+    @ViewBuilder
+    private var selectedSectionView: some View {
+        switch selectedLaunchSection {
+        case .overview:
+            overviewSection
+        case .timeline:
+            timelineSection
+        case .campaign:
+            campaignSection
+        case .audience:
+            audienceSection
+        case .materials:
+            materialsSection
+        case .releaseReadiness:
+            releaseReadinessSection
+        case .safetyBoundary:
+            launchSafetyBoundary
+        }
+    }
+
+    private var overviewSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Launch Overview", subtitle: "The local command surface for preparing a title release.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(LaunchRoomData.overviewItems) { item in
+                    StudioChecklistCard(item: item, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Room overview cards")
+    }
+
+    private var timelineSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Release Timeline", subtitle: "A cinematic path from package lock to post-premiere handoff.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(LaunchRoomData.timelineSteps) { step in
+                    LaunchTimelineCard(step: step, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Timeline section, local preview of release phases")
+    }
+
+    private var campaignSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Campaign Preview", subtitle: "Shape the public release story without publishing a campaign.")
+
+            HFGlassPanel(cornerRadius: 28, strokeColor: accent.opacity(0.40)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HFRoomStatusChip(title: "Local Preview", accent: accent)
+                    Text("The Friendly - Featured Premiere")
+                        .font(HFTypography.title)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("A cinematic story about an impossible idea becoming a movement.")
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: HFSpacing.sm) {
+                        LaunchPassiveCTA(title: "Preview Campaign", accent: accent)
+                        LaunchPassiveCTA(title: "Review Copy", accent: accent)
+                        LaunchPassiveCTA(title: "Prepare Launch Page", accent: accent)
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(LaunchRoomData.campaignItems) { item in
+                    LaunchCampaignCard(item: item, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Campaign section, preview of campaign page copy and launch materials")
+    }
+
+    private var audienceSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Audience Buildup", subtitle: "Display-only audience momentum that bridges Connect into Launch.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(LaunchRoomData.audienceSignals) { signal in
+                    LaunchAudienceSignalCard(signal: signal, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audience section, display-only preview of audience buildup")
+    }
+
+    private var materialsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Launch Materials", subtitle: "Track release materials without touching assets, files, or photo systems.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(LaunchRoomData.materialItems) { item in
+                    StudioChecklistCard(item: item, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Materials section, launch material readiness checklist")
+    }
+
+    private var releaseReadinessSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Release Readiness", subtitle: "Manual readiness groups across Watch, Create, Connect, Launch, and Export handoff.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(LaunchRoomData.readinessGroups) { group in
+                    LaunchReadinessGroupCard(group: group, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Release Readiness section, local readiness groups")
+    }
+
+    private var launchSafetyBoundary: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Launch Safety Boundary")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Launch Room is a local product preview. Payments, subscriptions, StoreKit, crowdfunding, notifications, analytics, campaign publishing, waitlists, and backend launch systems remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("Protected for this phase.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(LaunchRoomData.safetyItems) { item in
+                        StudioSafetyChip(item: item)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Safety Boundary, payments StoreKit subscriptions notifications analytics waitlists campaign publishing and backend remain disconnected")
+    }
+}
+
+private struct LaunchTimelineCard: View {
+    let step: LaunchTimelineStep
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 44, height: 44)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text(step.title)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                            HFRoomStatusChip(title: step.status, accent: accent)
+                        }
+                        Text(step.timing)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(accent)
+                        Text(step.focus)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(step.checklist, id: \.self) { item in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(accent)
+                                .padding(.top, 2)
+                            Text(item)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                    }
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    LaunchPassiveCTA(title: "Review Timeline", accent: accent)
+                    LaunchPassiveCTA(title: "Preview Phase", accent: accent)
+                    LaunchPassiveCTA(title: "Check Readiness", accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(step.title), \(step.timing), \(step.status), \(step.focus)")
+    }
+}
+
+private struct LaunchCampaignCard: View {
+    let item: LaunchCampaignItem
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(item.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                        HFRoomStatusChip(title: item.status, accent: accent)
+                    }
+                    Text(item.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.status), \(item.detail)")
+    }
+}
+
+private struct LaunchAudienceSignalCard: View {
+    let signal: LaunchAudienceSignal
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: signal.systemImage)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(signal.metric)
+                        .font(HFTypography.title)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(signal.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                    HFRoomStatusChip(title: signal.signal, accent: accent)
+                    Text(signal.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(signal.title), \(signal.metric), \(signal.signal), \(signal.detail)")
+    }
+}
+
+private struct LaunchReadinessGroupCard: View {
+    let group: LaunchReadinessGroup
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: group.systemImage)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 44, height: 44)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text(group.title)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                            HFRoomStatusChip(title: group.status, accent: accent)
+                        }
+                        Text(group.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(group.checklist, id: \.self) { item in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(accent)
+                                .padding(.top, 2)
+                            Text(item)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(group.title), \(group.status), \(group.detail)")
+    }
+}
+
+private struct LaunchPassiveCTA: View {
+    let title: String
+    let accent: Color
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.68)
+            .padding(.horizontal, HFSpacing.xs)
+            .padding(.vertical, 8)
+            .background(accent.opacity(0.12))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(accent.opacity(0.34), lineWidth: 1))
+    }
+}
+
+private enum ExportSection: String, CaseIterable, Identifiable {
+    case overview = "Overview"
+    case deliverables = "Deliverables"
+    case mediaKit = "Media Kit"
+    case festivalPackage = "Festival Package"
+    case platformChecklist = "Platform Checklist"
+    case distributionReadiness = "Distribution Readiness"
+    case safetyBoundary = "Safety Boundary"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .overview: "rectangle.3.group.fill"
+        case .deliverables: "shippingbox.fill"
+        case .mediaKit: "photo.stack.fill"
+        case .festivalPackage: "rosette"
+        case .platformChecklist: "checklist.checked"
+        case .distributionReadiness: "checkmark.seal.fill"
+        case .safetyBoundary: "lock.shield.fill"
+        }
+    }
+
+    var accessibilityName: String {
+        switch self {
+        case .overview: "Export Room overview section"
+        case .deliverables: "Deliverables section, local preview of release package materials"
+        case .mediaKit: "Media Kit section, preview of poster trailer stills synopsis credits and press readiness"
+        case .festivalPackage: "Festival Package section, local preview of festival submission materials"
+        case .platformChecklist: "Platform Checklist section, preview-only platform requirements"
+        case .distributionReadiness: "Distribution Readiness section, local handoff map"
+        case .safetyBoundary: "Export Safety Boundary section"
+        }
+    }
+}
+
+private struct ExportDeliverable: Identifiable {
+    let id = UUID()
+    let title: String
+    let type: String
+    let status: String
+    let includes: [String]
+    let systemImage: String
+}
+
+private struct ExportChecklistGroup: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
+    let items: [String]
+    let systemImage: String
+}
+
+private struct ExportReadinessGroup: Identifiable {
+    let id = UUID()
+    let title: String
+    let readiness: String
+    let detail: String
+    let checklist: [String]
+    let systemImage: String
+}
+
+private enum ExportRoomData {
+    static let overviewItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Deliverables", status: "Readiness Preview", detail: "Track the required materials for release, festivals, and platform delivery.", systemImage: "shippingbox.fill"),
+        StudioChecklistItem(title: "Media Kit", status: "Preview", detail: "Prepare posters, stills, synopsis, credits, creator notes, and press copy.", systemImage: "photo.stack.fill"),
+        StudioChecklistItem(title: "Festival Package", status: "Local Preview", detail: "Organize submission-ready materials for festival review.", systemImage: "rosette"),
+        StudioChecklistItem(title: "Platform Checklist", status: "Protected", detail: "Preview requirements for future platform delivery.", systemImage: "checklist.checked"),
+        StudioChecklistItem(title: "Distribution Readiness", status: "Preview", detail: "Review title package completeness before real export systems are connected.", systemImage: "checkmark.seal.fill"),
+        StudioChecklistItem(title: "Launch Handoff", status: "Coming Soon", detail: "Carry campaign, audience, and release notes into delivery preparation.", systemImage: "flag.checkered")
+    ]
+
+    static let deliverables: [ExportDeliverable] = [
+        ExportDeliverable(
+            title: "Master Title Package",
+            type: "Release package",
+            status: "Needs Review",
+            includes: ["Title metadata", "Synopsis", "Runtime notes", "Rating guidance"],
+            systemImage: "film.stack.fill"
+        ),
+        ExportDeliverable(
+            title: "Poster Package",
+            type: "Marketing artwork",
+            status: "Ready Preview",
+            includes: ["Key art", "Thumbnail direction", "Vertical poster", "Horizontal backdrop"],
+            systemImage: "photo.stack.fill"
+        ),
+        ExportDeliverable(
+            title: "Trailer Package",
+            type: "Preview assets",
+            status: "In Review",
+            includes: ["Trailer notes", "Teaser copy", "Premiere hook", "Caption guidance"],
+            systemImage: "film.fill"
+        ),
+        ExportDeliverable(
+            title: "Credit Package",
+            type: "Production details",
+            status: "Deferred",
+            includes: ["Cast", "Crew", "Studio notes", "Rights notes preview"],
+            systemImage: "person.text.rectangle.fill"
+        ),
+        ExportDeliverable(
+            title: "Press Package",
+            type: "Publicity material",
+            status: "Preview",
+            includes: ["Press blurb", "Creator statement", "Festival logline", "Audience positioning"],
+            systemImage: "newspaper.fill"
+        )
+    ]
+
+    static let mediaKitItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Poster", status: "Ready Preview", detail: "Key art and thumbnail direction are ready for visual review.", systemImage: "photo.fill"),
+        StudioChecklistItem(title: "Backdrop", status: "Needs Review", detail: "Backdrop direction should support Watch, Launch, and delivery surfaces.", systemImage: "photo.on.rectangle.angled"),
+        StudioChecklistItem(title: "Trailer", status: "Needs Review", detail: "Trailer positioning, teaser copy, and premiere hook need final polish.", systemImage: "film.fill"),
+        StudioChecklistItem(title: "Teaser", status: "Coming Soon", detail: "Short-form teaser planning remains display-only.", systemImage: "play.rectangle.fill"),
+        StudioChecklistItem(title: "Stills", status: "Needs Review", detail: "Still selections remain preview references only.", systemImage: "rectangle.stack.fill"),
+        StudioChecklistItem(title: "Synopsis", status: "Ready", detail: "Short and long synopsis support streaming and press surfaces.", systemImage: "doc.text.fill"),
+        StudioChecklistItem(title: "Credits", status: "Deferred", detail: "Credits remain a readiness item until final review.", systemImage: "person.2.fill"),
+        StudioChecklistItem(title: "Creator Notes", status: "Preview", detail: "Creator statement and behind-the-scenes context are prepared for launch handoff.", systemImage: "note.text"),
+        StudioChecklistItem(title: "Press Blurb", status: "Preview", detail: "Press copy frames the public story without publishing.", systemImage: "newspaper.fill"),
+        StudioChecklistItem(title: "Audience Hook", status: "Ready", detail: "The launch hook carries into professional package review.", systemImage: "sparkles")
+    ]
+
+    static let festivalGroups: [ExportChecklistGroup] = [
+        ExportChecklistGroup(title: "Story Package", status: "Preview", detail: "Core story materials for festival review.", items: ["Logline", "Short synopsis", "Long synopsis", "Director statement", "Genre and tone"], systemImage: "text.quote"),
+        ExportChecklistGroup(title: "Visual Package", status: "Needs Review", detail: "Visual references for selection committees and press.", items: ["Poster", "Stills", "Trailer notes", "Backdrop", "Thumbnail direction"], systemImage: "photo.stack.fill"),
+        ExportChecklistGroup(title: "Credits Package", status: "Deferred", detail: "Production details remain local planning data.", items: ["Cast", "Crew", "Studio", "Runtime", "Language"], systemImage: "person.text.rectangle.fill"),
+        ExportChecklistGroup(title: "Press Package", status: "Preview", detail: "Public-facing materials for review and coverage.", items: ["Press blurb", "Creator bio", "Audience positioning", "Festival notes", "Review quote placeholder"], systemImage: "newspaper.fill"),
+        ExportChecklistGroup(title: "Submission Readiness", status: "Protected", detail: "No real submission, accounts, forms, or delivery systems are connected.", items: ["Materials review", "Rights notes preview", "Delivery notes", "Contact details deferred", "Platform handoff protected"], systemImage: "lock.shield.fill")
+    ]
+
+    static let platformGroups: [ExportChecklistGroup] = [
+        ExportChecklistGroup(title: "HighFive Cinema", status: "Preview", detail: "Requirements for the local HighFive streaming surface.", items: ["Movie detail package", "Poster/backdrop readiness", "Watch surface copy", "Related title placement", "Launch handoff notes"], systemImage: "play.rectangle.fill"),
+        ExportChecklistGroup(title: "Streaming Platform Package", status: "Protected", detail: "Future package requirements without delivery infrastructure.", items: ["Title metadata", "Runtime", "Synopsis", "Artwork package", "Trailer notes"], systemImage: "tv.fill"),
+        ExportChecklistGroup(title: "Festival Platform Package", status: "Local Preview", detail: "Festival-facing materials prepared as static readiness copy.", items: ["Festival synopsis", "Director statement", "Press materials", "Stills", "Screening notes"], systemImage: "rosette"),
+        ExportChecklistGroup(title: "Marketing Package", status: "Preview", detail: "Promotion materials carried forward from Launch.", items: ["Poster", "Social-safe copy", "Trailer hook", "Audience angle", "Creator notes"], systemImage: "megaphone.fill"),
+        ExportChecklistGroup(title: "Distribution Package", status: "Coming Soon", detail: "Future distribution handoff remains protected and local-only.", items: ["Deliverable list", "Platform notes", "Rights notes preview", "Export handoff", "Final review"], systemImage: "shippingbox.fill")
+    ]
+
+    static let readinessGroups: [ExportReadinessGroup] = [
+        ExportReadinessGroup(title: "Watch Surface", readiness: "Preview", detail: "Consumer-facing title presentation is ready for package review.", checklist: ["Movie Detail ready", "Poster/backdrop ready", "Watch Now preview", "Related titles", "My List routing"], systemImage: "play.rectangle.fill"),
+        ExportReadinessGroup(title: "Create Package", readiness: "Readiness", detail: "Creator-side story materials are gathered for delivery prep.", checklist: ["Creator profile", "Pitch summary", "Media kit", "Production notes", "Story positioning"], systemImage: "wand.and.stars"),
+        ExportReadinessGroup(title: "Connect Surface", readiness: "Preview", detail: "Audience energy supports the final handoff story.", checklist: ["Community preview", "Reactions preview", "Creator updates", "Audience energy", "Watch community"], systemImage: "person.2.fill"),
+        ExportReadinessGroup(title: "Launch Package", readiness: "Local Preview", detail: "Release planning carries into export readiness.", checklist: ["Campaign preview", "Timeline", "Audience buildup", "Release status", "Materials readiness"], systemImage: "flag.checkered"),
+        ExportReadinessGroup(title: "Export Package", readiness: "Protected", detail: "Professional package stays local until real systems exist.", checklist: ["Deliverables", "Media kit", "Festival package", "Platform checklist", "Distribution handoff"], systemImage: "shippingbox.fill")
+    ]
+
+    static let safetyItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Export Engine", status: "Protected", detail: "No export engine is connected to this room.", systemImage: "shippingbox.fill"),
+        StudioChecklistItem(title: "Render Engine", status: "Protected", detail: "Rendering systems remain outside this SwiftUI preview.", systemImage: "viewfinder"),
+        StudioChecklistItem(title: "File Writing", status: "Deferred", detail: "No folders, documents, or generated packages are written.", systemImage: "doc.badge.gearshape"),
+        StudioChecklistItem(title: "Photos", status: "Deferred", detail: "No photo library or picker access is introduced.", systemImage: "photo"),
+        StudioChecklistItem(title: "Share Sheets", status: "Deferred", detail: "No share or system handoff surfaces are connected.", systemImage: "square.and.arrow.up"),
+        StudioChecklistItem(title: "Platform Delivery", status: "Deferred", detail: "Delivery endpoints remain future planning only.", systemImage: "paperplane.fill"),
+        StudioChecklistItem(title: "Backend", status: "Deferred", detail: "Export Room uses local static SwiftUI data only.", systemImage: "server.rack"),
+        StudioChecklistItem(title: "Distribution APIs", status: "Deferred", detail: "No distributor or platform submission APIs are connected.", systemImage: "network")
+    ]
 }
 
 private struct ExportRoomView: View {
+    @State private var selectedExportSection: ExportSection = .overview
+    private let accent = Color.purple
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -1449,27 +2147,14 @@ private struct ExportRoomView: View {
                     title: "Export Room",
                     subtitle: "Prepare deliverables, media kits, and platform packages.",
                     purpose: "This room previews professional readiness and distribution preparation.",
-                    heroCopy: "A professional space for deliverables, media kits, festival packages, and distribution readiness.",
+                    heroCopy: "A professional space for title deliverables, media kits, festival packages, distribution readiness, and platform handoff preparation.",
                     status: "Readiness Preview",
                     systemImage: "shippingbox.fill",
-                    accent: Color.purple
+                    accent: accent
                 )
 
-                VStack(spacing: HFSpacing.md) {
-                    HFRoomFeatureCard(title: "Deliverables", subtitle: "Track required materials for release and distribution.", status: "Readiness", systemImage: "checklist.checked", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Poster Package", subtitle: "Organize key art, thumbnails, and promotional visuals.", status: "Preview", systemImage: "photo.fill", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Trailer Package", subtitle: "Prepare trailers, teasers, and preview assets.", status: "Coming Soon", systemImage: "film.fill", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Festival Package", subtitle: "Collect synopsis, stills, credits, and submission materials.", status: "Readiness", systemImage: "rosette", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Distribution Checklist", subtitle: "Prepare platform requirements before real export exists.", status: "Local Preview", systemImage: "list.bullet.rectangle.fill", accent: Color.purple)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-
-                QAInfoPanel(
-                    icon: "lock.shield.fill",
-                    title: "Export systems remain locked",
-                    subtitle: "This room is planning-only. It does not generate files, open share flows, access photos, or run delivery systems."
-                )
-                .padding(.horizontal, HFSpacing.screenHorizontal)
+                exportSectionSelector
+                selectedSectionView
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -1477,6 +2162,342 @@ private struct ExportRoomView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Export Room")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var exportSectionSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.sm) {
+                ForEach(ExportSection.allCases) { section in
+                    Button {
+                        selectedExportSection = section
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: section.systemImage)
+                                .font(.system(size: 12, weight: .bold))
+                            Text(section.rawValue)
+                        }
+                        .font(HFTypography.micro)
+                        .foregroundStyle(selectedExportSection == section ? .white : HFColors.textSecondary)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .padding(.vertical, 10)
+                        .background(selectedExportSection == section ? accent : Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedExportSection == section ? accent.opacity(0.78) : HFColors.glassStroke, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(section.accessibilityName)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Export Room section selector")
+    }
+
+    @ViewBuilder
+    private var selectedSectionView: some View {
+        switch selectedExportSection {
+        case .overview:
+            overviewSection
+        case .deliverables:
+            deliverablesSection
+        case .mediaKit:
+            mediaKitSection
+        case .festivalPackage:
+            festivalPackageSection
+        case .platformChecklist:
+            platformChecklistSection
+        case .distributionReadiness:
+            distributionReadinessSection
+        case .safetyBoundary:
+            exportSafetyBoundary
+        }
+    }
+
+    private var overviewSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Export Overview", subtitle: "The local command surface for professional package readiness.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(ExportRoomData.overviewItems) { item in
+                    StudioChecklistCard(item: item, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Export Room overview cards")
+    }
+
+    private var deliverablesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Deliverables", subtitle: "Professional package checklist without file management or generation.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(ExportRoomData.deliverables) { deliverable in
+                    ExportDeliverableCard(deliverable: deliverable, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Deliverables section, local preview of release package materials")
+    }
+
+    private var mediaKitSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Media Kit", subtitle: "Organize readiness copy without touching assets or file systems.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(ExportRoomData.mediaKitItems) { item in
+                    StudioChecklistCard(item: item, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Media Kit section, preview of poster trailer stills synopsis credits and press readiness")
+    }
+
+    private var festivalPackageSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Festival Package", subtitle: "Submission readiness preview with no forms, uploads, accounts, or payments.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(ExportRoomData.festivalGroups) { group in
+                    ExportChecklistGroupCard(group: group, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Festival Package section, local preview of festival submission materials")
+    }
+
+    private var platformChecklistSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Platform Checklist", subtitle: "Preview future platform requirements without delivery endpoints.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(ExportRoomData.platformGroups) { group in
+                    ExportChecklistGroupCard(group: group, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Platform Checklist section, preview-only platform requirements")
+    }
+
+    private var distributionReadinessSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Distribution Readiness", subtitle: "Manual Watch, Create, Connect, Launch, and Export handoff map.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(ExportRoomData.readinessGroups) { group in
+                    ExportReadinessGroupCard(group: group, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Distribution Readiness section, local handoff map")
+    }
+
+    private var exportSafetyBoundary: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Export Safety Boundary")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Export Room is a local product preview. Rendering, export engine, file writing, Photos, share sheets, platform delivery, backend submissions, and distribution APIs remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("Protected for this phase.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(ExportRoomData.safetyItems) { item in
+                        StudioSafetyChip(item: item)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Export Safety Boundary, export engine rendering file writing Photos share sheets platform delivery backend and distribution APIs remain disconnected")
+    }
+}
+
+private struct ExportDeliverableCard: View {
+    let deliverable: ExportDeliverable
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: deliverable.systemImage)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 44, height: 44)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text(deliverable.title)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                            HFRoomStatusChip(title: deliverable.status, accent: accent)
+                        }
+                        Text(deliverable.type)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(deliverable.includes, id: \.self) { item in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(accent)
+                                .padding(.top, 2)
+                            Text(item)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                    }
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    LaunchPassiveCTA(title: "Review Package", accent: accent)
+                    LaunchPassiveCTA(title: "Preview Checklist", accent: accent)
+                    LaunchPassiveCTA(title: "Check Readiness", accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(deliverable.title), \(deliverable.type), \(deliverable.status)")
+    }
+}
+
+private struct ExportChecklistGroupCard: View {
+    let group: ExportChecklistGroup
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: group.systemImage)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 44, height: 44)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text(group.title)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                            HFRoomStatusChip(title: group.status, accent: accent)
+                        }
+                        Text(group.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(group.items, id: \.self) { item in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(accent)
+                                .padding(.top, 2)
+                            Text(item)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(group.title), \(group.status), \(group.detail)")
+    }
+}
+
+private struct ExportReadinessGroupCard: View {
+    let group: ExportReadinessGroup
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: group.systemImage)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 44, height: 44)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Text(group.title)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                            HFRoomStatusChip(title: group.readiness, accent: accent)
+                        }
+                        Text(group.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(group.checklist, id: \.self) { item in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(accent)
+                                .padding(.top, 2)
+                            Text(item)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(group.title), \(group.readiness), \(group.detail)")
     }
 }
 
@@ -1617,6 +2638,7 @@ private struct DeveloperQAHubView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 releaseReadinessSection
+                productSpineSection
                 consumerScreenQASection
                 visualParitySection
                 protectedSystemsSection
@@ -1684,10 +2706,10 @@ private struct DeveloperQAHubView: View {
                         }
 
                         VStack(spacing: HFSpacing.sm) {
-                            checkpointRow(label: "Current Checkpoint", value: "Phase 12.5 Consumer UI Visual Parity")
-                            checkpointRow(label: "Last Known Commit", value: "948738d")
-                            checkpointRow(label: "Last Known Tag", value: "phase-12-5-consumer-ui-visual-parity")
-                            checkpointRow(label: "Primary Status", value: "Needs Visual Assembly QA", isProminent: true)
+                            checkpointRow(label: "Current Checkpoint", value: "Phase 17.0A HighFive Rooms Ecosystem QA Lock")
+                            checkpointRow(label: "Last Known Commit", value: "1db931a")
+                            checkpointRow(label: "Last Known Tag", value: "phase-13-0a-creator-studio-room")
+                            checkpointRow(label: "Primary Status", value: "Ecosystem Spine QA Lock", isProminent: true)
                         }
 
                         Text("Manual checkpoint / last known handoff data. This screen does not read live repository state.")
@@ -1725,6 +2747,19 @@ private struct DeveloperQAHubView: View {
             LazyVGrid(columns: columns, spacing: HFSpacing.sm) {
                 ForEach(HFDeveloperQAData.releaseReadiness) { item in
                     QAStatusCard(item: item)
+                }
+            }
+        }
+    }
+
+    private var productSpineSection: some View {
+        hubSection(
+            title: "Product Spine",
+            subtitle: "Internal read-only map for Watch, Create, Connect, Launch, and Export."
+        ) {
+            VStack(spacing: HFSpacing.md) {
+                ForEach(HFDeveloperQAData.productSpine) { pillar in
+                    QAProductSpineCard(pillar: pillar)
                 }
             }
         }
@@ -1867,9 +2902,9 @@ private struct DeveloperQAHubView: View {
                 }
 
                 toolLink(
-                    title: "Final Demo Tour",
-                    subtitle: "Walk through internal demo routes without exposing them to Home.",
-                    systemImage: "map.fill"
+                    title: "Consumer + Rooms Demo Tour",
+                    subtitle: "Guided proof path for Watch, HighFive Rooms, Product Spine, and internal safety.",
+                    systemImage: "play.rectangle.on.rectangle.fill"
                 ) {
                     FinalDemoTourView()
                 }
@@ -1965,6 +3000,8 @@ private struct DeveloperQAHubView: View {
             content()
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title) section")
     }
 
     private func toolLink<Destination: View>(
@@ -1979,6 +3016,7 @@ private struct DeveloperQAHubView: View {
             HFActionTile(title: title, subtitle: subtitle, systemImage: systemImage)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(subtitle)")
     }
 }
 
@@ -2063,6 +3101,15 @@ private struct HFQAFrameReference: Identifiable {
 private struct HFQAProtectedSystem: Identifiable {
     let id = UUID()
     let name: String
+    let systemImage: String
+}
+
+private struct HFQAProductSpinePillar: Identifiable {
+    let id = UUID()
+    let pillar: String
+    let room: String
+    let primarySurfaces: [String]
+    let status: HFQAStatus
     let systemImage: String
 }
 
@@ -2207,16 +3254,62 @@ private enum HFDeveloperQAData {
         HFQAProtectedSystem(name: "Figma Blueprint", systemImage: "rectangle.3.group.fill")
     ]
 
+    static let productSpine: [HFQAProductSpinePillar] = [
+        HFQAProductSpinePillar(
+            pillar: "WATCH",
+            room: "Watch Room",
+            primarySurfaces: ["Home", "Search / Discover", "Library", "Downloads", "Movie Detail"],
+            status: .passed,
+            systemImage: "play.rectangle.fill"
+        ),
+        HFQAProductSpinePillar(
+            pillar: "CREATE",
+            room: "Creator Studio",
+            primarySurfaces: ["Overview", "Projects", "Creator Profile", "Pitch", "Media Kit", "Launch Prep"],
+            status: .passed,
+            systemImage: "wand.and.stars"
+        ),
+        HFQAProductSpinePillar(
+            pillar: "CONNECT",
+            room: "Connect Room",
+            primarySurfaces: ["Overview", "Communities", "Reactions", "Following", "Creator Updates", "Watch Community"],
+            status: .passed,
+            systemImage: "person.2.fill"
+        ),
+        HFQAProductSpinePillar(
+            pillar: "LAUNCH",
+            room: "Launch Room",
+            primarySurfaces: ["Overview", "Timeline", "Campaign", "Audience", "Materials", "Release Readiness"],
+            status: .passed,
+            systemImage: "flag.checkered"
+        ),
+        HFQAProductSpinePillar(
+            pillar: "EXPORT",
+            room: "Export Room",
+            primarySurfaces: ["Overview", "Deliverables", "Media Kit", "Festival Package", "Platform Checklist", "Distribution Readiness"],
+            status: .passed,
+            systemImage: "shippingbox.fill"
+        )
+    ]
+
     static let routeValidations: [HFQARouteValidation] = [
         HFQARouteValidation(route: "Home -> Movie Detail", expectedBehavior: "Tap a poster or featured title and open Movie Detail.", status: .needsManualQA, notes: "Confirm navigation works without exposing internal tools."),
         HFQARouteValidation(route: "Search -> Movie Detail", expectedBehavior: "Search results open the selected Movie Detail screen.", status: .needsManualQA, notes: "Local search only."),
         HFQARouteValidation(route: "Discover -> Movie Detail", expectedBehavior: "Discovery rails route into Movie Detail.", status: .needsManualQA, notes: "No consumer route matrix."),
         HFQARouteValidation(route: "Library -> Movie Detail", expectedBehavior: "Saved and in-progress titles open Movie Detail.", status: .needsManualQA, notes: "Validate My List behavior."),
         HFQARouteValidation(route: "Downloads -> Movie Detail", expectedBehavior: "Downloaded local titles open detail where supported.", status: .needsManualQA, notes: "No file-system behavior."),
-        HFQARouteValidation(route: "Profile -> Developer / QA Hub", expectedBehavior: "Internal hub is reachable only from Profile.", status: .passed, notes: "No new bottom tab."),
         HFQARouteValidation(route: "Profile -> Settings", expectedBehavior: "Settings opens local preview copy only.", status: .passed, notes: "No live account service."),
-        HFQARouteValidation(route: "Profile -> Creator Preview", expectedBehavior: "Creator preview routes remain secondary.", status: .needsManualQA, notes: "Do not dominate profile first glance."),
-        HFQARouteValidation(route: "Profile -> Connect Preview", expectedBehavior: "Connect preview routes remain secondary.", status: .needsManualQA, notes: "Community systems stay local.")
+        HFQARouteValidation(route: "Profile -> HighFive Rooms / room section", expectedBehavior: "HighFive Rooms appears below consumer profile actions.", status: .passed, notes: "Product rooms stay inside Profile."),
+        HFQARouteValidation(route: "Profile -> Watch Room", expectedBehavior: "Watch Room opens as the streaming product room.", status: .passed, notes: "No new bottom tab."),
+        HFQARouteValidation(route: "Profile -> Creator Studio", expectedBehavior: "Creator Studio opens as the Create product room.", status: .passed, notes: "Separate from Developer / QA."),
+        HFQARouteValidation(route: "Profile -> Connect Room", expectedBehavior: "Connect Room opens as the community preview room.", status: .passed, notes: "Separate from Creator Studio."),
+        HFQARouteValidation(route: "Profile -> Launch Room", expectedBehavior: "Launch Room opens as the release readiness room.", status: .passed, notes: "No payment or campaign systems."),
+        HFQARouteValidation(route: "Profile -> Export Room", expectedBehavior: "Export Room opens as the deliverables readiness room.", status: .passed, notes: "No export, render, or file systems."),
+        HFQARouteValidation(route: "Profile -> Developer / QA Hub", expectedBehavior: "Internal hub is reachable only from Profile.", status: .passed, notes: "No new bottom tab."),
+        HFQARouteValidation(route: "Developer / QA Hub -> Product Spine", expectedBehavior: "Product Spine appears as an internal validation section.", status: .passed, notes: "Read-only static QA surface."),
+        HFQARouteValidation(route: "Developer / QA Hub -> Visual Parity", expectedBehavior: "Visual Parity Center lists locked Figma authority.", status: .passed, notes: "No Figma mutation."),
+        HFQARouteValidation(route: "Developer / QA Hub -> Protected Systems Seal", expectedBehavior: "Protected systems are listed as locked.", status: .protected, notes: "No unlock, edit, or repair actions."),
+        HFQARouteValidation(route: "Developer / QA Hub -> Screenshot Review", expectedBehavior: "Screenshot Review lists expected manual capture targets.", status: .needsManualQA, notes: "No file picker or Photos integration.")
     ]
 
     static let buildChecklist: [HFQAStatusItem] = [
@@ -2227,17 +3320,27 @@ private enum HFDeveloperQAData {
         HFQAStatusItem(title: "app installed on simulator", status: .needsReview, detail: "Install on booted simulator when available.", systemImage: "iphone.and.arrow.forward"),
         HFQAStatusItem(title: "app launched on simulator", status: .needsReview, detail: "Launch the HighFive app bundle.", systemImage: "play.fill"),
         HFQAStatusItem(title: "screenshots captured", status: .needed, detail: "Capture consumer screens for visual review.", systemImage: "camera"),
+        HFQAStatusItem(title: "rooms verified", status: .needsReview, detail: "Verify Watch, Creator Studio, Connect, Launch, and Export.", systemImage: "rectangle.3.group.fill"),
+        HFQAStatusItem(title: "product spine locked", status: .needsReview, detail: "Confirm Product Spine maps all five pillars.", systemImage: "point.3.connected.trianglepath.dotted"),
         HFQAStatusItem(title: "commit created", status: .deferred, detail: "Only after build and scans pass.", systemImage: "checkmark.seal"),
         HFQAStatusItem(title: "tag created", status: .deferred, detail: "Only after complete phase checkpoint.", systemImage: "tag")
     ]
 
     static let screenshotReviews: [HFQAScreenshotReview] = [
-        HFQAScreenshotReview(screen: "Home", expectedName: "highfive-visible-template-assembly-home.png", status: .needed, reviewFocus: "Hero scale, gold mood, poster density, no dashboard feel."),
-        HFQAScreenshotReview(screen: "Discover/Search", expectedName: "highfive-visible-template-assembly-discover.png", status: .needed, reviewFocus: "Content discovery and filter treatment."),
-        HFQAScreenshotReview(screen: "Movie Detail", expectedName: "highfive-visible-template-assembly-movie-detail.png", status: .needed, reviewFocus: "Cinematic title page and actions."),
-        HFQAScreenshotReview(screen: "Downloads", expectedName: "highfive-visible-template-assembly-downloads.png", status: .needed, reviewFocus: "Offline shelf and Find More To Download CTA."),
-        HFQAScreenshotReview(screen: "Profile", expectedName: "highfive-visible-template-assembly-profile.png", status: .needed, reviewFocus: "Consumer-first profile, internal tools hidden lower."),
-        HFQAScreenshotReview(screen: "Developer / QA Hub", expectedName: "highfive-dev-qa-hub.png", status: .needed, reviewFocus: "Internal control room, readable statuses, no live-system execution.")
+        HFQAScreenshotReview(screen: "Home", expectedName: "highfive-ecosystem-home.png", status: .needed, reviewFocus: "Consumer streaming first impression."),
+        HFQAScreenshotReview(screen: "Discover/Search", expectedName: "highfive-ecosystem-discover.png", status: .needed, reviewFocus: "Content discovery and filter treatment."),
+        HFQAScreenshotReview(screen: "Movie Detail", expectedName: "highfive-ecosystem-movie-detail.png", status: .needed, reviewFocus: "Cinematic title page and actions."),
+        HFQAScreenshotReview(screen: "Downloads", expectedName: "highfive-ecosystem-downloads.png", status: .needed, reviewFocus: "Offline shelf and download rows."),
+        HFQAScreenshotReview(screen: "Profile", expectedName: "highfive-ecosystem-profile.png", status: .needed, reviewFocus: "Consumer-first profile, HighFive Rooms visible, Developer / QA separate."),
+        HFQAScreenshotReview(screen: "Watch Room", expectedName: "highfive-ecosystem-watch-room.png", status: .needed, reviewFocus: "Streaming room with no AVPlayer integration."),
+        HFQAScreenshotReview(screen: "Creator Studio", expectedName: "highfive-ecosystem-creator-studio.png", status: .needed, reviewFocus: "Project, pitch, media kit, and launch prep structure."),
+        HFQAScreenshotReview(screen: "Connect Room", expectedName: "highfive-ecosystem-connect-room.png", status: .needed, reviewFocus: "Community preview with no messaging or analytics."),
+        HFQAScreenshotReview(screen: "Launch Room", expectedName: "highfive-ecosystem-launch-room.png", status: .needed, reviewFocus: "Timeline, campaign, audience, materials, and readiness."),
+        HFQAScreenshotReview(screen: "Export Room", expectedName: "highfive-ecosystem-export-room.png", status: .needed, reviewFocus: "Deliverables, media kit, festival, platform, and distribution readiness."),
+        HFQAScreenshotReview(screen: "Developer / QA Hub", expectedName: "highfive-ecosystem-developer-qa.png", status: .needed, reviewFocus: "Internal control room with Product Spine and safety centers."),
+        HFQAScreenshotReview(screen: "Product Spine", expectedName: "highfive-ecosystem-product-spine.png", status: .needed, reviewFocus: "WATCH, CREATE, CONNECT, LAUNCH, EXPORT map."),
+        HFQAScreenshotReview(screen: "Protected Systems", expectedName: "highfive-ecosystem-protected-systems.png", status: .needed, reviewFocus: "Locked protected paths with no edit controls."),
+        HFQAScreenshotReview(screen: "Screenshot Review", expectedName: "highfive-ecosystem-screenshot-review.png", status: .needed, reviewFocus: "Expected screenshot target list.")
     ]
 }
 
@@ -2272,6 +3375,59 @@ private struct QAStatusCard: View {
             }
             .padding(HFSpacing.md)
         }
+    }
+}
+
+private struct QAProductSpineCard: View {
+    let pillar: HFQAProductSpinePillar
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: pillar.status.color.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: pillar.systemImage)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(pillar.status.color)
+                        .frame(width: 44, height: 44)
+                        .background(pillar.status.color.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text(pillar.pillar)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(pillar.status.color)
+                        Text(pillar.room)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.sm)
+                    QAStatusPill(status: pillar.status)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Primary sections")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+
+                    ForEach(pillar.primarySurfaces, id: \.self) { surface in
+                        HStack(spacing: HFSpacing.xs) {
+                            Circle()
+                                .fill(pillar.status.color)
+                                .frame(width: 5, height: 5)
+                            Text(surface)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Product Spine \(pillar.pillar), room \(pillar.room)")
     }
 }
 

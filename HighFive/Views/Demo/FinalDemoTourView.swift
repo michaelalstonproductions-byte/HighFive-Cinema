@@ -1,283 +1,281 @@
 import SwiftUI
 
 struct FinalDemoTourView: View {
-    private var featuredMovie: Movie {
-        HFMockData.movie("friendly") ?? HFMockData.movies[0]
-    }
+    private let storyCopy = "HighFive opens with Watch because the consumer experience comes first. HighFive Rooms then reveal the creator ecosystem: creators can prepare projects, connect with audiences, launch titles, and organize professional deliverables. Developer / QA remains internal so the product can be validated without exposing tools to viewers."
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                header
-                overviewSection
-                guidedStepsSection
-                productSpineCompletionSection
-                demoModesSection
-                provesSection
-                doesNotDoSection
-                finalRule
+        ScrollViewReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                    Color.clear
+                        .frame(height: 0)
+                        .id("demoTourTop")
+
+                    hero
+                    actsSection
+                    screenshotPlanSection
+                    productStorySection
+                    figmaSourceSection
+                    protectedSystemsSection
+                }
+                .padding(.top, HFSpacing.lg)
+                .padding(.bottom, HFSpacing.floatingTabClearance)
             }
-            .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .onAppear {
+                DispatchQueue.main.async {
+                    proxy.scrollTo("demoTourTop", anchor: .top)
+                }
+            }
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle("Final Demo Tour")
+        .navigationTitle("Demo Tour")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFStatusBadge(title: "Internal walkthrough", isProminent: true)
+    private var hero: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: "play.rectangle.on.rectangle.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
 
-            Text("Final Demo Tour")
-                .font(HFTypography.display)
-                .foregroundStyle(HFColors.textPrimary)
+                    Text("HighFive Cinema Demo Tour")
+                        .font(HFTypography.display)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
-            Text("Internal local walkthrough for proving the Watch to Export spine. Product users should start from Home, Search, Library, Downloads, or Profile.")
-                .font(HFTypography.body)
-                .foregroundStyle(HFColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Watch first. Then create, connect, launch, and prepare content for the world.")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("A guided internal route through the consumer streaming shell, HighFive Rooms ecosystem, and Developer / QA validation layer.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(HFFinalDemoTourData.statusChips, id: \.self) { chip in
+                        HFStatusBadge(title: chip, isProminent: chip == "Consumer First")
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Consumer and Rooms Demo Tour, internal guided proof path for HighFive Cinema")
     }
 
-    private var overviewSection: some View {
+    private var actsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            ForEach(HFFinalDemoTourData.acts) { act in
+                demoActSection(act)
+            }
+        }
+    }
+
+    private func demoActSection(_ act: HFDemoAct) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Internal Overview", actionTitle: nil)
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(act.title)
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text(act.purpose)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(Array(act.steps.enumerated()), id: \.element.id) { index, step in
+                    HFFinalDemoStepCard(step: step, stepNumber: index + 1)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(act.accessibilityLabel)
+    }
+
+    private var screenshotPlanSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Screenshot Plan", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(HFFinalDemoTourData.screenshotPlan) { target in
+                    screenshotPlanRow(target)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Screenshot plan rows for consumer rooms and internal demo tour screenshots")
+    }
+
+    private func screenshotPlanRow(_ target: HFDemoScreenshotTarget) -> some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.glassStroke) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text(target.filename)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(target.route)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+
+                    HFStatusBadge(title: target.status, isProminent: false)
+                }
+
+                Text(target.reviewFocus)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(target.filename), route \(target.route), focus \(target.reviewFocus), status \(target.status)")
+    }
+
+    private var productStorySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "The HighFive Story", actionTitle: nil)
 
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
-                    Text("Watch -> Create -> Connect -> Launch -> Export")
-                        .font(HFTypography.section)
-                        .foregroundStyle(HFColors.gold)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text("Use this local tour to review the product journey behind Build & QA Tools. Active screens open locally; future export and capture systems remain locked until scoped.")
+                    Text(storyCopy)
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        ForEach(HFFinalDemoTourData.productStory) { item in
+                            storyPillarCard(item)
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Product Spine, Watch Create Connect Launch Export mapping")
+    }
+
+    private func storyPillarCard(_ item: HFDemoStoryItem) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(HFColors.gold)
+
+            Text(item.label)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
+
+            Text(item.value)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(HFColors.glassSurface)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
+    }
+
+    private var figmaSourceSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Figma Source", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.glassStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    metadataRow(label: "File", value: "HighFive Cinema Master Template")
+                    metadataRow(label: "File Key", value: "G2QYwgGfR08ZsF1oQpgDuG")
+                    metadataRow(label: "Canvas", value: "01_Streaming_System")
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Primary production frames")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+
+                        ForEach(HFFinalDemoTourData.figmaFrames, id: \.self) { frame in
+                            Text(frame)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    metadataRow(label: "Secondary style reference", value: "Home_Discovery_Gold - Node 11:9977")
+                    metadataRow(label: "Classification", value: "Secondary / Style Support Only")
+                    Text("Do not use secondary references to replace production frames.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textMuted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(HFSpacing.lg)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Figma Source, HighFive Cinema Master Template production frames and secondary style reference")
     }
 
-    private var guidedStepsSection: some View {
+    private var protectedSystemsSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Guided Tour Steps", actionTitle: nil)
+            HFSectionHeader(title: "Protected Systems Summary", actionTitle: nil)
 
-            VStack(spacing: HFSpacing.md) {
-                ForEach(Array(HFFinalDemoTourData.steps.enumerated()), id: \.element.id) { index, step in
-                    stepRoute(for: step, index: index + 1)
-                }
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    Text("The demo tour may display these as static text. It must not touch or connect them.")
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-    private var productSpineCompletionSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Spine Completion", actionTitle: nil)
-
-            VStack(spacing: HFSpacing.md) {
-                NavigationLink {
-                    ProductSpineCompletionView()
-                } label: {
-                    HFActionTile(title: "Product Spine Completion", subtitle: "Confirm the local product structure before visual polish.", systemImage: "rectangle.connected.to.line.below")
-                }
-                .buttonStyle(.plain)
-
-                NavigationLink {
-                    LockedSystemsMapView()
-                } label: {
-                    HFActionTile(title: "Locked Systems Map", subtitle: "Review future real systems that remain disconnected.", systemImage: "lock.shield.fill")
-                }
-                .buttonStyle(.plain)
-
-                NavigationLink {
-                    VisualParityBacklogView()
-                } label: {
-                    HFActionTile(title: "Visual Parity Backlog", subtitle: "Keep mockup matching parked until the spine is stable.", systemImage: "rectangle.3.group.fill")
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var demoModesSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Demo Modes", actionTitle: nil)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(HFFinalDemoTourData.audiencePaths) { path in
-                        NavigationLink {
-                            DemoAudiencePathView()
-                        } label: {
-                            HFDemoAudiencePathCard(path: path)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        ForEach(HFFinalDemoTourData.protectedPaths, id: \.self) { path in
+                            HFRouteChip(title: path, systemImage: "lock.fill")
                         }
-                        .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-            }
-            .scrollClipDisabled()
-        }
-    }
-
-    private var provesSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "What This Tour Proves", actionTitle: nil)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: HFSpacing.md)], spacing: HFSpacing.md) {
-                ForEach(HFFinalDemoTourData.highlights) { highlight in
-                    HFEcosystemCard(
-                        title: highlight.title,
-                        subtitle: highlight.subtitle,
-                        systemImage: highlight.systemImage,
-                        status: highlight.status,
-                        minWidth: 230
-                    )
-                }
+                .padding(HFSpacing.lg)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Protected systems summary, protected paths and assets remain disconnected")
     }
 
-    private var doesNotDoSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "What This Tour Does Not Do", actionTitle: nil)
+    private func metadataRow(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Text(label)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
 
-            VStack(spacing: HFSpacing.md) {
-                ForEach([
-                    "Does not submit to App Store",
-                    "Does not connect backend, accounts, or payments",
-                    "Does not upload files or process creator assets",
-                    "Does not capture camera, screen, or protected media",
-                    "Does not render, save, or share images",
-                    "Does not touch protected playback, depth, motion, or rendering systems"
-                ], id: \.self) { item in
-                    HFInsightCard(title: item, message: "Locked until a separate protected implementation phase.", systemImage: "lock.shield.fill")
-                }
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var finalRule: some View {
-        HFInsightCard(
-            title: "Final Demo Rule",
-            message: "HighFive is demo-ready only when the tree is clean, the latest feature is committed, QA has passed, and every real system remains locked until separately scoped.",
-            systemImage: "checkmark.seal.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    @ViewBuilder
-    private func stepRoute(for step: HFFinalDemoStep, index: Int) -> some View {
-        switch step.title {
-        case "Watch The Friendly", "Open Movie Detail":
-            NavigationLink(value: featuredMovie) {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Explore Unified Discovery":
-            NavigationLink {
-                UnifiedDiscoveryView()
-                    .padding(.top, HFSpacing.lg)
-                    .background(HFColors.screenBackground.ignoresSafeArea())
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Open Personalized Hub":
-            NavigationLink {
-                PersonalizedHubView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Enter Creator Mode":
-            NavigationLink {
-                CreatorEntryView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Open Creator Command Center":
-            NavigationLink {
-                CreatorWorkflowCommandCenterView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Continue Package Builder":
-            NavigationLink {
-                CreatorPackageBuilderPreviewView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Review Release Readiness":
-            NavigationLink {
-                CreatorReleaseReadinessPreviewView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Open Connect Hub":
-            NavigationLink {
-                ConnectHubView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Explore Social Rooms":
-            NavigationLink {
-                SocialRoomsPreviewView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Open Social Graph":
-            NavigationLink {
-                SocialGraphPreviewView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Open Launch Center":
-            NavigationLink {
-                CreatorLaunchCenterPreviewView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Preview Access":
-            NavigationLink {
-                CreatorAccessPreviewView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Open Product Spine Lockdown":
-            NavigationLink {
-                ProductSpineLockdownView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        case "Finish at Release Candidate Prep":
-            NavigationLink {
-                ReleaseCandidatePrepView()
-            } label: {
-                HFFinalDemoStepCard(step: step, stepNumber: index)
-            }
-            .buttonStyle(.plain)
-        default:
-            HFFinalDemoStepCard(step: step, stepNumber: index, showsRouteCue: false)
+            Text(value)
+                .font(HFTypography.body)
+                .foregroundStyle(HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
