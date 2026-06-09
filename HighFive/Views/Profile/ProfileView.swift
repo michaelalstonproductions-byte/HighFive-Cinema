@@ -674,7 +674,155 @@ private struct WatchRoomView: View {
     }
 }
 
+private enum StudioSection: String, CaseIterable, Identifiable {
+    case overview = "Overview"
+    case projects = "Projects"
+    case profile = "Creator Profile"
+    case pitch = "Pitch"
+    case mediaKit = "Media Kit"
+    case launchPrep = "Launch Prep"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .overview: "rectangle.3.group.fill"
+        case .projects: "film.stack.fill"
+        case .profile: "person.crop.square.fill"
+        case .pitch: "text.quote"
+        case .mediaKit: "photo.stack.fill"
+        case .launchPrep: "flag.checkered"
+        }
+    }
+
+    var accessibilityName: String {
+        switch self {
+        case .overview: "Overview section"
+        case .projects: "Projects section, local preview of creator projects"
+        case .profile: "Creator Profile section"
+        case .pitch: "Pitch section"
+        case .mediaKit: "Media Kit section, preview of poster trailer stills and synopsis readiness"
+        case .launchPrep: "Launch Prep section"
+        }
+    }
+}
+
+private struct StudioProject: Identifiable {
+    let id = UUID()
+    let title: String
+    let format: String
+    let stage: String
+    let readiness: Int
+    let needs: [String]
+    let status: String
+}
+
+private struct StudioChecklistItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
+    let systemImage: String
+}
+
+private struct StudioPitchItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let systemImage: String
+}
+
+private enum StudioData {
+    static let overviewItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Active Projects", status: "Preview", detail: "Organize films, episodes, shorts, and campaigns.", systemImage: "film.stack.fill"),
+        StudioChecklistItem(title: "Creator Identity", status: "Preview", detail: "Shape the public profile behind the work.", systemImage: "person.crop.square.fill"),
+        StudioChecklistItem(title: "Pitch Package", status: "Local Preview", detail: "Prepare story, audience, format, and positioning.", systemImage: "text.quote"),
+        StudioChecklistItem(title: "Media Kit", status: "Preview", detail: "Collect key art, stills, synopsis, and creator notes.", systemImage: "photo.stack.fill"),
+        StudioChecklistItem(title: "Launch Readiness", status: "Coming Soon", detail: "Track what the title needs before premiere.", systemImage: "flag.checkered"),
+        StudioChecklistItem(title: "Export Prep", status: "Protected", detail: "Prepare deliverables before real delivery systems are connected.", systemImage: "shippingbox.fill")
+    ]
+
+    static let projects: [StudioProject] = [
+        StudioProject(
+            title: "The Friendly",
+            format: "Feature Film",
+            stage: "Packaging",
+            readiness: 72,
+            needs: ["Pitch polish", "Trailer notes", "Launch copy"],
+            status: "Studio Preview"
+        ),
+        StudioProject(
+            title: "Neon Canyon",
+            format: "Limited Series",
+            stage: "Development",
+            readiness: 48,
+            needs: ["Creator profile", "Key art", "Audience notes"],
+            status: "Local Preview"
+        ),
+        StudioProject(
+            title: "Midnight Orchard",
+            format: "Short Film",
+            stage: "Festival Prep",
+            readiness: 81,
+            needs: ["Poster package", "Festival synopsis", "Credits review"],
+            status: "Readiness"
+        )
+    ]
+
+    static let profileItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Profile name", status: "Ready", detail: "HighFive Studio", systemImage: "checkmark.seal.fill"),
+        StudioChecklistItem(title: "Short bio", status: "Ready", detail: "A cinematic team preparing premium stories for streaming, community, and launch.", systemImage: "text.alignleft"),
+        StudioChecklistItem(title: "Creator image placeholder", status: "Needs Review", detail: "Use a visual placeholder until approved creator artwork is available.", systemImage: "person.crop.square"),
+        StudioChecklistItem(title: "Featured project", status: "Ready", detail: "The Friendly anchors the current studio package.", systemImage: "star.fill"),
+        StudioChecklistItem(title: "Social links", status: "Deferred", detail: "Relationship links stay disconnected in this phase.", systemImage: "link"),
+        StudioChecklistItem(title: "Verification", status: "Deferred", detail: "Verification is a future account system.", systemImage: "checkmark.shield")
+    ]
+
+    static let pitchItems: [StudioPitchItem] = [
+        StudioPitchItem(title: "Logline", detail: "A small-town team turns an impossible idea into a cinematic movement.", systemImage: "quote.opening"),
+        StudioPitchItem(title: "Audience", detail: "Fans of premium indie stories, behind-the-scenes creator journeys, and character-driven drama.", systemImage: "person.3.fill"),
+        StudioPitchItem(title: "Format", detail: "Feature, limited series, shorts, and creator-led packages can be framed for HighFive.", systemImage: "rectangle.stack.fill"),
+        StudioPitchItem(title: "Tone", detail: "Cinematic, hopeful, grounded, and emotional.", systemImage: "sparkles"),
+        StudioPitchItem(title: "Comparable space", detail: "Premium streaming originals, festival dramas, and creator-led documentaries.", systemImage: "rectangle.on.rectangle.angled.fill"),
+        StudioPitchItem(title: "Why now", detail: "Creator-first storytelling is becoming the next premium viewing category.", systemImage: "clock.badge.checkmark.fill"),
+        StudioPitchItem(title: "Release angle", detail: "Package the story for streaming, community, launch, and readiness moments.", systemImage: "megaphone.fill")
+    ]
+
+    static let mediaKitItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Poster", status: "Ready", detail: "Key art reference is present in the local content slate.", systemImage: "photo.fill"),
+        StudioChecklistItem(title: "Backdrop", status: "Needs Review", detail: "Backdrop treatment should match the premium streaming UI.", systemImage: "photo.on.rectangle.angled"),
+        StudioChecklistItem(title: "Trailer", status: "Deferred", detail: "Trailer notes can be prepared without playback integration.", systemImage: "film.fill"),
+        StudioChecklistItem(title: "Stills", status: "Needs Review", detail: "Still selections remain display-only for this phase.", systemImage: "rectangle.stack.fill"),
+        StudioChecklistItem(title: "Synopsis", status: "Ready", detail: "Short and long synopsis blocks can support detail and launch pages.", systemImage: "doc.text.fill"),
+        StudioChecklistItem(title: "Credits", status: "Needs Review", detail: "Credit lines should be reviewed before public launch.", systemImage: "person.text.rectangle.fill"),
+        StudioChecklistItem(title: "Creator Notes", status: "Preview", detail: "Creator context helps connect the story to the audience.", systemImage: "note.text"),
+        StudioChecklistItem(title: "Press Blurb", status: "Deferred", detail: "Press copy stays a planning item until launch systems mature.", systemImage: "newspaper.fill")
+    ]
+
+    static let launchPrepItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Title package", status: "Preview", detail: "Title, synopsis, key art, and creator context are grouped for review.", systemImage: "shippingbox.fill"),
+        StudioChecklistItem(title: "Creator profile", status: "Preview", detail: "Creator identity supports the release story.", systemImage: "person.crop.square.fill"),
+        StudioChecklistItem(title: "Poster package", status: "Needs Review", detail: "Review key art before premiere positioning.", systemImage: "photo.stack.fill"),
+        StudioChecklistItem(title: "Trailer notes", status: "Deferred", detail: "Trailer planning stays local and non-playback.", systemImage: "film.fill"),
+        StudioChecklistItem(title: "Audience copy", status: "Preview", detail: "Write short, clear audience-facing copy.", systemImage: "text.bubble.fill"),
+        StudioChecklistItem(title: "Launch timeline", status: "Coming Soon", detail: "Timeline planning bridges into the Launch Room.", systemImage: "calendar.badge.clock"),
+        StudioChecklistItem(title: "Community preview", status: "Preview", detail: "Connect Room can frame audience energy around the title.", systemImage: "person.2.fill"),
+        StudioChecklistItem(title: "Distribution notes", status: "Protected", detail: "Delivery planning stays separate from real distribution systems.", systemImage: "lock.shield.fill")
+    ]
+
+    static let safetyItems: [StudioChecklistItem] = [
+        StudioChecklistItem(title: "Uploads", status: "Deferred", detail: "Media intake is not connected in this phase.", systemImage: "arrow.up.doc"),
+        StudioChecklistItem(title: "Accounts", status: "Deferred", detail: "Creator identity is display-only.", systemImage: "person.crop.circle.badge.exclamationmark"),
+        StudioChecklistItem(title: "Payments", status: "Deferred", detail: "No commerce system is part of this room.", systemImage: "creditcard"),
+        StudioChecklistItem(title: "Rendering", status: "Protected", detail: "Rendering systems remain outside this SwiftUI room.", systemImage: "viewfinder"),
+        StudioChecklistItem(title: "Export Engine", status: "Protected", detail: "Professional delivery remains a protected future system.", systemImage: "shippingbox.fill"),
+        StudioChecklistItem(title: "Backend", status: "Deferred", detail: "Studio data is static and local for this phase.", systemImage: "server.rack")
+    ]
+}
+
 private struct CreateRoomView: View {
+    @State private var selectedStudioSection: StudioSection = .overview
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -683,63 +831,488 @@ private struct CreateRoomView: View {
                     title: "Creator Studio",
                     subtitle: "Plan, package, and prepare stories for HighFive.",
                     purpose: "This room previews the creator-side studio.",
-                    heroCopy: "A premium workspace for projects, creator identity, pitches, and media packages.",
+                    heroCopy: "A premium workspace for projects, creator identity, pitches, media kits, and launch readiness.",
                     status: "Studio Preview",
                     systemImage: "wand.and.stars",
                     accent: Color.orange
                 )
 
-                VStack(spacing: HFSpacing.md) {
-                    NavigationLink {
-                        CreatorEntryView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Studio Overview", subtitle: "Open the creator entry point and studio preview surface.", status: "Preview", systemImage: "rectangle.3.group.fill", accent: Color.orange)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        CreatorDashboardPreviewView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Projects", subtitle: "Organize films, episodes, shorts, and campaigns.", status: "Local Preview", systemImage: "folder.fill", accent: Color.orange)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        CreatorEntryView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Creator Profile", subtitle: "Shape the public identity behind the work.", status: "Preview", systemImage: "person.crop.square.fill", accent: Color.orange)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        CreatorPackageBuilderPreviewView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Pitch Deck", subtitle: "Prepare the story, audience, and positioning.", status: "Studio Preview", systemImage: "rectangle.on.rectangle.angled.fill", accent: Color.orange)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        CreatorAssetManagerPreviewView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Media Kit", subtitle: "Collect posters, stills, synopsis, and creator notes.", status: "Readiness", systemImage: "photo.stack.fill", accent: Color.orange)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        CreatorReleaseReadinessPreviewView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Studio Checklist", subtitle: "Track readiness for creator package review.", status: "Readiness", systemImage: "checklist.checked", accent: Color.orange)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
+                studioSectionSelector
+                selectedSectionView
+                studioSafetyBoundary
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle("Create Room")
+        .navigationTitle("Creator Studio")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var studioSectionSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.sm) {
+                ForEach(StudioSection.allCases) { section in
+                    Button {
+                        selectedStudioSection = section
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: section.systemImage)
+                                .font(.system(size: 12, weight: .bold))
+                            Text(section.rawValue)
+                        }
+                        .font(HFTypography.micro)
+                        .foregroundStyle(selectedStudioSection == section ? .black : HFColors.textSecondary)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .padding(.vertical, 10)
+                        .background(selectedStudioSection == section ? Color.orange : Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedStudioSection == section ? Color.orange.opacity(0.78) : HFColors.glassStroke, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(section.accessibilityName)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Studio section selector")
+    }
+
+    @ViewBuilder
+    private var selectedSectionView: some View {
+        switch selectedStudioSection {
+        case .overview:
+            overviewSection
+        case .projects:
+            projectsSection
+        case .profile:
+            creatorProfileSection
+        case .pitch:
+            pitchSection
+        case .mediaKit:
+            mediaKitSection
+        case .launchPrep:
+            launchPrepSection
+        }
+    }
+
+    private var overviewSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Studio Overview", subtitle: "The local command surface for preparing a HighFive title.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(StudioData.overviewItems) { item in
+                    StudioChecklistCard(item: item, accent: Color.orange)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Studio overview cards")
+    }
+
+    private var projectsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Project Slate", subtitle: "Premium local project cards, not a file manager.")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(StudioData.projects) { project in
+                    StudioProjectCard(project: project)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var creatorProfileSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Creator Identity", subtitle: "Preview the public creator profile before account systems exist.")
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.orange.opacity(0.36)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "person.crop.square.fill")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(Color.orange)
+                            .frame(width: 58, height: 58)
+                            .background(Color.orange.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("HighFive Studio")
+                                .font(HFTypography.title)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Independent Film Team")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(Color.orange)
+                            Text("A cinematic team preparing premium stories for streaming, community, and launch.")
+                                .font(HFTypography.body)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    HStack(spacing: HFSpacing.xs) {
+                        ForEach(["Drama", "Documentary", "Sci-Fi", "Comedy"], id: \.self) { genre in
+                            HFRoomStatusChip(title: genre, accent: Color.orange)
+                        }
+                    }
+
+                    StudioProgressBar(title: "Profile completeness", value: 68, accent: Color.orange)
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(StudioData.profileItems) { item in
+                    StudioChecklistRow(item: item, accent: Color.orange)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Profile section, public identity preview")
+    }
+
+    private var pitchSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Pitch Package", subtitle: "Shape the story, audience, format, and release angle.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(StudioData.pitchItems) { item in
+                    StudioPitchCard(item: item)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Pitch section, story packaging preview")
+    }
+
+    private var mediaKitSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Media Kit", subtitle: "Organize release materials without touching real asset systems.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(StudioData.mediaKitItems) { item in
+                    StudioChecklistCard(item: item, accent: Color.orange)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Media Kit section, preview of poster trailer stills and synopsis readiness")
+    }
+
+    private var launchPrepSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Launch Prep", subtitle: "Bridge Create into Launch with planning-only readiness.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(StudioData.launchPrepItems) { item in
+                    StudioChecklistRow(item: item, accent: Color.orange)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Prep section, release readiness preview")
+    }
+
+    private var studioSafetyBoundary: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Studio Safety Boundary")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Creator Studio is a local product preview. Uploads, Accounts, Payments, Rendering, and delivery systems remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(StudioData.safetyItems) { item in
+                        StudioSafetyChip(item: item)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Studio Safety Boundary, protected systems remain disconnected")
+    }
+}
+
+private struct StudioRoomSectionHeader: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(title)
+                .font(HFTypography.section)
+                .foregroundStyle(HFColors.textPrimary)
+            Text(subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct StudioChecklistCard: View {
+    let item: StudioChecklistItem
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                    HFRoomStatusChip(title: item.status, accent: accent)
+                    Text(item.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.status), \(item.detail)")
+    }
+}
+
+private struct StudioProjectCard: View {
+    let project: StudioProject
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.orange.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: project.status, accent: Color.orange)
+                        Text(project.title)
+                            .font(HFTypography.title)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("\(project.format) · \(project.stage)")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+
+                    Spacer()
+
+                    StudioReadinessRing(value: project.readiness)
+                }
+
+                StudioProgressBar(title: "Readiness", value: project.readiness, accent: Color.orange)
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(project.needs, id: \.self) { need in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Color.orange)
+                                .padding(.top, 2)
+                            Text(need)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                    }
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    StudioPassiveCTA(title: "View Package")
+                    StudioPassiveCTA(title: "Review Checklist")
+                    StudioPassiveCTA(title: "Prepare Pitch")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(project.title), \(project.format), \(project.stage), \(project.readiness) percent ready")
+    }
+}
+
+private struct StudioReadinessRing: View {
+    let value: Int
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.12), lineWidth: 5)
+            Circle()
+                .trim(from: 0, to: CGFloat(value) / 100)
+                .stroke(Color.orange, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Text("\(value)%")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textPrimary)
+        }
+        .frame(width: 54, height: 54)
+    }
+}
+
+private struct StudioProgressBar: View {
+    let title: String
+    let value: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textMuted)
+                Spacer()
+                Text("\(value)%")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(accent)
+            }
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.10))
+                    Capsule()
+                        .fill(accent)
+                        .frame(width: max(8, proxy.size.width * CGFloat(value) / 100))
+                }
+            }
+            .frame(height: 8)
+        }
+    }
+}
+
+private struct StudioChecklistRow: View {
+    let item: StudioChecklistItem
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.24)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 38, height: 38)
+                    .background(accent.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(item.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                        HFRoomStatusChip(title: item.status, accent: accent)
+                    }
+
+                    Text(item.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.status), \(item.detail)")
+    }
+}
+
+private struct StudioPitchCard: View {
+    let item: StudioPitchItem
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: Color.orange.opacity(0.28)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color.orange)
+                    .frame(width: 42, height: 42)
+                    .background(Color.orange.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(item.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.detail)")
+    }
+}
+
+private struct StudioPassiveCTA: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(Color.orange)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, HFSpacing.xs)
+            .padding(.vertical, 8)
+            .background(Color.orange.opacity(0.12))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(Color.orange.opacity(0.34), lineWidth: 1))
+    }
+}
+
+private struct StudioSafetyChip: View {
+    let item: StudioChecklistItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HFRoomStatusChip(title: item.status, accent: HFColors.gold)
+            Text(item.title)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(HFColors.textPrimary)
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.status), \(item.detail)")
     }
 }
 
