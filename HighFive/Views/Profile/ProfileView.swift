@@ -323,39 +323,42 @@ struct ProfileView: View {
                 } label: {
                     HFProductRoomEntryCard(
                         title: "Watch",
-                        subtitle: "Your streaming home, saved titles, downloads, and discovery.",
-                        status: "Streaming",
+                        subtitle: "Streaming home, saved titles, downloads, and discovery.",
+                        status: "Live Preview",
                         systemImage: "play.rectangle.fill",
                         accent: HFColors.gold
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Watch Room, streaming home and saved titles")
 
                 NavigationLink {
-                    CreatorStudioRoomView()
+                    CreateRoomView()
                 } label: {
                     HFProductRoomEntryCard(
                         title: "Create",
-                        subtitle: "Build projects, pitches, creator profiles, and studio materials.",
+                        subtitle: "Projects, pitches, creator profiles, and studio materials.",
                         status: "Studio Preview",
                         systemImage: "wand.and.stars",
                         accent: Color.orange
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Create Room, creator studio preview")
 
                 NavigationLink {
                     ConnectRoomView()
                 } label: {
                     HFProductRoomEntryCard(
                         title: "Connect",
-                        subtitle: "Grow audiences, creator communities, and fan engagement.",
-                        status: "Local Preview",
+                        subtitle: "Audience communities, reactions, and creator engagement.",
+                        status: "Community Preview",
                         systemImage: "person.2.fill",
                         accent: Color.cyan
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Connect Room, community preview")
 
                 NavigationLink {
                     LaunchRoomView()
@@ -369,22 +372,26 @@ struct ProfileView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Launch Room, premiere and campaign preview")
 
                 NavigationLink {
                     ExportRoomView()
                 } label: {
                     HFProductRoomEntryCard(
                         title: "Export",
-                        subtitle: "Organize deliverables, media kits, and distribution readiness.",
-                        status: "Readiness",
+                        subtitle: "Deliverables, media kits, and distribution packages.",
+                        status: "Readiness Preview",
                         systemImage: "shippingbox.fill",
                         accent: Color.purple
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Export Room, deliverables and distribution readiness preview")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("HighFive Rooms section")
     }
 
     private var avatarRow: some View {
@@ -594,6 +601,8 @@ private struct HFProductRoomEntryCard: View {
             }
             .padding(HFSpacing.md)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) Room, \(subtitle)")
     }
 }
 
@@ -611,7 +620,9 @@ private struct WatchRoomView: View {
                     eyebrow: "WATCH",
                     title: "Watch Room",
                     subtitle: "The consumer streaming layer of HighFive Cinema.",
-                    status: "Streaming",
+                    purpose: "This room connects the viewer to content.",
+                    heroCopy: "Your streaming home for featured titles, saved films, downloads, and discovery.",
+                    status: "Live Preview",
                     systemImage: "play.rectangle.fill",
                     accent: HFColors.gold
                 )
@@ -620,35 +631,35 @@ private struct WatchRoomView: View {
                     NavigationLink {
                         MovieDetailView(movie: featuredMovie)
                     } label: {
-                        HFRoomFeatureCard(title: "Watch Now", subtitle: "Open the featured title path and review the movie detail experience.", status: "Preview", systemImage: "play.fill", accent: HFColors.gold)
+                        HFRoomFeatureCard(title: "Continue Watching", subtitle: "Resume titles already in progress with the Watch Now path.", status: "Live Preview", systemImage: "play.fill", accent: HFColors.gold)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         MyListView()
                     } label: {
-                        HFRoomFeatureCard(title: "My List", subtitle: "Saved titles and in-progress viewing stay in the consumer library.", status: "Local Preview", systemImage: "bookmark.fill", accent: HFColors.gold)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        DownloadsView()
-                    } label: {
-                        HFRoomFeatureCard(title: "Downloads", subtitle: "Offline-ready titles remain local preview content.", status: "Local Preview", systemImage: "arrow.down.circle.fill", accent: HFColors.gold)
+                        HFRoomFeatureCard(title: "My List", subtitle: "Saved titles ready for your next watch.", status: "Local Preview", systemImage: "bookmark.fill", accent: HFColors.gold)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         SearchView(mode: $searchMode)
                     } label: {
-                        HFRoomFeatureCard(title: "Discover", subtitle: "Find films, originals, premieres, and poster-led rails.", status: "Streaming", systemImage: "magnifyingglass", accent: HFColors.gold)
+                        HFRoomFeatureCard(title: "Discover", subtitle: "Browse movies, originals, and upcoming premieres.", status: "Preview", systemImage: "magnifyingglass", accent: HFColors.gold)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        DownloadsView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Downloads", subtitle: "Offline-ready titles in one place.", status: "Local Preview", systemImage: "arrow.down.circle.fill", accent: HFColors.gold)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         MovieDetailView(movie: featuredMovie)
                     } label: {
-                        HFRoomFeatureCard(title: "Featured Titles", subtitle: "The Friendly remains the current hero path for visual QA.", status: "Featured", systemImage: "star.fill", accent: HFColors.gold)
+                        HFRoomFeatureCard(title: "Featured Titles", subtitle: "HighFive picks and editorial rails.", status: "Preview", systemImage: "star.fill", accent: HFColors.gold)
                     }
                     .buttonStyle(.plain)
                 }
@@ -663,7 +674,7 @@ private struct WatchRoomView: View {
     }
 }
 
-private struct CreatorStudioRoomView: View {
+private struct CreateRoomView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -671,6 +682,8 @@ private struct CreatorStudioRoomView: View {
                     eyebrow: "CREATE",
                     title: "Creator Studio",
                     subtitle: "Plan, package, and prepare stories for HighFive.",
+                    purpose: "This room previews the creator-side studio.",
+                    heroCopy: "A premium workspace for projects, creator identity, pitches, and media packages.",
                     status: "Studio Preview",
                     systemImage: "wand.and.stars",
                     accent: Color.orange
@@ -687,14 +700,28 @@ private struct CreatorStudioRoomView: View {
                     NavigationLink {
                         CreatorDashboardPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Projects", subtitle: "Review project health, drafts, and readiness signals locally.", status: "Local Preview", systemImage: "folder.fill", accent: Color.orange)
+                        HFRoomFeatureCard(title: "Projects", subtitle: "Organize films, episodes, shorts, and campaigns.", status: "Local Preview", systemImage: "folder.fill", accent: Color.orange)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorEntryView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Creator Profile", subtitle: "Shape the public identity behind the work.", status: "Preview", systemImage: "person.crop.square.fill", accent: Color.orange)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         CreatorPackageBuilderPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Pitch / Media Kit", subtitle: "Package story materials, pitch notes, and presentation copy.", status: "Studio Preview", systemImage: "shippingbox.fill", accent: Color.orange)
+                        HFRoomFeatureCard(title: "Pitch Deck", subtitle: "Prepare the story, audience, and positioning.", status: "Studio Preview", systemImage: "rectangle.on.rectangle.angled.fill", accent: Color.orange)
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorAssetManagerPreviewView()
+                    } label: {
+                        HFRoomFeatureCard(title: "Media Kit", subtitle: "Collect posters, stills, synopsis, and creator notes.", status: "Readiness", systemImage: "photo.stack.fill", accent: Color.orange)
                     }
                     .buttonStyle(.plain)
 
@@ -704,8 +731,6 @@ private struct CreatorStudioRoomView: View {
                         HFRoomFeatureCard(title: "Studio Checklist", subtitle: "Track readiness for creator package review.", status: "Readiness", systemImage: "checklist.checked", accent: Color.orange)
                     }
                     .buttonStyle(.plain)
-
-                    HFRoomFeatureCard(title: "Drafts", subtitle: "Draft planning stays local and display-only in this room.", status: "Coming Soon", systemImage: "doc.text.fill", accent: Color.orange)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
@@ -713,7 +738,7 @@ private struct CreatorStudioRoomView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle("Creator Studio")
+        .navigationTitle("Create Room")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -726,7 +751,9 @@ private struct ConnectRoomView: View {
                     eyebrow: "CONNECT",
                     title: "Connect Room",
                     subtitle: "Build audience relationships around stories and creators.",
-                    status: "Local Preview",
+                    purpose: "This room previews community and fan engagement.",
+                    heroCopy: "A place for creator communities, reactions, following, and audience energy.",
+                    status: "Community Preview",
                     systemImage: "person.2.fill",
                     accent: Color.cyan
                 )
@@ -735,35 +762,35 @@ private struct ConnectRoomView: View {
                     NavigationLink {
                         ConnectHubView()
                     } label: {
-                        HFRoomFeatureCard(title: "Creator Communities", subtitle: "Preview community entry points around projects and creators.", status: "Preview", systemImage: "person.3.fill", accent: Color.cyan)
+                        HFRoomFeatureCard(title: "Communities", subtitle: "Group audiences around titles, creators, and premieres.", status: "Preview", systemImage: "person.3.fill", accent: Color.cyan)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         ActivityFeedPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Fan Reactions Preview", subtitle: "Review local activity and reaction-style cards.", status: "Local Preview", systemImage: "heart.text.square.fill", accent: Color.cyan)
+                        HFRoomFeatureCard(title: "Reactions", subtitle: "Preview fan response and engagement signals.", status: "Local Preview", systemImage: "heart.text.square.fill", accent: Color.cyan)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         FollowSuggestionsPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Following Preview", subtitle: "Explore suggested creators and relationship previews.", status: "Preview", systemImage: "person.badge.plus.fill", accent: Color.cyan)
+                        HFRoomFeatureCard(title: "Following", subtitle: "Help audiences keep up with creators and releases.", status: "Preview", systemImage: "person.badge.plus.fill", accent: Color.cyan)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         SocialRoomsPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Comments Preview", subtitle: "Room discussion previews remain local and display-only.", status: "Local Preview", systemImage: "text.bubble.fill", accent: Color.cyan)
+                        HFRoomFeatureCard(title: "Creator Updates", subtitle: "Share progress, release notes, and behind-the-scenes moments.", status: "Local Preview", systemImage: "text.bubble.fill", accent: Color.cyan)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         WatchPartyPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Watch Community", subtitle: "Preview community energy around shared viewing moments.", status: "Coming Soon", systemImage: "play.tv.fill", accent: Color.cyan)
+                        HFRoomFeatureCard(title: "Watch Community", subtitle: "Turn viewing into conversation around great content.", status: "Coming Soon", systemImage: "play.tv.fill", accent: Color.cyan)
                     }
                     .buttonStyle(.plain)
                 }
@@ -786,6 +813,8 @@ private struct LaunchRoomView: View {
                     eyebrow: "LAUNCH",
                     title: "Launch Room",
                     subtitle: "Prepare premieres, campaigns, and release moments.",
+                    purpose: "This room previews release and campaign planning.",
+                    heroCopy: "A launch command space for premieres, audience buildup, campaign pages, and release readiness.",
                     status: "Launch Preview",
                     systemImage: "flag.checkered",
                     accent: Color.green
@@ -795,35 +824,35 @@ private struct LaunchRoomView: View {
                     NavigationLink {
                         CreatorLaunchCenterPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Premiere Timeline", subtitle: "Preview the milestone path for a HighFive premiere.", status: "Preview", systemImage: "calendar.badge.clock", accent: Color.green)
+                        HFRoomFeatureCard(title: "Premiere Timeline", subtitle: "Plan the path from announcement to release.", status: "Preview", systemImage: "calendar.badge.clock", accent: Color.green)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         AppReleasePresentationView()
                     } label: {
-                        HFRoomFeatureCard(title: "Campaign Page Preview", subtitle: "Review the product story for a release moment.", status: "Launch Preview", systemImage: "rectangle.on.rectangle.angled.fill", accent: Color.green)
+                        HFRoomFeatureCard(title: "Campaign Preview", subtitle: "Shape the public-facing launch page.", status: "Launch Preview", systemImage: "rectangle.on.rectangle.angled.fill", accent: Color.green)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         CreatorAccessPreviewView()
                     } label: {
-                        HFRoomFeatureCard(title: "Audience Waitlist Preview", subtitle: "Audience access planning stays preview-only.", status: "Preview", systemImage: "person.crop.circle.badge.clock", accent: Color.green)
+                        HFRoomFeatureCard(title: "Audience Waitlist", subtitle: "Preview demand and interest before release.", status: "Preview", systemImage: "person.crop.circle.badge.clock", accent: Color.green)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         AppDemoChecklistView()
                     } label: {
-                        HFRoomFeatureCard(title: "Launch Checklist", subtitle: "Review launch story and demo readiness locally.", status: "Readiness", systemImage: "checklist.checked", accent: Color.green)
+                        HFRoomFeatureCard(title: "Launch Checklist", subtitle: "Track posters, trailers, synopsis, and release materials.", status: "Readiness", systemImage: "checklist.checked", accent: Color.green)
                     }
                     .buttonStyle(.plain)
 
                     NavigationLink {
                         ReleaseCandidatePrepView()
                     } label: {
-                        HFRoomFeatureCard(title: "Release Status", subtitle: "Track release candidate prep without live release services.", status: "Local Preview", systemImage: "gauge.with.dots.needle.67percent", accent: Color.green)
+                        HFRoomFeatureCard(title: "Release Status", subtitle: "See what is ready, pending, or deferred.", status: "Local Preview", systemImage: "gauge.with.dots.needle.67percent", accent: Color.green)
                     }
                     .buttonStyle(.plain)
                 }
@@ -846,17 +875,19 @@ private struct ExportRoomView: View {
                     eyebrow: "EXPORT",
                     title: "Export Room",
                     subtitle: "Prepare deliverables, media kits, and platform packages.",
-                    status: "Readiness",
+                    purpose: "This room previews professional readiness and distribution preparation.",
+                    heroCopy: "A professional space for deliverables, media kits, festival packages, and distribution readiness.",
+                    status: "Readiness Preview",
                     systemImage: "shippingbox.fill",
                     accent: Color.purple
                 )
 
                 VStack(spacing: HFSpacing.md) {
-                    HFRoomFeatureCard(title: "Deliverables", subtitle: "Plan final package requirements without generating files.", status: "Readiness", systemImage: "checklist.checked", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Poster Package", subtitle: "Review poster package expectations with existing artwork references.", status: "Preview", systemImage: "photo.fill", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Trailer Package", subtitle: "Track trailer package planning without playback or delivery systems.", status: "Coming Soon", systemImage: "film.fill", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Festival Package", subtitle: "Prepare festival-facing materials as a static planning surface.", status: "Readiness", systemImage: "rosette", accent: Color.purple)
-                    HFRoomFeatureCard(title: "Distribution Checklist", subtitle: "Organize platform readiness and delivery notes as local preview data.", status: "Local Preview", systemImage: "list.bullet.rectangle.fill", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Deliverables", subtitle: "Track required materials for release and distribution.", status: "Readiness", systemImage: "checklist.checked", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Poster Package", subtitle: "Organize key art, thumbnails, and promotional visuals.", status: "Preview", systemImage: "photo.fill", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Trailer Package", subtitle: "Prepare trailers, teasers, and preview assets.", status: "Coming Soon", systemImage: "film.fill", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Festival Package", subtitle: "Collect synopsis, stills, credits, and submission materials.", status: "Readiness", systemImage: "rosette", accent: Color.purple)
+                    HFRoomFeatureCard(title: "Distribution Checklist", subtitle: "Prepare platform requirements before real export exists.", status: "Local Preview", systemImage: "list.bullet.rectangle.fill", accent: Color.purple)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
@@ -880,6 +911,8 @@ private struct HFProductRoomHero: View {
     let eyebrow: String
     let title: String
     let subtitle: String
+    let purpose: String
+    let heroCopy: String
     let status: String
     let systemImage: String
     let accent: Color
@@ -918,11 +951,27 @@ private struct HFProductRoomHero: View {
                     }
 
                     HFRoomStatusChip(title: status, accent: accent)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(purpose)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(heroCopy)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(HFSpacing.md)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
                 }
                 .padding(HFSpacing.lg)
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(subtitle), \(status)")
     }
 }
 
@@ -961,6 +1010,8 @@ private struct HFRoomFeatureCard: View {
             }
             .padding(HFSpacing.md)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(subtitle), \(status)")
     }
 }
 
@@ -979,6 +1030,7 @@ private struct HFRoomStatusChip: View {
             .background(accent.opacity(0.12))
             .overlay(Capsule().stroke(accent.opacity(0.38), lineWidth: 1))
             .clipShape(Capsule())
+            .accessibilityLabel("Status: \(title)")
     }
 }
 
