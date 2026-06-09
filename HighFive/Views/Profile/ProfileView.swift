@@ -474,98 +474,22 @@ private struct ProfileMockSheetView: View {
 }
 
 private struct DeveloperQAHubView: View {
+    private let columns = [
+        GridItem(.adaptive(minimum: 150), spacing: HFSpacing.sm)
+    ]
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    Text("Developer / QA Hub")
-                        .font(HFTypography.display)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Internal review tools for the local product spine.")
-                        .font(HFTypography.body)
-                        .foregroundStyle(HFColors.textSecondary)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-
-                VStack(spacing: HFSpacing.md) {
-                    NavigationLink {
-                        ProductSpineCompletionView()
-                    } label: {
-                        HFActionTile(title: "Product Spine Completion", subtitle: "Review the full local spine.", systemImage: "rectangle.connected.to.line.below")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        FinalDemoTourView()
-                    } label: {
-                        HFActionTile(title: "Final Demo Tour", subtitle: "Walk through internal demo routes.", systemImage: "map.fill")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        RouteQualityCenterView()
-                    } label: {
-                        HFActionTile(title: "Route Quality Center", subtitle: "Review route clarity and dead ends.", systemImage: "arrow.triangle.branch")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        MockupReadinessLockView()
-                    } label: {
-                        HFActionTile(title: "Mockup Readiness Lock", subtitle: "Check readiness before visual parity.", systemImage: "checkmark.seal.fill")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        SpineSafetySealView()
-                    } label: {
-                        HFActionTile(title: "Spine Safety Seal", subtitle: "Confirm protected systems stay untouched.", systemImage: "shield.lefthalf.filled")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        VisualPassLaunchChecklistView()
-                    } label: {
-                        HFActionTile(title: "Visual Pass Launch Checklist", subtitle: "Track the next visual pass.", systemImage: "checklist.checked")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        DeadEndCleanupChecklistView()
-                    } label: {
-                        HFActionTile(title: "Dead-End Cleanup Checklist", subtitle: "Audit local-only route exits.", systemImage: "point.3.connected.trianglepath.dotted")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        SpineNavigationMapView()
-                    } label: {
-                        HFActionTile(title: "Spine Navigation Map", subtitle: "Review the internal route map.", systemImage: "map")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        PreMockupReadinessReviewView()
-                    } label: {
-                        HFActionTile(title: "Pre-Mockup Readiness Review", subtitle: "Check source readiness before parity work.", systemImage: "doc.text.magnifyingglass")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        VisualParityBacklogView()
-                    } label: {
-                        HFActionTile(title: "Visual Parity Backlog", subtitle: "Track visual backlog items away from consumer Home.", systemImage: "rectangle.stack.badge.plus")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        ProductSpineGapReviewView()
-                    } label: {
-                        HFActionTile(title: "Product Spine Gap Review", subtitle: "Review remaining local spine gaps.", systemImage: "exclamationmark.triangle.fill")
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
+                header
+                releaseReadinessSection
+                consumerScreenQASection
+                visualParitySection
+                protectedSystemsSection
+                routeQualitySection
+                buildLaunchChecklistSection
+                screenshotReviewSection
+                internalToolsSection
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -573,5 +497,850 @@ private struct DeveloperQAHubView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Developer / QA")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFStatusBadge(title: "Internal Only", systemImage: "lock.shield.fill", isProminent: false)
+
+                Text("Developer / QA Hub")
+                    .font(HFTypography.display)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("Internal build room for release readiness, visual parity, route quality, and protected-system safety.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HFGlassPanel(cornerRadius: 28, strokeColor: HFColors.goldStroke) {
+                ZStack(alignment: .topTrailing) {
+                    LinearGradient(
+                        colors: [
+                            HFColors.gold.opacity(0.24),
+                            Color.orange.opacity(0.08),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                                Text("HighFive Cinema")
+                                    .font(HFTypography.section)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text("Internal Build Room")
+                                    .font(HFTypography.title)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "rectangle.3.group.bubble.left.fill")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 56, height: 56)
+                                .background(HFColors.gold.opacity(0.14))
+                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        }
+
+                        VStack(spacing: HFSpacing.sm) {
+                            checkpointRow(label: "Current Checkpoint", value: "Phase 12.5 Consumer UI Visual Parity")
+                            checkpointRow(label: "Last Known Commit", value: "948738d")
+                            checkpointRow(label: "Last Known Tag", value: "phase-12-5-consumer-ui-visual-parity")
+                            checkpointRow(label: "Primary Status", value: "Needs Visual Assembly QA", isProminent: true)
+                        }
+
+                        Text("Manual checkpoint / last known handoff data. This screen does not read live repository state.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(HFSpacing.lg)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func checkpointRow(label: String, value: String, isProminent: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: HFSpacing.sm) {
+            Text(label)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textMuted)
+            Spacer(minLength: HFSpacing.sm)
+            Text(value)
+                .font(isProminent ? HFTypography.smallAction : HFTypography.caption)
+                .foregroundStyle(isProminent ? HFColors.gold : HFColors.textPrimary)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var releaseReadinessSection: some View {
+        hubSection(
+            title: "Release Readiness",
+            subtitle: "Static status board for the current visual checkpoint."
+        ) {
+            LazyVGrid(columns: columns, spacing: HFSpacing.sm) {
+                ForEach(HFDeveloperQAData.releaseReadiness) { item in
+                    QAStatusCard(item: item)
+                }
+            }
+        }
+    }
+
+    private var consumerScreenQASection: some View {
+        hubSection(
+            title: "Consumer Screen QA",
+            subtitle: "Screen-by-screen review focus for the consumer streaming shell."
+        ) {
+            VStack(spacing: HFSpacing.md) {
+                ForEach(HFDeveloperQAData.screenReviews) { review in
+                    QAScreenReviewCard(review: review)
+                }
+            }
+        }
+    }
+
+    private var visualParitySection: some View {
+        hubSection(
+            title: "Visual Parity Center",
+            subtitle: "Locked Figma authority and secondary style boundaries."
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                QAInfoPanel(
+                    icon: "rectangle.3.group.fill",
+                    title: "HighFive Cinema Master Template",
+                    subtitle: "File Key: G2QYwgGfR08ZsF1oQpgDuG\nCanvas: 01_Streaming_System"
+                )
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Production Frames")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+
+                    ForEach(HFDeveloperQAData.figmaFrames) { frame in
+                        QAFrameReferenceRow(frame: frame)
+                    }
+                }
+
+                QAInfoPanel(
+                    icon: "sparkles",
+                    title: "Home_Discovery_Gold · 11:9977",
+                    subtitle: "Classification: Secondary / Style Support Only. Use for dark/gold cinematic polish only; never replace production frames."
+                )
+            }
+        }
+    }
+
+    private var protectedSystemsSection: some View {
+        hubSection(
+            title: "Protected Systems Seal",
+            subtitle: "Read-only vault. No unlock, edit, repair, or connect actions live here."
+        ) {
+            LazyVGrid(columns: columns, spacing: HFSpacing.sm) {
+                ForEach(HFDeveloperQAData.protectedSystems) { system in
+                    QAProtectedSystemCard(system: system)
+                }
+            }
+        }
+    }
+
+    private var routeQualitySection: some View {
+        hubSection(
+            title: "Route Quality Center",
+            subtitle: "Manual route checks that keep internal validation away from consumer screens."
+        ) {
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(HFDeveloperQAData.routeValidations) { route in
+                    QARouteValidationRow(route: route)
+                }
+            }
+        }
+    }
+
+    private var buildLaunchChecklistSection: some View {
+        hubSection(
+            title: "Build + Launch Checklist",
+            subtitle: "Manual validation checklist. The app does not execute these commands."
+        ) {
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(HFDeveloperQAData.buildChecklist) { item in
+                    QAChecklistRow(item: item)
+                }
+            }
+        }
+    }
+
+    private var screenshotReviewSection: some View {
+        hubSection(
+            title: "Screenshot Review",
+            subtitle: "Expected review captures for the visible template assembly pass."
+        ) {
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(HFDeveloperQAData.screenshotReviews) { item in
+                    QAScreenshotReviewCard(item: item)
+                }
+            }
+        }
+    }
+
+    private var internalToolsSection: some View {
+        hubSection(
+            title: "Internal Tools Index",
+            subtitle: "Existing local review tools. These do not run live services or automation."
+        ) {
+            VStack(spacing: HFSpacing.md) {
+                toolLink(
+                    title: "Product Spine Completion",
+                    subtitle: "Review the full local Watch, Create, Connect, Launch, Export spine.",
+                    systemImage: "rectangle.connected.to.line.below"
+                ) {
+                    ProductSpineCompletionView()
+                }
+
+                toolLink(
+                    title: "Final Demo Tour",
+                    subtitle: "Walk through internal demo routes without exposing them to Home.",
+                    systemImage: "map.fill"
+                ) {
+                    FinalDemoTourView()
+                }
+
+                toolLink(
+                    title: "Route Quality Center",
+                    subtitle: "Review route clarity, destinations, and dead-end cleanup.",
+                    systemImage: "arrow.triangle.branch"
+                ) {
+                    RouteQualityCenterView()
+                }
+
+                toolLink(
+                    title: "Mockup Readiness Lock",
+                    subtitle: "Check readiness before Figma visual parity work.",
+                    systemImage: "checkmark.seal.fill"
+                ) {
+                    MockupReadinessLockView()
+                }
+
+                toolLink(
+                    title: "Spine Safety Seal",
+                    subtitle: "Confirm protected systems stay locked during UI work.",
+                    systemImage: "shield.lefthalf.filled"
+                ) {
+                    SpineSafetySealView()
+                }
+
+                toolLink(
+                    title: "Visual Pass Launch Checklist",
+                    subtitle: "Track visual pass launch checks as manual review items.",
+                    systemImage: "checklist.checked"
+                ) {
+                    VisualPassLaunchChecklistView()
+                }
+
+                toolLink(
+                    title: "Dead-End Cleanup Checklist",
+                    subtitle: "Audit local-only route exits and preview language.",
+                    systemImage: "point.3.connected.trianglepath.dotted"
+                ) {
+                    DeadEndCleanupChecklistView()
+                }
+
+                toolLink(
+                    title: "Spine Navigation Map",
+                    subtitle: "Review the internal route map for the local product spine.",
+                    systemImage: "map"
+                ) {
+                    SpineNavigationMapView()
+                }
+
+                toolLink(
+                    title: "Pre-Mockup Readiness Review",
+                    subtitle: "Check source readiness before parity work.",
+                    systemImage: "doc.text.magnifyingglass"
+                ) {
+                    PreMockupReadinessReviewView()
+                }
+
+                toolLink(
+                    title: "Visual Parity Backlog",
+                    subtitle: "Track visual backlog items away from consumer surfaces.",
+                    systemImage: "rectangle.stack.badge.plus"
+                ) {
+                    VisualParityBacklogView()
+                }
+
+                toolLink(
+                    title: "Product Spine Gap Review",
+                    subtitle: "Review remaining local spine gaps before release review.",
+                    systemImage: "exclamationmark.triangle.fill"
+                ) {
+                    ProductSpineGapReviewView()
+                }
+            }
+        }
+    }
+
+    private func hubSection<Content: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: title, actionTitle: nil)
+
+            Text(subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            content()
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func toolLink<Destination: View>(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
+        NavigationLink {
+            destination()
+        } label: {
+            HFActionTile(title: title, subtitle: subtitle, systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private enum HFQAStatus {
+    case passed
+    case needsReview
+    case protected
+    case deferred
+    case blocked
+    case needed
+    case captured
+    case reviewed
+    case needsFix
+
+    var title: String {
+        switch self {
+        case .passed: return "Passed"
+        case .needsReview: return "Needs Review"
+        case .protected: return "Protected"
+        case .deferred: return "Deferred"
+        case .blocked: return "Blocked"
+        case .needed: return "Needed"
+        case .captured: return "Captured"
+        case .reviewed: return "Reviewed"
+        case .needsFix: return "Needs Fix"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .passed, .reviewed: return "checkmark.circle.fill"
+        case .needsReview, .needed: return "clock.fill"
+        case .protected: return "lock.shield.fill"
+        case .deferred: return "pause.circle.fill"
+        case .blocked, .needsFix: return "exclamationmark.triangle.fill"
+        case .captured: return "camera.viewfinder"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .passed, .reviewed:
+            return Color.green
+        case .needsReview, .needed, .captured:
+            return HFColors.gold
+        case .protected:
+            return Color.cyan
+        case .deferred:
+            return Color.gray
+        case .blocked, .needsFix:
+            return Color.red
+        }
+    }
+}
+
+private struct HFQAStatusItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: HFQAStatus
+    let detail: String
+    let systemImage: String
+}
+
+private struct HFQAScreenReview: Identifiable {
+    let id = UUID()
+    let screen: String
+    let figmaSource: String
+    let status: HFQAStatus
+    let reviewFocus: String
+    let checklist: [String]
+}
+
+private struct HFQAFrameReference: Identifiable {
+    let id = UUID()
+    let name: String
+    let node: String
+    let purpose: String
+}
+
+private struct HFQAProtectedSystem: Identifiable {
+    let id = UUID()
+    let name: String
+    let systemImage: String
+}
+
+private struct HFQARouteValidation: Identifiable {
+    let id = UUID()
+    let route: String
+    let expectedBehavior: String
+    let status: HFQAStatus
+    let notes: String
+}
+
+private struct HFQAScreenshotReview: Identifiable {
+    let id = UUID()
+    let screen: String
+    let expectedName: String
+    let status: HFQAStatus
+    let reviewFocus: String
+}
+
+private enum HFDeveloperQAData {
+    static let releaseReadiness: [HFQAStatusItem] = [
+        HFQAStatusItem(title: "Build Passed", status: .passed, detail: "Last handoff reports a successful simulator build.", systemImage: "hammer.fill"),
+        HFQAStatusItem(title: "Simulator Launched", status: .passed, detail: "The app launched on the booted simulator during the last visual checkpoint.", systemImage: "iphone.gen3"),
+        HFQAStatusItem(title: "Consumer Shell Locked", status: .protected, detail: "Home, Search, Library, Downloads, and Profile remain the only tabs.", systemImage: "rectangle.bottomthird.inset.filled"),
+        HFQAStatusItem(title: "Protected Systems Safe", status: .protected, detail: "Depth, motion, playback, rendering, store, and assets stay locked.", systemImage: "lock.shield.fill"),
+        HFQAStatusItem(title: "Screenshots Needed", status: .needsReview, detail: "Capture and inspect Home, Discover, Movie Detail, Downloads, and Profile.", systemImage: "camera.viewfinder"),
+        HFQAStatusItem(title: "Visual Assembly In Progress", status: .needsReview, detail: "Phase 12.5A needs visible simulator QA before promotion.", systemImage: "sparkles")
+    ]
+
+    static let screenReviews: [HFQAScreenReview] = [
+        HFQAScreenReview(
+            screen: "Home",
+            figmaSource: "HF_Home · Node 1:2",
+            status: .needsReview,
+            reviewFocus: "Premium streaming entry and first five seconds.",
+            checklist: [
+                "Hero feels cinematic",
+                "Poster rails are visible",
+                "No dashboard language",
+                "No QA/internal tools exposed",
+                "Bottom tab remains locked"
+            ]
+        ),
+        HFQAScreenReview(
+            screen: "Search / Discover",
+            figmaSource: "HF_Discover · Node 1:191",
+            status: .needsReview,
+            reviewFocus: "Content discovery, filters, and poster-first results.",
+            checklist: [
+                "Search field has clear focus",
+                "Category filters use the gold active state",
+                "Discovery rails are content-led",
+                "No route matrix is visible"
+            ]
+        ),
+        HFQAScreenReview(
+            screen: "Library",
+            figmaSource: "No dedicated locked Figma frame yet",
+            status: .deferred,
+            reviewFocus: "Validate against consumer shell and My List behavior.",
+            checklist: [
+                "Saved titles are visible",
+                "Movie detail routing works",
+                "Empty states invite discovery",
+                "No account setup requirement"
+            ]
+        ),
+        HFQAScreenReview(
+            screen: "Downloads",
+            figmaSource: "HF_Downloads · Node 1:150",
+            status: .needsReview,
+            reviewFocus: "Offline shelf feel with poster stack and download rows.",
+            checklist: [
+                "Poster stack hero is visible",
+                "Storage card is compact",
+                "Rows feel like streaming content",
+                "Find More To Download is clear"
+            ]
+        ),
+        HFQAScreenReview(
+            screen: "Profile",
+            figmaSource: "HF_Profile · Node 1:115",
+            status: .needsReview,
+            reviewFocus: "Consumer profile first, internal tools hidden lower.",
+            checklist: [
+                "Profile switcher is clear",
+                "Settings and Help are easy to find",
+                "Developer / QA Hub is secondary",
+                "Internal tools are not first-glance content"
+            ]
+        ),
+        HFQAScreenReview(
+            screen: "Movie Detail",
+            figmaSource: "HF_Movie_Detail · Node 1:78",
+            status: .needsReview,
+            reviewFocus: "Cinematic title page with clear Watch and Save actions.",
+            checklist: [
+                "Backdrop feels premium",
+                "Title hierarchy is strong",
+                "Metadata row is readable",
+                "Related titles are reachable"
+            ]
+        )
+    ]
+
+    static let figmaFrames: [HFQAFrameReference] = [
+        HFQAFrameReference(name: "HF_Home", node: "1:2", purpose: "Consumer home authority"),
+        HFQAFrameReference(name: "HF_Movie_Detail", node: "1:78", purpose: "Title detail authority"),
+        HFQAFrameReference(name: "HF_Profile", node: "1:115", purpose: "Profile authority"),
+        HFQAFrameReference(name: "HF_Downloads", node: "1:150", purpose: "Downloads authority"),
+        HFQAFrameReference(name: "HF_Discover", node: "1:191", purpose: "Discover authority")
+    ]
+
+    static let protectedSystems: [HFQAProtectedSystem] = [
+        HFQAProtectedSystem(name: "Depth", systemImage: "cube.transparent"),
+        HFQAProtectedSystem(name: "Motion", systemImage: "gyroscope"),
+        HFQAProtectedSystem(name: "Playback", systemImage: "play.rectangle.fill"),
+        HFQAProtectedSystem(name: "Layer4", systemImage: "square.stack.3d.up.fill"),
+        HFQAProtectedSystem(name: "Rendering", systemImage: "viewfinder"),
+        HFQAProtectedSystem(name: "Creator", systemImage: "wand.and.stars"),
+        HFQAProtectedSystem(name: "App/UI", systemImage: "rectangle.3.group.fill"),
+        HFQAProtectedSystem(name: "Store", systemImage: "cart.fill"),
+        HFQAProtectedSystem(name: "Assets", systemImage: "photo.stack.fill"),
+        HFQAProtectedSystem(name: "Poster Mappings", systemImage: "photo.fill"),
+        HFQAProtectedSystem(name: "Backdrop Mappings", systemImage: "photo.on.rectangle.angled"),
+        HFQAProtectedSystem(name: "Info.plist", systemImage: "doc.text.fill"),
+        HFQAProtectedSystem(name: "PrivacyInfo", systemImage: "hand.raised.fill"),
+        HFQAProtectedSystem(name: "Entitlements", systemImage: "key.fill")
+    ]
+
+    static let routeValidations: [HFQARouteValidation] = [
+        HFQARouteValidation(route: "Home -> Movie Detail", expectedBehavior: "Poster and hero routes open a local title page.", status: .needsReview, notes: "Watch path must stay content-first."),
+        HFQARouteValidation(route: "Search -> Movie Detail", expectedBehavior: "Search results open the selected movie detail.", status: .needsReview, notes: "Local search only."),
+        HFQARouteValidation(route: "Discover -> Movie Detail", expectedBehavior: "Discovery rails route into content details.", status: .needsReview, notes: "No module browser behavior."),
+        HFQARouteValidation(route: "Library -> Movie Detail", expectedBehavior: "Saved and in-progress titles remain reachable.", status: .needsReview, notes: "Validate My List behavior."),
+        HFQARouteValidation(route: "Downloads -> Movie Detail", expectedBehavior: "Downloaded local titles can open detail when supported.", status: .needsReview, notes: "No file-system behavior."),
+        HFQARouteValidation(route: "Profile -> Developer / QA Hub", expectedBehavior: "Internal hub is reachable only from Profile.", status: .passed, notes: "No new bottom tab."),
+        HFQARouteValidation(route: "Profile -> Settings", expectedBehavior: "Settings opens local preview copy only.", status: .passed, notes: "No live account service."),
+        HFQARouteValidation(route: "Profile -> Creator Preview", expectedBehavior: "Creator preview routes remain secondary.", status: .needsReview, notes: "Do not dominate profile first glance."),
+        HFQARouteValidation(route: "Profile -> Connect Preview", expectedBehavior: "Connect preview routes remain secondary.", status: .needsReview, notes: "Community systems stay local.")
+    ]
+
+    static let buildChecklist: [HFQAStatusItem] = [
+        HFQAStatusItem(title: "git status clean", status: .needsReview, detail: "Manual repo check before commit.", systemImage: "checkmark.circle"),
+        HFQAStatusItem(title: "protected-path scan passed", status: .needsReview, detail: "No protected paths changed.", systemImage: "lock.shield"),
+        HFQAStatusItem(title: "forbidden import scan passed", status: .needsReview, detail: "No live-service imports added.", systemImage: "magnifyingglass"),
+        HFQAStatusItem(title: "xcodebuild passed", status: .needsReview, detail: "Simulator build must pass before promotion.", systemImage: "hammer"),
+        HFQAStatusItem(title: "app installed on simulator", status: .needsReview, detail: "Install on booted simulator when available.", systemImage: "iphone.and.arrow.forward"),
+        HFQAStatusItem(title: "app launched on simulator", status: .needsReview, detail: "Launch the HighFive app bundle.", systemImage: "play.fill"),
+        HFQAStatusItem(title: "screenshots captured", status: .needed, detail: "Capture consumer screens for visual review.", systemImage: "camera"),
+        HFQAStatusItem(title: "commit created", status: .deferred, detail: "Only after build and scans pass.", systemImage: "checkmark.seal"),
+        HFQAStatusItem(title: "tag created", status: .deferred, detail: "Only after complete phase checkpoint.", systemImage: "tag")
+    ]
+
+    static let screenshotReviews: [HFQAScreenshotReview] = [
+        HFQAScreenshotReview(screen: "Home", expectedName: "highfive-visible-template-assembly-home.png", status: .captured, reviewFocus: "First-glance streaming transformation."),
+        HFQAScreenshotReview(screen: "Discover/Search", expectedName: "highfive-visible-template-assembly-discover.png", status: .needed, reviewFocus: "Content discovery and filter treatment."),
+        HFQAScreenshotReview(screen: "Movie Detail", expectedName: "highfive-visible-template-assembly-movie-detail.png", status: .needed, reviewFocus: "Cinematic title page and actions."),
+        HFQAScreenshotReview(screen: "Downloads", expectedName: "highfive-visible-template-assembly-downloads.png", status: .needed, reviewFocus: "Offline shelf and Find More To Download CTA."),
+        HFQAScreenshotReview(screen: "Profile", expectedName: "highfive-visible-template-assembly-profile.png", status: .needed, reviewFocus: "Consumer profile and hidden internal hub entry.")
+    ]
+}
+
+private struct QAStatusCard: View {
+    let item: HFQAStatusItem
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: item.status.color.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(alignment: .top) {
+                    Image(systemName: item.systemImage)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(item.status.color)
+                        .frame(width: 36, height: 36)
+                        .background(item.status.color.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    Spacer()
+
+                    QAStatusPill(status: item.status)
+                }
+
+                Text(item.title)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(item.detail)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct QAScreenReviewCard: View {
+    let review: HFQAScreenReview
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: review.status.color.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text(review.screen)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(review.figmaSource)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                    }
+
+                    Spacer()
+
+                    QAStatusPill(status: review.status)
+                }
+
+                Text(review.reviewFocus)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(review.checklist, id: \.self) { item in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(HFColors.gold)
+                                .padding(.top, 2)
+                            Text(item)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct QAInfoPanel: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 40, height: 40)
+                    .background(HFColors.gold.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(subtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct QAFrameReferenceRow: View {
+    let frame: HFQAFrameReference
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: "rectangle.inset.filled")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 28, height: 28)
+                .background(HFColors.gold.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(frame.name) · \(frame.node)")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(frame.purpose)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+            }
+
+            Spacer()
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+}
+
+private struct QAProtectedSystemCard: View {
+    let system: HFQAProtectedSystem
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: Color.cyan.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: system.systemImage)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.cyan)
+                    .frame(width: 34, height: 34)
+                    .background(Color.cyan.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                Text(system.name)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                QAStatusPill(status: .protected)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct QARouteValidationRow: View {
+    let route: HFQARouteValidation
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: route.status.color.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(alignment: .top) {
+                    Text(route.route)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer()
+
+                    QAStatusPill(status: route.status)
+                }
+
+                Text(route.expectedBehavior)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(route.notes)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct QAChecklistRow: View {
+    let item: HFQAStatusItem
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(item.status.color)
+                .frame(width: 30, height: 30)
+                .background(item.status.color.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(item.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+
+            QAStatusPill(status: item.status)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+}
+
+private struct QAScreenshotReviewCard: View {
+    let item: HFQAScreenshotReview
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: item.status.color.opacity(0.3)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(item.screen)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(item.expectedName)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+
+                    QAStatusPill(status: item.status)
+                }
+
+                Text(item.reviewFocus)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+    }
+}
+
+private struct QAStatusPill: View {
+    let status: HFQAStatus
+
+    var body: some View {
+        HStack(spacing: HFSpacing.xxs) {
+            Image(systemName: status.systemImage)
+                .font(.system(size: 9, weight: .black))
+            Text(status.title)
+                .font(HFTypography.micro)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+        }
+        .foregroundStyle(status.color)
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 6)
+        .background(status.color.opacity(0.13))
+        .overlay(Capsule().stroke(status.color.opacity(0.4), lineWidth: 1))
+        .clipShape(Capsule())
     }
 }
