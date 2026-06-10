@@ -989,6 +989,43 @@ private struct HFLaunchCampaignPreview {
     let readiness: [HFLaunchPlannerReadinessRow]
 }
 
+private struct HFExportPackageItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFExportPackageSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let prepares: String
+    let previewSummary: String
+    let deferredSummary: String
+    let items: [HFExportPackageItem]
+}
+
+private struct HFExportPackageReadinessRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
+}
+
+private struct HFExportDistributionPreview {
+    let title: String
+    let subtitle: String
+    let packageFocus: String
+    let deliveryWindow: String
+    let packageTone: String
+    let plannerStatus: String
+    let sections: [HFExportPackageSection]
+    let readiness: [HFExportPackageReadinessRow]
+}
+
 private enum HFRoomDepthData {
     static let watch = HFRoomDepthBlueprint(
         readinessScore: 86,
@@ -1871,6 +1908,123 @@ private enum HFLaunchCampaignPlannerPreviewData {
             HFLaunchPlannerReadinessRow(title: "Audience Build", status: "Local", detail: "Audience momentum remains static and local."),
             HFLaunchPlannerReadinessRow(title: "Payments / Tickets", status: "Deferred", detail: "Commerce and access systems are not connected."),
             HFLaunchPlannerReadinessRow(title: "Notifications / Analytics", status: "Protected", detail: "Live delivery and measurement systems remain protected.")
+        ]
+    )
+}
+
+private enum HFExportDistributionPackagePreviewData {
+    static let package = HFExportDistributionPreview(
+        title: "Distribution Package",
+        subtitle: "Prepare a title handoff before File, Render, Export, Share, Platform, or server delivery systems are connected.",
+        packageFocus: "Professional handoff package for festivals, press, and future platform delivery",
+        deliveryWindow: "Preview handoff window",
+        packageTone: "Studio-ready, organized, premium",
+        plannerStatus: "Preview Package",
+        sections: [
+            HFExportPackageSection(
+                title: "Distribution Package",
+                subtitle: "Frame the professional handoff package.",
+                status: "Preview",
+                systemImage: "shippingbox.fill",
+                prepares: "Prepares the package title, purpose, tone, and review notes.",
+                previewSummary: "Package framing is visible as local planning content.",
+                deferredSummary: "Delivery systems and professional output remain disconnected.",
+                items: [
+                    HFExportPackageItem(title: "Package title", detail: "The Friendly Distribution Package", state: "Preview"),
+                    HFExportPackageItem(title: "Handoff purpose", detail: "Prepared for festivals, press, and future platform delivery.", state: "Ready"),
+                    HFExportPackageItem(title: "Delivery tone", detail: "Studio-ready, organized, premium.", state: "Ready"),
+                    HFExportPackageItem(title: "Review status", detail: "Local package review before professional systems exist.", state: "Draft"),
+                    HFExportPackageItem(title: "Package notes", detail: "Notes remain static and review-only.", state: "Preview")
+                ]
+            ),
+            HFExportPackageSection(
+                title: "Deliverables",
+                subtitle: "Organize the required title materials.",
+                status: "Draft",
+                systemImage: "tray.full.fill",
+                prepares: "Prepares core materials expected in a professional handoff.",
+                previewSummary: "Poster, stills, synopsis, credits, and creator notes are checklist rows.",
+                deferredSummary: "Generated packages and system handoff remain disconnected.",
+                items: [
+                    HFExportPackageItem(title: "Poster", detail: "Key art direction anchors the package.", state: "Preview"),
+                    HFExportPackageItem(title: "Stills", detail: "Still selections remain placeholders.", state: "Draft"),
+                    HFExportPackageItem(title: "Synopsis", detail: "Short and long story copy support review.", state: "Ready"),
+                    HFExportPackageItem(title: "Credits", detail: "Credit package is tracked for review.", state: "Draft"),
+                    HFExportPackageItem(title: "Creator notes", detail: "Creator perspective travels with the package.", state: "Preview")
+                ]
+            ),
+            HFExportPackageSection(
+                title: "Media Kit",
+                subtitle: "Prepare press and public materials.",
+                status: "Preview",
+                systemImage: "photo.stack.fill",
+                prepares: "Prepares the press-facing language and visual readiness list.",
+                previewSummary: "Media kit rows are static review fields.",
+                deferredSummary: "Media intake and library access stay disconnected.",
+                items: [
+                    HFExportPackageItem(title: "Press copy", detail: "Public story copy is framed for review.", state: "Preview"),
+                    HFExportPackageItem(title: "Creator bio", detail: "Creator background supports press context.", state: "Draft"),
+                    HFExportPackageItem(title: "Title description", detail: "Description supports festival and platform review.", state: "Ready"),
+                    HFExportPackageItem(title: "Visual materials", detail: "Poster and stills are represented as placeholders.", state: "Preview"),
+                    HFExportPackageItem(title: "Release language", detail: "Launch copy carries into handoff planning.", state: "Preview")
+                ]
+            ),
+            HFExportPackageSection(
+                title: "Festival Package",
+                subtitle: "Preview festival-ready handoff materials.",
+                status: "Local",
+                systemImage: "rosette",
+                prepares: "Prepares festival-facing story, credits, statement, and notes.",
+                previewSummary: "Festival package content is local and static.",
+                deferredSummary: "Submission forms, accounts, and delivery pipes remain disconnected.",
+                items: [
+                    HFExportPackageItem(title: "Festival synopsis", detail: "Festival-facing story copy is available.", state: "Preview"),
+                    HFExportPackageItem(title: "Director statement", detail: "Statement slot is ready for review.", state: "Draft"),
+                    HFExportPackageItem(title: "Credits", detail: "Credit review supports festival readiness.", state: "Draft"),
+                    HFExportPackageItem(title: "Screener placeholder", detail: "Placeholder only; no playback or delivery system.", state: "Deferred"),
+                    HFExportPackageItem(title: "Submission notes", detail: "Notes stay local for future planning.", state: "Local")
+                ]
+            ),
+            HFExportPackageSection(
+                title: "Platform Checklist",
+                subtitle: "Review future platform requirements.",
+                status: "Preview",
+                systemImage: "checklist.checked",
+                prepares: "Prepares platform-facing metadata and requirement notes.",
+                previewSummary: "Checklist content is visible without live delivery.",
+                deferredSummary: "Platform services and distributor handoff remain disconnected.",
+                items: [
+                    HFExportPackageItem(title: "Title metadata", detail: "Title, genre, runtime, and description fields are represented.", state: "Preview"),
+                    HFExportPackageItem(title: "Artwork set", detail: "Poster and backdrop readiness are tracked.", state: "Draft"),
+                    HFExportPackageItem(title: "Runtime", detail: "Runtime is a review placeholder.", state: "Deferred"),
+                    HFExportPackageItem(title: "Rating / advisory", detail: "Advisory copy can be planned locally.", state: "Preview"),
+                    HFExportPackageItem(title: "Platform notes", detail: "Requirement notes remain static.", state: "Preview")
+                ]
+            ),
+            HFExportPackageSection(
+                title: "Handoff Readiness",
+                subtitle: "Check package completeness safely.",
+                status: "Protected",
+                systemImage: "checkmark.shield.fill",
+                prepares: "Prepares a safety-aware package review before professional systems exist.",
+                previewSummary: "Package review, missing items, and delivery summary are visible.",
+                deferredSummary: "File handling, sharing, Render Engines, Export Engines, platform delivery, and server submissions remain disconnected.",
+                items: [
+                    HFExportPackageItem(title: "Package review", detail: "Distribution package is ready for local inspection.", state: "Preview"),
+                    HFExportPackageItem(title: "Missing items", detail: "Incomplete materials are represented as checklist rows.", state: "Draft"),
+                    HFExportPackageItem(title: "Deferred systems", detail: "Professional output systems remain off.", state: "Deferred"),
+                    HFExportPackageItem(title: "Protected exports", detail: "Export and Render engines stay protected.", state: "Protected"),
+                    HFExportPackageItem(title: "Delivery summary", detail: "Handoff summary remains preview-only.", state: "Preview")
+                ]
+            )
+        ],
+        readiness: [
+            HFExportPackageReadinessRow(title: "Deliverables", status: "Draft", detail: "Poster, stills, synopsis, credits, and notes need review."),
+            HFExportPackageReadinessRow(title: "Media Kit", status: "Preview", detail: "Press and title materials are represented locally."),
+            HFExportPackageReadinessRow(title: "Festival Package", status: "Local", detail: "Festival package content is static and reviewable."),
+            HFExportPackageReadinessRow(title: "Platform Checklist", status: "Preview", detail: "Platform requirements are visible without delivery."),
+            HFExportPackageReadinessRow(title: "File / Share Systems", status: "Deferred", detail: "Document and system handoff surfaces are disconnected."),
+            HFExportPackageReadinessRow(title: "Render / Export Engines", status: "Protected", detail: "Professional output engines remain protected.")
         ]
     )
 }
@@ -4575,6 +4729,420 @@ private struct LaunchPassiveCTA: View {
     }
 }
 
+private struct HFExportDistributionPackageSection: View {
+    let package: HFExportDistributionPreview
+    let accent: Color
+    @State private var selectedSectionIndex = 0
+
+    private var selectedSection: HFExportPackageSection {
+        guard package.sections.indices.contains(selectedSectionIndex) else {
+            return package.sections[0]
+        }
+        return package.sections[selectedSectionIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFExportDistributionHeroCard(package: package, accent: accent)
+
+            HFExportDistributionSectionSelector(
+                sections: package.sections,
+                selectedSectionIndex: $selectedSectionIndex,
+                accent: accent
+            )
+
+            HFExportDistributionDetailPanel(section: selectedSection, accent: accent)
+            HFExportDistributionReadinessSummary(rows: package.readiness, accent: accent)
+            HFExportDistributionBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Distribution Package, local export distribution preview.")
+        .accessibilityIdentifier("hf.room.export.distributionPackage")
+    }
+}
+
+private struct HFExportDistributionHeroCard: View {
+    let package: HFExportDistributionPreview
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "shippingbox.and.arrow.backward.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Distribution Package", accent: accent)
+                        Text("Distribution Package")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(package.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("The Friendly Distribution Package")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        HFRoomStatusChip(title: package.plannerStatus, accent: accent)
+                    }
+
+                    Text(package.packageFocus)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        HFExportDistributionMetric(title: "Window", value: package.deliveryWindow, accent: accent)
+                        HFExportDistributionMetric(title: "Tone", value: package.packageTone, accent: accent)
+                        HFExportDistributionMetric(title: "Deliverables", value: "Draft", accent: accent)
+                        HFExportDistributionMetric(title: "Media Kit", value: "Preview", accent: accent)
+                        HFExportDistributionMetric(title: "Festival", value: "Local", accent: accent)
+                        HFExportDistributionMetric(title: "Platform", value: "Deferred", accent: accent)
+                        HFExportDistributionMetric(title: "Render / Export", value: "Protected", accent: accent)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Distribution Package, local export distribution preview. The Friendly Distribution Package, \(package.plannerStatus)")
+        .accessibilityIdentifier("hf.room.export.distributionHero")
+    }
+}
+
+private struct HFExportDistributionMetric: View {
+    let title: String
+    let value: String
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+            Text(value)
+                .font(HFTypography.caption)
+                .foregroundStyle(title == "Window" || title == "Tone" ? HFColors.textSecondary : accent)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFExportDistributionSectionSelector: View {
+    let sections: [HFExportPackageSection]
+    @Binding var selectedSectionIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Package Sections")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                        Button {
+                            selectedSectionIndex = index
+                        } label: {
+                            HFExportDistributionSectionCard(
+                                section: section,
+                                isSelected: selectedSectionIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) section.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Distribution package sections for local export distribution preview")
+        .accessibilityIdentifier("hf.room.export.distributionSections")
+    }
+}
+
+private struct HFExportDistributionSectionCard: View {
+    let section: HFExportPackageSection
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? .white : accent)
+                    .frame(width: 34, height: 34)
+                    .background(isSelected ? Color.white.opacity(0.18) : accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(section.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(isSelected ? .white : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: section.status, accent: isSelected ? .white : accent)
+                }
+            }
+
+            Text(section.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .white.opacity(0.78) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(Array(section.items.prefix(3))) { item in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "sparkle")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isSelected ? .white : accent)
+                            .padding(.top, 2)
+                        Text(item.title)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(isSelected ? .white.opacity(0.78) : HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(width: 220, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.title) section. \(section.status).")
+    }
+}
+
+private struct HFExportDistributionDetailPanel: View {
+    let section: HFExportPackageSection
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: section.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Package Area", accent: accent)
+                        Text("Selected Package Area")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(section.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFExportDistributionDetailRow(title: "Prepares", detail: section.prepares, accent: accent)
+                    HFExportDistributionDetailRow(title: "Preview-only", detail: section.previewSummary, accent: accent)
+                    HFExportDistributionDetailRow(title: "Deferred", detail: section.deferredSummary, accent: accent)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(section.items) { item in
+                        HFExportDistributionItemRow(item: item, accent: accent)
+                    }
+                }
+
+                Text("Preview Package Area")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Package Area, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Package Area, \(section.title), \(section.prepares)")
+        .accessibilityIdentifier("hf.room.export.distributionDetail")
+    }
+}
+
+private struct HFExportDistributionDetailRow: View {
+    let title: String
+    let detail: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            HFRoomStatusChip(title: title, accent: accent)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct HFExportDistributionItemRow: View {
+    let item: HFExportPackageItem
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: item.state, accent: accent)
+                }
+            }
+
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.state), \(item.detail)")
+    }
+}
+
+private struct HFExportDistributionReadinessSummary: View {
+    let rows: [HFExportPackageReadinessRow]
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Distribution Readiness")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(row.title)
+                                    .font(HFTypography.smallAction)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(row.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: HFSpacing.sm)
+                            HFRoomStatusChip(title: row.status, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Distribution Readiness, \(rows.map { "\($0.title), \($0.status)" }.joined(separator: ", "))")
+        .accessibilityIdentifier("hf.room.export.distributionReadiness")
+    }
+}
+
+private struct HFExportDistributionBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Export Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local distribution-package preview. File handling, media library access, system handoff sheets, Render Engines, Export Engines, platform delivery, server submissions, and distribution services remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Safety Boundary, File handling Render Export Sharing Platform and server systems remain disconnected.")
+        .accessibilityIdentifier("hf.room.export.distributionBoundary")
+    }
+}
+
 private enum ExportSection: String, CaseIterable, Identifiable {
     case overview = "Overview"
     case deliverables = "Deliverables"
@@ -4758,6 +5326,7 @@ private struct ExportRoomView: View {
                     items: ["Deliverables", "Media kit", "Handoff"]
                 )
 
+                HFExportDistributionPackageSection(package: HFExportDistributionPackagePreviewData.package, accent: accent)
                 HFRoomDepthSnapshotStrip(accent: accent)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.export, accent: accent, roomID: "export")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.export, accent: accent, roomID: "export")
