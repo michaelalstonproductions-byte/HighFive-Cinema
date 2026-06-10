@@ -69,7 +69,7 @@ struct MovieDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
             LinearGradient(
-                colors: [.clear, HFColors.background.opacity(0.34), HFColors.background.opacity(0.88), HFColors.background],
+                colors: [.clear, HFColors.warmGlow.opacity(0.30), HFColors.background.opacity(0.88), HFColors.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -77,7 +77,7 @@ struct MovieDetailView: View {
 
             VStack {
                 HStack {
-                    Text("HIGHFIVE TITLE")
+                    Text(movie.isOriginal ? "HIGHFIVE ORIGINAL" : "FEATURED TITLE")
                         .font(HFTypography.micro)
                         .foregroundStyle(HFColors.gold)
                         .kerning(1.4)
@@ -99,21 +99,33 @@ struct MovieDetailView: View {
                 HFPosterCard(movie: movie, width: 126, showTitle: false, showProgress: movie.progress != nil)
 
                 VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Now Streaming")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                        .textCase(.uppercase)
+                        .kerning(1.4)
+
                     Text(movie.title)
                         .font(HFTypography.heroTitle)
                         .foregroundStyle(HFColors.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.68)
 
+                    Text(movie.subtitle)
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     detailMetadataChips
 
                     HStack(spacing: HFSpacing.xs) {
-                        HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
+                        HFButton("Watch Now", systemImage: "play.fill") {
                             previewMovie = movie
                         }
 
                         HFButton(
-                            streamingStore.isSaved(movie) ? "Saved" : "Save",
+                            streamingStore.isSaved(movie) ? "In My List" : "Save",
                             systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
                             style: .secondary
                         ) {
@@ -152,7 +164,7 @@ struct MovieDetailView: View {
     private var overview: some View {
         VStack(alignment: .leading, spacing: HFSpacing.lg) {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Text("Synopsis")
+                Text("Overview")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.gold)
                     .textCase(.uppercase)
@@ -189,7 +201,7 @@ struct MovieDetailView: View {
 
     private var creatorSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Creator", actionTitle: nil)
+            HFSectionHeader(title: "Presented By", actionTitle: nil)
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
                 HStack(spacing: HFSpacing.md) {
                     ZStack {
@@ -254,7 +266,7 @@ struct MovieDetailView: View {
         Group {
             if !galleryAssets.isEmpty {
                 VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    HFSectionHeader(title: "Gallery", actionTitle: nil)
+                    HFSectionHeader(title: "Scenes From This Title", actionTitle: nil)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: HFSpacing.md) {
                             ForEach(galleryAssets, id: \.self) { assetName in
@@ -280,15 +292,16 @@ struct MovieDetailView: View {
 
     private var relatedSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Related Titles", actionTitle: nil)
+            HFSectionHeader(title: "More Like This", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-            ForEach(relatedTitles) { related in
-                NavigationLink(value: related) {
-                    HFPosterCard(movie: related, width: HFSpacing.posterRailWidth, showProgress: related.progress != nil)
-                }
-                .buttonStyle(.plain)
-            }
+                    ForEach(relatedTitles) { related in
+                        NavigationLink(value: related) {
+                            HFPosterCard(movie: related, width: HFSpacing.posterRailWidth, showProgress: related.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open \(related.title)")
+                    }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }

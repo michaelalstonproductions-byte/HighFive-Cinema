@@ -5,16 +5,16 @@ struct MyListView: View {
     var onBrowseDiscover: (() -> Void)?
     @State private var selectedFilter = "Saved"
 
-    private let filters = ["Saved", "In Progress", "Downloaded"]
+    private let filters = ["Saved", "Continue Watching", "Downloads"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
 
     private var savedMovies: [Movie] {
         switch selectedFilter {
-        case "In Progress":
+        case "Continue Watching":
             return HFMockData.movies.filter { streamingStore.isSaved($0) && $0.progress != nil }
-        case "Downloaded":
+        case "Downloads":
             return HFMockData.movies.filter { streamingStore.isSaved($0) && streamingStore.isDownloaded($0) }
         default:
             return HFMockData.movies.filter { streamingStore.isSaved($0) }
@@ -29,7 +29,7 @@ struct MyListView: View {
 
                 if savedMovies.isEmpty {
                     HFEmptyState(
-                        title: "Your list is empty",
+                        title: "Your shelf is waiting",
                         message: "Save titles from Home, Search, Discover, or Movie Detail and they will appear here.",
                         systemImage: "bookmark",
                         actionTitle: "Browse Discover",
@@ -49,12 +49,13 @@ struct MyListView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Text("My List")
+            Text("Your Library")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Saved titles, downloads, and what you are watching next.")
+            Text("Saved titles, offline-ready picks, and what you are watching next.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -74,7 +75,7 @@ struct MyListView: View {
 
     private var savedGrid: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "\(selectedFilter) Titles", actionTitle: nil)
+            HFSectionHeader(title: selectedFilter == "Saved" ? "Saved For Later" : selectedFilter, actionTitle: nil)
 
             LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
                 ForEach(savedMovies) { movie in
@@ -91,7 +92,7 @@ struct MyListView: View {
 
     private var savedSummary: some View {
         HFInsightCard(
-            title: "\(savedMovies.count) titles",
+            title: selectedFilter == "Saved" ? "\(savedMovies.count) saved titles" : "\(savedMovies.count) titles ready",
             message: selectedFilter == "Saved" ? "Your saved slate is available across Home, Search, and Movie Detail." : "This filter reflects your saved and downloaded titles.",
             systemImage: "bookmark.fill"
         )

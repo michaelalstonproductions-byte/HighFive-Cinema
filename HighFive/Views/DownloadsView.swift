@@ -32,7 +32,7 @@ struct DownloadsView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .alert("Remove All Downloads?", isPresented: $showsRemoveAllAlert) {
+        .alert("Remove Offline Titles?", isPresented: $showsRemoveAllAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Remove All", role: .destructive) {
                 streamingStore.removeAllDownloads()
@@ -45,7 +45,7 @@ struct DownloadsView: View {
     private var header: some View {
         HStack(alignment: .center, spacing: HFSpacing.md) {
             VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text("Downloads")
+                Text("Offline")
                     .font(HFTypography.display)
                     .foregroundStyle(HFColors.textPrimary)
                 Text("Offline-ready titles for your next watch.")
@@ -92,7 +92,7 @@ struct DownloadsView: View {
                     .font(HFTypography.micro)
                     .foregroundStyle(HFColors.gold)
                     .kerning(1.3)
-                Text(downloads.isEmpty ? "No titles downloaded" : "\(downloads.count) titles downloaded")
+                Text(downloads.isEmpty ? "No offline titles" : "\(downloads.count) offline titles")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
                 Text(downloads.isEmpty ? "Find more to fill your offline shelf." : "Ready when you are.")
@@ -123,7 +123,7 @@ struct DownloadsView: View {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
                 HStack {
                     VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                        Text("Storage Status")
+                        Text("Offline Capacity")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
                         Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB saved")
@@ -149,7 +149,7 @@ struct DownloadsView: View {
                 }
                 .frame(height: 7)
 
-                Text("Manage saved titles and make space for more movies.")
+                Text("Keep favorite titles ready for travel, commutes, and low-signal nights.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -161,7 +161,7 @@ struct DownloadsView: View {
 
     private var downloadList: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Downloaded Movies", actionTitle: nil)
+            HFSectionHeader(title: "Available Offline", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(downloads) { movie in
@@ -182,7 +182,7 @@ struct DownloadsView: View {
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Remove \(movie.title) download")
+                        .accessibilityLabel("Remove \(movie.title) from offline titles")
                     }
                 }
 
@@ -191,7 +191,7 @@ struct DownloadsView: View {
                 } label: {
                     HStack(spacing: HFSpacing.xs) {
                         Image(systemName: "trash.fill")
-                        Text("Remove All Downloads")
+                        Text("Remove Offline Titles")
                     }
                     .font(HFTypography.smallAction)
                     .foregroundStyle(HFColors.textPrimary)
@@ -202,7 +202,7 @@ struct DownloadsView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove all downloads")
+                .accessibilityLabel("Remove offline titles")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -210,7 +210,7 @@ struct DownloadsView: View {
 
     private var emptyState: some View {
         HFEmptyState(
-            title: "No Downloads Yet",
+            title: "No Offline Titles Yet",
             message: "Download a title from the available slate and it will appear here.",
             systemImage: "arrow.down.circle",
             actionTitle: "Find More To Download",
