@@ -916,6 +916,37 @@ private struct HFCreatorPackagePreview {
     let readiness: [HFCreatorPackageReadinessRow]
 }
 
+private struct HFCreatorSlateMaterial: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+    let systemImage: String
+}
+
+private struct HFCreatorSlateProject: Identifiable {
+    let id = UUID()
+    let title: String
+    let format: String
+    let genre: String
+    let status: String
+    let logline: String
+    let audience: String
+    let packageProgress: Double
+    let systemImage: String
+    let materials: [HFCreatorSlateMaterial]
+}
+
+private struct HFCreatorSlatePreview {
+    let title: String
+    let subtitle: String
+    let activeProjectCount: Int
+    let readyPackageCount: Int
+    let draftPackageCount: Int
+    let protectedSystemCount: Int
+    let projects: [HFCreatorSlateProject]
+}
+
 private struct HFConnectPlannerPrompt: Identifiable {
     let id = UUID()
     let title: String
@@ -1712,6 +1743,71 @@ private enum HFCreatorPackageBuilderPreviewData {
             HFCreatorPackageReadinessRow(title: "Media Kit", status: "Deferred", detail: "Visual materials remain placeholders."),
             HFCreatorPackageReadinessRow(title: "Launch Prep", status: "Preview", detail: "Campaign copy is framed for future planning."),
             HFCreatorPackageReadinessRow(title: "Export / Render", status: "Protected", detail: "Professional systems remain disconnected.")
+        ]
+    )
+}
+
+private enum HFCreatorStudioSlatePreviewData {
+    static let slate = HFCreatorSlatePreview(
+        title: "Studio Slate",
+        subtitle: "Organize title packages before media intake, accounts, documents, package production, delivery, or server systems are connected.",
+        activeProjectCount: 3,
+        readyPackageCount: 1,
+        draftPackageCount: 2,
+        protectedSystemCount: 4,
+        projects: [
+            HFCreatorSlateProject(
+                title: "The Friendly",
+                format: "Feature Film",
+                genre: "Drama / Family",
+                status: "Package Ready",
+                logline: "A warm cinematic story prepared for a HighFive premiere.",
+                audience: "Premium streaming viewers",
+                packageProgress: 0.84,
+                systemImage: "film.fill",
+                materials: [
+                    HFCreatorSlateMaterial(title: "Title synopsis", detail: "Story foundation is ready for package review.", state: "Ready", systemImage: "doc.text.fill"),
+                    HFCreatorSlateMaterial(title: "Audience promise", detail: "Family-forward streaming promise is defined.", state: "Ready", systemImage: "person.3.fill"),
+                    HFCreatorSlateMaterial(title: "Poster / stills placeholder", detail: "Visual slots are present as local planning rows.", state: "Draft", systemImage: "photo.stack.fill"),
+                    HFCreatorSlateMaterial(title: "Creator note", detail: "Creator intent is framed for package context.", state: "Preview", systemImage: "note.text"),
+                    HFCreatorSlateMaterial(title: "Launch angle", detail: "Warm premiere positioning connects to Launch planning.", state: "Preview", systemImage: "flag.checkered"),
+                    HFCreatorSlateMaterial(title: "Delivery handoff", detail: "Professional delivery remains protected planning copy.", state: "Protected", systemImage: "lock.shield.fill")
+                ]
+            ),
+            HFCreatorSlateProject(
+                title: "Midnight Borough",
+                format: "Limited Series",
+                genre: "Mystery / Thriller",
+                status: "Pitch Draft",
+                logline: "A moody city mystery shaped for episodic release.",
+                audience: "Late-night discovery viewers",
+                packageProgress: 0.56,
+                systemImage: "building.2.crop.circle.fill",
+                materials: [
+                    HFCreatorSlateMaterial(title: "Series premise", detail: "Core mystery frame is being shaped.", state: "Draft", systemImage: "doc.text.magnifyingglass"),
+                    HFCreatorSlateMaterial(title: "Audience hook", detail: "Late-night discovery angle is ready for review.", state: "Preview", systemImage: "moon.stars.fill"),
+                    HFCreatorSlateMaterial(title: "Episode slate", detail: "Episode arc rows remain local package notes.", state: "Draft", systemImage: "rectangle.stack.fill"),
+                    HFCreatorSlateMaterial(title: "Pitch statement", detail: "Creator-led statement needs one more pass.", state: "Draft", systemImage: "text.quote"),
+                    HFCreatorSlateMaterial(title: "Launch angle", detail: "Release direction is held for future planning.", state: "Deferred", systemImage: "flag")
+                ]
+            ),
+            HFCreatorSlateProject(
+                title: "Golden Hour Kids",
+                format: "Short Collection",
+                genre: "Family / Adventure",
+                status: "Media Kit Draft",
+                logline: "A bright family collection prepared for creator-led launch.",
+                audience: "Family watch-night viewers",
+                packageProgress: 0.64,
+                systemImage: "sun.max.fill",
+                materials: [
+                    HFCreatorSlateMaterial(title: "Collection summary", detail: "Short-form story grouping is in draft shape.", state: "Draft", systemImage: "square.grid.2x2.fill"),
+                    HFCreatorSlateMaterial(title: "Family audience promise", detail: "Watch-night positioning is ready to inspect.", state: "Preview", systemImage: "person.2.fill"),
+                    HFCreatorSlateMaterial(title: "Media kit notes", detail: "Visual and copy needs are tracked locally.", state: "Draft", systemImage: "photo.on.rectangle.angled"),
+                    HFCreatorSlateMaterial(title: "Creator statement", detail: "Creator voice is framed for the collection.", state: "Preview", systemImage: "person.text.rectangle.fill"),
+                    HFCreatorSlateMaterial(title: "Release angle", detail: "Campaign direction stays future-facing.", state: "Deferred", systemImage: "sparkles")
+                ]
+            )
         ]
     )
 }
@@ -2849,6 +2945,7 @@ private struct CreateRoomView: View {
                     items: ["Project slate", "Pitch package", "Media kit"]
                 )
 
+                HFCreatorStudioSlateSection(slate: HFCreatorStudioSlatePreviewData.slate, accent: Color.orange)
                 HFCreatorPackageBuilderSection(package: HFCreatorPackageBuilderPreviewData.package, accent: Color.orange)
                 HFRoomDepthSnapshotStrip(accent: Color.orange)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.create, accent: Color.orange, roomID: "create")
@@ -3336,6 +3433,521 @@ private struct StudioSafetyChip: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.title), \(item.status), \(item.detail)")
+    }
+}
+
+private struct HFCreatorStudioSlateSection: View {
+    let slate: HFCreatorSlatePreview
+    let accent: Color
+    @State private var selectedProjectIndex = 0
+
+    private var selectedProject: HFCreatorSlateProject {
+        guard slate.projects.indices.contains(selectedProjectIndex) else {
+            return slate.projects[0]
+        }
+        return slate.projects[selectedProjectIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFCreatorStudioSlateOverviewCard(slate: slate, accent: accent)
+
+            HFCreatorStudioProjectCards(
+                projects: slate.projects,
+                selectedProjectIndex: $selectedProjectIndex,
+                accent: accent
+            )
+
+            HFCreatorStudioSelectedProjectPanel(project: selectedProject, accent: accent)
+            HFCreatorStudioPackageProgressSection(accent: accent)
+            HFCreatorStudioCreativeMaterialsSection(accent: accent)
+            HFCreatorStudioLaunchConnectionCard(accent: accent)
+            HFCreatorStudioBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Studio Slate, local creator project slate preview.")
+        .accessibilityIdentifier("hf.room.create.studioSlate")
+    }
+}
+
+private struct HFCreatorStudioSlateOverviewCard: View {
+    let slate: HFCreatorSlatePreview
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.3.group.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Studio Slate", accent: accent)
+                        Text(slate.title)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(slate.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    HFCreatorStudioSlateMetric(title: "Active Projects", value: "\(slate.activeProjectCount)", accent: accent)
+                    HFCreatorStudioSlateMetric(title: "Ready Packages", value: "\(slate.readyPackageCount)", accent: accent)
+                    HFCreatorStudioSlateMetric(title: "Draft Packages", value: "\(slate.draftPackageCount)", accent: accent)
+                    HFCreatorStudioSlateMetric(title: "Protected Systems", value: "Locked", accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Studio Slate, local creator project slate preview. \(slate.activeProjectCount) active projects.")
+    }
+}
+
+private struct HFCreatorStudioSlateMetric: View {
+    let title: String
+    let value: String
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(accent)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFCreatorStudioProjectCards: View {
+    let projects: [HFCreatorSlateProject]
+    @Binding var selectedProjectIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Active Project Slate")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(projects.enumerated()), id: \.element.id) { index, project in
+                        Button {
+                            selectedProjectIndex = index
+                        } label: {
+                            HFCreatorStudioProjectCard(
+                                project: project,
+                                isSelected: selectedProjectIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(project.title), \(project.status), Review Package Preview.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Active Project Slate.")
+        .accessibilityIdentifier("hf.room.create.projectCards")
+    }
+}
+
+private struct HFCreatorStudioProjectCard: View {
+    let project: HFCreatorSlateProject
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: project.systemImage)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 38, height: 38)
+                    .background(isSelected ? Color.black.opacity(0.10) : accent.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HFRoomStatusChip(title: project.status, accent: isSelected ? .black : accent)
+                    Text(project.title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Text(project.format)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+            Text(project.genre)
+                .font(HFTypography.micro)
+                .foregroundStyle(isSelected ? .black.opacity(0.66) : HFColors.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(project.logline)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            StudioProgressBar(title: "Package progress", value: Int(project.packageProgress * 100), accent: isSelected ? .black : accent)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Audience")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(isSelected ? .black.opacity(0.58) : HFColors.textMuted)
+                Text(project.audience)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(isSelected ? .black.opacity(0.76) : HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text("Review Package Preview")
+                .font(HFTypography.micro)
+                .foregroundStyle(isSelected ? .black : accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.xs)
+                .padding(.vertical, 8)
+                .background((isSelected ? Color.black : accent).opacity(0.12))
+                .clipShape(Capsule())
+        }
+        .frame(width: 244, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(project.title), \(project.format), \(project.status), \(Int(project.packageProgress * 100)) percent package progress.")
+    }
+}
+
+private struct HFCreatorStudioSelectedProjectPanel: View {
+    let project: HFCreatorSlateProject
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: project.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Project Package", accent: accent)
+                        Text("Selected Project Package")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(project.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFCreatorStudioDetailLine(title: "Logline", detail: project.logline, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Audience", detail: project.audience, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Package status", detail: project.status, accent: accent)
+                }
+
+                StudioProgressBar(title: "Package progress", value: Int(project.packageProgress * 100), accent: accent)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(project.materials) { material in
+                        HFCreatorStudioMaterialRow(material: material, accent: accent)
+                    }
+                }
+
+                Text("Preview Project Package")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Project Package, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Project Package. \(project.title). \(project.status).")
+        .accessibilityIdentifier("hf.room.create.selectedProject")
+    }
+}
+
+private struct HFCreatorStudioDetailLine: View {
+    let title: String
+    let detail: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            HFRoomStatusChip(title: title, accent: accent)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct HFCreatorStudioMaterialRow: View {
+    let material: HFCreatorSlateMaterial
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: material.systemImage)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(material.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: material.state, accent: accent)
+                }
+            }
+
+            Text(material.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(material.title), \(material.state), \(material.detail)")
+    }
+}
+
+private struct HFCreatorStudioPackageProgressSection: View {
+    let accent: Color
+
+    private let rows: [(title: String, status: String, detail: String, value: Int)] = [
+        ("Identity", "Ready", "Title, format, and creator note are in place.", 88),
+        ("Story", "Draft", "Synopsis and tone are shaped for review.", 64),
+        ("Audience", "Preview", "Audience promise is clear enough to inspect.", 58),
+        ("Media Kit", "Draft", "Visual placeholders and press rows are tracked.", 46),
+        ("Launch Prep", "Preview", "Release direction is connected to Launch planning.", 60),
+        ("Export / Render", "Protected", "Professional systems remain separated.", 12)
+    ]
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Package Progress")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HStack(alignment: .firstTextBaseline) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(row.title)
+                                        .font(HFTypography.smallAction)
+                                        .foregroundStyle(HFColors.textPrimary)
+                                    Text(row.detail)
+                                        .font(HFTypography.caption)
+                                        .foregroundStyle(HFColors.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: HFSpacing.sm)
+                                HFRoomStatusChip(title: row.status, accent: accent)
+                            }
+                            StudioProgressBar(title: "Progress", value: row.value, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Package Progress.")
+        .accessibilityIdentifier("hf.room.create.packageProgress")
+    }
+}
+
+private struct HFCreatorStudioCreativeMaterialsSection: View {
+    let accent: Color
+
+    private let cards: [(title: String, detail: String, systemImage: String, status: String)] = [
+        ("Story Notes", "Shape synopsis, tone, audience, and creator intent.", "doc.text.fill", "Ready"),
+        ("Visual Materials", "Track poster, stills, and media-kit placeholders.", "photo.stack.fill", "Draft"),
+        ("Pitch Copy", "Prepare headline, release angle, and creator statement.", "text.quote", "Preview"),
+        ("Launch Connection", "Prepare the title for a future Launch Room plan.", "flag.checkered", "Preview"),
+        ("Protected Systems", "Media intake, documents, server services, package production, and delivery remain disconnected.", "lock.shield.fill", "Protected")
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Creative Materials", subtitle: "Local material cards for story, visuals, pitch, and release direction.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(Array(cards.enumerated()), id: \.offset) { _, card in
+                    HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.26)) {
+                        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                            Image(systemName: card.systemImage)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(accent)
+                                .frame(width: 42, height: 42)
+                                .background(accent.opacity(0.14))
+                                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                            Text(card.title)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                            HFRoomStatusChip(title: card.status, accent: accent)
+                            Text(card.detail)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(HFSpacing.md)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(card.title), \(card.status), \(card.detail)")
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creative Materials.")
+        .accessibilityIdentifier("hf.room.create.creativeMaterials")
+    }
+}
+
+private struct HFCreatorStudioLaunchConnectionCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "flag.checkered")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Planning Bridge", accent: accent)
+                    Text("Launch Connection")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Creator packages can prepare campaign direction, while live release, audience alerts, commerce, waitlists, measurement, and server systems remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Preview Launch Connection")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Connection.")
+        .accessibilityIdentifier("hf.room.create.launchConnection")
+    }
+}
+
+private struct HFCreatorStudioBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 48, height: 48)
+                    .background(HFColors.gold.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Studio Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local creator slate preview. Media intake, library access, document handling, identity services, server release systems, package production, delivery systems, commerce, and platform services remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Studio Safety Boundary, live systems remain disconnected.")
+        .accessibilityIdentifier("hf.room.create.studioBoundary")
     }
 }
 
