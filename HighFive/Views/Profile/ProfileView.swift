@@ -916,6 +916,42 @@ private struct HFCreatorPackagePreview {
     let readiness: [HFCreatorPackageReadinessRow]
 }
 
+private struct HFConnectPlannerPrompt: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFConnectPlannerSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let prepares: String
+    let previewSummary: String
+    let deferredSummary: String
+    let prompts: [HFConnectPlannerPrompt]
+}
+
+private struct HFConnectReadinessRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
+}
+
+private struct HFConnectAudiencePreview {
+    let title: String
+    let subtitle: String
+    let focusTitle: String
+    let audienceTone: String
+    let plannerStatus: String
+    let sections: [HFConnectPlannerSection]
+    let readiness: [HFConnectReadinessRow]
+}
+
 private enum HFRoomDepthData {
     static let watch = HFRoomDepthBlueprint(
         readinessScore: 86,
@@ -1566,6 +1602,121 @@ private enum HFCreatorPackageBuilderPreviewData {
             HFCreatorPackageReadinessRow(title: "Media Kit", status: "Deferred", detail: "Visual materials remain placeholders."),
             HFCreatorPackageReadinessRow(title: "Launch Prep", status: "Preview", detail: "Campaign copy is framed for future planning."),
             HFCreatorPackageReadinessRow(title: "Export / Render", status: "Protected", detail: "Professional systems remain disconnected.")
+        ]
+    )
+}
+
+private enum HFConnectAudiencePlannerPreviewData {
+    static let plan = HFConnectAudiencePreview(
+        title: "Audience Planner",
+        subtitle: "Plan audience moments around a title before Messaging, Accounts, Notifications, Analytics, or Backend systems are connected.",
+        focusTitle: "The Friendly Audience Plan",
+        audienceTone: "Warm, premium, family-forward",
+        plannerStatus: "Preview Plan",
+        sections: [
+            HFConnectPlannerSection(
+                title: "Audience Groups",
+                subtitle: "Map who gathers around the premiere.",
+                status: "Preview",
+                systemImage: "person.3.fill",
+                prepares: "Prepares the viewer groups that can gather around a title in local planning.",
+                previewSummary: "Audience grouping is visible as static planning copy.",
+                deferredSummary: "Accounts and live relationship systems remain disconnected.",
+                prompts: [
+                    HFConnectPlannerPrompt(title: "Premiere viewers", detail: "Viewers arriving for the first release moment.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Family audience", detail: "Warm family-forward audience fit.", state: "Ready"),
+                    HFConnectPlannerPrompt(title: "Creator supporters", detail: "People following the creator story in preview copy.", state: "Draft"),
+                    HFConnectPlannerPrompt(title: "Genre fans", detail: "Drama and original-story viewers.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Saved-title viewers", detail: "People who saved the title in the local shell.", state: "Local")
+                ]
+            ),
+            HFConnectPlannerSection(
+                title: "Creator Updates",
+                subtitle: "Plan creator-led moments before release.",
+                status: "Draft",
+                systemImage: "text.bubble.fill",
+                prepares: "Prepares update themes and creator voice for local audience review.",
+                previewSummary: "Update copy is drafted without posting or delivery.",
+                deferredSummary: "Live posting and Notifications remain disconnected.",
+                prompts: [
+                    HFConnectPlannerPrompt(title: "Behind-the-scenes note", detail: "A warm creator note about the title origin.", state: "Draft"),
+                    HFConnectPlannerPrompt(title: "Production journal", detail: "A short production memory for the room.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Premiere reminder copy", detail: "Static wording for a future release reminder.", state: "Deferred"),
+                    HFConnectPlannerPrompt(title: "Creator voice", detail: "Grounded, optimistic, and premium.", state: "Ready"),
+                    HFConnectPlannerPrompt(title: "Update theme", detail: "The story behind the premiere moment.", state: "Draft")
+                ]
+            ),
+            HFConnectPlannerSection(
+                title: "Reaction Moments",
+                subtitle: "Shape local response cues around the title.",
+                status: "Local",
+                systemImage: "heart.text.square.fill",
+                prepares: "Prepares static reaction cues that show how audience energy might feel.",
+                previewSummary: "Reactions are local labels and do not record behavior.",
+                deferredSummary: "Analytics and Tracking remain protected.",
+                prompts: [
+                    HFConnectPlannerPrompt(title: "Warm reaction", detail: "A family-forward response cue.", state: "Local"),
+                    HFConnectPlannerPrompt(title: "Favorite scene", detail: "A prompt for the strongest story beat.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Premiere response", detail: "A local release-week response idea.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Community highlight", detail: "A future highlight slot, not a live feed.", state: "Deferred"),
+                    HFConnectPlannerPrompt(title: "Watch mood", detail: "Hopeful, comfortable, and shared.", state: "Ready")
+                ]
+            ),
+            HFConnectPlannerSection(
+                title: "Watch Community Prompts",
+                subtitle: "Frame conversation around the content itself.",
+                status: "Preview",
+                systemImage: "play.tv.fill",
+                prepares: "Prepares content-centered prompts that can guide future room design.",
+                previewSummary: "Prompt rows are static and local.",
+                deferredSummary: "Chat and Comments remain disconnected.",
+                prompts: [
+                    HFConnectPlannerPrompt(title: "What moment stayed with you?", detail: "A reflective prompt for the title heart.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Who would you watch this with?", detail: "A family and friends viewing cue.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "What scene should others notice?", detail: "A discovery-oriented room prompt.", state: "Draft"),
+                    HFConnectPlannerPrompt(title: "Why this title tonight?", detail: "A simple watch-mood prompt.", state: "Local")
+                ]
+            ),
+            HFConnectPlannerSection(
+                title: "Premiere Conversation",
+                subtitle: "Prepare the release-week audience frame.",
+                status: "Preview",
+                systemImage: "flag.checkered",
+                prepares: "Prepares a premiere conversation plan without live participation.",
+                previewSummary: "The release-week topic and creator note are visible locally.",
+                deferredSummary: "Watch-party systems remain placeholders only.",
+                prompts: [
+                    HFConnectPlannerPrompt(title: "Premiere topic", detail: "Why this story matters on release night.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Audience prompt", detail: "A simple prompt for shared viewing context.", state: "Draft"),
+                    HFConnectPlannerPrompt(title: "Creator note", detail: "A warm note from the project perspective.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Watch-party placeholder", detail: "A non-live planning slot.", state: "Deferred"),
+                    HFConnectPlannerPrompt(title: "Post-premiere reflection", detail: "A local reflection idea for later review.", state: "Preview")
+                ]
+            ),
+            HFConnectPlannerSection(
+                title: "Community Readiness",
+                subtitle: "Check local community planning before live systems exist.",
+                status: "Protected",
+                systemImage: "checkmark.shield.fill",
+                prepares: "Prepares a safety-aware review of Connect planning content.",
+                previewSummary: "Update copy, prompts, and creator notes can be reviewed.",
+                deferredSummary: "Messaging, Comments, Notifications, Analytics, Social Graph, and Backend systems stay disconnected.",
+                prompts: [
+                    HFConnectPlannerPrompt(title: "Update copy", detail: "Creator update wording is available for review.", state: "Draft"),
+                    HFConnectPlannerPrompt(title: "Audience prompt", detail: "Audience-facing prompts are grouped locally.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Creator note", detail: "Creator context supports the community moment.", state: "Preview"),
+                    HFConnectPlannerPrompt(title: "Community angle", detail: "Warm, premium, and title-centered.", state: "Ready"),
+                    HFConnectPlannerPrompt(title: "Safety boundary", detail: "Live systems remain disconnected.", state: "Protected")
+                ]
+            )
+        ],
+        readiness: [
+            HFConnectReadinessRow(title: "Community Plan", status: "Preview", detail: "Audience groups and release framing are visible."),
+            HFConnectReadinessRow(title: "Creator Updates", status: "Draft", detail: "Creator voice and update theme need review."),
+            HFConnectReadinessRow(title: "Reaction Prompts", status: "Local", detail: "Response cues remain local static labels."),
+            HFConnectReadinessRow(title: "Premiere Conversation", status: "Preview", detail: "Release-week prompt planning is present."),
+            HFConnectReadinessRow(title: "Messaging / Comments", status: "Deferred", detail: "Live participation systems are not connected."),
+            HFConnectReadinessRow(title: "Analytics / Social Graph", status: "Protected", detail: "Measurement and relationship systems remain protected.")
         ]
     )
 }
@@ -2749,6 +2900,419 @@ private struct HFCreatorPackageBoundaryCard: View {
     }
 }
 
+private struct HFConnectAudiencePlannerSection: View {
+    let plan: HFConnectAudiencePreview
+    let accent: Color
+    @State private var selectedSectionIndex = 0
+
+    private var selectedSection: HFConnectPlannerSection {
+        guard plan.sections.indices.contains(selectedSectionIndex) else {
+            return plan.sections[0]
+        }
+        return plan.sections[selectedSectionIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFConnectAudienceHeroCard(plan: plan, accent: accent)
+
+            HFConnectAudienceSectionSelector(
+                sections: plan.sections,
+                selectedSectionIndex: $selectedSectionIndex,
+                accent: accent
+            )
+
+            HFConnectAudienceDetailPanel(section: selectedSection, accent: accent)
+            HFConnectAudienceReadinessSummary(rows: plan.readiness, accent: accent)
+            HFConnectAudienceBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audience Planner, local audience community preview.")
+        .accessibilityIdentifier("hf.room.connect.audiencePlanner")
+    }
+}
+
+private struct HFConnectAudienceHeroCard: View {
+    let plan: HFConnectAudiencePreview
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.3.sequence.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Audience Planner", accent: accent)
+                        Text("Audience Planner")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(plan.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(plan.focusTitle)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        HFRoomStatusChip(title: plan.plannerStatus, accent: accent)
+                    }
+
+                    Text("Premiere community and creator updates")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        HFConnectAudienceMetric(title: "Tone", value: plan.audienceTone, accent: accent)
+                        HFConnectAudienceMetric(title: "Communities", value: "Preview", accent: accent)
+                        HFConnectAudienceMetric(title: "Updates", value: "Draft", accent: accent)
+                        HFConnectAudienceMetric(title: "Reactions", value: "Local", accent: accent)
+                        HFConnectAudienceMetric(title: "Messaging", value: "Deferred", accent: accent)
+                        HFConnectAudienceMetric(title: "Analytics", value: "Protected", accent: accent)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Audience Planner, local audience community preview. \(plan.focusTitle), \(plan.plannerStatus)")
+        .accessibilityIdentifier("hf.room.connect.audienceHero")
+    }
+}
+
+private struct HFConnectAudienceMetric: View {
+    let title: String
+    let value: String
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+            Text(value)
+                .font(HFTypography.caption)
+                .foregroundStyle(title == "Tone" ? HFColors.textSecondary : accent)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFConnectAudienceSectionSelector: View {
+    let sections: [HFConnectPlannerSection]
+    @Binding var selectedSectionIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Audience Sections")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                        Button {
+                            selectedSectionIndex = index
+                        } label: {
+                            HFConnectAudienceSectionCard(
+                                section: section,
+                                isSelected: selectedSectionIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) planner section.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audience sections for local audience planner preview")
+        .accessibilityIdentifier("hf.room.connect.audienceSections")
+    }
+}
+
+private struct HFConnectAudienceSectionCard: View {
+    let section: HFConnectPlannerSection
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 34, height: 34)
+                    .background(isSelected ? Color.black.opacity(0.10) : accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(section.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: section.status, accent: isSelected ? .black : accent)
+                }
+            }
+
+            Text(section.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(Array(section.prompts.prefix(3))) { prompt in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "sparkle")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isSelected ? .black : accent)
+                            .padding(.top, 2)
+                        Text(prompt.title)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(isSelected ? .black.opacity(0.74) : HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(width: 220, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.title) planner section. \(section.status).")
+    }
+}
+
+private struct HFConnectAudienceDetailPanel: View {
+    let section: HFConnectPlannerSection
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: section.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Audience Area", accent: accent)
+                        Text("Selected Audience Area")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(section.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFConnectAudienceDetailRow(title: "Prepares", detail: section.prepares, accent: accent)
+                    HFConnectAudienceDetailRow(title: "Preview-only", detail: section.previewSummary, accent: accent)
+                    HFConnectAudienceDetailRow(title: "Deferred", detail: section.deferredSummary, accent: accent)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(section.prompts) { prompt in
+                        HFConnectAudiencePromptRow(prompt: prompt, accent: accent)
+                    }
+                }
+
+                Text("Preview Audience Area")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Audience Area, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Audience Area, \(section.title), \(section.prepares)")
+        .accessibilityIdentifier("hf.room.connect.audienceDetail")
+    }
+}
+
+private struct HFConnectAudienceDetailRow: View {
+    let title: String
+    let detail: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            HFRoomStatusChip(title: title, accent: accent)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct HFConnectAudiencePromptRow: View {
+    let prompt: HFConnectPlannerPrompt
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(prompt.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: prompt.state, accent: accent)
+                }
+            }
+
+            Text(prompt.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(prompt.title), \(prompt.state), \(prompt.detail)")
+    }
+}
+
+private struct HFConnectAudienceReadinessSummary: View {
+    let rows: [HFConnectReadinessRow]
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Audience Readiness")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(row.title)
+                                    .font(HFTypography.smallAction)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(row.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: HFSpacing.sm)
+                            HFRoomStatusChip(title: row.status, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audience Readiness, \(rows.map { "\($0.title), \($0.status)" }.joined(separator: ", "))")
+        .accessibilityIdentifier("hf.room.connect.audienceReadiness")
+    }
+}
+
+private struct HFConnectAudienceBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Connect Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local audience-planning preview. Messaging, Comments, Accounts, Notifications, Analytics, Social Graph, and Backend systems remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Connect Safety Boundary, Messaging Notifications Analytics and Backend remain disconnected.")
+        .accessibilityIdentifier("hf.room.connect.audienceBoundary")
+    }
+}
+
 private struct ConnectRoomView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -2769,6 +3333,7 @@ private struct ConnectRoomView: View {
                     items: ["Communities", "Audience energy", "Creator updates"]
                 )
 
+                HFConnectAudiencePlannerSection(plan: HFConnectAudiencePlannerPreviewData.plan, accent: Color.cyan)
                 HFRoomDepthSnapshotStrip(accent: Color.cyan)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.connect, accent: Color.cyan, roomID: "connect")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.connect, accent: Color.cyan, roomID: "connect")
