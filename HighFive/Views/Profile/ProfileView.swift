@@ -860,6 +860,24 @@ private struct HFRoomWorkflowPlan {
     let nextStepActionTitle: String
 }
 
+private struct HFRoomWorkflowDrilldown: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let detailTitle: String
+    let detailBody: String
+    let checklist: [String]
+    let systemImage: String
+}
+
+private struct HFRoomWorkflowDrilldownPlan {
+    let title: String
+    let subtitle: String
+    let ctaTitle: String
+    let stages: [HFRoomWorkflowDrilldown]
+}
+
 private enum HFRoomDepthData {
     static let watch = HFRoomDepthBlueprint(
         readinessScore: 86,
@@ -1122,6 +1140,273 @@ private enum HFRoomWorkflowPlans {
     )
 }
 
+private enum HFRoomWorkflowDrilldownPlans {
+    static let watch = HFRoomWorkflowDrilldownPlan(
+        title: "Watch Flow Drilldown",
+        subtitle: "Choose a consumer stage and preview how it supports the streaming layer.",
+        ctaTitle: "Preview Watch Flow",
+        stages: [
+            HFRoomWorkflowDrilldown(
+                title: "Featured",
+                subtitle: "Premiere surface",
+                status: "Ready",
+                detailTitle: "Featured entry",
+                detailBody: "Shows how a featured title anchors the first viewer moment before any player surface is involved.",
+                checklist: ["Hero title", "Poster rail", "Movie Detail path", "Local preview copy"],
+                systemImage: "star.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Continue Watching",
+                subtitle: "Return path",
+                status: "Preview",
+                detailTitle: "Progress return",
+                detailBody: "Frames a calm return path for in-progress titles using static viewer context.",
+                checklist: ["In-progress title", "Detail route", "Progress label", "Five-tab shell"],
+                systemImage: "play.rectangle.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "My List",
+                subtitle: "Saved shelf",
+                status: "Ready",
+                detailTitle: "Saved titles",
+                detailBody: "Keeps saved films visible in the consumer library without adding persistence.",
+                checklist: ["Saved card", "Library route", "Title metadata", "Local state copy"],
+                systemImage: "bookmark.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Downloads",
+                subtitle: "Offline-ready shelf",
+                status: "Local",
+                detailTitle: "Download shelf preview",
+                detailBody: "Explains the offline-ready shelf as display-only product structure.",
+                checklist: ["Shelf status", "Download label", "Protected boundary", "Static title row"],
+                systemImage: "arrow.down.circle.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Discover",
+                subtitle: "Search path",
+                status: "Preview",
+                detailTitle: "Discovery movement",
+                detailBody: "Shows how viewers move from a room preview into search and discovery surfaces.",
+                checklist: ["Search route", "Discovery rail", "Genre hint", "Viewer-facing copy"],
+                systemImage: "magnifyingglass"
+            )
+        ]
+    )
+
+    static let create = HFRoomWorkflowDrilldownPlan(
+        title: "Creator Package Drilldown",
+        subtitle: "Select a stage to inspect the local package detail before any live studio services exist.",
+        ctaTitle: "Preview Selected Stage",
+        stages: [
+            HFRoomWorkflowDrilldown(
+                title: "Project Slate",
+                subtitle: "Title foundation",
+                status: "Ready",
+                detailTitle: "Organize the slate",
+                detailBody: "Organize titles, formats, and story packages before building a pitch.",
+                checklist: ["Title summary", "Format", "Story package", "Creator note", "Release angle"],
+                systemImage: "film.stack.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Story Positioning",
+                subtitle: "Audience promise",
+                status: "Draft",
+                detailTitle: "Clarify the title promise",
+                detailBody: "Clarify audience, genre, and promise of the title.",
+                checklist: ["Audience promise", "Genre note", "Tone", "Viewer hook", "Comparable space"],
+                systemImage: "text.quote"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Pitch Package",
+                subtitle: "Story and angle",
+                status: "Preview",
+                detailTitle: "Shape the pitch",
+                detailBody: "Prepare the story, creator angle, and release positioning.",
+                checklist: ["Logline", "Creator angle", "Pitch notes", "Release angle", "Review copy"],
+                systemImage: "rectangle.stack.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Media Kit",
+                subtitle: "Materials preview",
+                status: "Preview",
+                detailTitle: "Preview title materials",
+                detailBody: "Preview the materials a title will need later.",
+                checklist: ["Poster placeholder", "Still placeholder", "Synopsis", "Credits", "Creator note"],
+                systemImage: "photo.stack.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Launch Prep",
+                subtitle: "Plan bridge",
+                status: "Deferred",
+                detailTitle: "Prepare the bridge",
+                detailBody: "Connect the project package to the future launch plan.",
+                checklist: ["Launch copy", "Audience hook", "Creator note", "Release angle", "Readiness flag"],
+                systemImage: "flag.checkered"
+            )
+        ]
+    )
+
+    static let connect = HFRoomWorkflowDrilldownPlan(
+        title: "Audience Moment Drilldown",
+        subtitle: "Inspect local community stages without connecting live social services.",
+        ctaTitle: "Preview Selected Moment",
+        stages: [
+            HFRoomWorkflowDrilldown(
+                title: "Communities",
+                subtitle: "Audience groups",
+                status: "Preview",
+                detailTitle: "Group viewer interest",
+                detailBody: "Group viewers around titles, creators, and premieres.",
+                checklist: ["Audience group", "Title context", "Creator link", "Premiere prompt", "Room tone"],
+                systemImage: "person.3.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Creator Updates",
+                subtitle: "Update planning",
+                status: "Local",
+                detailTitle: "Plan creator moments",
+                detailBody: "Plan update moments that keep audiences engaged.",
+                checklist: ["Update topic", "Behind-the-scenes angle", "Creator voice", "Release context", "Preview copy"],
+                systemImage: "text.bubble.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Reactions",
+                subtitle: "Energy preview",
+                status: "Preview",
+                detailTitle: "Preview audience energy",
+                detailBody: "Preview how audience energy may appear around a title.",
+                checklist: ["Reaction preview", "Tone signal", "Audience energy", "Title beat", "Local status"],
+                systemImage: "heart.text.square.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Following",
+                subtitle: "Relationship layer",
+                status: "Preview",
+                detailTitle: "Show return paths",
+                detailBody: "Show the relationship layer without real accounts.",
+                checklist: ["Creator follow preview", "Title interest", "Return path", "Local badge", "Safe boundary"],
+                systemImage: "person.badge.plus.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Watch Community",
+                subtitle: "Content conversation",
+                status: "Deferred",
+                detailTitle: "Frame the viewing moment",
+                detailBody: "Frame conversation around the content itself.",
+                checklist: ["Watch conversation angle", "Premiere prompt", "Audience group", "Story beat", "Preview-only label"],
+                systemImage: "play.tv.fill"
+            )
+        ]
+    )
+
+    static let launch = HFRoomWorkflowDrilldownPlan(
+        title: "Launch Stage Drilldown",
+        subtitle: "Choose a release stage and inspect the local premiere planning detail.",
+        ctaTitle: "Preview Selected Launch Stage",
+        stages: [
+            HFRoomWorkflowDrilldown(
+                title: "Announcement",
+                subtitle: "First public story",
+                status: "Draft",
+                detailTitle: "Shape the announcement",
+                detailBody: "Shape the first public story around the title.",
+                checklist: ["Campaign headline", "Title promise", "Creator note", "Poster material", "Audience hook"],
+                systemImage: "sparkles"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Campaign Preview",
+                subtitle: "Copy and materials",
+                status: "Preview",
+                detailTitle: "Organize the campaign",
+                detailBody: "Organize campaign copy and key materials.",
+                checklist: ["Campaign headline", "Synopsis", "Poster material", "Creator note", "Readiness flag"],
+                systemImage: "megaphone.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Premiere Window",
+                subtitle: "Timing context",
+                status: "Deferred",
+                detailTitle: "Preview timing",
+                detailBody: "Preview release timing and premiere context.",
+                checklist: ["Premiere date placeholder", "Release window", "Context note", "Audience cue", "Static status"],
+                systemImage: "calendar.badge.clock"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Audience Build",
+                subtitle: "Momentum planning",
+                status: "Preview",
+                detailTitle: "Prepare momentum",
+                detailBody: "Prepare momentum before launch.",
+                checklist: ["Audience hook", "Community prompt", "Creator update", "Campaign copy", "Preview signal"],
+                systemImage: "person.3.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Release Readiness",
+                subtitle: "Future launch fit",
+                status: "Ready",
+                detailTitle: "Check release fit",
+                detailBody: "Confirm the title package is ready for a future live launch system.",
+                checklist: ["Readiness flag", "Synopsis", "Poster material", "Creator note", "Campaign review"],
+                systemImage: "checkmark.seal.fill"
+            )
+        ]
+    )
+
+    static let export = HFRoomWorkflowDrilldownPlan(
+        title: "Package Stage Drilldown",
+        subtitle: "Inspect distribution readiness locally before real delivery systems are connected.",
+        ctaTitle: "Preview Selected Package Stage",
+        stages: [
+            HFRoomWorkflowDrilldown(
+                title: "Deliverables",
+                subtitle: "Materials list",
+                status: "Review",
+                detailTitle: "Review delivery needs",
+                detailBody: "Review the materials a title will need for delivery.",
+                checklist: ["Poster", "Stills", "Synopsis", "Credits", "Creator notes"],
+                systemImage: "shippingbox.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Media Kit",
+                subtitle: "Press package",
+                status: "Preview",
+                detailTitle: "Preview press materials",
+                detailBody: "Preview press and title assets in one package.",
+                checklist: ["Poster", "Stills", "Synopsis", "Creator notes", "Press blurb"],
+                systemImage: "photo.stack.fill"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Festival Package",
+                subtitle: "Festival handoff",
+                status: "Preview",
+                detailTitle: "Organize festival fit",
+                detailBody: "Organize a future festival-ready handoff.",
+                checklist: ["Festival packet", "Synopsis", "Credits", "Creator notes", "Poster"],
+                systemImage: "rosette"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Platform Checklist",
+                subtitle: "Requirement preview",
+                status: "Protected",
+                detailTitle: "Preview platform needs",
+                detailBody: "Preview requirements before platform submission exists.",
+                checklist: ["Platform checklist", "Synopsis", "Credits", "Poster", "Readiness note"],
+                systemImage: "checklist.checked"
+            ),
+            HFRoomWorkflowDrilldown(
+                title: "Handoff Readiness",
+                subtitle: "Completeness check",
+                status: "Protected",
+                detailTitle: "Check package completeness",
+                detailBody: "Check package completeness before real delivery systems are connected.",
+                checklist: ["Package status", "Festival packet", "Platform checklist", "Creator notes", "Handoff preview"],
+                systemImage: "lock.shield.fill"
+            )
+        ]
+    )
+}
+
 private struct WatchRoomView: View {
     @State private var searchMode: HFSearchHubMode = .discover
 
@@ -1149,6 +1434,7 @@ private struct WatchRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: HFColors.gold)
+                HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.watch, accent: HFColors.gold, roomID: "watch")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.watch, accent: HFColors.gold, roomID: "watch")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.watch, accent: HFColors.gold)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.watch.pipelineStages, accent: HFColors.gold)
@@ -1376,6 +1662,7 @@ private struct CreateRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: Color.orange)
+                HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.create, accent: Color.orange, roomID: "create")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.create, accent: Color.orange, roomID: "create")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.create, accent: Color.orange)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.create.pipelineStages, accent: Color.orange)
@@ -1884,6 +2171,7 @@ private struct ConnectRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: Color.cyan)
+                HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.connect, accent: Color.cyan, roomID: "connect")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.connect, accent: Color.cyan, roomID: "connect")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.connect, accent: Color.cyan)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.connect.pipelineStages, accent: Color.cyan)
@@ -2134,6 +2422,7 @@ private struct LaunchRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: accent)
+                HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.launch, accent: accent, roomID: "launch")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.launch, accent: accent, roomID: "launch")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.launch, accent: accent)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.launch.pipelineStages, accent: accent)
@@ -2737,6 +3026,7 @@ private struct ExportRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: accent)
+                HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.export, accent: accent, roomID: "export")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.export, accent: accent, roomID: "export")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.export, accent: accent)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.export.pipelineStages, accent: accent)
@@ -3368,6 +3658,269 @@ private struct HFRoomWorkflowNextStepCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Next step, \(plan.nextStepTitle), \(plan.nextStepSubtitle), \(plan.nextStepActionTitle)")
         .accessibilityIdentifier("hf.room.\(roomID).nextStep")
+    }
+}
+
+private struct HFRoomWorkflowDrilldownSection: View {
+    let plan: HFRoomWorkflowDrilldownPlan
+    let accent: Color
+    let roomID: String
+    @State private var selectedStageIndex = 0
+
+    private var selectedStage: HFRoomWorkflowDrilldown {
+        guard plan.stages.indices.contains(selectedStageIndex) else {
+            return plan.stages[0]
+        }
+        return plan.stages[selectedStageIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "rectangle.3.group.bubble.left.fill")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 46, height: 46)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomLocalPreviewBadge(title: "Local Drilldown", accent: accent)
+                    Text(plan.title)
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(plan.subtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HFRoomWorkflowStageSelector(
+                stages: plan.stages,
+                selectedStageIndex: $selectedStageIndex,
+                accent: accent,
+                roomID: roomID
+            )
+
+            HFRoomWorkflowDetailPanel(
+                stage: selectedStage,
+                ctaTitle: plan.ctaTitle,
+                accent: accent,
+                roomID: roomID
+            )
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(plan.title), selected stage \(selectedStage.title), local drilldown preview")
+        .accessibilityIdentifier("hf.room.\(roomID).drilldown")
+    }
+}
+
+private struct HFRoomWorkflowStageSelector: View {
+    let stages: [HFRoomWorkflowDrilldown]
+    @Binding var selectedStageIndex: Int
+    let accent: Color
+    let roomID: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Select Stage")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Tap to inspect", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(stages.enumerated()), id: \.element.id) { index, stage in
+                        Button {
+                            selectedStageIndex = index
+                        } label: {
+                            HFRoomWorkflowSelectorChip(
+                                stage: stage,
+                                index: index + 1,
+                                isSelected: selectedStageIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(stage.title), \(stage.status), selected stage \(selectedStageIndex == index ? "yes" : "no")")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Stage selector, local stage choices")
+        .accessibilityIdentifier("hf.room.\(roomID).stageSelector")
+    }
+}
+
+private struct HFRoomWorkflowSelectorChip: View {
+    let stage: HFRoomWorkflowDrilldown
+    let index: Int
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Text("\(index)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 22, height: 22)
+                    .background(isSelected ? accent : accent.opacity(0.12))
+                    .clipShape(Circle())
+
+                Image(systemName: stage.systemImage)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+            }
+
+            Text(stage.title)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(stage.subtitle)
+                .font(HFTypography.micro)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textMuted)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(width: 150, alignment: .topLeading)
+        .frame(minHeight: 108, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFRoomWorkflowDetailPanel: View {
+    let stage: HFRoomWorkflowDrilldown
+    let ctaTitle: String
+    let accent: Color
+    let roomID: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: stage.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 50, height: 50)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Selected Stage", accent: accent)
+                            HFRoomStatusChip(title: stage.status, accent: accent)
+                        }
+
+                        Text(stage.detailTitle)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(stage.detailBody)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HFRoomWorkflowChecklistPreview(items: stage.checklist, accent: accent)
+
+                Text(ctaTitle)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("safe preview CTA, \(ctaTitle)")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Detail panel, selected stage \(stage.title), \(stage.detailBody), local checklist preview")
+        .accessibilityIdentifier("hf.room.\(roomID).detailPanel")
+    }
+}
+
+private struct HFRoomWorkflowChecklistPreview: View {
+    let items: [String]
+    let accent: Color
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 150), spacing: HFSpacing.sm)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Local Checklist Preview")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Static", accent: accent)
+            }
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(items, id: \.self) { item in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(accent)
+                            .padding(.top, 2)
+
+                        Text(item)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(HFSpacing.sm)
+                    .background(Color.white.opacity(0.055))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("local checklist preview, \(items.joined(separator: ", "))")
+    }
+}
+
+private struct HFRoomLocalPreviewBadge: View {
+    let title: String
+    let accent: Color
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .padding(.horizontal, HFSpacing.sm)
+            .padding(.vertical, 7)
+            .background(accent.opacity(0.12))
+            .overlay(
+                Capsule()
+                    .stroke(accent.opacity(0.35), lineWidth: 1)
+            )
+            .clipShape(Capsule())
     }
 }
 
