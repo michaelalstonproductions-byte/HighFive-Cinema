@@ -793,6 +793,195 @@ private struct HFInternalGatewayCard: View {
     }
 }
 
+private struct HFRoomReadinessSignal: Identifiable {
+    let id = UUID()
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+}
+
+private struct HFRoomPipelineStage: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let systemImage: String
+}
+
+private struct HFRoomWorkflowStep: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+}
+
+private struct HFRoomBoundaryItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let systemImage: String
+}
+
+private struct HFRoomDepthBlueprint {
+    let readinessScore: Int
+    let readinessTitle: String
+    let readinessSubtitle: String
+    let readinessSignals: [HFRoomReadinessSignal]
+    let pipelineStages: [HFRoomPipelineStage]
+    let workflowSteps: [HFRoomWorkflowStep]
+    let boundaryTitle: String
+    let boundarySubtitle: String
+    let boundaryItems: [HFRoomBoundaryItem]
+}
+
+private enum HFRoomDepthData {
+    static let watch = HFRoomDepthBlueprint(
+        readinessScore: 86,
+        readinessTitle: "Viewing Readiness",
+        readinessSubtitle: "Consumer surfaces are ready for a local watch-room demo.",
+        readinessSignals: [
+            HFRoomReadinessSignal(title: "Hero title", value: "Ready", detail: "Featured title routes into Movie Detail.", systemImage: "star.fill"),
+            HFRoomReadinessSignal(title: "Saved path", value: "Ready", detail: "My List remains the viewer library route.", systemImage: "bookmark.fill"),
+            HFRoomReadinessSignal(title: "Offline shelf", value: "Preview", detail: "Downloads is display-only and local.", systemImage: "arrow.down.circle.fill")
+        ],
+        pipelineStages: [
+            HFRoomPipelineStage(title: "Home", status: "Entry", systemImage: "house.fill"),
+            HFRoomPipelineStage(title: "Detail", status: "Inspect", systemImage: "film.fill"),
+            HFRoomPipelineStage(title: "List", status: "Save", systemImage: "bookmark.fill"),
+            HFRoomPipelineStage(title: "Download", status: "Shelf", systemImage: "arrow.down.circle.fill")
+        ],
+        workflowSteps: [
+            HFRoomWorkflowStep(title: "Choose a title", detail: "Start from Home, Search, Library, or a featured card.", status: "Viewer", systemImage: "rectangle.stack.fill"),
+            HFRoomWorkflowStep(title: "Inspect the story", detail: "Movie Detail carries synopsis, creator context, and related titles.", status: "Local", systemImage: "doc.text.fill"),
+            HFRoomWorkflowStep(title: "Keep momentum", detail: "My List and Downloads keep the viewer inside consumer tabs.", status: "Ready", systemImage: "play.rectangle.fill")
+        ],
+        boundaryTitle: "Watch Safe Boundary",
+        boundarySubtitle: "Watch Room is a static SwiftUI consumer preview. Player, capture, and protected media systems stay disconnected.",
+        boundaryItems: [
+            HFRoomBoundaryItem(title: "No player engine", detail: "Watch actions remain preview navigation only.", systemImage: "play.slash.fill"),
+            HFRoomBoundaryItem(title: "No media capture", detail: "Capture and recording behavior are outside this room.", systemImage: "video.slash.fill"),
+            HFRoomBoundaryItem(title: "No protected media edits", detail: "Protected media systems remain untouched.", systemImage: "lock.shield.fill")
+        ]
+    )
+
+    static let create = HFRoomDepthBlueprint(
+        readinessScore: 74,
+        readinessTitle: "Studio Readiness",
+        readinessSubtitle: "The creator package has enough local structure for product review.",
+        readinessSignals: [
+            HFRoomReadinessSignal(title: "Project slate", value: "Ready", detail: "Three local projects show status and needs.", systemImage: "film.stack.fill"),
+            HFRoomReadinessSignal(title: "Pitch package", value: "Preview", detail: "Story, audience, format, and release angle are framed.", systemImage: "text.quote"),
+            HFRoomReadinessSignal(title: "Media kit", value: "Review", detail: "Poster, stills, synopsis, credits, and notes are tracked.", systemImage: "photo.stack.fill")
+        ],
+        pipelineStages: [
+            HFRoomPipelineStage(title: "Project", status: "Select", systemImage: "film.stack.fill"),
+            HFRoomPipelineStage(title: "Pitch", status: "Shape", systemImage: "text.quote"),
+            HFRoomPipelineStage(title: "Kit", status: "Package", systemImage: "photo.stack.fill"),
+            HFRoomPipelineStage(title: "Launch", status: "Prep", systemImage: "flag.checkered")
+        ],
+        workflowSteps: [
+            HFRoomWorkflowStep(title: "Frame the project", detail: "Use project cards to show stage, readiness, and needs.", status: "Preview", systemImage: "rectangle.3.group.fill"),
+            HFRoomWorkflowStep(title: "Build the package", detail: "Move through creator identity, pitch, media kit, and launch prep.", status: "Local", systemImage: "shippingbox.fill"),
+            HFRoomWorkflowStep(title: "Hand off safely", detail: "Launch and Export references remain planning surfaces only.", status: "Protected", systemImage: "lock.shield.fill")
+        ],
+        boundaryTitle: "Create Safe Boundary",
+        boundarySubtitle: "Creator Studio stays local and static. No uploads, creator accounts, backend sync, payment logic, file access, rendering, or live creator systems are introduced.",
+        boundaryItems: [
+            HFRoomBoundaryItem(title: "No uploads", detail: "Media kit cards are display-only.", systemImage: "arrow.up.doc"),
+            HFRoomBoundaryItem(title: "No creator backend", detail: "Creator identity and projects are local preview data.", systemImage: "server.rack"),
+            HFRoomBoundaryItem(title: "No render/export hooks", detail: "Professional systems remain protected.", systemImage: "lock.shield.fill")
+        ]
+    )
+
+    static let connect = HFRoomDepthBlueprint(
+        readinessScore: 69,
+        readinessTitle: "Community Readiness",
+        readinessSubtitle: "Connect has enough local surface area to explain audience energy without live social systems.",
+        readinessSignals: [
+            HFRoomReadinessSignal(title: "Communities", value: "Preview", detail: "Rooms and project communities are reachable.", systemImage: "person.3.fill"),
+            HFRoomReadinessSignal(title: "Reactions", value: "Local", detail: "Activity and reactions are static signals.", systemImage: "heart.text.square.fill"),
+            HFRoomReadinessSignal(title: "Watch party", value: "Future", detail: "Conversation framing exists without live participation.", systemImage: "play.tv.fill")
+        ],
+        pipelineStages: [
+            HFRoomPipelineStage(title: "Discover", status: "Find", systemImage: "magnifyingglass"),
+            HFRoomPipelineStage(title: "Room", status: "Enter", systemImage: "bubble.left.and.bubble.right.fill"),
+            HFRoomPipelineStage(title: "React", status: "Signal", systemImage: "heart.fill"),
+            HFRoomPipelineStage(title: "Follow", status: "Return", systemImage: "person.badge.plus.fill")
+        ],
+        workflowSteps: [
+            HFRoomWorkflowStep(title: "Find a community", detail: "Open communities around titles, creators, and release moments.", status: "Preview", systemImage: "person.3.fill"),
+            HFRoomWorkflowStep(title: "Read the room", detail: "Activity, discussions, and reactions show audience context.", status: "Local", systemImage: "text.bubble.fill"),
+            HFRoomWorkflowStep(title: "Bridge to launch", detail: "Community energy supports Launch Room planning without sending messages.", status: "Safe", systemImage: "flag.checkered")
+        ],
+        boundaryTitle: "Connect Safe Boundary",
+        boundarySubtitle: "Connect Room is a static community preview. Messaging, notifications, uploads, live reactions, accounts, analytics, and backend social services stay disconnected.",
+        boundaryItems: [
+            HFRoomBoundaryItem(title: "No messaging", detail: "Discussion rows do not send or receive messages.", systemImage: "bubble.left.and.bubble.right.slash.fill"),
+            HFRoomBoundaryItem(title: "No notifications", detail: "No push or reminder system is connected.", systemImage: "bell.slash.fill"),
+            HFRoomBoundaryItem(title: "No social backend", detail: "Followers, reactions, and room counts are mock data.", systemImage: "server.rack")
+        ]
+    )
+
+    static let launch = HFRoomDepthBlueprint(
+        readinessScore: 72,
+        readinessTitle: "Launch Readiness",
+        readinessSubtitle: "Campaign, timeline, materials, and handoff planning are structured for review.",
+        readinessSignals: [
+            HFRoomReadinessSignal(title: "Timeline", value: "Preview", detail: "Release phases are visible and ordered.", systemImage: "calendar.badge.clock"),
+            HFRoomReadinessSignal(title: "Campaign", value: "Local", detail: "Campaign copy is framed without publishing.", systemImage: "megaphone.fill"),
+            HFRoomReadinessSignal(title: "Audience", value: "Mock", detail: "Momentum numbers are display-only.", systemImage: "person.3.fill")
+        ],
+        pipelineStages: [
+            HFRoomPipelineStage(title: "Package", status: "Lock", systemImage: "shippingbox.fill"),
+            HFRoomPipelineStage(title: "Warmup", status: "Build", systemImage: "flame.fill"),
+            HFRoomPipelineStage(title: "Campaign", status: "Preview", systemImage: "megaphone.fill"),
+            HFRoomPipelineStage(title: "Premiere", status: "Plan", systemImage: "flag.checkered")
+        ],
+        workflowSteps: [
+            HFRoomWorkflowStep(title: "Lock release basics", detail: "Title, synopsis, creator notes, and poster direction come first.", status: "Review", systemImage: "checklist.checked"),
+            HFRoomWorkflowStep(title: "Build the campaign", detail: "Shape audience hook, campaign header, and creator note.", status: "Preview", systemImage: "megaphone.fill"),
+            HFRoomWorkflowStep(title: "Prepare handoff", detail: "Export handoff remains readiness copy, not a delivery system.", status: "Protected", systemImage: "lock.shield.fill")
+        ],
+        boundaryTitle: "Launch Safe Boundary",
+        boundarySubtitle: "Launch Room is planning-only. Payments, commerce frameworks, subscriptions, campaign publishing, waitlists, notifications, analytics, and backend launch services stay disconnected.",
+        boundaryItems: [
+            HFRoomBoundaryItem(title: "No commerce", detail: "No paywall, subscription, commerce framework, or payment path exists.", systemImage: "creditcard"),
+            HFRoomBoundaryItem(title: "No publishing", detail: "Campaign pages and waitlists are static previews.", systemImage: "paperplane.fill"),
+            HFRoomBoundaryItem(title: "No analytics", detail: "Audience numbers are local display copy.", systemImage: "chart.bar.xaxis")
+        ]
+    )
+
+    static let export = HFRoomDepthBlueprint(
+        readinessScore: 66,
+        readinessTitle: "Export Readiness",
+        readinessSubtitle: "Deliverables, media kit, festival package, and platform checklist are organized as protected planning data.",
+        readinessSignals: [
+            HFRoomReadinessSignal(title: "Deliverables", value: "Review", detail: "Package groups are visible without generating files.", systemImage: "shippingbox.fill"),
+            HFRoomReadinessSignal(title: "Festival kit", value: "Preview", detail: "Submission materials are grouped for review.", systemImage: "rosette"),
+            HFRoomReadinessSignal(title: "Distribution", value: "Protected", detail: "Handoff is planning-only.", systemImage: "lock.shield.fill")
+        ],
+        pipelineStages: [
+            HFRoomPipelineStage(title: "Collect", status: "List", systemImage: "tray.full.fill"),
+            HFRoomPipelineStage(title: "Review", status: "Check", systemImage: "checklist.checked"),
+            HFRoomPipelineStage(title: "Package", status: "Plan", systemImage: "shippingbox.fill"),
+            HFRoomPipelineStage(title: "Handoff", status: "Protect", systemImage: "lock.shield.fill")
+        ],
+        workflowSteps: [
+            HFRoomWorkflowStep(title: "Review required materials", detail: "Deliverables, poster package, trailer notes, credits, and press copy are visible.", status: "Preview", systemImage: "doc.text.fill"),
+            HFRoomWorkflowStep(title: "Map platform needs", detail: "Platform checklists describe future requirements without endpoints.", status: "Local", systemImage: "tv.fill"),
+            HFRoomWorkflowStep(title: "Protect delivery systems", detail: "No render, file writing, share, or distribution API behavior is connected.", status: "Protected", systemImage: "lock.shield.fill")
+        ],
+        boundaryTitle: "Export Safe Boundary",
+        boundarySubtitle: "Export Room is a local readiness preview. Rendering, export engines, file writing, photo-library access, share sheets, uploads, platform delivery, backend submissions, and distribution APIs stay disconnected.",
+        boundaryItems: [
+            HFRoomBoundaryItem(title: "No generated files", detail: "Package cards do not write, export, or save content.", systemImage: "doc.badge.gearshape"),
+            HFRoomBoundaryItem(title: "No share surfaces", detail: "No system share or delivery flow is connected.", systemImage: "square.and.arrow.up"),
+            HFRoomBoundaryItem(title: "No render pipeline", detail: "Rendering and export engines stay protected.", systemImage: "viewfinder")
+        ]
+    )
+}
+
 private struct WatchRoomView: View {
     @State private var searchMode: HFSearchHubMode = .discover
 
@@ -818,6 +1007,11 @@ private struct WatchRoomView: View {
                     accent: HFColors.gold,
                     items: ["Streaming-first", "Saved titles", "Offline-ready"]
                 )
+
+                HFRoomDepthSnapshotStrip(accent: HFColors.gold)
+                HFRoomReadinessPanel(blueprint: HFRoomDepthData.watch, accent: HFColors.gold)
+                HFRoomPipelineStrip(stages: HFRoomDepthData.watch.pipelineStages, accent: HFColors.gold)
+                HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.watch.workflowSteps, accent: HFColors.gold)
 
                 VStack(spacing: HFSpacing.md) {
                     NavigationLink {
@@ -859,6 +1053,8 @@ private struct WatchRoomView: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Watch Room feature cards")
                 .accessibilityIdentifier("hf.room.watch.features")
+
+                HFRoomSafeBoundaryCard(blueprint: HFRoomDepthData.watch, accent: HFColors.gold)
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -1038,9 +1234,15 @@ private struct CreateRoomView: View {
                     items: ["Project slate", "Pitch package", "Media kit"]
                 )
 
+                HFRoomDepthSnapshotStrip(accent: Color.orange)
+                HFRoomReadinessPanel(blueprint: HFRoomDepthData.create, accent: Color.orange)
+                HFRoomPipelineStrip(stages: HFRoomDepthData.create.pipelineStages, accent: Color.orange)
+                HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.create.workflowSteps, accent: Color.orange)
+
                 studioSectionSelector
                 selectedSectionView
                     .accessibilityIdentifier("hf.room.create.features")
+                HFRoomSafeBoundaryCard(blueprint: HFRoomDepthData.create, accent: Color.orange)
                 studioSafetyBoundary
             }
             .padding(.top, HFSpacing.lg)
@@ -1539,6 +1741,11 @@ private struct ConnectRoomView: View {
                     items: ["Communities", "Audience energy", "Creator updates"]
                 )
 
+                HFRoomDepthSnapshotStrip(accent: Color.cyan)
+                HFRoomReadinessPanel(blueprint: HFRoomDepthData.connect, accent: Color.cyan)
+                HFRoomPipelineStrip(stages: HFRoomDepthData.connect.pipelineStages, accent: Color.cyan)
+                HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.connect.workflowSteps, accent: Color.cyan)
+
                 VStack(spacing: HFSpacing.md) {
                     NavigationLink {
                         ConnectHubView()
@@ -1579,6 +1786,8 @@ private struct ConnectRoomView: View {
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Connect Room feature cards")
                 .accessibilityIdentifier("hf.room.connect.features")
+
+                HFRoomSafeBoundaryCard(blueprint: HFRoomDepthData.connect, accent: Color.cyan)
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -1781,9 +1990,15 @@ private struct LaunchRoomView: View {
                     items: ["Timeline", "Campaign", "Readiness"]
                 )
 
+                HFRoomDepthSnapshotStrip(accent: accent)
+                HFRoomReadinessPanel(blueprint: HFRoomDepthData.launch, accent: accent)
+                HFRoomPipelineStrip(stages: HFRoomDepthData.launch.pipelineStages, accent: accent)
+                HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.launch.workflowSteps, accent: accent)
+
                 launchSectionSelector
                 selectedSectionView
                     .accessibilityIdentifier("hf.room.launch.features")
+                HFRoomSafeBoundaryCard(blueprint: HFRoomDepthData.launch, accent: accent)
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -2377,9 +2592,15 @@ private struct ExportRoomView: View {
                     items: ["Deliverables", "Media kit", "Handoff"]
                 )
 
+                HFRoomDepthSnapshotStrip(accent: accent)
+                HFRoomReadinessPanel(blueprint: HFRoomDepthData.export, accent: accent)
+                HFRoomPipelineStrip(stages: HFRoomDepthData.export.pipelineStages, accent: accent)
+                HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.export.workflowSteps, accent: accent)
+
                 exportSectionSelector
                 selectedSectionView
                     .accessibilityIdentifier("hf.room.export.features")
+                HFRoomSafeBoundaryCard(blueprint: HFRoomDepthData.export, accent: accent)
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -2724,6 +2945,372 @@ private struct ExportReadinessGroupCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(group.title), \(group.readiness), \(group.detail)")
+    }
+}
+
+private struct HFRoomReadinessPanel: View {
+    let blueprint: HFRoomDepthBlueprint
+    let accent: Color
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)
+    ]
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ZStack {
+                        Circle()
+                            .stroke(Color.white.opacity(0.12), lineWidth: 6)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(blueprint.readinessScore) / 100)
+                            .stroke(accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                        Text("\(blueprint.readinessScore)%")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textPrimary)
+                    }
+                    .frame(width: 62, height: 62)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Readiness Panel", accent: accent)
+                        Text(blueprint.readinessTitle)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(blueprint.readinessSubtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                StudioProgressBar(title: "Room depth score", value: blueprint.readinessScore, accent: accent)
+
+                LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(blueprint.readinessSignals) { signal in
+                        HFRoomReadinessSignalCard(signal: signal, accent: accent)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(blueprint.readinessTitle), \(blueprint.readinessScore) percent, \(blueprint.readinessSubtitle)")
+    }
+}
+
+private struct HFRoomReadinessSignalCard: View {
+    let signal: HFRoomReadinessSignal
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: signal.systemImage)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(accent)
+                .frame(width: 34, height: 34)
+                .background(accent.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            Text(signal.title)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HFRoomStatusChip(title: signal.value, accent: accent)
+
+            Text(signal.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(signal.title), \(signal.value), \(signal.detail)")
+    }
+}
+
+private struct HFRoomPipelineStrip: View {
+    let stages: [HFRoomPipelineStage]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Pipeline")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Static Flow", accent: accent)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(Array(stages.enumerated()), id: \.element.id) { index, stage in
+                        HFRoomPipelineStageCard(stage: stage, index: index + 1, accent: accent)
+
+                        if index < stages.count - 1 {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundStyle(accent.opacity(0.82))
+                        }
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Room pipeline, \(stages.map(\.title).joined(separator: ", "))")
+    }
+}
+
+private struct HFRoomPipelineStageCard: View {
+    let stage: HFRoomPipelineStage
+    let index: Int
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text("\(index)")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(.black)
+                        .frame(width: 22, height: 22)
+                        .background(accent)
+                        .clipShape(Circle())
+
+                    Image(systemName: stage.systemImage)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(accent)
+                }
+
+                Text(stage.title)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+
+                Text(stage.status)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+            }
+            .frame(width: 112, alignment: .leading)
+            .padding(HFSpacing.sm)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Pipeline stage \(index), \(stage.title), \(stage.status)")
+    }
+}
+
+private struct HFRoomWorkflowDepthPanel: View {
+    let steps: [HFRoomWorkflowStep]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Workflow Depth", subtitle: "A local, reviewable path through this room.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                    HFRoomWorkflowStepRow(step: step, index: index + 1, accent: accent)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Workflow Depth section")
+    }
+}
+
+private struct HFRoomWorkflowStepRow: View {
+    let step: HFRoomWorkflowStep
+    let index: Int
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.24)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                        .fill(accent.opacity(0.14))
+                    VStack(spacing: 2) {
+                        Image(systemName: step.systemImage)
+                            .font(.system(size: 13, weight: .bold))
+                        Text("\(index)")
+                            .font(HFTypography.micro)
+                    }
+                    .foregroundStyle(accent)
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(step.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HFRoomStatusChip(title: step.status, accent: accent)
+                    }
+
+                    Text(step.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Workflow step \(index), \(step.title), \(step.status), \(step.detail)")
+    }
+}
+
+private struct HFRoomSafeBoundaryCard: View {
+    let blueprint: HFRoomDepthBlueprint
+    let accent: Color
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 140), spacing: HFSpacing.sm)
+    ]
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Safe Boundary", accent: accent)
+                        Text(blueprint.boundaryTitle)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(blueprint.boundarySubtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(blueprint.boundaryItems) { item in
+                        HFRoomBoundaryMiniCard(item: item, accent: accent)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(blueprint.boundaryTitle), \(blueprint.boundarySubtitle)")
+    }
+}
+
+private struct HFRoomBoundaryMiniCard: View {
+    let item: HFRoomBoundaryItem
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(accent)
+                .frame(width: 34, height: 34)
+                .background(accent.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            Text(item.title)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.detail)")
+    }
+}
+
+private struct HFRoomDepthSnapshotStrip: View {
+    let accent: Color
+
+    private let items: [(title: String, subtitle: String, systemImage: String)] = [
+        ("Readiness", "Cards visible", "gauge.with.dots.needle.67percent"),
+        ("Workflow", "Section ready", "point.3.connected.trianglepath.dotted"),
+        ("Boundary", "Safe card", "lock.shield.fill")
+    ]
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack {
+                    Text("Room Product Depth")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local UI", accent: accent)
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(items, id: \.title) { item in
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: item.systemImage)
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(accent)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title)
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.72)
+                                Text(item.subtitle)
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.72)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .padding(.vertical, 9)
+                        .background(accent.opacity(0.10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                                .stroke(accent.opacity(0.24), lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.sm)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Room Product Depth, readiness cards visible, workflow section ready, safe boundary card")
     }
 }
 
