@@ -250,6 +250,8 @@ struct HomeView: View {
             .buttonStyle(.plain)
 
             heroPosterStack
+                .frame(width: 92, height: 132, alignment: .topTrailing)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .padding(.top, HFSpacing.lg)
                 .padding(.trailing, HFSpacing.sm)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
@@ -338,13 +340,14 @@ struct HomeView: View {
     }
 
     private var heroPosterStack: some View {
-        VStack(spacing: -18) {
-            ForEach(Array(HFMockData.recommended.movies.prefix(3).enumerated()), id: \.element.id) { index, movie in
-                HFPosterCard(movie: movie, width: HFResponsiveFit.heroPosterWidth(width: screenWidth), showTitle: false, posterOnly: true)
-                    .rotationEffect(.degrees(index == 1 ? 7 : -6))
+        VStack(spacing: -14) {
+            ForEach(Array(HFMockData.recommended.movies.prefix(1)), id: \.id) { movie in
+                HFPosterCard(movie: movie, width: max(58, HFResponsiveFit.heroPosterWidth(width: screenWidth) * 0.52), showTitle: false, posterOnly: true)
+                    .rotationEffect(.degrees(-6))
                     .shadow(color: HFColors.shadow, radius: 12, x: 0, y: 10)
             }
         }
+        .opacity(0.88)
         .padding(HFSpacing.xs)
         .background(Color.black.opacity(0.30))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
