@@ -46,9 +46,10 @@ struct UnifiedDiscoveryView: View {
             Text("Discover")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
                 .minimumScaleFactor(0.78)
 
-            Text("Find movies, originals, saved titles, and upcoming premieres.")
+            Text("Find the next premiere, original, or saved story worth watching tonight.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -78,11 +79,11 @@ struct UnifiedDiscoveryView: View {
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.gold)
                             .kerning(1.2)
-                        Text("Find something great to watch tonight.")
+                        Text("A cinematic lane for tonight's next watch.")
                             .font(HFTypography.section)
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(2)
-                        Text("Originals, thrillers, saved titles, and coming soon premieres.")
+                        Text("Originals, thrillers, saved titles, and upcoming premieres.")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(2)
@@ -98,6 +99,10 @@ struct UnifiedDiscoveryView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
                     .stroke(HFColors.gold.opacity(0.48), lineWidth: 1)
+            )
+            .background(
+                HFColors.warmGlow.opacity(0.16),
+                in: RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
             )
             .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 22, x: 0, y: 14)
         }

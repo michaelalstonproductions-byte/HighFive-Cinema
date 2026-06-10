@@ -30,7 +30,7 @@ struct HomeView: View {
                 homeCategoryPills
                 heroSection
                 tonightFeatureSection
-                todaySection
+                programmingPulseSection
                 watchSectionHeader
 
                 ForEach(HFMockData.premiumHomeRails) { category in
@@ -73,7 +73,7 @@ struct HomeView: View {
                     .kerning(0.4)
                     .lineLimit(2)
                     .minimumScaleFactor(0.78)
-                Text("Premium stories. Ready now.")
+                Text("Streaming now.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .lineLimit(1)
@@ -139,27 +139,66 @@ struct HomeView: View {
         .accessibilityLabel("Home categories Movies, Series, Originals")
     }
 
-    private var todaySection: some View {
-        HFTodaySummaryCard(items: HFEcosystemPreviewData.todaySummaryItems)
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+    private var programmingPulseSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.44)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Tonight on HighFive")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("A curated slate of premieres, originals, and saved titles ready for the next watch.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.sm)
+
+                    Image(systemName: "sparkles.tv.fill")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 38, height: 38)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Featured Premiere", systemImage: "play.fill", isActive: true)
+                    HFRouteChip(title: "Originals", systemImage: "star.fill")
+                    HFRouteChip(title: "New This Week", systemImage: "calendar")
+                }
+            }
+            .padding(HFSpacing.lg)
+            .background(
+                LinearGradient(
+                    colors: [HFColors.warmGlow.opacity(0.24), Color.clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Tonight on HighFive, curated premieres, originals, and saved titles")
     }
 
     private var watchSectionHeader: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Watch", actionTitle: nil)
+            HFSectionHeader(title: "Start Watching", actionTitle: nil)
 
             HStack(spacing: HFSpacing.sm) {
                 Button(action: onDiscover) {
-                    HFRouteChip(title: "Open Discover", systemImage: "sparkles")
+                    HFRouteChip(title: "Browse Premieres", systemImage: "sparkles")
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Open Discover")
+                .accessibilityLabel("Browse premieres")
 
                 Button(action: onMyList) {
-                    HFRouteChip(title: "View My List", systemImage: "bookmark.fill")
+                    HFRouteChip(title: "My List", systemImage: "bookmark.fill")
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("View My List")
+                .accessibilityLabel("Open My List")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -219,7 +258,7 @@ struct HomeView: View {
 
                 NavigationLink(value: heroMovie) {
                     VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                        Text("FEATURED PREMIERE")
+                        Text("TONIGHT ON HIGHFIVE")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.gold)
                             .kerning(1.6)
@@ -230,10 +269,10 @@ struct HomeView: View {
                             .lineLimit(2)
                             .minimumScaleFactor(0.66)
 
-                        Text(heroMovie.subtitle)
+                        Text("A cinematic premiere selected for tonight.")
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
-                            .lineLimit(1)
+                            .lineLimit(2)
                             .minimumScaleFactor(0.78)
 
                         HStack(spacing: HFSpacing.xs) {
@@ -327,11 +366,11 @@ struct HomeView: View {
                     .frame(width: 158, height: 142)
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("TONIGHT ON HIGHFIVE")
+                        Text("FEATURED PREMIERE")
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.gold)
                             .kerning(1.2)
-                        Text("The Friendly leads a slate built for a late-night premiere.")
+                        Text("The Friendly leads a slate built for a late-night HighFive premiere.")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(3)
@@ -365,7 +404,7 @@ struct HomeView: View {
 
     private var goldDiscoveryRail: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "HighFive Gold Picks", actionTitle: "Discover", action: onDiscover)
+            HFSectionHeader(title: "HighFive Originals", actionTitle: "Discover", action: onDiscover)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
