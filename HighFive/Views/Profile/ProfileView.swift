@@ -1026,6 +1026,42 @@ private struct HFExportDistributionPreview {
     let readiness: [HFExportPackageReadinessRow]
 }
 
+private struct HFWatchHubItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFWatchHubSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let prepares: String
+    let previewSummary: String
+    let deferredSummary: String
+    let items: [HFWatchHubItem]
+}
+
+private struct HFWatchHubReadinessRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let status: String
+    let detail: String
+}
+
+private struct HFWatchViewingHubPreview {
+    let title: String
+    let subtitle: String
+    let viewingFocus: String
+    let tonightPick: String
+    let hubStatus: String
+    let sections: [HFWatchHubSection]
+    let readiness: [HFWatchHubReadinessRow]
+}
+
 private enum HFRoomDepthData {
     static let watch = HFRoomDepthBlueprint(
         readinessScore: 86,
@@ -2029,6 +2065,535 @@ private enum HFExportDistributionPackagePreviewData {
     )
 }
 
+private enum HFWatchViewingHubPreviewData {
+    static let hub = HFWatchViewingHubPreview(
+        title: "Viewing Hub",
+        subtitle: "Preview the premium watching path before Player systems, accounts, measurement, offline delivery, or sync systems are connected.",
+        viewingFocus: "Featured premiere, saved titles, offline shelf, and discovery path",
+        tonightPick: "The Friendly",
+        hubStatus: "Preview Hub",
+        sections: [
+            HFWatchHubSection(
+                title: "Featured Premiere",
+                subtitle: "Anchor tonight around a premium title.",
+                status: "Ready",
+                systemImage: "star.fill",
+                prepares: "Prepares the first viewing moment with a featured title and editorial reason.",
+                previewSummary: "The featured premiere card is local and static.",
+                deferredSummary: "Player systems and server streaming remain disconnected.",
+                items: [
+                    HFWatchHubItem(title: "Tonight pick", detail: "The Friendly", state: "Ready"),
+                    HFWatchHubItem(title: "Hero title", detail: "A warm HighFive premiere placed at the center of Watch Room.", state: "Ready"),
+                    HFWatchHubItem(title: "Streaming mood", detail: "Premium, family-forward, cinematic evening viewing.", state: "Preview"),
+                    HFWatchHubItem(title: "Editorial reason", detail: "A featured original with creator-led story momentum.", state: "Ready"),
+                    HFWatchHubItem(title: "Primary action preview", detail: "Safe local viewing action copy only.", state: "Preview")
+                ]
+            ),
+            HFWatchHubSection(
+                title: "Continue Watching",
+                subtitle: "Represent viewing momentum without real viewing state.",
+                status: "Local",
+                systemImage: "play.rectangle.fill",
+                prepares: "Prepares the resume lane and next-up context for a premium watch hub.",
+                previewSummary: "Progress and resume context are local display rows.",
+                deferredSummary: "Player state, account sync, and measurement remain disconnected.",
+                items: [
+                    HFWatchHubItem(title: "In-progress title", detail: "Neon Canyon", state: "Local"),
+                    HFWatchHubItem(title: "Progress preview", detail: "48 percent preview progress.", state: "Preview"),
+                    HFWatchHubItem(title: "Next scene copy", detail: "Return to the canyon reveal.", state: "Local"),
+                    HFWatchHubItem(title: "Resume context", detail: "A premium continuation cue without real viewing state.", state: "Preview"),
+                    HFWatchHubItem(title: "Local state only", detail: "No account sync or player state is connected.", state: "Protected")
+                ]
+            ),
+            HFWatchHubSection(
+                title: "My List",
+                subtitle: "Preview the saved-title shelf inside Watch Room.",
+                status: "Preview",
+                systemImage: "bookmark.fill",
+                prepares: "Prepares saved-title priority and mood for the local viewing hub.",
+                previewSummary: "Saved shelf rows are static product copy.",
+                deferredSummary: "Account storage and server sync remain disconnected.",
+                items: [
+                    HFWatchHubItem(title: "Saved title", detail: "Midnight Orchard", state: "Preview"),
+                    HFWatchHubItem(title: "Watch mood", detail: "Festival night, quiet drama, cinematic discovery.", state: "Ready"),
+                    HFWatchHubItem(title: "Title priority", detail: "High priority preview slot.", state: "Preview"),
+                    HFWatchHubItem(title: "Queue preview", detail: "Saved queue appears as a local shelf concept.", state: "Local"),
+                    HFWatchHubItem(title: "Saved shelf", detail: "Library path remains the real tab destination.", state: "Ready")
+                ]
+            ),
+            HFWatchHubSection(
+                title: "Offline Shelf",
+                subtitle: "Show offline intent without real download behavior.",
+                status: "Deferred",
+                systemImage: "arrow.down.circle.fill",
+                prepares: "Prepares the offline-ready shelf concept for consumer planning.",
+                previewSummary: "Offline rows are preview labels only.",
+                deferredSummary: "Real offline delivery and storage systems remain disconnected.",
+                items: [
+                    HFWatchHubItem(title: "Offline-ready preview", detail: "A future shelf for saved viewing access.", state: "Preview"),
+                    HFWatchHubItem(title: "Download shelf concept", detail: "A display-only shelf connected to the Downloads tab.", state: "Deferred"),
+                    HFWatchHubItem(title: "Storage card concept", detail: "Storage state is represented as copy only.", state: "Deferred"),
+                    HFWatchHubItem(title: "Available offline copy", detail: "Preview wording for future offline access.", state: "Preview"),
+                    HFWatchHubItem(title: "Deferred real downloads", detail: "Offline delivery remains disconnected.", state: "Protected")
+                ]
+            ),
+            HFWatchHubSection(
+                title: "Discovery Path",
+                subtitle: "Guide the next title after tonight's premiere.",
+                status: "Ready",
+                systemImage: "magnifyingglass",
+                prepares: "Prepares a streaming-first discovery lane that points to Search and Home.",
+                previewSummary: "Recommendations are local editorial rows.",
+                deferredSummary: "Measurement and personalization services remain disconnected.",
+                items: [
+                    HFWatchHubItem(title: "HighFive Picks", detail: "Premium picks are framed as local editorial rails.", state: "Ready"),
+                    HFWatchHubItem(title: "Originals", detail: "Original titles support the premium streaming position.", state: "Preview"),
+                    HFWatchHubItem(title: "Trending", detail: "Trending copy remains static.", state: "Local"),
+                    HFWatchHubItem(title: "Because you watched", detail: "A local recommendation label only.", state: "Preview"),
+                    HFWatchHubItem(title: "Coming soon", detail: "Future titles can be framed without live services.", state: "Preview")
+                ]
+            ),
+            HFWatchHubSection(
+                title: "Viewing Readiness",
+                subtitle: "Check the local viewing hub before live systems exist.",
+                status: "Protected",
+                systemImage: "checkmark.shield.fill",
+                prepares: "Prepares a safety-aware viewing readiness check across Watch Room surfaces.",
+                previewSummary: "Featured, list, offline, and discovery states are reviewable.",
+                deferredSummary: "Player systems, offline delivery, sync, and measurement remain disconnected.",
+                items: [
+                    HFWatchHubItem(title: "Featured ready", detail: "Featured premiere is ready for local review.", state: "Ready"),
+                    HFWatchHubItem(title: "List ready", detail: "Saved-title shelf has preview content.", state: "Preview"),
+                    HFWatchHubItem(title: "Offline preview", detail: "Offline shelf remains concept-only.", state: "Deferred"),
+                    HFWatchHubItem(title: "Discovery ready", detail: "Discovery path points to consumer tabs.", state: "Ready"),
+                    HFWatchHubItem(title: "Protected playback", detail: "Player systems remain disconnected.", state: "Protected")
+                ]
+            )
+        ],
+        readiness: [
+            HFWatchHubReadinessRow(title: "Featured Premiere", status: "Ready", detail: "Tonight pick and editorial reason are present."),
+            HFWatchHubReadinessRow(title: "Continue Watching", status: "Local", detail: "Resume context is local display copy."),
+            HFWatchHubReadinessRow(title: "My List", status: "Preview", detail: "Saved-title shelf is represented in the hub."),
+            HFWatchHubReadinessRow(title: "Offline Shelf", status: "Deferred", detail: "Offline delivery remains concept-only."),
+            HFWatchHubReadinessRow(title: "Playback / Player", status: "Protected", detail: "Viewing engines remain disconnected."),
+            HFWatchHubReadinessRow(title: "Analytics / Sync", status: "Protected", detail: "Measurement and sync systems remain disconnected.")
+        ]
+    )
+}
+
+private struct HFWatchViewingHubSection: View {
+    let hub: HFWatchViewingHubPreview
+    let accent: Color
+    @State private var selectedSectionIndex = 0
+
+    private var selectedSection: HFWatchHubSection {
+        guard hub.sections.indices.contains(selectedSectionIndex) else {
+            return hub.sections[0]
+        }
+        return hub.sections[selectedSectionIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFWatchViewingHeroCard(hub: hub, accent: accent)
+
+            HFWatchViewingSectionSelector(
+                sections: hub.sections,
+                selectedSectionIndex: $selectedSectionIndex,
+                accent: accent
+            )
+
+            HFWatchViewingDetailPanel(section: selectedSection, accent: accent)
+            HFWatchViewingReadinessSummary(rows: hub.readiness, accent: accent)
+            HFWatchViewingBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Viewing Hub, local premium watch preview.")
+        .accessibilityIdentifier("hf.room.watch.viewingHub")
+    }
+}
+
+private struct HFWatchViewingHeroCard: View {
+    let hub: HFWatchViewingHubPreview
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "play.rectangle.on.rectangle.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Viewing Hub", accent: accent)
+                        Text("Viewing Hub")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(hub.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("The Friendly Viewing Hub")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        HFRoomStatusChip(title: hub.hubStatus, accent: accent)
+                    }
+
+                    Text(hub.viewingFocus)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        HFWatchViewingMetric(title: "Tonight", value: hub.tonightPick, accent: accent)
+                        HFWatchViewingMetric(title: "Featured", value: "Ready", accent: accent)
+                        HFWatchViewingMetric(title: "Continue", value: "Local", accent: accent)
+                        HFWatchViewingMetric(title: "My List", value: "Preview", accent: accent)
+                        HFWatchViewingMetric(title: "Offline", value: "Deferred", accent: accent)
+                        HFWatchViewingMetric(title: "Player", value: "Protected", accent: accent)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Viewing Hub, local premium watch preview. The Friendly Viewing Hub, \(hub.hubStatus)")
+        .accessibilityIdentifier("hf.room.watch.viewingHero")
+    }
+}
+
+private struct HFWatchViewingMetric: View {
+    let title: String
+    let value: String
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+            Text(value)
+                .font(HFTypography.caption)
+                .foregroundStyle(title == "Tonight" ? HFColors.textSecondary : accent)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFWatchViewingSectionSelector: View {
+    let sections: [HFWatchHubSection]
+    @Binding var selectedSectionIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Viewing Sections")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                        Button {
+                            selectedSectionIndex = index
+                        } label: {
+                            HFWatchViewingSectionCard(
+                                section: section,
+                                isSelected: selectedSectionIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) section.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Viewing sections for local premium watch preview")
+        .accessibilityIdentifier("hf.room.watch.viewingSections")
+    }
+}
+
+private struct HFWatchViewingSectionCard: View {
+    let section: HFWatchHubSection
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 34, height: 34)
+                    .background(isSelected ? Color.black.opacity(0.10) : accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(section.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: section.status, accent: isSelected ? .black : accent)
+                }
+            }
+
+            Text(section.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(Array(section.items.prefix(3))) { item in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "sparkle")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isSelected ? .black : accent)
+                            .padding(.top, 2)
+                        Text(item.title)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(isSelected ? .black.opacity(0.74) : HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(width: 220, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.title) section. \(section.status).")
+    }
+}
+
+private struct HFWatchViewingDetailPanel: View {
+    let section: HFWatchHubSection
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: section.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Viewing Area", accent: accent)
+                        Text("Selected Viewing Area")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(section.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFWatchViewingDetailRow(title: "Prepares", detail: section.prepares, accent: accent)
+                    HFWatchViewingDetailRow(title: "Preview-only", detail: section.previewSummary, accent: accent)
+                    HFWatchViewingDetailRow(title: "Deferred", detail: section.deferredSummary, accent: accent)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(section.items) { item in
+                        HFWatchViewingItemRow(item: item, accent: accent)
+                    }
+                }
+
+                Text("Preview Viewing Area")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Viewing Area, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Viewing Area, \(section.title), \(section.prepares)")
+        .accessibilityIdentifier("hf.room.watch.viewingDetail")
+    }
+}
+
+private struct HFWatchViewingDetailRow: View {
+    let title: String
+    let detail: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            HFRoomStatusChip(title: title, accent: accent)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct HFWatchViewingItemRow: View {
+    let item: HFWatchHubItem
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: item.state, accent: accent)
+                }
+            }
+
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.state), \(item.detail)")
+    }
+}
+
+private struct HFWatchViewingReadinessSummary: View {
+    let rows: [HFWatchHubReadinessRow]
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Viewing Readiness")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(row.title)
+                                    .font(HFTypography.smallAction)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(row.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: HFSpacing.sm)
+                            HFRoomStatusChip(title: row.status, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Viewing Readiness, \(rows.map { "\($0.title), \($0.status)" }.joined(separator: ", "))")
+        .accessibilityIdentifier("hf.room.watch.viewingReadiness")
+    }
+}
+
+private struct HFWatchViewingBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Watch Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local viewing-hub preview. Player systems, account sync, measurement, offline delivery, group watch, and server streaming remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Watch Safety Boundary, player sync measurement offline delivery group watch and server streaming remain disconnected.")
+        .accessibilityIdentifier("hf.room.watch.viewingBoundary")
+    }
+}
+
 private struct WatchRoomView: View {
     @State private var searchMode: HFSearchHubMode = .discover
 
@@ -2055,6 +2620,7 @@ private struct WatchRoomView: View {
                     items: ["Streaming-first", "Saved titles", "Offline-ready"]
                 )
 
+                HFWatchViewingHubSection(hub: HFWatchViewingHubPreviewData.hub, accent: HFColors.gold)
                 HFRoomDepthSnapshotStrip(accent: HFColors.gold)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.watch, accent: HFColors.gold, roomID: "watch")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.watch, accent: HFColors.gold, roomID: "watch")
