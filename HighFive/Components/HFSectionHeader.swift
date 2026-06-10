@@ -6,7 +6,12 @@ struct HFSectionHeader: View {
     var action: (() -> Void)?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .firstTextBaseline, spacing: HFSpacing.sm) {
+            Capsule()
+                .fill(HFColors.goldGradient)
+                .frame(width: 4, height: 20)
+                .accessibilityHidden(true)
+
             Text(title)
                 .font(HFTypography.section)
                 .foregroundStyle(HFColors.textPrimary)
@@ -17,11 +22,20 @@ struct HFSectionHeader: View {
 
             if let actionTitle {
                 Button(action: { action?() }) {
-                    Text(actionTitle)
-                        .font(HFTypography.smallAction)
-                        .foregroundStyle(HFColors.gold)
+                    HStack(spacing: HFSpacing.xxs) {
+                        Text(actionTitle)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .black))
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.gold)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(height: 30)
+                    .background(HFColors.gold.opacity(0.10))
+                    .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(actionTitle)
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

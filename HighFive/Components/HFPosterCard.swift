@@ -49,6 +49,12 @@ struct HFPosterCard: View {
                         .accessibilityLabel("Coming soon")
                 }
 
+                if width >= 100 {
+                    posterSignalBadges
+                        .padding(HFSpacing.xs)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+
                 if showProgress, let progress = movie.progress {
                     GeometryReader { proxy in
                         ZStack(alignment: .leading) {
@@ -100,6 +106,19 @@ struct HFPosterCard: View {
     }
 
     @ViewBuilder
+    private var posterSignalBadges: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            if movie.isOriginal {
+                HFPosterSignalBadge(title: "Original", systemImage: "sparkles")
+            }
+
+            if movie.isDownloaded {
+                HFPosterSignalBadge(title: "Offline", systemImage: "arrow.down.circle.fill")
+            }
+        }
+    }
+
+    @ViewBuilder
     private var posterArtwork: some View {
         if HFPosterAssetHealth.hasImage(named: movie.posterAssetName), let assetName = movie.posterAssetName {
             Image(assetName)
@@ -109,5 +128,27 @@ struct HFPosterCard: View {
         } else {
             HFPosterFallback(title: movie.title)
         }
+    }
+}
+
+private struct HFPosterSignalBadge: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: systemImage)
+                .font(.system(size: 8, weight: .black))
+            Text(title)
+                .font(.system(size: 9, weight: .black, design: .default))
+        }
+        .foregroundStyle(.black)
+        .lineLimit(1)
+        .minimumScaleFactor(0.78)
+        .padding(.horizontal, 7)
+        .frame(height: 20)
+        .background(HFColors.goldGradient)
+        .clipShape(Capsule())
+        .shadow(color: HFColors.shadow.opacity(0.32), radius: 8, x: 0, y: 4)
     }
 }

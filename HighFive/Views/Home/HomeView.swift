@@ -28,6 +28,7 @@ struct HomeView: View {
             VStack(spacing: HFSpacing.xl) {
                 header
                 homeCategoryPills
+                homePremiereMetrics
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -139,6 +140,17 @@ struct HomeView: View {
         .padding(.horizontal, screenPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Home categories Movies, Series, Originals")
+    }
+
+    private var homePremiereMetrics: some View {
+        HStack(spacing: HFSpacing.sm) {
+            HFHomeMetricPill(value: "\(HFMockData.movies.filter(\.isOriginal).count)", label: "Originals", systemImage: "sparkles")
+            HFHomeMetricPill(value: "\(HFMockData.movies.filter { $0.progress != nil }.count)", label: "In Progress", systemImage: "play.circle.fill")
+            HFHomeMetricPill(value: "\(HFMockData.movies.filter(\.isDownloaded).count)", label: "Offline", systemImage: "arrow.down.circle.fill")
+        }
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Home summary, originals, in progress titles, and offline titles")
     }
 
     private var programmingPulseSection: some View {
@@ -278,6 +290,20 @@ struct HomeView: View {
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.78)
+
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: "sparkles")
+                            Text("Premium local premiere")
+                            Spacer(minLength: 0)
+                            Text("4K Mood")
+                        }
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .frame(height: 34)
+                        .background(Color.black.opacity(0.36))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(HFColors.gold.opacity(0.26), lineWidth: 1))
 
                         HStack(spacing: HFSpacing.xs) {
                             ForEach([heroMovie.rating, heroMovie.duration, "Original"], id: \.self) { badge in
@@ -485,6 +511,39 @@ struct HomeView: View {
                 .scaledToFill()
         } else {
             HFPosterFallback(title: movie.title)
+        }
+    }
+}
+
+private struct HFHomeMetricPill: View {
+    let value: String
+    let label: String
+    let systemImage: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: 18, strokeColor: HFColors.gold.opacity(0.24)) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 30, height: 30)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(value)
+                        .font(.system(size: 18, weight: .black, design: .default))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(label)
+                        .font(.system(size: 10, weight: .bold, design: .default))
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.74)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, HFSpacing.sm)
+            .padding(.vertical, HFSpacing.xs)
         }
     }
 }

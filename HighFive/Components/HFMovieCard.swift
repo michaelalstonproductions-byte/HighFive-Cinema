@@ -21,6 +21,19 @@ struct HFMovieCard: View {
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textMuted)
                         .lineLimit(1)
+
+                    HStack(spacing: HFSpacing.xxs) {
+                        if movie.isOriginal {
+                            HFMovieSignalChip(title: "Original", systemImage: "sparkles")
+                        }
+                        if movie.isDownloaded {
+                            HFMovieSignalChip(title: "Offline", systemImage: "arrow.down.circle.fill")
+                        }
+                        if movie.progress != nil {
+                            HFMovieSignalChip(title: "Resume", systemImage: "play.fill")
+                        }
+                    }
+
                     HStack(spacing: HFSpacing.xs) {
                         ForEach(movie.genres.prefix(2), id: \.self) { genre in
                             Text(genre)
@@ -61,5 +74,27 @@ struct HFMovieCard: View {
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                 .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
         )
+    }
+}
+
+private struct HFMovieSignalChip: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: systemImage)
+                .font(.system(size: 8, weight: .black))
+            Text(title)
+                .font(HFTypography.micro)
+        }
+        .foregroundStyle(HFColors.gold)
+        .lineLimit(1)
+        .minimumScaleFactor(0.76)
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 24)
+        .background(HFColors.gold.opacity(0.10))
+        .overlay(Capsule().stroke(HFColors.gold.opacity(0.22), lineWidth: 1))
+        .clipShape(Capsule())
     }
 }

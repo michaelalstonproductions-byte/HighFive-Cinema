@@ -32,8 +32,10 @@ struct MovieDetailView: View {
                 hero
 
                 overview
+                titleSignalPanel
                 relatedSection
                 creatorSection
+                castSection
                 gallerySection
                 bottomScrollClearance
             }
@@ -182,6 +184,45 @@ struct MovieDetailView: View {
             genreTags
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var titleSignalPanel: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: movie.isComingSoon ? "calendar.badge.clock" : "play.rectangle.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(movie.isComingSoon ? "Premiere Watchlist" : "Ready to Stream")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(movie.isComingSoon ? "This title is staged as a coming-soon HighFive original." : "Watch, save, or continue from the local preview slate.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFDetailSignalChip(title: movie.creatorName, systemImage: "building.2.fill")
+                    HFDetailSignalChip(title: movie.isDownloaded ? "Offline" : "Streaming", systemImage: movie.isDownloaded ? "arrow.down.circle.fill" : "wifi")
+                    if let progress = movie.progress {
+                        HFDetailSignalChip(title: "\(Int(progress * 100))% watched", systemImage: "play.circle.fill")
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Movie detail readiness panel")
     }
 
     private var genreTags: some View {
@@ -363,5 +404,27 @@ struct MovieDetailView: View {
             .padding(.bottom, HFSpacing.sm)
         }
         .background(HFColors.background.opacity(0.72))
+    }
+}
+
+private struct HFDetailSignalChip: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: HFSpacing.xxs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 10, weight: .black))
+            Text(title)
+                .font(HFTypography.caption)
+        }
+        .foregroundStyle(HFColors.gold)
+        .lineLimit(1)
+        .minimumScaleFactor(0.72)
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 28)
+        .background(HFColors.gold.opacity(0.10))
+        .overlay(Capsule().stroke(HFColors.gold.opacity(0.22), lineWidth: 1))
+        .clipShape(Capsule())
     }
 }

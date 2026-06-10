@@ -55,6 +55,7 @@ struct ProfileView: View {
                 manageProfilesButton
 
                 menu
+                roomsGatewayHero
                 highFiveRoomsSection
                 buildQAToolsSection
                 signOutButton
@@ -129,6 +130,7 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                roomsGatewayHero
                 highFiveRoomsSection
             }
             .padding(.top, HFSpacing.lg)
@@ -468,6 +470,61 @@ struct ProfileView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("HighFive Rooms, product spaces for watching, creating, connecting, launching, and export readiness")
         .accessibilityIdentifier("hf.profile.roomsSection")
+    }
+
+    private var roomsGatewayHero: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.3.group.fill")
+                        .font(.system(size: 25, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 54, height: 54)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("HighFive Rooms Gateway")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.78)
+                        Text("Start in Watch, then move into creator, community, launch, and delivery previews without leaving the local app shell.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(["Watch", "Create", "Connect", "Launch", "Export"], id: \.self) { room in
+                        Text(room)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(room == "Watch" ? .black : HFColors.gold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.76)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 28)
+                            .background(room == "Watch" ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.10)))
+                            .overlay(Capsule().stroke(HFColors.gold.opacity(room == "Watch" ? 0 : 0.22), lineWidth: 1))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+            .background(
+                LinearGradient(
+                    colors: [HFColors.warmGlow.opacity(0.26), Color.clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("HighFive Rooms Gateway")
     }
 
     private var avatarRow: some View {

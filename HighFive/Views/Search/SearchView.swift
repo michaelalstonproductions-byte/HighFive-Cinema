@@ -60,6 +60,8 @@ struct SearchView: View {
                 )
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
+                modeContextPanel
+
                 if mode == .search {
                     searchContent
                 } else {
@@ -91,6 +93,41 @@ struct SearchView: View {
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var modeContextPanel: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: mode == .search ? "magnifyingglass.circle.fill" : "sparkles.tv.fill")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 48, height: 48)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(mode == .search ? "Find a title fast" : "Browse the premium slate")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(mode == .search ? "Search local titles, genres, originals, and offline-ready movies." : "Discover originals, coming-soon stories, saved picks, and continue-watching paths.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: HFSpacing.xs) {
+                        HFSearchSignalChip(title: "\(HFMockData.movies.count) titles")
+                        HFSearchSignalChip(title: "\(HFMockData.movies.filter(\.isOriginal).count) originals")
+                        HFSearchSignalChip(title: "\(HFMockData.movies.filter { $0.isComingSoon }.count) upcoming")
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(mode == .search ? "Search context panel" : "Discover context panel")
     }
 
     private var searchContent: some View {
@@ -259,5 +296,22 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+    }
+}
+
+private struct HFSearchSignalChip: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(HFColors.gold)
+            .lineLimit(1)
+            .minimumScaleFactor(0.74)
+            .padding(.horizontal, HFSpacing.xs)
+            .frame(height: 24)
+            .background(HFColors.gold.opacity(0.10))
+            .overlay(Capsule().stroke(HFColors.gold.opacity(0.22), lineWidth: 1))
+            .clipShape(Capsule())
     }
 }

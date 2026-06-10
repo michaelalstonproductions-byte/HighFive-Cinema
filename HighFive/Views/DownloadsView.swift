@@ -19,6 +19,7 @@ struct DownloadsView: View {
                 header
                 downloadHero
                 storageStatus
+                offlinePlan
 
                 if downloads.isEmpty {
                     emptyState
@@ -161,6 +162,21 @@ struct DownloadsView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var offlinePlan: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Offline Plan", actionTitle: nil)
+
+            HStack(spacing: HFSpacing.sm) {
+                HFDownloadPlanTile(title: "Travel", subtitle: "Ready without signal", systemImage: "airplane")
+                HFDownloadPlanTile(title: "Home", subtitle: "Resume instantly", systemImage: "house.fill")
+                HFDownloadPlanTile(title: "Queue", subtitle: "\(downloads.count) saved", systemImage: "list.bullet.rectangle")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Offline plan summary")
+    }
+
     private var downloadList: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Available Offline", actionTitle: nil)
@@ -240,5 +256,38 @@ struct DownloadsView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Find more to download")
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+}
+
+private struct HFDownloadPlanTile: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: 16, strokeColor: HFColors.gold.opacity(0.22)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 32, height: 32)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(Circle())
+
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+
+                Text(subtitle)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(HFSpacing.sm)
+        }
     }
 }
