@@ -12,8 +12,8 @@ struct ProfileView: View {
     private let menuItems: [(title: String, systemImage: String)] = [
         ("Notifications", "bell.fill"),
         ("My List", "bookmark.fill"),
-        ("App Settings", "gearshape.fill"),
-        ("Account", "person.crop.circle.fill"),
+        ("Viewing Preferences", "slider.horizontal.3"),
+        ("Account Preview", "person.crop.circle.fill"),
         ("Help", "questionmark.circle.fill")
     ]
 
@@ -56,14 +56,17 @@ struct ProfileView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Text("Profiles & More")
+            Text("Your Profile")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Switch profiles, manage your list, adjust settings, and get help.")
+            Text("Manage your viewing space, saved titles, and HighFive Rooms.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your Profile, manage your viewing space, saved titles, and HighFive Rooms")
     }
 
     private var profileShortcutsSection: some View {
@@ -88,6 +91,8 @@ struct ProfileView: View {
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Profile switcher, watching as \(selectedProfile.name)")
     }
 
     private var selectedProfilePanel: some View {
@@ -295,7 +300,7 @@ struct ProfileView: View {
                 NavigationLink {
                     DeveloperQAHubView()
                 } label: {
-                    HFActionTile(
+                    HFInternalGatewayCard(
                         title: "Developer / QA Hub",
                         subtitle: "Internal validation, visual parity, route quality, and release readiness.",
                         systemImage: "wrench.and.screwdriver.fill"
@@ -327,7 +332,7 @@ struct ProfileView: View {
                     HFProductRoomEntryCard(
                         title: "Watch",
                         subtitle: "Streaming home, saved titles, downloads, and discovery.",
-                        status: "Live Preview",
+                        status: "WATCH",
                         systemImage: "play.rectangle.fill",
                         accent: HFColors.gold
                     )
@@ -341,7 +346,7 @@ struct ProfileView: View {
                     HFProductRoomEntryCard(
                         title: "Create",
                         subtitle: "Projects, pitches, creator profiles, and studio materials.",
-                        status: "Studio Preview",
+                        status: "CREATE",
                         systemImage: "wand.and.stars",
                         accent: Color.orange
                     )
@@ -355,7 +360,7 @@ struct ProfileView: View {
                     HFProductRoomEntryCard(
                         title: "Connect",
                         subtitle: "Audience communities, reactions, and creator engagement.",
-                        status: "Community Preview",
+                        status: "CONNECT",
                         systemImage: "person.2.fill",
                         accent: Color.cyan
                     )
@@ -369,7 +374,7 @@ struct ProfileView: View {
                     HFProductRoomEntryCard(
                         title: "Launch",
                         subtitle: "Premieres, campaigns, timelines, and release readiness.",
-                        status: "Launch Preview",
+                        status: "LAUNCH",
                         systemImage: "flag.checkered",
                         accent: HFColors.gold
                     )
@@ -383,7 +388,7 @@ struct ProfileView: View {
                     HFProductRoomEntryCard(
                         title: "Export",
                         subtitle: "Deliverables, media kits, and distribution packages.",
-                        status: "Readiness Preview",
+                        status: "EXPORT",
                         systemImage: "shippingbox.fill",
                         accent: Color.purple
                     )
@@ -456,15 +461,15 @@ struct ProfileView: View {
             onOpenMyList?()
         case "Notifications":
             showsNotifications = true
-        case "App Settings":
+        case "Viewing Preferences":
             activeMockSheet = ProfileMockSheet(
-                title: "App Settings",
+                title: "Viewing Preferences",
                 message: "Streaming display, download, and playback preferences will live here later.",
                 systemImage: "gearshape.fill"
             )
-        case "Account":
+        case "Account Preview":
             activeMockSheet = ProfileMockSheet(
-                title: "Account",
+                title: "Account Preview",
                 message: "Account preferences are in preview. No sign-in or billing is connected.",
                 systemImage: "person.crop.circle.fill"
             )
@@ -607,6 +612,60 @@ private struct HFProductRoomEntryCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) Room, \(subtitle)")
+    }
+}
+
+private struct HFInternalGatewayCard: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.glassStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(title)
+                            .font(HFTypography.menu)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("INTERNAL")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textMuted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .padding(.horizontal, HFSpacing.xs)
+                            .padding(.vertical, 6)
+                            .background(Color.white.opacity(0.06))
+                            .overlay(Capsule().stroke(HFColors.glassStroke, lineWidth: 1))
+                            .clipShape(Capsule())
+                    }
+
+                    Text(subtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(HFColors.textMuted)
+                    .padding(.top, 4)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), internal validation and release readiness")
     }
 }
 
