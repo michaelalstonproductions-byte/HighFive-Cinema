@@ -690,6 +690,11 @@ private struct WatchRoomView: View {
                     accent: HFColors.gold
                 )
 
+                HFRoomExperienceStrip(
+                    accent: HFColors.gold,
+                    items: ["Streaming-first", "Saved titles", "Offline-ready"]
+                )
+
                 VStack(spacing: HFSpacing.md) {
                     NavigationLink {
                         MovieDetailView(movie: featuredMovie)
@@ -727,6 +732,9 @@ private struct WatchRoomView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Watch Room feature cards")
+                .accessibilityIdentifier("hf.room.watch.features")
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -734,6 +742,7 @@ private struct WatchRoomView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Watch Room")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.room.watch.root")
     }
 }
 
@@ -900,8 +909,14 @@ private struct CreateRoomView: View {
                     accent: Color.orange
                 )
 
+                HFRoomExperienceStrip(
+                    accent: Color.orange,
+                    items: ["Project slate", "Pitch package", "Media kit"]
+                )
+
                 studioSectionSelector
                 selectedSectionView
+                    .accessibilityIdentifier("hf.room.create.features")
                 studioSafetyBoundary
             }
             .padding(.top, HFSpacing.lg)
@@ -910,6 +925,7 @@ private struct CreateRoomView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Creator Studio")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.room.create.root")
     }
 
     private var studioSectionSelector: some View {
@@ -1394,6 +1410,11 @@ private struct ConnectRoomView: View {
                     accent: Color.cyan
                 )
 
+                HFRoomExperienceStrip(
+                    accent: Color.cyan,
+                    items: ["Communities", "Audience energy", "Creator updates"]
+                )
+
                 VStack(spacing: HFSpacing.md) {
                     NavigationLink {
                         ConnectHubView()
@@ -1431,6 +1452,9 @@ private struct ConnectRoomView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Connect Room feature cards")
+                .accessibilityIdentifier("hf.room.connect.features")
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -1438,6 +1462,7 @@ private struct ConnectRoomView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Connect Room")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.room.connect.root")
     }
 }
 
@@ -1627,8 +1652,14 @@ private struct LaunchRoomView: View {
                     accent: accent
                 )
 
+                HFRoomExperienceStrip(
+                    accent: accent,
+                    items: ["Timeline", "Campaign preview", "Readiness"]
+                )
+
                 launchSectionSelector
                 selectedSectionView
+                    .accessibilityIdentifier("hf.room.launch.features")
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -1636,6 +1667,7 @@ private struct LaunchRoomView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Launch Room")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.room.launch.root")
     }
 
     private var launchSectionSelector: some View {
@@ -2216,8 +2248,14 @@ private struct ExportRoomView: View {
                     accent: accent
                 )
 
+                HFRoomExperienceStrip(
+                    accent: accent,
+                    items: ["Deliverables", "Media kit", "Handoff"]
+                )
+
                 exportSectionSelector
                 selectedSectionView
+                    .accessibilityIdentifier("hf.room.export.features")
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -2225,6 +2263,7 @@ private struct ExportRoomView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Export Room")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.room.export.root")
     }
 
     private var exportSectionSelector: some View {
@@ -2564,6 +2603,39 @@ private struct ExportReadinessGroupCard: View {
     }
 }
 
+private struct HFRoomExperienceStrip: View {
+    let accent: Color
+    let items: [String]
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.26)) {
+            HStack(spacing: HFSpacing.sm) {
+                ForEach(items, id: \.self) { item in
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "sparkle")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(item)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.76)
+                    }
+                    .font(HFTypography.micro)
+                    .foregroundStyle(accent)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(accent.opacity(0.10))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(accent.opacity(0.28), lineWidth: 1))
+                }
+            }
+            .padding(HFSpacing.sm)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Room signals, \(items.joined(separator: ", "))")
+    }
+}
+
 private struct HFProductRoomHero: View {
     let eyebrow: String
     let title: String
@@ -2582,6 +2654,18 @@ private struct HFProductRoomHero: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
+
+                Circle()
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 170, height: 170)
+                    .blur(radius: 18)
+                    .offset(x: 62, y: -54)
+
+                Circle()
+                    .fill(HFColors.warmGlow.opacity(0.16))
+                    .frame(width: 220, height: 220)
+                    .blur(radius: 24)
+                    .offset(x: -118, y: 132)
 
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
                     HStack(alignment: .top) {
@@ -2629,6 +2713,7 @@ private struct HFProductRoomHero: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title), \(subtitle), \(status)")
+        .accessibilityIdentifier("hf.room.\(eyebrow.lowercased()).hero")
     }
 }
 
