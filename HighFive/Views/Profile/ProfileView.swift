@@ -835,6 +835,31 @@ private struct HFRoomDepthBlueprint {
     let boundaryItems: [HFRoomBoundaryItem]
 }
 
+private struct HFRoomWorkflowStage: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+}
+
+private struct HFRoomWorkflowChecklistItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFRoomWorkflowPlan {
+    let title: String
+    let subtitle: String
+    let stages: [HFRoomWorkflowStage]
+    let checklist: [HFRoomWorkflowChecklistItem]
+    let nextStepTitle: String
+    let nextStepSubtitle: String
+    let nextStepActionTitle: String
+}
+
 private enum HFRoomDepthData {
     static let watch = HFRoomDepthBlueprint(
         readinessScore: 86,
@@ -982,6 +1007,121 @@ private enum HFRoomDepthData {
     )
 }
 
+private enum HFRoomWorkflowPlans {
+    static let watch = HFRoomWorkflowPlan(
+        title: "Viewing Flow",
+        subtitle: "A calm viewer path from featured title to saved and offline-ready shelves.",
+        stages: [
+            HFRoomWorkflowStage(title: "Featured", subtitle: "Start with the premiere surface.", status: "Ready", systemImage: "star.fill"),
+            HFRoomWorkflowStage(title: "Continue", subtitle: "Return to an in-progress title.", status: "Preview", systemImage: "play.rectangle.fill"),
+            HFRoomWorkflowStage(title: "My List", subtitle: "Keep saved titles close.", status: "Ready", systemImage: "bookmark.fill"),
+            HFRoomWorkflowStage(title: "Downloads", subtitle: "Show the offline-ready shelf.", status: "Local", systemImage: "arrow.down.circle.fill"),
+            HFRoomWorkflowStage(title: "Discover", subtitle: "Move into search and discovery.", status: "Preview", systemImage: "magnifyingglass")
+        ],
+        checklist: [
+            HFRoomWorkflowChecklistItem(title: "Featured premiere ready", detail: "Hero and Movie Detail route are ready for review.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Saved titles visible", detail: "My List keeps the viewer in the five-tab shell.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Offline-ready shelf", detail: "Downloads remains display-only in this phase.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Discovery rails", detail: "Search and discovery provide the return path.", state: "Preview")
+        ],
+        nextStepTitle: "Review Viewing Flow",
+        nextStepSubtitle: "Check that featured, saved, offline-ready, and discovery paths stay viewer-facing.",
+        nextStepActionTitle: "Review Watch Preview"
+    )
+
+    static let create = HFRoomWorkflowPlan(
+        title: "Creator Package Timeline",
+        subtitle: "Prepare a project package from slate to launch materials with local preview steps.",
+        stages: [
+            HFRoomWorkflowStage(title: "Project Slate", subtitle: "Choose the title package to prepare.", status: "Ready", systemImage: "film.stack.fill"),
+            HFRoomWorkflowStage(title: "Story Positioning", subtitle: "Clarify promise, audience, tone, and format.", status: "Draft", systemImage: "text.quote"),
+            HFRoomWorkflowStage(title: "Pitch Package", subtitle: "Shape the story and release angle.", status: "Preview", systemImage: "rectangle.stack.fill"),
+            HFRoomWorkflowStage(title: "Media Kit", subtitle: "Group poster, stills, synopsis, and creator notes.", status: "Preview", systemImage: "photo.stack.fill"),
+            HFRoomWorkflowStage(title: "Launch Prep", subtitle: "Carry finished copy into release planning.", status: "Deferred", systemImage: "flag.checkered")
+        ],
+        checklist: [
+            HFRoomWorkflowChecklistItem(title: "Title synopsis", detail: "Short story summary is ready for the package.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Audience promise", detail: "Viewer promise is drafted for pitch review.", state: "Draft"),
+            HFRoomWorkflowChecklistItem(title: "Poster / stills placeholder", detail: "Visual placeholders are present for review.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Creator profile", detail: "Creator identity is display-only and ready to inspect.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Pitch notes", detail: "Story, tone, and format notes are prepared locally.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Launch materials", detail: "Release copy is grouped for later planning.", state: "Deferred")
+        ],
+        nextStepTitle: "Prepare Pitch Package",
+        nextStepSubtitle: "Shape the story, audience, and release angle before launch.",
+        nextStepActionTitle: "Review Pitch Preview"
+    )
+
+    static let connect = HFRoomWorkflowPlan(
+        title: "Audience Connection Timeline",
+        subtitle: "Organize community activity around a title while staying local and preview-only.",
+        stages: [
+            HFRoomWorkflowStage(title: "Communities", subtitle: "Group audiences by title and creator.", status: "Preview", systemImage: "person.3.fill"),
+            HFRoomWorkflowStage(title: "Creator Updates", subtitle: "Plan behind-the-scenes story beats.", status: "Local", systemImage: "text.bubble.fill"),
+            HFRoomWorkflowStage(title: "Reactions", subtitle: "Review static audience response signals.", status: "Preview", systemImage: "heart.text.square.fill"),
+            HFRoomWorkflowStage(title: "Following", subtitle: "Show how viewers return to creators.", status: "Preview", systemImage: "person.badge.plus.fill"),
+            HFRoomWorkflowStage(title: "Watch Community", subtitle: "Frame a future conversation moment.", status: "Deferred", systemImage: "play.tv.fill")
+        ],
+        checklist: [
+            HFRoomWorkflowChecklistItem(title: "Creator update topic", detail: "A local topic is ready for room review.", state: "Draft"),
+            HFRoomWorkflowChecklistItem(title: "Premiere conversation", detail: "The room frames release-week audience context.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Audience group", detail: "Community grouping is visible and static.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Reaction preview", detail: "Response cards remain local signals.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Watch community prompt", detail: "Prompt copy is prepared for later room review.", state: "Deferred")
+        ],
+        nextStepTitle: "Preview Community Moment",
+        nextStepSubtitle: "Plan how audiences gather around the story before real social systems are connected.",
+        nextStepActionTitle: "Review Community Preview"
+    )
+
+    static let launch = HFRoomWorkflowPlan(
+        title: "Launch Timeline",
+        subtitle: "Prepare a premiere and release campaign as a static planning workflow.",
+        stages: [
+            HFRoomWorkflowStage(title: "Announcement", subtitle: "Frame the first public story beat.", status: "Draft", systemImage: "sparkles"),
+            HFRoomWorkflowStage(title: "Campaign Preview", subtitle: "Shape headline, hook, and creator note.", status: "Preview", systemImage: "megaphone.fill"),
+            HFRoomWorkflowStage(title: "Premiere Window", subtitle: "Hold a placeholder for timing review.", status: "Deferred", systemImage: "calendar.badge.clock"),
+            HFRoomWorkflowStage(title: "Audience Build", subtitle: "Connect community energy to launch copy.", status: "Preview", systemImage: "person.3.fill"),
+            HFRoomWorkflowStage(title: "Release Readiness", subtitle: "Check materials before release review.", status: "Ready", systemImage: "checkmark.seal.fill")
+        ],
+        checklist: [
+            HFRoomWorkflowChecklistItem(title: "Campaign headline", detail: "Headline direction is ready for review.", state: "Draft"),
+            HFRoomWorkflowChecklistItem(title: "Premiere date placeholder", detail: "Timing remains a static planning field.", state: "Deferred"),
+            HFRoomWorkflowChecklistItem(title: "Poster materials", detail: "Key art direction is represented locally.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Synopsis", detail: "Short and long story copy support the plan.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Creator note", detail: "Creator context is ready for launch review.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Release readiness", detail: "Manual readiness remains local and static.", state: "Ready")
+        ],
+        nextStepTitle: "Prepare Premiere Plan",
+        nextStepSubtitle: "Shape the public release story before live campaign systems are connected.",
+        nextStepActionTitle: "Review Launch Plan"
+    )
+
+    static let export = HFRoomWorkflowPlan(
+        title: "Delivery Timeline",
+        subtitle: "Organize deliverables and distribution readiness as protected planning data.",
+        stages: [
+            HFRoomWorkflowStage(title: "Deliverables", subtitle: "List the package materials.", status: "Review", systemImage: "shippingbox.fill"),
+            HFRoomWorkflowStage(title: "Media Kit", subtitle: "Group artwork, stills, synopsis, and notes.", status: "Preview", systemImage: "photo.stack.fill"),
+            HFRoomWorkflowStage(title: "Festival Package", subtitle: "Prepare festival-facing copy.", status: "Preview", systemImage: "rosette"),
+            HFRoomWorkflowStage(title: "Platform Checklist", subtitle: "Map future platform requirements.", status: "Protected", systemImage: "checklist.checked"),
+            HFRoomWorkflowStage(title: "Handoff Readiness", subtitle: "Review package completeness.", status: "Protected", systemImage: "lock.shield.fill")
+        ],
+        checklist: [
+            HFRoomWorkflowChecklistItem(title: "Poster", detail: "Key art direction is represented for review.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Stills", detail: "Still selections remain local references.", state: "Draft"),
+            HFRoomWorkflowChecklistItem(title: "Synopsis", detail: "Short and long copy are ready to inspect.", state: "Ready"),
+            HFRoomWorkflowChecklistItem(title: "Credits", detail: "Credit details remain a review item.", state: "Deferred"),
+            HFRoomWorkflowChecklistItem(title: "Creator notes", detail: "Creator context carries from launch planning.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Festival packet", detail: "Festival-facing materials are grouped locally.", state: "Preview"),
+            HFRoomWorkflowChecklistItem(title: "Platform checklist", detail: "Requirements are static and protected.", state: "Protected")
+        ],
+        nextStepTitle: "Review Distribution Package",
+        nextStepSubtitle: "Check package completeness before real delivery systems are connected.",
+        nextStepActionTitle: "Review Handoff Preview"
+    )
+}
+
 private struct WatchRoomView: View {
     @State private var searchMode: HFSearchHubMode = .discover
 
@@ -1009,6 +1149,7 @@ private struct WatchRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: HFColors.gold)
+                HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.watch, accent: HFColors.gold, roomID: "watch")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.watch, accent: HFColors.gold)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.watch.pipelineStages, accent: HFColors.gold)
                 HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.watch.workflowSteps, accent: HFColors.gold)
@@ -1235,6 +1376,7 @@ private struct CreateRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: Color.orange)
+                HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.create, accent: Color.orange, roomID: "create")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.create, accent: Color.orange)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.create.pipelineStages, accent: Color.orange)
                 HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.create.workflowSteps, accent: Color.orange)
@@ -1742,6 +1884,7 @@ private struct ConnectRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: Color.cyan)
+                HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.connect, accent: Color.cyan, roomID: "connect")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.connect, accent: Color.cyan)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.connect.pipelineStages, accent: Color.cyan)
                 HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.connect.workflowSteps, accent: Color.cyan)
@@ -1991,6 +2134,7 @@ private struct LaunchRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: accent)
+                HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.launch, accent: accent, roomID: "launch")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.launch, accent: accent)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.launch.pipelineStages, accent: accent)
                 HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.launch.workflowSteps, accent: accent)
@@ -2593,6 +2737,7 @@ private struct ExportRoomView: View {
                 )
 
                 HFRoomDepthSnapshotStrip(accent: accent)
+                HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.export, accent: accent, roomID: "export")
                 HFRoomReadinessPanel(blueprint: HFRoomDepthData.export, accent: accent)
                 HFRoomPipelineStrip(stages: HFRoomDepthData.export.pipelineStages, accent: accent)
                 HFRoomWorkflowDepthPanel(steps: HFRoomDepthData.export.workflowSteps, accent: accent)
@@ -2945,6 +3090,284 @@ private struct ExportReadinessGroupCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(group.title), \(group.readiness), \(group.detail)")
+    }
+}
+
+private struct HFRoomGuidedWorkflowSection: View {
+    let plan: HFRoomWorkflowPlan
+    let accent: Color
+    let roomID: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFRoomWorkflowFocusCard(plan: plan, accent: accent)
+            HFRoomWorkflowTimeline(stages: plan.stages, accent: accent)
+            HFRoomWorkflowChecklist(items: plan.checklist, accent: accent, roomID: roomID)
+            HFRoomWorkflowNextStepCard(plan: plan, accent: accent, roomID: roomID)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(plan.title), guided local workflow, \(plan.subtitle)")
+        .accessibilityIdentifier("hf.room.\(roomID).workflow")
+    }
+}
+
+private struct HFRoomWorkflowFocusCard: View {
+    let plan: HFRoomWorkflowPlan
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 21, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Guided Workflow", accent: accent)
+                        Text(plan.title)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(plan.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    HFRoomWorkflowMetric(title: "Stages", value: "\(plan.stages.count)", accent: accent)
+                    HFRoomWorkflowMetric(title: "Checklist", value: "\(plan.checklist.count)", accent: accent)
+                    HFRoomWorkflowMetric(title: "Mode", value: "Local", accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(plan.title), \(plan.stages.count) stages, \(plan.checklist.count) checklist items, local mode")
+    }
+}
+
+private struct HFRoomWorkflowMetric: View {
+    let title: String
+    let value: String
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFRoomWorkflowTimeline: View {
+    let stages: [HFRoomWorkflowStage]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Workflow Timeline")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Preview", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(stages.enumerated()), id: \.element.id) { index, stage in
+                        HFRoomWorkflowStageCard(stage: stage, index: index + 1, accent: accent)
+
+                        if index < stages.count - 1 {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .black))
+                                .foregroundStyle(accent.opacity(0.70))
+                                .padding(.top, 54)
+                        }
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Workflow Timeline, \(stages.map(\.title).joined(separator: ", "))")
+    }
+}
+
+private struct HFRoomWorkflowStageCard: View {
+    let stage: HFRoomWorkflowStage
+    let index: Int
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text("\(index)")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(.black)
+                        .frame(width: 22, height: 22)
+                        .background(accent)
+                        .clipShape(Circle())
+
+                    Image(systemName: stage.systemImage)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(accent)
+                }
+
+                Text(stage.title)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HFRoomStatusChip(title: stage.status, accent: accent)
+
+                Text(stage.subtitle)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(width: 158, alignment: .leading)
+            .padding(HFSpacing.sm)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Stage \(index), \(stage.title), \(stage.status), \(stage.subtitle)")
+    }
+}
+
+private struct HFRoomWorkflowChecklist: View {
+    let items: [HFRoomWorkflowChecklistItem]
+    let accent: Color
+    let roomID: String
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Workflow Checklist")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Manual", accent: accent)
+            }
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(items) { item in
+                    HFRoomWorkflowChecklistCard(item: item, accent: accent)
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Workflow Checklist, \(items.count) local checklist items")
+        .accessibilityIdentifier("hf.room.\(roomID).checklist")
+    }
+}
+
+private struct HFRoomWorkflowChecklistCard: View {
+    let item: HFRoomWorkflowChecklistItem
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: item.state, accent: accent)
+                }
+            }
+
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(accent.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.state), \(item.detail)")
+    }
+}
+
+private struct HFRoomWorkflowNextStepCard: View {
+    let plan: HFRoomWorkflowPlan
+    let accent: Color
+    let roomID: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "arrow.up.right.circle.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Next Step", accent: accent)
+                    Text(plan.nextStepTitle)
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(plan.nextStepSubtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(plan.nextStepActionTitle)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .padding(.vertical, 10)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Next step, \(plan.nextStepTitle), \(plan.nextStepSubtitle), \(plan.nextStepActionTitle)")
+        .accessibilityIdentifier("hf.room.\(roomID).nextStep")
     }
 }
 
