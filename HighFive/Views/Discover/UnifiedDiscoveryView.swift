@@ -16,7 +16,9 @@ struct UnifiedDiscoveryView: View {
             ForEach(streamingDiscoveryRails) { category in
                 movieRail(category)
             }
+            .accessibilityIdentifier("hf.consumer.discovery.rails")
         }
+        .accessibilityIdentifier("hf.consumer.discover.root")
     }
 
     private var streamingDiscoveryRails: [Category] {

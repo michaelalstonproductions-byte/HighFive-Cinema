@@ -24,28 +24,58 @@ struct HFStreamingRootView: View {
     ]
 
     private static var initialTab: HFStreamingTab {
-        Self.shouldStartInProfile ? .profile : .home
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-search") { return .search }
+        if arguments.contains("--hf-start-library") { return .library }
+        if arguments.contains("--hf-start-downloads") { return .downloads }
+        if Self.shouldStartInProfile { return .profile }
+        return .home
     }
 
     private static var shouldSkipLaunchIntro: Bool {
         let arguments = ProcessInfo.processInfo.arguments
-        return arguments.contains("--hf-skip-onboarding") || Self.shouldStartInProfile
+        return arguments.contains("--hf-skip-onboarding") || Self.shouldStartAfterOnboarding
+    }
+
+    private static var shouldStartAfterOnboarding: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-home")
+            || arguments.contains("--hf-start-search")
+            || arguments.contains("--hf-start-library")
+            || arguments.contains("--hf-start-downloads")
+            || arguments.contains("--hf-start-movie-detail")
+            || Self.shouldStartInProfile
     }
 
     private static var shouldStartInProfile: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-profile")
+            || arguments.contains("--hf-start-profile-rooms")
             || arguments.contains("--hf-start-watch-room")
             || arguments.contains("--hf-start-create-room")
             || arguments.contains("--hf-start-connect-room")
             || arguments.contains("--hf-start-launch-room")
             || arguments.contains("--hf-start-export-room")
+            || arguments.contains("--hf-start-developer-qa")
+            || arguments.contains("--hf-start-demo-tour")
+    }
+
+    private static var shouldStartInMovieDetail: Bool {
+        ProcessInfo.processInfo.arguments.contains("--hf-start-movie-detail")
+    }
+
+    private static var qaMovieDetailMovie: Movie {
+        HFMockData.movie("friendly") ?? HFMockData.movies[0]
     }
 
     var body: some View {
         Group {
             if hasCompletedLaunchIntro {
-                streamingShell
+                if Self.shouldStartInMovieDetail {
+                    qaMovieDetailView
+                } else {
+                    streamingShell
+                }
             } else {
                 HFLaunchIntroSequenceView {
                     withAnimation(.easeInOut(duration: 0.35)) {
@@ -57,6 +87,13 @@ struct HFStreamingRootView: View {
         .tint(HFColors.gold)
         .preferredColorScheme(.dark)
         .environmentObject(streamingStore)
+    }
+
+    private var qaMovieDetailView: some View {
+        NavigationStack {
+            MovieDetailView(movie: Self.qaMovieDetailMovie)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
     private var streamingShell: some View {

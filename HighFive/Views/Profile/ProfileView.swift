@@ -19,8 +19,8 @@ struct ProfileView: View {
 
     var body: some View {
         Group {
-            if let roomTarget = Self.qaRoomLaunchTarget {
-                qaRoomLaunchView(roomTarget)
+            if let launchTarget = Self.qaLaunchTarget {
+                qaLaunchView(launchTarget)
             } else {
                 profileContent
             }
@@ -65,8 +65,10 @@ struct ProfileView: View {
     }
 
     @ViewBuilder
-    private func qaRoomLaunchView(_ target: HFProfileRoomLaunchTarget) -> some View {
+    private func qaLaunchView(_ target: HFProfileQALaunchTarget) -> some View {
         switch target {
+        case .roomsGateway:
+            profileRoomsGatewayQAView
         case .watch:
             WatchRoomView()
         case .create:
@@ -77,6 +79,10 @@ struct ProfileView: View {
             LaunchRoomView()
         case .export:
             ExportRoomView()
+        case .developerQA:
+            DeveloperQAHubView()
+        case .demoTour:
+            FinalDemoTourView()
         }
     }
 
@@ -95,22 +101,39 @@ struct ProfileView: View {
         .accessibilityLabel("Your Profile, manage your viewing space, saved titles, and HighFive Rooms")
     }
 
-    private enum HFProfileRoomLaunchTarget {
+    private enum HFProfileQALaunchTarget {
+        case roomsGateway
         case watch
         case create
         case connect
         case launch
         case export
+        case developerQA
+        case demoTour
     }
 
-    private static var qaRoomLaunchTarget: HFProfileRoomLaunchTarget? {
+    private static var qaLaunchTarget: HFProfileQALaunchTarget? {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-profile-rooms") { return .roomsGateway }
         if arguments.contains("--hf-start-watch-room") { return .watch }
         if arguments.contains("--hf-start-create-room") { return .create }
         if arguments.contains("--hf-start-connect-room") { return .connect }
         if arguments.contains("--hf-start-launch-room") { return .launch }
         if arguments.contains("--hf-start-export-room") { return .export }
+        if arguments.contains("--hf-start-developer-qa") { return .developerQA }
+        if arguments.contains("--hf-start-demo-tour") { return .demoTour }
         return nil
+    }
+
+    private var profileRoomsGatewayQAView: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                header
+                highFiveRoomsSection
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
     }
 
     private var profileShortcutsSection: some View {

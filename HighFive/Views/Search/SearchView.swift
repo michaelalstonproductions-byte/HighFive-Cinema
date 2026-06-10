@@ -69,6 +69,7 @@ struct SearchView: View {
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
+        .accessibilityIdentifier("hf.consumer.search.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
@@ -82,6 +83,7 @@ struct SearchView: View {
                     .onSubmit {
                         streamingStore.addRecentSearch(query)
                     }
+                    .accessibilityIdentifier("hf.consumer.search.field")
             } else {
                 Text("Browse movies, originals, saved titles, and upcoming premieres.")
                     .font(HFTypography.body)
@@ -103,6 +105,7 @@ struct SearchView: View {
 
             resultsGrid
         }
+        .accessibilityIdentifier("hf.consumer.discovery.rails")
     }
 
     private var filterChips: some View {

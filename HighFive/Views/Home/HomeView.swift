@@ -36,6 +36,7 @@ struct HomeView: View {
                 ForEach(HFMockData.premiumHomeRails) { category in
                     movieRail(category)
                 }
+                .accessibilityIdentifier("hf.consumer.home.posterRails")
 
                 goldDiscoveryRail
                 smartRecommendationsSection
@@ -43,6 +44,7 @@ struct HomeView: View {
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
+        .accessibilityIdentifier("hf.consumer.home.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(item: $previewMovie) { movie in
             HFMockPlayerSheet(movie: movie)
@@ -332,6 +334,7 @@ struct HomeView: View {
         )
         .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 28, x: 0, y: 18)
         .padding(.horizontal, HFResponsiveFit.heroHorizontalInset(width: screenWidth))
+        .accessibilityIdentifier("hf.consumer.home.hero")
     }
 
     private var heroPosterStack: some View {

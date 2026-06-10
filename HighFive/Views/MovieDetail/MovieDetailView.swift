@@ -39,6 +39,7 @@ struct MovieDetailView: View {
             }
             .padding(.bottom, detailBottomClearance)
         }
+        .accessibilityIdentifier("hf.consumer.movieDetail.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .sheet(item: $previewMovie) { movie in
@@ -123,6 +124,7 @@ struct MovieDetailView: View {
                         HFButton("Watch Now", systemImage: "play.fill") {
                             previewMovie = movie
                         }
+                        .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
 
                         HFButton(
                             streamingStore.isSaved(movie) ? "In My List" : "Save",
@@ -143,6 +145,7 @@ struct MovieDetailView: View {
                 .stroke(HFColors.stroke, lineWidth: 1)
         )
         .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 24, x: 0, y: 14)
+        .accessibilityIdentifier("hf.consumer.movieDetail.hero")
     }
 
     private var detailMetadataChips: some View {
@@ -306,6 +309,7 @@ struct MovieDetailView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .accessibilityIdentifier("hf.consumer.movieDetail.related")
     }
 
     private var bottomScrollClearance: some View {

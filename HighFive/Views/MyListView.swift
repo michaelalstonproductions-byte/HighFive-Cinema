@@ -44,6 +44,7 @@ struct MyListView: View {
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
+        .accessibilityIdentifier("hf.consumer.library.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
@@ -71,6 +72,7 @@ struct MyListView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityIdentifier("hf.consumer.library.filters")
     }
 
     private var savedGrid: some View {
@@ -88,6 +90,7 @@ struct MyListView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityIdentifier("hf.consumer.library.savedShelf")
     }
 
     private var savedSummary: some View {

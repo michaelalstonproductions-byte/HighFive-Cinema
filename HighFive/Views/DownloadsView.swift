@@ -31,6 +31,7 @@ struct DownloadsView: View {
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
+        .accessibilityIdentifier("hf.consumer.downloads.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .alert("Remove Offline Titles?", isPresented: $showsRemoveAllAlert) {
             Button("Cancel", role: .cancel) {}
@@ -69,6 +70,7 @@ struct DownloadsView: View {
             .accessibilityLabel("Find more downloads")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.consumer.downloads.storageCard")
     }
 
     private var downloadHero: some View {
@@ -113,7 +115,7 @@ struct DownloadsView: View {
     }
 
     private func heroPoster(movie: Movie, rotation: Double) -> some View {
-        HFPosterCard(movie: movie, width: 164, showTitle: false, posterOnly: true)
+        HFPosterCard(movie: movie, width: 146, showTitle: false, posterOnly: true)
             .rotationEffect(.degrees(rotation))
             .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 24, x: 0, y: 16)
     }
@@ -206,6 +208,7 @@ struct DownloadsView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityIdentifier("hf.consumer.downloads.offlineShelf")
     }
 
     private var emptyState: some View {
