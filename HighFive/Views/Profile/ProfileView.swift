@@ -18,20 +18,12 @@ struct ProfileView: View {
     ]
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                header
-                selectedProfilePanel
-                avatarRow
-                manageProfilesButton
-
-                menu
-                highFiveRoomsSection
-                buildQAToolsSection
-                signOutButton
+        Group {
+            if let roomTarget = Self.qaRoomLaunchTarget {
+                qaRoomLaunchView(roomTarget)
+            } else {
+                profileContent
             }
-            .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.profile.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
@@ -54,6 +46,40 @@ struct ProfileView: View {
         }
     }
 
+    private var profileContent: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                header
+                selectedProfilePanel
+                avatarRow
+                manageProfilesButton
+
+                menu
+                highFiveRoomsSection
+                buildQAToolsSection
+                signOutButton
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.bottom, HFSpacing.floatingTabClearance)
+        }
+    }
+
+    @ViewBuilder
+    private func qaRoomLaunchView(_ target: HFProfileRoomLaunchTarget) -> some View {
+        switch target {
+        case .watch:
+            WatchRoomView()
+        case .create:
+            CreateRoomView()
+        case .connect:
+            ConnectRoomView()
+        case .launch:
+            LaunchRoomView()
+        case .export:
+            ExportRoomView()
+        }
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
             Text("Your Profile")
@@ -67,6 +93,24 @@ struct ProfileView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Your Profile, manage your viewing space, saved titles, and HighFive Rooms")
+    }
+
+    private enum HFProfileRoomLaunchTarget {
+        case watch
+        case create
+        case connect
+        case launch
+        case export
+    }
+
+    private static var qaRoomLaunchTarget: HFProfileRoomLaunchTarget? {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-watch-room") { return .watch }
+        if arguments.contains("--hf-start-create-room") { return .create }
+        if arguments.contains("--hf-start-connect-room") { return .connect }
+        if arguments.contains("--hf-start-launch-room") { return .launch }
+        if arguments.contains("--hf-start-export-room") { return .export }
+        return nil
     }
 
     private var profileShortcutsSection: some View {
@@ -685,7 +729,7 @@ private struct WatchRoomView: View {
                     subtitle: "The consumer streaming layer of HighFive Cinema.",
                     purpose: "This room connects the viewer to content.",
                     heroCopy: "Your streaming home for featured titles, saved films, downloads, and discovery.",
-                    status: "Live Preview",
+                    status: "Local Preview",
                     systemImage: "play.rectangle.fill",
                     accent: HFColors.gold
                 )
@@ -699,7 +743,7 @@ private struct WatchRoomView: View {
                     NavigationLink {
                         MovieDetailView(movie: featuredMovie)
                     } label: {
-                        HFRoomFeatureCard(title: "Continue Watching", subtitle: "Resume titles already in progress with the Watch Now path.", status: "Live Preview", systemImage: "play.fill", accent: HFColors.gold)
+                        HFRoomFeatureCard(title: "Continue Watching", subtitle: "Resume titles already in progress with the Watch Now path.", status: "Local Preview", systemImage: "play.fill", accent: HFColors.gold)
                     }
                     .buttonStyle(.plain)
 
@@ -1654,7 +1698,7 @@ private struct LaunchRoomView: View {
 
                 HFRoomExperienceStrip(
                     accent: accent,
-                    items: ["Timeline", "Campaign preview", "Readiness"]
+                    items: ["Timeline", "Campaign", "Readiness"]
                 )
 
                 launchSectionSelector

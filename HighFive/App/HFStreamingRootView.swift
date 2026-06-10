@@ -24,12 +24,22 @@ struct HFStreamingRootView: View {
     ]
 
     private static var initialTab: HFStreamingTab {
-        ProcessInfo.processInfo.arguments.contains("--hf-start-profile") ? .profile : .home
+        Self.shouldStartInProfile ? .profile : .home
     }
 
     private static var shouldSkipLaunchIntro: Bool {
         let arguments = ProcessInfo.processInfo.arguments
-        return arguments.contains("--hf-skip-onboarding") || arguments.contains("--hf-start-profile")
+        return arguments.contains("--hf-skip-onboarding") || Self.shouldStartInProfile
+    }
+
+    private static var shouldStartInProfile: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-profile")
+            || arguments.contains("--hf-start-watch-room")
+            || arguments.contains("--hf-start-create-room")
+            || arguments.contains("--hf-start-connect-room")
+            || arguments.contains("--hf-start-launch-room")
+            || arguments.contains("--hf-start-export-room")
     }
 
     var body: some View {
