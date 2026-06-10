@@ -947,6 +947,47 @@ private struct HFCreatorSlatePreview {
     let projects: [HFCreatorSlateProject]
 }
 
+private struct HFCreatorPitchBeat: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFCreatorPitchSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let shapes: String
+    let readySummary: String
+    let previewSummary: String
+    let deferredSummary: String
+    let beats: [HFCreatorPitchBeat]
+}
+
+private struct HFCreatorPitchReadinessRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+}
+
+private struct HFCreatorPitchPackage: Identifiable {
+    let id = UUID()
+    let projectTitle: String
+    let pitchTitle: String
+    let logline: String
+    let genre: String
+    let format: String
+    let audience: String
+    let releaseAngle: String
+    let pitchStatus: String
+    let sections: [HFCreatorPitchSection]
+    let readinessRows: [HFCreatorPitchReadinessRow]
+}
+
 private struct HFConnectPlannerPrompt: Identifiable {
     let id = UUID()
     let title: String
@@ -1808,6 +1849,131 @@ private enum HFCreatorStudioSlatePreviewData {
                     HFCreatorSlateMaterial(title: "Release angle", detail: "Campaign direction stays future-facing.", state: "Deferred", systemImage: "sparkles")
                 ]
             )
+        ]
+    )
+}
+
+private enum HFCreatorPitchPackagePreviewData {
+    static let pitch = HFCreatorPitchPackage(
+        projectTitle: "The Friendly",
+        pitchTitle: "A warm premium premiere for family-forward streaming.",
+        logline: "A heartfelt cinematic story built around kindness, memory, and a family watch-night mood.",
+        genre: "Drama / Family / Original",
+        format: "Feature Film",
+        audience: "Premium streaming viewers and family watch-night audiences.",
+        releaseAngle: "A HighFive Original positioned for a warm premiere campaign.",
+        pitchStatus: "Preview Pitch",
+        sections: [
+            HFCreatorPitchSection(
+                title: "Story Positioning",
+                subtitle: "Define the story promise and emotional lane.",
+                status: "Ready",
+                systemImage: "doc.text.fill",
+                shapes: "Shapes the core promise, emotional hook, and genre lane for a premium pitch.",
+                readySummary: "Core promise and emotional hook are ready to inspect.",
+                previewSummary: "Comparable feel and audience mood remain local pitch notes.",
+                deferredSummary: "Live editorial review is not connected.",
+                beats: [
+                    HFCreatorPitchBeat(title: "Core promise", detail: "A kind, memory-led family story with cinematic warmth.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Emotional hook", detail: "Kindness reframes the family watch-night mood.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Genre lane", detail: "Drama, family, and original streaming positioning.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Audience mood", detail: "Hopeful, premium, and shared.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Comparable feel", detail: "Festival-friendly warmth with streaming accessibility.", state: "Preview")
+                ]
+            ),
+            HFCreatorPitchSection(
+                title: "Audience Promise",
+                subtitle: "Clarify who the title serves and why they stay.",
+                status: "Preview",
+                systemImage: "person.3.fill",
+                shapes: "Shapes the primary viewer, watch-night use case, and viewer takeaway.",
+                readySummary: "Primary viewer and title promise are defined.",
+                previewSummary: "Community angle and viewer takeaway are still preview copy.",
+                deferredSummary: "Live audience systems remain disconnected.",
+                beats: [
+                    HFCreatorPitchBeat(title: "Primary viewer", detail: "Premium viewers looking for a warm original.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Watch-night use case", detail: "A family-forward weekend premiere.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Community angle", detail: "A story people can recommend across generations.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Title promise", detail: "A heartfelt original built around kindness.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Viewer takeaway", detail: "Leave with a warmer sense of memory and connection.", state: "Draft")
+                ]
+            ),
+            HFCreatorPitchSection(
+                title: "Format / Release Fit",
+                subtitle: "Match format, runtime, and placement to the title.",
+                status: "Draft",
+                systemImage: "rectangle.stack.fill",
+                shapes: "Shapes the feature fit, release path, premiere suitability, and HighFive placement.",
+                readySummary: "Feature format and HighFive placement are clear.",
+                previewSummary: "Runtime expectation and release path remain pitch placeholders.",
+                deferredSummary: "Live release services remain disconnected.",
+                beats: [
+                    HFCreatorPitchBeat(title: "Feature fit", detail: "Best held as a feature-length emotional arc.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Runtime expectation", detail: "Feature-length placeholder for pitch context.", state: "Draft"),
+                    HFCreatorPitchBeat(title: "Release path", detail: "Warm original premiere with follow-on discovery.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Premiere suitability", detail: "Strong fit for a calm featured premiere.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "HighFive placement", detail: "Originals-led story with family watch appeal.", state: "Ready")
+                ]
+            ),
+            HFCreatorPitchSection(
+                title: "Creator Statement",
+                subtitle: "Frame the voice behind the title.",
+                status: "Preview",
+                systemImage: "person.text.rectangle.fill",
+                shapes: "Shapes creator voice, story origin, timing, and audience connection.",
+                readySummary: "Creator voice and title intention are framed.",
+                previewSummary: "Story origin and why-now copy are local editorial notes.",
+                deferredSummary: "Identity services remain disconnected.",
+                beats: [
+                    HFCreatorPitchBeat(title: "Creator voice", detail: "Warm, grounded, and cinematic.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Story origin", detail: "A personal idea about kindness and memory.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Why now", detail: "A gentle original for viewers seeking emotional calm.", state: "Draft"),
+                    HFCreatorPitchBeat(title: "Audience connection", detail: "The title invites shared family conversation.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Title intention", detail: "Make the viewer feel seen and restored.", state: "Ready")
+                ]
+            ),
+            HFCreatorPitchSection(
+                title: "Visual / Media Notes",
+                subtitle: "Preview the visual direction without media intake.",
+                status: "Deferred",
+                systemImage: "photo.stack.fill",
+                shapes: "Shapes poster direction, stills placeholders, tone references, and media-kit reminders.",
+                readySummary: "Tone reference and title card note are present.",
+                previewSummary: "Poster direction and stills are planning placeholders.",
+                deferredSummary: "Library access and media intake remain disconnected.",
+                beats: [
+                    HFCreatorPitchBeat(title: "Poster direction", detail: "Warm key art with a clear family silhouette.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Stills placeholder", detail: "Local row for future still selection context.", state: "Deferred"),
+                    HFCreatorPitchBeat(title: "Tone reference", detail: "Soft gold, gentle contrast, quiet cinematic frame.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Title card note", detail: "Simple, premium, and readable.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Media kit reminder", detail: "Press copy and creator bio need final review.", state: "Draft")
+                ]
+            ),
+            HFCreatorPitchSection(
+                title: "Launch Angle",
+                subtitle: "Connect the pitch to a future campaign plan.",
+                status: "Local",
+                systemImage: "flag.checkered",
+                shapes: "Shapes campaign hook, premiere line, creator update, and launch-room bridge.",
+                readySummary: "Campaign hook and premiere line are ready to preview.",
+                previewSummary: "Creator update and audience build remain local planning notes.",
+                deferredSummary: "Live release and audience-alert systems remain disconnected.",
+                beats: [
+                    HFCreatorPitchBeat(title: "Campaign hook", detail: "A heartfelt HighFive Original for family watch night.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Premiere line", detail: "A warm premiere built around kindness and memory.", state: "Ready"),
+                    HFCreatorPitchBeat(title: "Creator update", detail: "A creator note can frame the title origin.", state: "Draft"),
+                    HFCreatorPitchBeat(title: "Audience build", detail: "Family-forward discovery and saved-title momentum.", state: "Preview"),
+                    HFCreatorPitchBeat(title: "Launch room bridge", detail: "Prepared for local campaign planning only.", state: "Local")
+                ]
+            )
+        ],
+        readinessRows: [
+            HFCreatorPitchReadinessRow(title: "Story Positioning", detail: "Core story promise is ready for local review.", status: "Ready"),
+            HFCreatorPitchReadinessRow(title: "Audience Promise", detail: "Viewer promise and use case are preview-ready.", status: "Preview"),
+            HFCreatorPitchReadinessRow(title: "Format / Release Fit", detail: "Feature positioning needs one more pass.", status: "Draft"),
+            HFCreatorPitchReadinessRow(title: "Creator Statement", detail: "Voice and intention are framed.", status: "Preview"),
+            HFCreatorPitchReadinessRow(title: "Media Notes", detail: "Visual direction remains a planning placeholder.", status: "Deferred"),
+            HFCreatorPitchReadinessRow(title: "Delivery Systems", detail: "Professional delivery remains separated.", status: "Protected")
         ]
     )
 }
@@ -2946,6 +3112,7 @@ private struct CreateRoomView: View {
                 )
 
                 HFCreatorStudioSlateSection(slate: HFCreatorStudioSlatePreviewData.slate, accent: Color.orange)
+                HFCreatorPitchPackageSection(pitch: HFCreatorPitchPackagePreviewData.pitch, accent: Color.orange)
                 HFCreatorPackageBuilderSection(package: HFCreatorPackageBuilderPreviewData.package, accent: Color.orange)
                 HFRoomDepthSnapshotStrip(accent: Color.orange)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.create, accent: Color.orange, roomID: "create")
@@ -3948,6 +4115,433 @@ private struct HFCreatorStudioBoundaryCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Studio Safety Boundary, live systems remain disconnected.")
         .accessibilityIdentifier("hf.room.create.studioBoundary")
+    }
+}
+
+private struct HFCreatorPitchPackageSection: View {
+    let pitch: HFCreatorPitchPackage
+    let accent: Color
+    @State private var selectedSectionIndex = 0
+
+    private var selectedSection: HFCreatorPitchSection {
+        guard pitch.sections.indices.contains(selectedSectionIndex) else {
+            return pitch.sections[0]
+        }
+        return pitch.sections[selectedSectionIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFCreatorPitchHeroCard(pitch: pitch, accent: accent)
+
+            HFCreatorPitchSectionSelector(
+                sections: pitch.sections,
+                selectedSectionIndex: $selectedSectionIndex,
+                accent: accent
+            )
+
+            HFCreatorPitchDetailPanel(section: selectedSection, accent: accent)
+            HFCreatorPitchReadinessSummary(rows: pitch.readinessRows, accent: accent)
+            HFCreatorPitchConnectionCard(accent: accent)
+            HFCreatorPitchBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Pitch Package, local creator pitch package preview.")
+        .accessibilityIdentifier("hf.room.create.pitchPackage")
+    }
+}
+
+private struct HFCreatorPitchHeroCard: View {
+    let pitch: HFCreatorPitchPackage
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "text.quote")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Pitch Package", accent: accent)
+                        Text("Pitch Package")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Shape story, audience, format, and release angle before media intake, release posting, package production, delivery, or server systems are connected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(pitch.projectTitle)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        HFRoomStatusChip(title: pitch.pitchStatus, accent: accent)
+                    }
+
+                    Text(pitch.pitchTitle)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(accent)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(pitch.logline)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        HFCreatorPackageMetric(title: "Genre", value: pitch.genre, accent: accent)
+                        HFCreatorPackageMetric(title: "Format", value: pitch.format, accent: accent)
+                        HFCreatorPackageMetric(title: "Story", value: "Ready", accent: accent)
+                        HFCreatorPackageMetric(title: "Audience", value: "Preview", accent: accent)
+                        HFCreatorPackageMetric(title: "Media", value: "Deferred", accent: accent)
+                        HFCreatorPackageMetric(title: "Launch", value: "Local", accent: accent)
+                    }
+
+                    HFCreatorStudioDetailLine(title: "Audience", detail: pitch.audience, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Release angle", detail: pitch.releaseAngle, accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Pitch Package, local creator pitch package preview. \(pitch.projectTitle), \(pitch.pitchStatus)")
+        .accessibilityIdentifier("hf.room.create.pitchHero")
+    }
+}
+
+private struct HFCreatorPitchSectionSelector: View {
+    let sections: [HFCreatorPitchSection]
+    @Binding var selectedSectionIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Pitch Sections")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                        Button {
+                            selectedSectionIndex = index
+                        } label: {
+                            HFCreatorPitchSectionCard(
+                                section: section,
+                                isSelected: selectedSectionIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) pitch section.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Pitch Package sections for local creator pitch package preview")
+        .accessibilityIdentifier("hf.room.create.pitchSections")
+    }
+}
+
+private struct HFCreatorPitchSectionCard: View {
+    let section: HFCreatorPitchSection
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 34, height: 34)
+                    .background(isSelected ? Color.black.opacity(0.10) : accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(section.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: section.status, accent: isSelected ? .black : accent)
+                }
+            }
+
+            Text(section.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(Array(section.beats.prefix(3))) { beat in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isSelected ? .black : accent)
+                            .padding(.top, 2)
+                        Text(beat.title)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(isSelected ? .black.opacity(0.74) : HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(width: 220, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.title) pitch section. \(section.status).")
+    }
+}
+
+private struct HFCreatorPitchDetailPanel: View {
+    let section: HFCreatorPitchSection
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: section.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Pitch Area", accent: accent)
+                        Text("Selected Pitch Area")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(section.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFCreatorStudioDetailLine(title: "Shapes", detail: section.shapes, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Ready", detail: section.readySummary, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Preview-only", detail: section.previewSummary, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Deferred", detail: section.deferredSummary, accent: accent)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(section.beats) { beat in
+                        HFCreatorPitchBeatRow(beat: beat, accent: accent)
+                    }
+                }
+
+                Text("Preview Pitch Area")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Pitch Area, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Pitch Area, \(section.title), \(section.shapes)")
+        .accessibilityIdentifier("hf.room.create.pitchDetail")
+    }
+}
+
+private struct HFCreatorPitchBeatRow: View {
+    let beat: HFCreatorPitchBeat
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "quote.opening")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(beat.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: beat.state, accent: accent)
+                }
+            }
+
+            Text(beat.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(beat.title), \(beat.state), \(beat.detail)")
+    }
+}
+
+private struct HFCreatorPitchReadinessSummary: View {
+    let rows: [HFCreatorPitchReadinessRow]
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Pitch Readiness")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(row.title)
+                                    .font(HFTypography.smallAction)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(row.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: HFSpacing.sm)
+                            HFRoomStatusChip(title: row.status, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Pitch Readiness.")
+        .accessibilityIdentifier("hf.room.create.pitchReadiness")
+    }
+}
+
+private struct HFCreatorPitchConnectionCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "shippingbox.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Local Bridge", accent: accent)
+                    Text("Package Connection")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("The pitch package feeds the local project slate, media kit, and launch preparation surfaces while live creator systems remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Package Connection")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Package Connection.")
+        .accessibilityIdentifier("hf.room.create.pitchConnection")
+    }
+}
+
+private struct HFCreatorPitchBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 48, height: 48)
+                    .background(HFColors.gold.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Pitch Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local pitch-package preview. Media intake, library access, document handling, identity services, server release systems, package production, delivery systems, commerce, and platform services remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Pitch Safety Boundary, live systems remain disconnected.")
+        .accessibilityIdentifier("hf.room.create.pitchBoundary")
     }
 }
 
