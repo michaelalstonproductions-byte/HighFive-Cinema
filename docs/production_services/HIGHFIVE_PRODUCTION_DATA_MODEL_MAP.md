@@ -1,0 +1,219 @@
+# HighFive Production Data Model Map
+
+This document maps current local app concepts to future production models. It is not implementation code.
+
+## User
+
+- Purpose: Account owner for viewer or creator capabilities.
+- Current local source: None.
+- Production fields: `id`, `accountStatus`, `emailHash`, `createdAt`, `updatedAt`, `deletedAt`.
+- Relationships: Has Profile, LibraryItems, NotificationPreferences, SubscriptionEntitlements.
+- Privacy level: High.
+- Sync rules: Server authoritative, local cache only after login.
+- Offline behavior: Read cached identity state; block sensitive writes while offline.
+- Needed API endpoints: create session, get current user, delete account.
+- Future owner service: AuthService.
+
+## Profile
+
+- Purpose: Display identity and app preferences.
+- Current local source: `HFMockData` profile data.
+- Production fields: `userId`, `displayName`, `avatarRef`, `profileType`, `preferences`, `updatedAt`.
+- Relationships: Belongs to User.
+- Privacy level: Medium.
+- Sync rules: Server authoritative with local optimistic edits.
+- Offline behavior: Show cached profile; queue profile changes only after policy approval.
+- Needed API endpoints: get profile, update profile.
+- Future owner service: UserProfileService.
+
+## Movie
+
+- Purpose: Catalog item shown on Home, Search, Library, Downloads, and Movie Detail.
+- Current local source: `HFMockData.movies`, `Movie`.
+- Production fields: `id`, `title`, `subtitle`, `synopsis`, `genres`, `duration`, `rating`, `posterAsset`, `backdropAsset`, `isOriginal`, `releaseStatus`, `createdAt`, `updatedAt`.
+- Relationships: Has MovieAssets and PlaybackSources.
+- Privacy level: Low unless personalized.
+- Sync rules: Remote catalog is authoritative; local cache for display.
+- Offline behavior: Cached metadata remains available.
+- Needed API endpoints: list catalog, get movie, search movies, get rails.
+- Future owner service: MovieCatalogService.
+
+## MovieAsset
+
+- Purpose: Poster, backdrop, stills, trailers, and metadata assets.
+- Current local source: Asset names referenced by Movie and mock data.
+- Production fields: `id`, `movieId`, `kind`, `storageRef`, `altText`, `width`, `height`, `updatedAt`.
+- Relationships: Belongs to Movie.
+- Privacy level: Low for public assets, high for unreleased assets.
+- Sync rules: Remote authoritative.
+- Offline behavior: Cache thumbnails and metadata where allowed.
+- Needed API endpoints: list assets for movie.
+- Future owner service: MovieCatalogService.
+
+## PlaybackSource
+
+- Purpose: Playable media source for Watch Now.
+- Current local source: Player placeholder route.
+- Production fields: `movieId`, `hlsSourceRef`, `drmPolicy`, `thumbnailRef`, `duration`, `provider`, `entitlementRequired`, `offlineAllowed`.
+- Relationships: Belongs to Movie and requires entitlement rules.
+- Privacy level: High.
+- Sync rules: Short-lived source references from server.
+- Offline behavior: Requires DownloadService policy and license state.
+- Needed API endpoints: request playback source, refresh playback source.
+- Future owner service: PlaybackService.
+
+## LibraryItem
+
+- Purpose: Saved/progress/downloaded state for a user and movie.
+- Current local source: `HFStreamingStore` saved and downloaded identifiers.
+- Production fields: `userId`, `movieId`, `saved`, `progress`, `downloaded`, `lastWatchedAt`, `updatedAt`.
+- Relationships: Joins User and Movie.
+- Privacy level: High.
+- Sync rules: User-scoped server authoritative with local optimistic updates.
+- Offline behavior: Queue save/progress changes and reconcile later.
+- Needed API endpoints: list library, update saved state, update progress.
+- Future owner service: LibraryService.
+
+## OfflineAsset
+
+- Purpose: Real offline media availability and license state.
+- Current local source: Local downloaded flag only.
+- Production fields: `userId`, `movieId`, `assetId`, `licenseState`, `expiresAt`, `sizeClass`, `lastVerifiedAt`.
+- Relationships: User, Movie, PlaybackSource.
+- Privacy level: High.
+- Sync rules: Server validates entitlement and offline policy.
+- Offline behavior: Play only when license state allows.
+- Needed API endpoints: request offline license, validate offline asset, remove offline asset.
+- Future owner service: DownloadService.
+
+## CreatorProject
+
+- Purpose: Creator-side project record.
+- Current local source: Static Creator Studio room surfaces.
+- Production fields: `id`, `ownerId`, `title`, `status`, `summary`, `createdAt`, `updatedAt`.
+- Relationships: Has CreatorPackages, LaunchCampaigns, ExportPackages.
+- Privacy level: High.
+- Sync rules: Server authoritative with draft support.
+- Offline behavior: Local drafts only after conflict policy.
+- Needed API endpoints: list projects, get project, create project, update project.
+- Future owner service: CreatorProjectService.
+
+## CreatorPackage
+
+- Purpose: Pitch, media kit, package prep, and launch prep data.
+- Current local source: Static Creator Studio copy.
+- Production fields: `id`, `projectId`, `packageType`, `headline`, `materials`, `status`, `updatedAt`.
+- Relationships: Belongs to CreatorProject.
+- Privacy level: High.
+- Sync rules: Server authoritative.
+- Offline behavior: Cached read-only package summary unless drafts are approved.
+- Needed API endpoints: get package, update package.
+- Future owner service: CreatorProjectService.
+
+## ConnectUpdate
+
+- Purpose: Creator/audience update record.
+- Current local source: Local Audience Updates draft/list.
+- Production fields: `id`, `creatorId`, `projectId`, `movieId`, `body`, `status`, `moderationState`, `createdAt`.
+- Relationships: User/Profile, Movie or CreatorProject.
+- Privacy level: High.
+- Sync rules: Draft local, submitted state server authoritative after moderation.
+- Offline behavior: Keep drafts local; submit only online.
+- Needed API endpoints: list updates, create draft, submit update, moderation status.
+- Future owner service: ConnectService.
+
+## AudiencePrompt
+
+- Purpose: Structured prompt for public momentum or premiere conversation.
+- Current local source: Static Connect and Launch room copy.
+- Production fields: `id`, `projectId`, `movieId`, `prompt`, `status`, `createdAt`, `updatedAt`.
+- Relationships: ConnectUpdate, LaunchCampaign.
+- Privacy level: Medium.
+- Sync rules: Server authoritative once connected.
+- Offline behavior: Local drafts allowed.
+- Needed API endpoints: list prompts, update prompt.
+- Future owner service: ConnectService.
+
+## LaunchCampaign
+
+- Purpose: Release campaign plan.
+- Current local source: Local Release Checklist.
+- Production fields: `id`, `projectId`, `movieId`, `headline`, `releaseDate`, `status`, `ownerId`, `updatedAt`.
+- Relationships: Has LaunchMilestones and AudiencePrompts.
+- Privacy level: High.
+- Sync rules: Server authoritative with local checklist cache.
+- Offline behavior: Display cached plan; queue local draft changes only after policy.
+- Needed API endpoints: get campaign, update campaign, list campaigns.
+- Future owner service: LaunchService.
+
+## LaunchMilestone
+
+- Purpose: Checklist/progress item for launch readiness.
+- Current local source: Local Release Checklist toggle state.
+- Production fields: `id`, `campaignId`, `title`, `completed`, `completedAt`, `ownerId`, `updatedAt`.
+- Relationships: Belongs to LaunchCampaign.
+- Privacy level: Medium.
+- Sync rules: Server authoritative with optimistic local toggles.
+- Offline behavior: Queue toggle changes.
+- Needed API endpoints: list milestones, update milestone.
+- Future owner service: LaunchService.
+
+## ExportPackage
+
+- Purpose: Delivery package record for festival/platform handoff.
+- Current local source: Generate Delivery Summary text.
+- Production fields: `id`, `projectId`, `movieId`, `summary`, `materials`, `checklist`, `status`, `updatedAt`.
+- Relationships: CreatorProject, Movie, DeliverySummary.
+- Privacy level: High.
+- Sync rules: Server authoritative.
+- Offline behavior: Cached read-only summary; local drafts require conflict rules.
+- Needed API endpoints: get package, generate package summary, update package.
+- Future owner service: ExportPackageService.
+
+## DeliverySummary
+
+- Purpose: Text summary generated from a delivery package.
+- Current local source: Local generated summary and optional Share Summary.
+- Production fields: `id`, `exportPackageId`, `generatedText`, `generatedAt`, `createdBy`, `version`.
+- Relationships: Belongs to ExportPackage.
+- Privacy level: High.
+- Sync rules: Generated server-side or locally with stored version metadata.
+- Offline behavior: Show cached summary and mark stale if source changes.
+- Needed API endpoints: generate summary, list summaries, get summary.
+- Future owner service: ExportPackageService.
+
+## SubscriptionEntitlement
+
+- Purpose: Access rights for premium catalog and playback.
+- Current local source: None.
+- Production fields: `userId`, `productId`, `entitlementState`, `expiresAt`, `source`, `updatedAt`.
+- Relationships: User, PlaybackSource.
+- Privacy level: High.
+- Sync rules: Server authoritative after payment validation.
+- Offline behavior: Cached entitlement with expiry.
+- Needed API endpoints: get entitlements, refresh entitlement.
+- Future owner service: PaymentEntitlementService.
+
+## NotificationPreference
+
+- Purpose: User opt-in state and notification categories.
+- Current local source: None.
+- Production fields: `userId`, `category`, `enabled`, `deviceState`, `updatedAt`.
+- Relationships: User.
+- Privacy level: High.
+- Sync rules: Server authoritative after device permission state is known.
+- Offline behavior: Cache preference; permission changes require OS callback.
+- Needed API endpoints: get preferences, update preference.
+- Future owner service: NotificationService.
+
+## AuditEvent
+
+- Purpose: Security, moderation, and support audit trail.
+- Current local source: Evidence scripts and local reports only.
+- Production fields: `id`, `actorId`, `action`, `resourceType`, `resourceId`, `createdAt`, `metadataClass`.
+- Relationships: User/Profile, moderated resources.
+- Privacy level: High.
+- Sync rules: Server append-only.
+- Offline behavior: Do not queue sensitive audit data on device without review.
+- Needed API endpoints: internal admin read only.
+- Future owner service: Admin/Moderation service.
