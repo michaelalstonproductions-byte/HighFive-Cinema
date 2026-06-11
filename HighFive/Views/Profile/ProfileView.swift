@@ -1027,6 +1027,45 @@ private struct HFCreatorMediaKit: Identifiable {
     let readinessRows: [HFCreatorMediaKitReadinessRow]
 }
 
+private struct HFCreatorLaunchPrepItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFCreatorLaunchPrepSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let prepares: String
+    let readySummary: String
+    let previewSummary: String
+    let deferredSummary: String
+    let items: [HFCreatorLaunchPrepItem]
+}
+
+private struct HFCreatorLaunchPrepReadinessRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+}
+
+private struct HFCreatorLaunchPrep: Identifiable {
+    let id = UUID()
+    let projectTitle: String
+    let prepTitle: String
+    let positioning: String
+    let releaseWindow: String
+    let audienceWarmup: String
+    let prepStatus: String
+    let sections: [HFCreatorLaunchPrepSection]
+    let readinessRows: [HFCreatorLaunchPrepReadinessRow]
+}
+
 private struct HFConnectPlannerPrompt: Identifiable {
     let id = UUID()
     let title: String
@@ -2136,6 +2175,129 @@ private enum HFCreatorMediaKitPreviewData {
             HFCreatorMediaKitReadinessRow(title: "Creator Bio", detail: "Creator voice is framed for public context.", status: "Preview"),
             HFCreatorMediaKitReadinessRow(title: "Credits / Metadata", detail: "Title facts need one more pass.", status: "Draft"),
             HFCreatorMediaKitReadinessRow(title: "Delivery Systems", detail: "Professional handoff remains separated.", status: "Protected")
+        ]
+    )
+}
+
+private enum HFCreatorLaunchPrepPreviewData {
+    static let prep = HFCreatorLaunchPrep(
+        projectTitle: "The Friendly",
+        prepTitle: "Warm premiere launch prep for a HighFive Original.",
+        positioning: "A family-forward original positioned around kindness, memory, and a premium watch-night mood.",
+        releaseWindow: "Preview premiere window",
+        audienceWarmup: "Creator update, public blurb, watch-night promise, and community prompt.",
+        prepStatus: "Preview Launch Prep",
+        sections: [
+            HFCreatorLaunchPrepSection(
+                title: "Premiere Positioning",
+                subtitle: "Frame the public release promise.",
+                status: "Ready",
+                systemImage: "sparkles.tv.fill",
+                prepares: "Prepares the premiere promise, title hook, watch-night angle, mood line, and public framing.",
+                readySummary: "Premiere promise and title hook are ready for local review.",
+                previewSummary: "Mood line and public framing remain preview copy.",
+                deferredSummary: "Live release services remain disconnected.",
+                items: [
+                    HFCreatorLaunchPrepItem(title: "Premiere promise", detail: "A warm original made for shared family viewing.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Title hook", detail: "Kindness, memory, and a premium watch-night mood.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Watch-night angle", detail: "Positioned as a calm weekend premiere.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Mood line", detail: "Soft gold, gentle, hopeful, and intimate.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Public framing", detail: "A HighFive Original with creator-led warmth.", state: "Draft")
+                ]
+            ),
+            HFCreatorLaunchPrepSection(
+                title: "Campaign Direction",
+                subtitle: "Shape launch copy without live campaign systems.",
+                status: "Preview",
+                systemImage: "megaphone.fill",
+                prepares: "Prepares campaign headline, creator quote, release copy, visual phrase, and Launch Room bridge.",
+                readySummary: "Campaign headline and release copy are framed.",
+                previewSummary: "Creator quote and visual phrase remain local planning notes.",
+                deferredSummary: "Campaign execution remains disconnected.",
+                items: [
+                    HFCreatorLaunchPrepItem(title: "Campaign headline", detail: "The Friendly brings warmth to family watch night.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Creator quote", detail: "A short origin note can anchor the public story.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Release copy", detail: "A heartfelt original centered on kindness and memory.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Visual phrase", detail: "Soft gold premiere with intimate family energy.", state: "Draft"),
+                    HFCreatorLaunchPrepItem(title: "Launch-room bridge", detail: "Prepared for local Launch Room planning.", state: "Local")
+                ]
+            ),
+            HFCreatorLaunchPrepSection(
+                title: "Audience Warmup",
+                subtitle: "Plan the audience setup before launch.",
+                status: "Local",
+                systemImage: "person.3.fill",
+                prepares: "Prepares creator update topic, community prompt, family viewer hook, early interest note, and watch reminder copy.",
+                readySummary: "Family viewer hook and creator update topic are ready to preview.",
+                previewSummary: "Community prompt and early-interest note remain local copy.",
+                deferredSummary: "Audience systems remain disconnected.",
+                items: [
+                    HFCreatorLaunchPrepItem(title: "Creator update topic", detail: "Why this story belongs in a family watch night.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Community prompt", detail: "What memory would you want to share after watching?", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Family viewer hook", detail: "A story to watch with someone who remembers you.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Early interest note", detail: "Local copy for future audience planning.", state: "Draft"),
+                    HFCreatorLaunchPrepItem(title: "Watch reminder copy", detail: "A soft prompt for the premiere window.", state: "Preview")
+                ]
+            ),
+            HFCreatorLaunchPrepSection(
+                title: "Launch Materials",
+                subtitle: "Gather the title materials needed for release planning.",
+                status: "Draft",
+                systemImage: "rectangle.stack.badge.person.crop.fill",
+                prepares: "Prepares poster direction, press copy, public blurb, still-frame row, and creator note.",
+                readySummary: "Public blurb and creator note are framed.",
+                previewSummary: "Poster direction and still-frame row are planning placeholders.",
+                deferredSummary: "Media intake and delivery services remain disconnected.",
+                items: [
+                    HFCreatorLaunchPrepItem(title: "Poster direction", detail: "Warm key-art tone from the Media Kit.", state: "Draft"),
+                    HFCreatorLaunchPrepItem(title: "Press copy", detail: "Short public copy is ready for launch review.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Public blurb", detail: "A family-forward original about kindness and memory.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Still-frame row", detail: "Local still sequence supports launch planning.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Creator note", detail: "Voice and origin carry forward from the pitch.", state: "Preview")
+                ]
+            ),
+            HFCreatorLaunchPrepSection(
+                title: "Release Checklist",
+                subtitle: "Check package alignment before handoff.",
+                status: "Preview",
+                systemImage: "checklist.checked",
+                prepares: "Prepares title page copy, campaign headline, media kit check, pitch alignment, and readiness review.",
+                readySummary: "Title page copy and pitch alignment are readable.",
+                previewSummary: "Media kit check and readiness review remain local rows.",
+                deferredSummary: "Server release services remain disconnected.",
+                items: [
+                    HFCreatorLaunchPrepItem(title: "Title page copy", detail: "Public title presentation is ready to inspect.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Campaign headline", detail: "Launch headline matches the media kit tone.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Media kit check", detail: "Poster, stills, press copy, and creator bio are grouped.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Pitch alignment", detail: "Story promise matches the public launch copy.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Readiness review", detail: "Final local pass before Launch Room planning.", state: "Draft")
+                ]
+            ),
+            HFCreatorLaunchPrepSection(
+                title: "Launch Room Handoff",
+                subtitle: "Bridge Creator Studio into Launch Room planning.",
+                status: "Local",
+                systemImage: "arrow.triangle.branch",
+                prepares: "Prepares campaign plan, audience tone, materials status, safety boundary, and future Launch Room bridge.",
+                readySummary: "Campaign plan and materials status are summarized.",
+                previewSummary: "Audience tone and Launch Room bridge stay local.",
+                deferredSummary: "Live launch systems remain disconnected.",
+                items: [
+                    HFCreatorLaunchPrepItem(title: "Campaign plan", detail: "Warm premiere push for a HighFive Original.", state: "Preview"),
+                    HFCreatorLaunchPrepItem(title: "Audience tone", detail: "Family-forward, cinematic, premium.", state: "Ready"),
+                    HFCreatorLaunchPrepItem(title: "Materials status", detail: "Media Kit and Pitch surfaces feed this handoff.", state: "Local"),
+                    HFCreatorLaunchPrepItem(title: "Safety boundary", detail: "Live launch operations remain separated.", state: "Protected"),
+                    HFCreatorLaunchPrepItem(title: "Future Launch Room bridge", detail: "Prepared for local Launch Room review.", state: "Local")
+                ]
+            )
+        ],
+        readinessRows: [
+            HFCreatorLaunchPrepReadinessRow(title: "Premiere Positioning", detail: "Title promise and hook are ready.", status: "Ready"),
+            HFCreatorLaunchPrepReadinessRow(title: "Campaign Direction", detail: "Headline and release copy are preview-ready.", status: "Preview"),
+            HFCreatorLaunchPrepReadinessRow(title: "Audience Warmup", detail: "Creator update and community prompt are local.", status: "Local"),
+            HFCreatorLaunchPrepReadinessRow(title: "Launch Materials", detail: "Poster and still rows need one more pass.", status: "Draft"),
+            HFCreatorLaunchPrepReadinessRow(title: "Release Checklist", detail: "Package alignment is visible for review.", status: "Preview"),
+            HFCreatorLaunchPrepReadinessRow(title: "Live Launch Systems", detail: "Release services remain separated.", status: "Protected")
         ]
     )
 }
@@ -3276,6 +3438,7 @@ private struct CreateRoomView: View {
                 HFCreatorStudioSlateSection(slate: HFCreatorStudioSlatePreviewData.slate, accent: Color.orange)
                 HFCreatorPitchPackageSection(pitch: HFCreatorPitchPackagePreviewData.pitch, accent: Color.orange)
                 HFCreatorMediaKitPreviewSection(kit: HFCreatorMediaKitPreviewData.kit, accent: Color.orange)
+                HFCreatorLaunchPrepPreviewSection(prep: HFCreatorLaunchPrepPreviewData.prep, accent: Color.orange)
                 HFCreatorPackageBuilderSection(package: HFCreatorPackageBuilderPreviewData.package, accent: Color.orange)
                 HFRoomDepthSnapshotStrip(accent: Color.orange)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.create, accent: Color.orange, roomID: "create")
@@ -5131,6 +5294,432 @@ private struct HFCreatorMediaKitBoundaryCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Media Kit Safety Boundary, live systems remain disconnected.")
         .accessibilityIdentifier("hf.room.create.mediaKitBoundary")
+    }
+}
+
+private struct HFCreatorLaunchPrepPreviewSection: View {
+    let prep: HFCreatorLaunchPrep
+    let accent: Color
+    @State private var selectedSectionIndex = 0
+
+    private var selectedSection: HFCreatorLaunchPrepSection {
+        guard prep.sections.indices.contains(selectedSectionIndex) else {
+            return prep.sections[0]
+        }
+        return prep.sections[selectedSectionIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFCreatorLaunchPrepHeroCard(prep: prep, accent: accent)
+
+            HFCreatorLaunchPrepSectionSelector(
+                sections: prep.sections,
+                selectedSectionIndex: $selectedSectionIndex,
+                accent: accent
+            )
+
+            HFCreatorLaunchPrepDetailPanel(section: selectedSection, accent: accent)
+            HFCreatorLaunchPrepReadinessSummary(rows: prep.readinessRows, accent: accent)
+            HFCreatorLaunchRoomConnectionCard(accent: accent)
+            HFCreatorLaunchPrepBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Prep, local creator launch preparation preview.")
+        .accessibilityIdentifier("hf.room.create.launchPrep")
+    }
+}
+
+private struct HFCreatorLaunchPrepHeroCard: View {
+    let prep: HFCreatorLaunchPrep
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Launch Prep", accent: accent)
+                        Text("Launch Prep")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Prepare release direction before release services, audience reminders, commerce, measurement, or server systems are connected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(prep.projectTitle)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        HFRoomStatusChip(title: prep.prepStatus, accent: accent)
+                    }
+
+                    Text(prep.prepTitle)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(accent)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(prep.positioning)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        HFCreatorPackageMetric(title: "Positioning", value: "Ready", accent: accent)
+                        HFCreatorPackageMetric(title: "Campaign Direction", value: "Preview", accent: accent)
+                        HFCreatorPackageMetric(title: "Materials", value: "Draft", accent: accent)
+                        HFCreatorPackageMetric(title: "Audience Warmup", value: "Local", accent: accent)
+                        HFCreatorPackageMetric(title: "Live Launch Systems", value: "Protected", accent: accent)
+                    }
+
+                    HFCreatorStudioDetailLine(title: "Release window", detail: prep.releaseWindow, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Audience warmup", detail: prep.audienceWarmup, accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Prep, local creator launch preparation preview. \(prep.projectTitle), \(prep.prepStatus)")
+        .accessibilityIdentifier("hf.room.create.launchPrepHero")
+    }
+}
+
+private struct HFCreatorLaunchPrepSectionSelector: View {
+    let sections: [HFCreatorLaunchPrepSection]
+    @Binding var selectedSectionIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Launch Prep Sections")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                        Button {
+                            selectedSectionIndex = index
+                        } label: {
+                            HFCreatorLaunchPrepSectionCard(
+                                section: section,
+                                isSelected: selectedSectionIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) launch prep section.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Prep sections for local creator launch preparation preview")
+        .accessibilityIdentifier("hf.room.create.launchPrepSections")
+    }
+}
+
+private struct HFCreatorLaunchPrepSectionCard: View {
+    let section: HFCreatorLaunchPrepSection
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 34, height: 34)
+                    .background(isSelected ? Color.black.opacity(0.10) : accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(section.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: section.status, accent: isSelected ? .black : accent)
+                }
+            }
+
+            Text(section.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(Array(section.items.prefix(3))) { item in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isSelected ? .black : accent)
+                            .padding(.top, 2)
+                        Text(item.title)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(isSelected ? .black.opacity(0.74) : HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(width: 220, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.title) launch prep section. \(section.status).")
+    }
+}
+
+private struct HFCreatorLaunchPrepDetailPanel: View {
+    let section: HFCreatorLaunchPrepSection
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: section.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Launch Prep Area", accent: accent)
+                        Text("Selected Launch Prep Area")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(section.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFCreatorStudioDetailLine(title: "Prepares", detail: section.prepares, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Ready", detail: section.readySummary, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Preview-only", detail: section.previewSummary, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Deferred", detail: section.deferredSummary, accent: accent)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(section.items) { item in
+                        HFCreatorLaunchPrepItemRow(item: item, accent: accent)
+                    }
+                }
+
+                Text("Preview Launch Prep Area")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Launch Prep Area, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Launch Prep Area, \(section.title), \(section.prepares)")
+        .accessibilityIdentifier("hf.room.create.launchPrepDetail")
+    }
+}
+
+private struct HFCreatorLaunchPrepItemRow: View {
+    let item: HFCreatorLaunchPrepItem
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: item.state, accent: accent)
+                }
+            }
+
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.state), \(item.detail)")
+    }
+}
+
+private struct HFCreatorLaunchPrepReadinessSummary: View {
+    let rows: [HFCreatorLaunchPrepReadinessRow]
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Launch Prep Readiness")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(row.title)
+                                    .font(HFTypography.smallAction)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(row.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: HFSpacing.sm)
+                            HFRoomStatusChip(title: row.status, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Prep Readiness.")
+        .accessibilityIdentifier("hf.room.create.launchPrepReadiness")
+    }
+}
+
+private struct HFCreatorLaunchRoomConnectionCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "arrow.up.right.square.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Local Bridge", accent: accent)
+                    Text("Launch Room Connection")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Creator launch prep shapes campaign direction for the Launch Room while live release services remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Launch Room Connection")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Room Connection.")
+        .accessibilityIdentifier("hf.room.create.launchRoomConnection")
+    }
+}
+
+private struct HFCreatorLaunchPrepBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 48, height: 48)
+                    .background(HFColors.gold.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Launch Prep Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local launch-prep preview. Release posting, audience reminders, commerce, audience lists, measurement, server systems, and campaign execution remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Prep Safety Boundary, live systems remain disconnected.")
+        .accessibilityIdentifier("hf.room.create.launchPrepBoundary")
     }
 }
 
