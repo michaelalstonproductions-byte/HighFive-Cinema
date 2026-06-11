@@ -988,6 +988,45 @@ private struct HFCreatorPitchPackage: Identifiable {
     let readinessRows: [HFCreatorPitchReadinessRow]
 }
 
+private struct HFCreatorMediaKitItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let state: String
+}
+
+private struct HFCreatorMediaKitSection: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let status: String
+    let systemImage: String
+    let prepares: String
+    let readySummary: String
+    let previewSummary: String
+    let deferredSummary: String
+    let items: [HFCreatorMediaKitItem]
+}
+
+private struct HFCreatorMediaKitReadinessRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+}
+
+private struct HFCreatorMediaKit: Identifiable {
+    let id = UUID()
+    let projectTitle: String
+    let kitTitle: String
+    let publicBlurb: String
+    let visualDirection: String
+    let creatorBio: String
+    let kitStatus: String
+    let sections: [HFCreatorMediaKitSection]
+    let readinessRows: [HFCreatorMediaKitReadinessRow]
+}
+
 private struct HFConnectPlannerPrompt: Identifiable {
     let id = UUID()
     let title: String
@@ -1974,6 +2013,129 @@ private enum HFCreatorPitchPackagePreviewData {
             HFCreatorPitchReadinessRow(title: "Creator Statement", detail: "Voice and intention are framed.", status: "Preview"),
             HFCreatorPitchReadinessRow(title: "Media Notes", detail: "Visual direction remains a planning placeholder.", status: "Deferred"),
             HFCreatorPitchReadinessRow(title: "Delivery Systems", detail: "Professional delivery remains separated.", status: "Protected")
+        ]
+    )
+}
+
+private enum HFCreatorMediaKitPreviewData {
+    static let kit = HFCreatorMediaKit(
+        projectTitle: "The Friendly",
+        kitTitle: "Warm premiere media kit for a HighFive Original.",
+        publicBlurb: "A heartfelt cinematic story about kindness, memory, and the feeling of a family watch night.",
+        visualDirection: "Soft gold light, intimate portraits, hopeful family atmosphere.",
+        creatorBio: "A creator-led story package prepared for premium streaming discovery.",
+        kitStatus: "Preview Kit",
+        sections: [
+            HFCreatorMediaKitSection(
+                title: "Poster / Key Art Direction",
+                subtitle: "Shape the first public visual signal.",
+                status: "Draft",
+                systemImage: "photo.artframe",
+                prepares: "Prepares the public key-art mood, palette, title treatment, and tagline direction.",
+                readySummary: "Visual mood and palette are framed for local review.",
+                previewSummary: "Title treatment and tagline idea remain preview copy.",
+                deferredSummary: "Real media intake and production services remain disconnected.",
+                items: [
+                    HFCreatorMediaKitItem(title: "Hero image mood", detail: "Soft family portrait energy with premium cinematic warmth.", state: "Draft"),
+                    HFCreatorMediaKitItem(title: "Color palette", detail: "Soft gold, deep black, warm ivory, and restrained amber.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Title treatment", detail: "Simple, readable, and centered on emotional clarity.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Tagline idea", detail: "A family story about what kindness leaves behind.", state: "Draft"),
+                    HFCreatorMediaKitItem(title: "Poster note", detail: "Keep the art intimate, not spectacle-led.", state: "Preview")
+                ]
+            ),
+            HFCreatorMediaKitSection(
+                title: "Still Frames",
+                subtitle: "Plan the public still sequence.",
+                status: "Preview",
+                systemImage: "rectangle.stack.fill",
+                prepares: "Prepares the still-frame story order for press, title pages, and launch planning.",
+                readySummary: "Emotional close-up and family table moment are ready to discuss.",
+                previewSummary: "Exterior, transition, and premiere still rows are planning placeholders.",
+                deferredSummary: "Image library access and media selection remain disconnected.",
+                items: [
+                    HFCreatorMediaKitItem(title: "Emotional close-up", detail: "A quiet face-led frame that sells the title heart.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Family table moment", detail: "A shared scene that communicates watch-night warmth.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Golden-hour exterior", detail: "A hopeful exterior frame for release pages.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Quiet transition", detail: "A softer frame for editorial pacing context.", state: "Draft"),
+                    HFCreatorMediaKitItem(title: "Premiere still placeholder", detail: "A local row for future public-review context.", state: "Deferred")
+                ]
+            ),
+            HFCreatorMediaKitSection(
+                title: "Press Copy",
+                subtitle: "Prepare public synopsis and quote language.",
+                status: "Ready",
+                systemImage: "newspaper.fill",
+                prepares: "Prepares short-form and long-form copy for public title presentation.",
+                readySummary: "Short synopsis and review-ready summary are ready for local review.",
+                previewSummary: "Premiere blurb and creator quote remain editable planning copy.",
+                deferredSummary: "Server release systems remain disconnected.",
+                items: [
+                    HFCreatorMediaKitItem(title: "Short synopsis", detail: "A warm original about kindness, memory, and family connection.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Long synopsis", detail: "A fuller story summary for title pages and press context.", state: "Draft"),
+                    HFCreatorMediaKitItem(title: "Premiere blurb", detail: "A soft public-facing line for the launch surface.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Creator quote", detail: "A concise note about why this story matters now.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Review-ready summary", detail: "A polished local copy block for internal review.", state: "Ready")
+                ]
+            ),
+            HFCreatorMediaKitSection(
+                title: "Creator Bio",
+                subtitle: "Frame the creator voice behind the title.",
+                status: "Preview",
+                systemImage: "person.text.rectangle.fill",
+                prepares: "Prepares the public creator profile, story origin, and audience connection.",
+                readySummary: "Creator voice and personal statement are framed.",
+                previewSummary: "Background note and story origin remain local preview text.",
+                deferredSummary: "Identity services remain disconnected.",
+                items: [
+                    HFCreatorMediaKitItem(title: "Creator voice", detail: "Warm, grounded, and emotionally direct.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Background note", detail: "A brief context line for creator discovery.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Story origin", detail: "Kindness and memory are the source idea.", state: "Draft"),
+                    HFCreatorMediaKitItem(title: "Audience connection", detail: "The title is positioned for shared family viewing.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Personal statement", detail: "A clear intention for why the story should be watched.", state: "Ready")
+                ]
+            ),
+            HFCreatorMediaKitSection(
+                title: "Credits / Metadata",
+                subtitle: "Organize public title facts.",
+                status: "Draft",
+                systemImage: "list.bullet.rectangle.fill",
+                prepares: "Prepares the public facts that support title pages, press notes, and package review.",
+                readySummary: "Director and runtime rows are present.",
+                previewSummary: "Producer, cast, and advisory rows remain placeholders.",
+                deferredSummary: "Platform services remain disconnected.",
+                items: [
+                    HFCreatorMediaKitItem(title: "Director", detail: "Creator-led director line for public package review.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Producer", detail: "Producer credit row remains a local placeholder.", state: "Draft"),
+                    HFCreatorMediaKitItem(title: "Cast placeholder", detail: "Cast line can be reviewed without account services.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Runtime", detail: "Feature-length placeholder for public metadata.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Rating / advisory placeholder", detail: "Public guidance stays planning-only.", state: "Draft")
+                ]
+            ),
+            HFCreatorMediaKitSection(
+                title: "Public Launch Blurb",
+                subtitle: "Bridge the kit into launch planning.",
+                status: "Local",
+                systemImage: "megaphone.fill",
+                prepares: "Prepares public headline, audience hook, watch-night promise, and Launch Room direction.",
+                readySummary: "Hero headline and watch-night promise are ready to preview.",
+                previewSummary: "Audience hook and platform positioning remain local planning notes.",
+                deferredSummary: "Live campaign and delivery systems remain disconnected.",
+                items: [
+                    HFCreatorMediaKitItem(title: "Hero headline", detail: "The Friendly brings warmth to family watch night.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Audience hook", detail: "For viewers who want an original with heart.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Watch-night promise", detail: "A calm, premium story to share together.", state: "Ready"),
+                    HFCreatorMediaKitItem(title: "Platform positioning", detail: "HighFive Original with discovery and premiere value.", state: "Preview"),
+                    HFCreatorMediaKitItem(title: "Launch-room bridge", detail: "Campaign copy can move into local Launch planning.", state: "Local")
+                ]
+            )
+        ],
+        readinessRows: [
+            HFCreatorMediaKitReadinessRow(title: "Poster Direction", detail: "Key-art mood and palette are drafted.", status: "Draft"),
+            HFCreatorMediaKitReadinessRow(title: "Still Frames", detail: "Public still sequence is preview-ready.", status: "Preview"),
+            HFCreatorMediaKitReadinessRow(title: "Press Copy", detail: "Short copy and summary are ready.", status: "Ready"),
+            HFCreatorMediaKitReadinessRow(title: "Creator Bio", detail: "Creator voice is framed for public context.", status: "Preview"),
+            HFCreatorMediaKitReadinessRow(title: "Credits / Metadata", detail: "Title facts need one more pass.", status: "Draft"),
+            HFCreatorMediaKitReadinessRow(title: "Delivery Systems", detail: "Professional handoff remains separated.", status: "Protected")
         ]
     )
 }
@@ -3113,6 +3275,7 @@ private struct CreateRoomView: View {
 
                 HFCreatorStudioSlateSection(slate: HFCreatorStudioSlatePreviewData.slate, accent: Color.orange)
                 HFCreatorPitchPackageSection(pitch: HFCreatorPitchPackagePreviewData.pitch, accent: Color.orange)
+                HFCreatorMediaKitPreviewSection(kit: HFCreatorMediaKitPreviewData.kit, accent: Color.orange)
                 HFCreatorPackageBuilderSection(package: HFCreatorPackageBuilderPreviewData.package, accent: Color.orange)
                 HFRoomDepthSnapshotStrip(accent: Color.orange)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.create, accent: Color.orange, roomID: "create")
@@ -4542,6 +4705,432 @@ private struct HFCreatorPitchBoundaryCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Pitch Safety Boundary, live systems remain disconnected.")
         .accessibilityIdentifier("hf.room.create.pitchBoundary")
+    }
+}
+
+private struct HFCreatorMediaKitPreviewSection: View {
+    let kit: HFCreatorMediaKit
+    let accent: Color
+    @State private var selectedSectionIndex = 0
+
+    private var selectedSection: HFCreatorMediaKitSection {
+        guard kit.sections.indices.contains(selectedSectionIndex) else {
+            return kit.sections[0]
+        }
+        return kit.sections[selectedSectionIndex]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFCreatorMediaKitHeroCard(kit: kit, accent: accent)
+
+            HFCreatorMediaKitSectionSelector(
+                sections: kit.sections,
+                selectedSectionIndex: $selectedSectionIndex,
+                accent: accent
+            )
+
+            HFCreatorMediaKitDetailPanel(section: selectedSection, accent: accent)
+            HFCreatorMediaKitReadinessSummary(rows: kit.readinessRows, accent: accent)
+            HFCreatorMediaKitConnectionCard(accent: accent)
+            HFCreatorMediaKitBoundaryCard(accent: accent)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Media Kit, local creator media kit preview.")
+        .accessibilityIdentifier("hf.room.create.mediaKit")
+    }
+}
+
+private struct HFCreatorMediaKitHeroCard: View {
+    let kit: HFCreatorMediaKit
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 52, height: 52)
+                        .background(accent.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Media Kit", accent: accent)
+                        Text("Media Kit")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Prepare public-facing title materials before media intake, document handling, release posting, package production, delivery, or server systems are connected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.xs)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(kit.projectTitle)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        HFRoomStatusChip(title: kit.kitStatus, accent: accent)
+                    }
+
+                    Text(kit.kitTitle)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(accent)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(kit.publicBlurb)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        HFCreatorPackageMetric(title: "Poster Direction", value: "Draft", accent: accent)
+                        HFCreatorPackageMetric(title: "Still Frames", value: "Preview", accent: accent)
+                        HFCreatorPackageMetric(title: "Press Copy", value: "Ready", accent: accent)
+                        HFCreatorPackageMetric(title: "Credits", value: "Draft", accent: accent)
+                        HFCreatorPackageMetric(title: "Delivery Systems", value: "Protected", accent: accent)
+                    }
+
+                    HFCreatorStudioDetailLine(title: "Visual direction", detail: kit.visualDirection, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Creator bio", detail: kit.creatorBio, accent: accent)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Media Kit, local creator media kit preview. \(kit.projectTitle), \(kit.kitStatus)")
+        .accessibilityIdentifier("hf.room.create.mediaKitHero")
+    }
+}
+
+private struct HFCreatorMediaKitSectionSelector: View {
+    let sections: [HFCreatorMediaKitSection]
+    @Binding var selectedSectionIndex: Int
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text("Media Kit Sections")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                Spacer()
+                HFRoomStatusChip(title: "Local Selection", accent: accent)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                        Button {
+                            selectedSectionIndex = index
+                        } label: {
+                            HFCreatorMediaKitSectionCard(
+                                section: section,
+                                isSelected: selectedSectionIndex == index,
+                                accent: accent
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(section.title) media kit section.")
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Media Kit sections for local creator media kit preview")
+        .accessibilityIdentifier("hf.room.create.mediaKitSections")
+    }
+}
+
+private struct HFCreatorMediaKitSectionCard: View {
+    let section: HFCreatorMediaKitSection
+    let isSelected: Bool
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(isSelected ? .black : accent)
+                    .frame(width: 34, height: 34)
+                    .background(isSelected ? Color.black.opacity(0.10) : accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(section.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: section.status, accent: isSelected ? .black : accent)
+                }
+            }
+
+            Text(section.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(isSelected ? .black.opacity(0.72) : HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(Array(section.items.prefix(3))) { item in
+                    HStack(alignment: .top, spacing: HFSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isSelected ? .black : accent)
+                            .padding(.top, 2)
+                        Text(item.title)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(isSelected ? .black.opacity(0.74) : HFColors.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .frame(width: 220, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(isSelected ? accent : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? accent.opacity(0.82) : accent.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.title) media kit section. \(section.status).")
+    }
+}
+
+private struct HFCreatorMediaKitDetailPanel: View {
+    let section: HFCreatorMediaKitSection
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: section.systemImage)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Selected Media Kit Area", accent: accent)
+                        Text("Selected Media Kit Area")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(section.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HFCreatorStudioDetailLine(title: "Prepares", detail: section.prepares, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Ready", detail: section.readySummary, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Preview-only", detail: section.previewSummary, accent: accent)
+                    HFCreatorStudioDetailLine(title: "Deferred", detail: section.deferredSummary, accent: accent)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(section.items) { item in
+                        HFCreatorMediaKitItemRow(item: item, accent: accent)
+                    }
+                }
+
+                Text("Preview Media Kit Area")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(accent)
+                    .clipShape(Capsule())
+                    .accessibilityLabel("Preview Media Kit Area, safe local preview action")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Selected Media Kit Area, \(section.title), \(section.prepares)")
+        .accessibilityIdentifier("hf.room.create.mediaKitDetail")
+    }
+}
+
+private struct HFCreatorMediaKitItemRow: View {
+    let item: HFCreatorMediaKitItem
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .top, spacing: HFSpacing.xs) {
+                Image(systemName: "sparkle.magnifyingglass")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accent)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HFRoomStatusChip(title: item.state, accent: accent)
+                }
+            }
+
+            Text(item.detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(item.title), \(item.state), \(item.detail)")
+    }
+}
+
+private struct HFCreatorMediaKitReadinessSummary: View {
+    let rows: [HFCreatorMediaKitReadinessRow]
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack {
+                    Text("Media Kit Readiness")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    HFRoomStatusChip(title: "Local", accent: accent)
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(rows) { row in
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(row.title)
+                                    .font(HFTypography.smallAction)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(row.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: HFSpacing.sm)
+                            HFRoomStatusChip(title: row.status, accent: accent)
+                        }
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Media Kit Readiness.")
+        .accessibilityIdentifier("hf.room.create.mediaKitReadiness")
+    }
+}
+
+private struct HFCreatorMediaKitConnectionCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.32)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Local Bridge", accent: accent)
+                    Text("Launch + Export Connection")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("The media kit prepares public copy, title materials, and handoff notes for future Launch and Export rooms while live delivery systems remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Media Kit Connection")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch and Export Connection.")
+        .accessibilityIdentifier("hf.room.create.mediaKitConnection")
+    }
+}
+
+private struct HFCreatorMediaKitBoundaryCard: View {
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 48, height: 48)
+                    .background(HFColors.gold.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Safe Preview", accent: accent)
+                    Text("Media Kit Safety Boundary")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("This is a local media-kit preview. Media intake, image library access, document handling, identity services, release posting, package production, delivery systems, commerce, and platform services remain disconnected.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Review Safe Preview")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .padding(.top, HFSpacing.xs)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Media Kit Safety Boundary, live systems remain disconnected.")
+        .accessibilityIdentifier("hf.room.create.mediaKitBoundary")
     }
 }
 
