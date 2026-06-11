@@ -48,6 +48,7 @@ struct MyListView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.library.root")
+        .accessibilityIdentifier("hf.functional.library.savedState")
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 

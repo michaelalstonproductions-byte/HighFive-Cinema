@@ -39,6 +39,7 @@ struct DownloadsView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.downloads.root")
+        .accessibilityIdentifier("hf.functional.downloads.downloadedState")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .alert("Remove Offline Titles?", isPresented: $showsRemoveAllAlert) {
             Button("Cancel", role: .cancel) {}

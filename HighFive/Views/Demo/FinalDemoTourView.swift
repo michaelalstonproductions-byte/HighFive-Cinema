@@ -14,6 +14,7 @@ struct FinalDemoTourView: View {
                     hero
                     actsSection
                     ecosystemProofBoardSection
+                    functionalCoreProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -137,6 +138,38 @@ struct FinalDemoTourView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Ecosystem Proof Board, consumer shell, rooms suite, creator studio, public momentum, professional path, evidence locks, live systems, and protected systems")
         .accessibilityIdentifier("hf.demoTour.ecosystemProofBoard")
+    }
+
+    private var functionalCoreProofSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Functional Core Proof", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFStatusBadge(title: "Local First", isProminent: true)
+                        Text("Home, Movie Detail, Library, Downloads, Connect, Launch, and Export now share a local-first working path.")
+                            .font(HFTypography.body)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Functional Core Proof, Home Movie Detail Library Downloads Connect Launch and Export share a local-first working path")
+        .accessibilityIdentifier("hf.demoTour.functionalCoreProof")
     }
 
     private var runOfShowSection: some View {

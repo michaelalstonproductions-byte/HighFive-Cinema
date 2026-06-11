@@ -219,6 +219,7 @@ struct HomeView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Home streaming momentum, featured title, saved shelf, originals, offline shelf, and discovery path")
         .accessibilityIdentifier("hf.consumer.home.momentum")
+        .accessibilityIdentifier("hf.functional.home.ecosystemRoute")
     }
 
     private var premiereMomentumSection: some View {
@@ -412,6 +413,7 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Watch Now")
+                    .accessibilityIdentifier("hf.functional.player.watchNow")
 
                     HFButton(
                         streamingStore.isSaved(heroMovie) ? "In My List" : "Save",
@@ -434,6 +436,7 @@ struct HomeView: View {
         .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 28, x: 0, y: 18)
         .padding(.horizontal, HFResponsiveFit.heroHorizontalInset(width: screenWidth))
         .accessibilityIdentifier("hf.consumer.home.hero")
+        .accessibilityIdentifier("hf.functional.home.featuredMovieRoute")
     }
 
     private var heroPosterStack: some View {
@@ -502,6 +505,7 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open tonight on HighFive featured premiere")
+        .accessibilityIdentifier("hf.functional.home.featuredMovieRoute")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -558,6 +562,7 @@ struct HomeView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Continue watching \(movie.title)")
+                            .accessibilityIdentifier("hf.functional.home.continueWatchingRoute")
                         } else {
                             NavigationLink(value: movie) {
                                 HFPosterCard(movie: movie, width: HFResponsiveFit.posterRailWidth(width: screenWidth), showProgress: category.id == "continue")

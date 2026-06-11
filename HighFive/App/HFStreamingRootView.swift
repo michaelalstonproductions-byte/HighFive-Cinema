@@ -13,6 +13,7 @@ struct HFStreamingRootView: View {
     @State private var selectedProfile = HFMockData.userProfiles[0]
     @State private var searchMode: HFSearchHubMode = .search
     @State private var hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro
+    @AppStorage("hf.hasCompletedCinematicOnboarding") private var hasCompletedOnboarding = false
     @StateObject private var streamingStore = HFStreamingStore()
 
     private let tabItems: [HFTabItem<HFStreamingTab>] = [
@@ -35,6 +36,10 @@ struct HFStreamingRootView: View {
     private static var shouldSkipLaunchIntro: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-skip-onboarding") || Self.shouldStartAfterOnboarding
+    }
+
+    private static var shouldResetLaunchIntro: Bool {
+        ProcessInfo.processInfo.arguments.contains("--hf-reset-onboarding")
     }
 
     private static var shouldStartAfterOnboarding: Bool {
@@ -70,7 +75,7 @@ struct HFStreamingRootView: View {
 
     var body: some View {
         Group {
-            if hasCompletedLaunchIntro {
+            if shouldShowStreamingShell {
                 if Self.shouldStartInMovieDetail {
                     qaMovieDetailView
                 } else {
@@ -78,15 +83,24 @@ struct HFStreamingRootView: View {
                 }
             } else {
                 HFLaunchIntroSequenceView {
-                    withAnimation(.easeInOut(duration: 0.35)) {
-                        hasCompletedLaunchIntro = true
-                    }
+                    completeLaunchIntro()
                 }
             }
         }
         .tint(HFColors.gold)
         .preferredColorScheme(.dark)
         .environmentObject(streamingStore)
+    }
+
+    private var shouldShowStreamingShell: Bool {
+        hasCompletedLaunchIntro || (hasCompletedOnboarding && !Self.shouldResetLaunchIntro)
+    }
+
+    private func completeLaunchIntro() {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            hasCompletedLaunchIntro = true
+            hasCompletedOnboarding = true
+        }
     }
 
     private var qaMovieDetailView: some View {
@@ -157,7 +171,8 @@ struct HFStreamingRootView: View {
 private enum HFLaunchIntroStep: Int, CaseIterable {
     case intro
     case motion
-    case instructions
+    case controls
+    case homeReveal
 
     var page: Int { rawValue }
 
@@ -165,7 +180,9 @@ private enum HFLaunchIntroStep: Int, CaseIterable {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("--hf-onboarding-intro") { return .intro }
         if arguments.contains("--hf-onboarding-tilt-peek") { return .motion }
-        if arguments.contains("--hf-onboarding-instructions") { return .instructions }
+        if arguments.contains("--hf-onboarding-instructions") { return .controls }
+        if arguments.contains("--hf-onboarding-controls") { return .controls }
+        if arguments.contains("--hf-onboarding-home-reveal") { return .homeReveal }
         return .intro
     }
 }
@@ -192,21 +209,29 @@ private struct HFLaunchIntroSequenceView: View {
                     onSkip: onFinish
                 )
                 .transition(.opacity)
-                .accessibilityIdentifier("hf.onboarding.intro")
-                .accessibilityLabel("HighFive Cinema intro")
+                .accessibilityIdentifier("hf.onboarding.brandIntro")
+                .accessibilityLabel("HighFive Cinema brand intro")
             case .motion:
                 HFLaunchMotionInstructionScreen(
-                    onContinue: { advance(to: .instructions) },
+                    onContinue: { advance(to: .controls) },
                     onSkip: onFinish
                 )
                 .transition(.opacity)
-                .accessibilityIdentifier("hf.onboarding.tiltPeek")
-                .accessibilityLabel("Tilt and peek phone instructions")
-            case .instructions:
-                HFLaunchInstructionFormatScreen(onFinish: onFinish)
+                .accessibilityIdentifier("hf.onboarding.motionTraining")
+                .accessibilityLabel("Motion training, tilt to move and peek to explore")
+            case .controls:
+                HFLaunchControlsTrainingScreen(
+                    onContinue: { advance(to: .homeReveal) },
+                    onSkip: onFinish
+                )
+                .transition(.opacity)
+                .accessibilityIdentifier("hf.onboarding.controlsTraining")
+                .accessibilityLabel("Controls training, play scrub depth focus import and export")
+            case .homeReveal:
+                HFLaunchHomeRevealScreen(onFinish: onFinish)
                     .transition(.opacity)
-                    .accessibilityIdentifier("hf.onboarding.instructions")
-                    .accessibilityLabel("HighFive instruction format before Home")
+                    .accessibilityIdentifier("hf.onboarding.homeReveal")
+                    .accessibilityLabel("Home reveal, enter HighFive Cinema")
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -263,12 +288,12 @@ private struct HFLaunchIntroVideoScreen: View {
                         .shadow(color: HFColors.gold.opacity(0.20), radius: 28, x: 0, y: 16)
 
                     VStack(spacing: 14) {
-                        Image(systemName: "play.circle.fill")
+                        Image(systemName: "figure.walk")
                             .font(.system(size: 58, weight: .semibold))
                             .foregroundStyle(.white, HFColors.gold)
                             .shadow(color: .black.opacity(0.35), radius: 12, x: 0, y: 8)
 
-                        Text("Intro Video")
+                        Text("HighFive Cinema")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(HFColors.gold)
                             .textCase(.uppercase)
@@ -286,7 +311,7 @@ private struct HFLaunchIntroVideoScreen: View {
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.82)
 
-                    Text("A cinematic intro before you enter the streaming home.")
+                    Text("A cinematic walk into the streaming home.")
                         .font(.system(size: 16, weight: .regular))
                         .foregroundStyle(.white.opacity(0.76))
                         .multilineTextAlignment(.center)
@@ -370,8 +395,20 @@ private struct HFLaunchMotionInstructionScreen: View {
                         .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("hf.onboarding.tiltToMove")
 
-                    Text("Peek left and right to explore the edge of the frame.")
+                    Text("Shift your view")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(HFColors.gold.opacity(0.92))
+                        .multilineTextAlignment(.center)
+
+                    Text("Peek to explore")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("hf.onboarding.peekToExplore")
+
+                    Text("Reveal what's around you with a local training preview.")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.white.opacity(0.72))
                         .multilineTextAlignment(.center)
@@ -387,6 +424,141 @@ private struct HFLaunchMotionInstructionScreen: View {
             }
         }
         .onAppear { isTilting = true }
+    }
+}
+
+private struct HFLaunchControlsTrainingScreen: View {
+    let onContinue: () -> Void
+    let onSkip: () -> Void
+
+    var body: some View {
+        HFLaunchScreenFrame(
+            primaryTitle: "Next",
+            secondaryTitle: "Skip",
+            primaryIdentifier: "hf.onboarding.continueButton",
+            secondaryIdentifier: "hf.onboarding.skipButton",
+            onPrimary: onContinue,
+            onSecondary: onSkip
+        ) {
+            VStack(spacing: HFSpacing.lg) {
+                VStack(spacing: HFSpacing.sm) {
+                    Text("Master the Controls")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+
+                    Text("Everything you need to play, explore, and save your videos.")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.74))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    HFLaunchControlTile(title: "Play / Pause", detail: "Start or pause the scene.", systemImage: "playpause.fill")
+                    HFLaunchControlTile(title: "Scrub", detail: "Move through a moment.", systemImage: "slider.horizontal.3")
+                    HFLaunchControlTile(title: "Depth", detail: "Explore layered viewing.", systemImage: "square.stack.3d.down.forward.fill")
+                        .accessibilityIdentifier("hf.onboarding.depthControl")
+                    HFLaunchControlTile(title: "Focus", detail: "Keep the story clear.", systemImage: "scope")
+                        .accessibilityIdentifier("hf.onboarding.focusControl")
+                    HFLaunchControlTile(title: "Import", detail: "Training label only.", systemImage: "tray.and.arrow.down.fill")
+                    HFLaunchControlTile(title: "Export", detail: "Training label only.", systemImage: "tray.and.arrow.up.fill")
+                }
+                .accessibilityIdentifier("hf.onboarding.importExportTraining")
+            }
+            .padding(.horizontal, 28)
+        }
+    }
+}
+
+private struct HFLaunchHomeRevealScreen: View {
+    let onFinish: () -> Void
+
+    var body: some View {
+        HFLaunchScreenFrame(
+            primaryTitle: "Enter Home",
+            secondaryTitle: nil,
+            primaryIdentifier: "hf.onboarding.enterHomeButton",
+            secondaryIdentifier: nil,
+            onPrimary: onFinish,
+            onSecondary: nil
+        ) {
+            VStack(spacing: 22) {
+                ZStack {
+                    Circle()
+                        .fill(HFColors.gold.opacity(0.18))
+                        .frame(width: 210, height: 210)
+                        .blur(radius: 18)
+
+                    Image(systemName: "film.stack.fill")
+                        .font(.system(size: 74, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 132, height: 132)
+                        .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
+                        .shadow(color: HFColors.gold.opacity(0.30), radius: 28, x: 0, y: 18)
+                }
+
+                VStack(spacing: 12) {
+                    Text("HighFive Cinema")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+
+                    Text("Home is ready.")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(HFColors.gold)
+                        .multilineTextAlignment(.center)
+
+                    Text("Start with premium streaming, then open the product suite when you are ready.")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.74))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 30)
+            }
+        }
+    }
+}
+
+private struct HFLaunchControlTile: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 34, height: 34)
+                .background(HFColors.gold.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            Text(title)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(detail)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.68))
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 112, alignment: .topLeading)
+        .padding(14)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(detail)")
     }
 }
 

@@ -60,6 +60,7 @@ struct ProfileView: View {
                 productSuiteProgressSection
                 ecosystemPresentationModeSection
                 highFiveProductStorySection
+                functionalCoreSummarySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -140,6 +141,7 @@ struct ProfileView: View {
                 productSuiteProgressSection
                 ecosystemPresentationModeSection
                 highFiveProductStorySection
+                functionalCoreSummarySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -538,6 +540,11 @@ struct ProfileView: View {
 
     private var highFiveProductStorySection: some View {
         HFProfileHighFiveProductStorySection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var functionalCoreSummarySection: some View {
+        HFProfileFunctionalCoreSummarySection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4033,6 +4040,38 @@ private struct HFProfileHighFiveProductStorySection: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("HighFive Product Story, streaming first product suite and internal proof remain separated")
         .accessibilityIdentifier("hf.profile.highfiveProductStory")
+    }
+}
+
+private struct HFProfileFunctionalCoreSummarySection: View {
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 48, height: 48)
+                    .background(HFColors.gold.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomStatusChip(title: "Local App Behavior", accent: HFColors.gold)
+                    Text("Functional Core")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Watch, save, download-state, local updates, release checklist, and delivery summary are now connected as local app behavior.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Functional Core, Watch save download-state local updates release checklist and delivery summary are connected as local app behavior")
+        .accessibilityIdentifier("hf.profile.functionalCoreSummary")
     }
 }
 
@@ -8454,6 +8493,12 @@ private struct HFConnectAudienceBoundaryCard: View {
 }
 
 private struct ConnectRoomView: View {
+    @State private var localUpdateDraft = "The Friendly watch-night prompt is ready for local review."
+    @State private var localUpdates = [
+        "Draft: Invite viewers to choose who they would watch The Friendly with.",
+        "Preview: Share a behind-the-scenes note before premiere week."
+    ]
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -8473,6 +8518,7 @@ private struct ConnectRoomView: View {
                     items: ["Communities", "Audience energy", "Creator updates"]
                 )
 
+                localAudienceUpdatesSection
                 HFConnectAudiencePlannerSection(plan: HFConnectAudiencePlannerPreviewData.plan, accent: Color.cyan)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.audienceBoard, accent: Color.cyan)
                 HFPublicMomentumBoardSection(columns: HFRoomMegaExpansionData.publicMomentumColumns, accent: Color.cyan)
@@ -8539,6 +8585,112 @@ private struct ConnectRoomView: View {
         .navigationTitle("Connect Room")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("hf.room.connect.root")
+    }
+
+    private var localAudienceUpdatesSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "text.bubble.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color.cyan)
+                        .frame(width: 48, height: 48)
+                        .background(Color.cyan.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Draft", accent: Color.cyan)
+                        Text("Local Audience Updates")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Prepare creator updates and audience conversation locally before communication services exist.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                TextField("Write a local update", text: $localUpdateDraft, axis: .vertical)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2...4)
+                    .padding(HFSpacing.md)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                            .stroke(HFColors.glassStroke, lineWidth: 1)
+                    )
+                    .accessibilityIdentifier("hf.functional.connect.updateInput")
+
+                Button {
+                    addLocalUpdate()
+                } label: {
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add Local Update")
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(Color.cyan)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.functional.connect.addLocalUpdate")
+                .accessibilityLabel("Add Local Update")
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(Array(localUpdates.enumerated()), id: \.offset) { index, update in
+                        HFLocalUpdateRow(index: index + 1, update: update, accent: Color.cyan)
+                    }
+                }
+                .accessibilityIdentifier("hf.functional.connect.updateList")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Local Audience Updates, draft preview list, not sent")
+        .accessibilityIdentifier("hf.functional.connect.localUpdates")
+    }
+
+    private func addLocalUpdate() {
+        let trimmed = localUpdateDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        localUpdates.insert("Local update: \(trimmed)", at: 0)
+        localUpdateDraft = ""
+    }
+}
+
+private struct HFLocalUpdateRow: View {
+    let index: Int
+    let update: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Text("\(index)")
+                .font(HFTypography.caption)
+                .foregroundStyle(.black)
+                .frame(width: 28, height: 28)
+                .background(accent)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(update)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HFRoomStatusChip(title: "Not sent", accent: accent)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 }
 
@@ -9126,7 +9278,15 @@ private enum LaunchRoomData {
 
 private struct LaunchRoomView: View {
     @State private var selectedLaunchSection: LaunchSection = .overview
+    @State private var launchChecklistStates = [false, false, false, false, false]
     private let accent = HFColors.gold
+    private let launchChecklistItems = [
+        "Campaign headline reviewed",
+        "Premiere copy reviewed",
+        "Audience prompt prepared",
+        "Media kit checked",
+        "Release calendar reviewed"
+    ]
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -9147,6 +9307,7 @@ private struct LaunchRoomView: View {
                     items: ["Timeline", "Campaign", "Readiness"]
                 )
 
+                localReleaseChecklistSection
                 HFLaunchCampaignPlannerSection(campaign: HFLaunchCampaignPlannerPreviewData.campaign, accent: accent)
                 HFReleaseCalendarExpansionSection(
                     milestones: HFRoomMegaExpansionData.releaseMilestones,
@@ -9175,6 +9336,91 @@ private struct LaunchRoomView: View {
         .navigationTitle("Launch Room")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("hf.room.launch.root")
+    }
+
+    private var launchChecklistProgress: Int {
+        launchChecklistStates.filter { $0 }.count
+    }
+
+    private var localReleaseChecklistSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "checklist.checked")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Progress", accent: accent)
+                        Text("Local Release Checklist")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Toggle launch prep items locally and review the current release progress.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Text("\(launchChecklistProgress)/\(launchChecklistItems.count)")
+                        .font(.system(size: 30, weight: .black))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("reviewed")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                    Spacer()
+                    HFRoomStatusChip(title: launchChecklistProgress == launchChecklistItems.count ? "Ready" : "In Review", accent: accent)
+                }
+                .accessibilityIdentifier("hf.functional.launch.checklistProgress")
+
+                VStack(spacing: HFSpacing.sm) {
+                    ForEach(launchChecklistItems.indices, id: \.self) { index in
+                        Toggle(isOn: Binding(
+                            get: { launchChecklistStates[index] },
+                            set: { launchChecklistStates[index] = $0 }
+                        )) {
+                            Text(launchChecklistItems[index])
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .toggleStyle(.switch)
+                        .tint(accent)
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.055))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                        .accessibilityIdentifier("hf.functional.launch.checklistToggle")
+                    }
+                }
+
+                Button {
+                    selectedLaunchSection = .releaseReadiness
+                } label: {
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "arrow.right.circle.fill")
+                        Text("Review Launch Progress")
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(accent)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.functional.launch.reviewProgress")
+                .accessibilityLabel("Review Launch Progress")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Local Release Checklist, \(launchChecklistProgress) of \(launchChecklistItems.count) reviewed")
+        .accessibilityIdentifier("hf.functional.launch.localChecklist")
     }
 
     private var launchSectionSelector: some View {
@@ -10153,6 +10399,7 @@ private enum ExportRoomData {
 
 private struct ExportRoomView: View {
     @State private var selectedExportSection: ExportSection = .overview
+    @State private var generatedDeliverySummary = ""
     private let accent = Color.purple
 
     var body: some View {
@@ -10174,6 +10421,7 @@ private struct ExportRoomView: View {
                     items: ["Deliverables", "Media kit", "Handoff"]
                 )
 
+                deliverySummarySection
                 HFExportDistributionPackageSection(package: HFExportDistributionPackagePreviewData.package, accent: accent)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.deliveryBoard, accent: accent)
                 HFProfessionalDeliveryBoardSection(columns: HFRoomMegaExpansionData.professionalDeliveryColumns, accent: accent)
@@ -10198,6 +10446,98 @@ private struct ExportRoomView: View {
         .navigationTitle("Export Room")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("hf.room.export.root")
+    }
+
+    private var deliverySummarySection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Text Summary", accent: accent)
+                        Text("Generate Delivery Summary")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Create a local text handoff summary from the current title and readiness package.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Button {
+                    generateDeliverySummary()
+                } label: {
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "wand.and.stars")
+                        Text("Generate Summary")
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(accent)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.functional.export.generateSummary")
+                .accessibilityLabel("Generate Summary")
+
+                if !generatedDeliverySummary.isEmpty {
+                    Text(generatedDeliverySummary)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(HFSpacing.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                                .stroke(HFColors.glassStroke, lineWidth: 1)
+                        )
+                        .accessibilityIdentifier("hf.functional.export.summaryText")
+
+                    ShareLink(item: generatedDeliverySummary) {
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share Summary")
+                        }
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(accent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(accent.opacity(0.34), lineWidth: 1))
+                    }
+                    .accessibilityIdentifier("hf.functional.export.shareSummary")
+                    .accessibilityLabel("Share Summary")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Generate Delivery Summary, local text package summary")
+        .accessibilityIdentifier("hf.functional.export.deliverySummary")
+    }
+
+    private func generateDeliverySummary() {
+        generatedDeliverySummary = """
+        HighFive Cinema Delivery Summary
+        Title: The Friendly
+        Watch surface: Movie Detail, Watch Now path, related titles, and My List route.
+        Launch handoff: Campaign headline, premiere copy, audience prompt, media kit, and release calendar reviewed locally.
+        Export package: Deliverables, media kit, festival materials, platform checklist, and distribution handoff are ready for text review.
+        Status: Local summary only.
+        """
     }
 
     private var exportSectionSelector: some View {
@@ -11728,6 +12068,18 @@ private struct DeveloperQAHubView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 2)
+    }
+
+    private func proofMomentIcon(for title: String) -> String {
+        switch title {
+        case "Product Story": return "point.3.connected.trianglepath.dotted"
+        case "Demo Runway": return "play.rectangle.on.rectangle.fill"
+        case "Screenshot Evidence": return "camera.viewfinder"
+        case "Protected Systems": return "shield.lefthalf.filled"
+        case "Route Quality": return "arrow.triangle.branch"
+        case "Evidence Locks": return "checkmark.seal.fill"
+        default: return "checkmark.circle.fill"
+        }
     }
 
     private var releaseReadinessSection: some View {

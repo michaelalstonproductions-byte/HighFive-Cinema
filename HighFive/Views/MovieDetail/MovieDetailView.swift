@@ -51,6 +51,7 @@ struct MovieDetailView: View {
         .navigationBarBackButtonHidden(true)
         .sheet(item: $previewMovie) { movie in
             HFMockPlayerSheet(movie: movie)
+                .accessibilityIdentifier("hf.functional.player.sheet")
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -127,18 +128,33 @@ struct MovieDetailView: View {
 
                     detailMetadataChips
 
-                    HStack(spacing: HFSpacing.xs) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         HFButton("Watch Now", systemImage: "play.fill") {
                             previewMovie = movie
                         }
                         .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
+                        .accessibilityLabel("Watch Now")
 
-                        HFButton(
-                            streamingStore.isSaved(movie) ? "In My List" : "Save",
-                            systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
-                            style: .secondary
-                        ) {
-                            streamingStore.toggleSaved(movie)
+                        HStack(spacing: HFSpacing.xs) {
+                            HFButton(
+                                streamingStore.isSaved(movie) ? "In My List" : "Add to My List",
+                                systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
+                                style: .secondary
+                            ) {
+                                streamingStore.toggleSaved(movie)
+                            }
+                            .accessibilityIdentifier("hf.functional.movie.saveToggle")
+                            .accessibilityLabel(streamingStore.isSaved(movie) ? "Remove from My List" : "Add to My List")
+
+                            HFButton(
+                                streamingStore.isDownloaded(movie) ? "Downloaded" : "Download",
+                                systemImage: streamingStore.isDownloaded(movie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
+                                style: .secondary
+                            ) {
+                                streamingStore.toggleDownload(movie)
+                            }
+                            .accessibilityIdentifier("hf.functional.movie.downloadToggle")
+                            .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Downloaded and available offline" : "Download for offline-ready viewing")
                         }
                     }
                 }
@@ -217,7 +233,7 @@ struct MovieDetailView: View {
 
                 HStack(spacing: HFSpacing.xs) {
                     HFDetailSignalChip(title: movie.creatorName, systemImage: "building.2.fill")
-                    HFDetailSignalChip(title: movie.isDownloaded ? "Offline" : "Streaming", systemImage: movie.isDownloaded ? "arrow.down.circle.fill" : "wifi")
+                    HFDetailSignalChip(title: streamingStore.isDownloaded(movie) ? "Offline-ready" : "Streaming", systemImage: streamingStore.isDownloaded(movie) ? "arrow.down.circle.fill" : "wifi")
                     if let progress = movie.progress {
                         HFDetailSignalChip(title: "\(Int(progress * 100))% watched", systemImage: "play.circle.fill")
                     }
@@ -284,7 +300,7 @@ struct MovieDetailView: View {
                 HFConsumerMomentumRow(title: "Watch Now ready", detail: "Start from the cinematic title page.", status: "Ready", systemImage: "play.fill")
                 HFConsumerMomentumRow(title: "Saved shelf ready", detail: streamingStore.isSaved(movie) ? "Already in My List." : "Save when this fits your night.", status: streamingStore.isSaved(movie) ? "Saved" : "Ready", systemImage: "bookmark.fill")
                 HFConsumerMomentumRow(title: "Related titles ready", detail: "More Like This keeps the decision path moving.", status: "Ready", systemImage: "rectangle.stack.fill")
-                HFConsumerMomentumRow(title: "Offline shelf preview", detail: movie.isDownloaded ? "Available Offline appears in Downloads." : "Offline choices stay visible in the consumer shelf.", status: movie.isDownloaded ? "Offline" : "Preview", systemImage: "arrow.down.circle.fill")
+                HFConsumerMomentumRow(title: "Offline shelf", detail: streamingStore.isDownloaded(movie) ? "Available Offline appears in Downloads." : "Tap Download to mark this title offline-ready.", status: streamingStore.isDownloaded(movie) ? "Downloaded" : "Ready", systemImage: "arrow.down.circle.fill")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -545,13 +561,15 @@ struct MovieDetailView: View {
                     HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
                         previewMovie = movie
                     }
+                    .accessibilityIdentifier("hf.functional.player.watchNow")
                     HFButton(
-                        streamingStore.isSaved(movie) ? "Saved" : "My List",
+                        streamingStore.isSaved(movie) ? "In My List" : "Add to My List",
                         systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
                         style: .secondary
                     ) {
                         streamingStore.toggleSaved(movie)
                     }
+                    .accessibilityIdentifier("hf.functional.movie.saveToggle")
                 }
                 .padding(HFSpacing.sm)
             }

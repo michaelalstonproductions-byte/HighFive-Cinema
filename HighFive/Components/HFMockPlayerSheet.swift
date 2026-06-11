@@ -11,7 +11,7 @@ struct HFMockPlayerSheet: View {
 
             VStack(spacing: HFSpacing.xl) {
                 HStack {
-                    Text("Now Playing Preview")
+                    Text("Player Path")
                         .font(HFTypography.section)
                         .foregroundStyle(HFColors.textPrimary)
                     Spacer()
@@ -26,6 +26,8 @@ struct HFMockPlayerSheet: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.functional.player.close")
+                    .accessibilityLabel("Close player")
                 }
 
                 ZStack(alignment: .bottomLeading) {
@@ -62,11 +64,11 @@ struct HFMockPlayerSheet: View {
                         HStack {
                             Image(systemName: "play.fill")
                                 .foregroundStyle(HFColors.gold)
-                            Text("Local mock playback only")
+                        Text("Player route ready")
                                 .font(HFTypography.cardTitle)
                                 .foregroundStyle(HFColors.textPrimary)
                             Spacer()
-                            Text("42%")
+                        Text("Local")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.gold)
                         }
@@ -81,6 +83,10 @@ struct HFMockPlayerSheet: View {
                             }
                         }
                         .frame(height: 7)
+                        Text("Media source not connected yet.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(HFSpacing.lg)
                 }
@@ -91,6 +97,7 @@ struct HFMockPlayerSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .accessibilityIdentifier("hf.functional.player.watchNow")
     }
 
     @ViewBuilder
