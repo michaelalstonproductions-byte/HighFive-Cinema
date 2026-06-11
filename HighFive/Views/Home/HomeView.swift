@@ -33,6 +33,7 @@ struct HomeView: View {
                 tonightFeatureSection
                 programmingPulseSection
                 premiereMomentumSection
+                watchFirstStorySection
                 homeStreamingMomentumSection
                 watchSectionHeader
 
@@ -234,6 +235,37 @@ struct HomeView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Premieres Building Momentum, public premiere planning hints for featured titles")
         .accessibilityIdentifier("hf.consumer.home.premiereMomentum")
+    }
+
+    private var watchFirstStorySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Built Around The Watch", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "play.rectangle.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 42, height: 42)
+                        .background(HFColors.gold.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("HighFive starts with premium streaming, then opens creator rooms through Profile.")
+                            .font(HFTypography.body)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HFRouteChip(title: "Watch First", systemImage: "sparkles.tv.fill")
+                    }
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Built Around The Watch, HighFive starts with premium streaming then opens creator rooms through Profile")
+        .accessibilityIdentifier("hf.consumer.home.watchFirstStory")
     }
 
     private var watchSectionHeader: some View {

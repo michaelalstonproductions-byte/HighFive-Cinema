@@ -58,6 +58,8 @@ struct ProfileView: View {
                 menu
                 roomsGatewayHero
                 productSuiteProgressSection
+                ecosystemPresentationModeSection
+                highFiveProductStorySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -136,6 +138,8 @@ struct ProfileView: View {
                 header
                 roomsGatewayHero
                 productSuiteProgressSection
+                ecosystemPresentationModeSection
+                highFiveProductStorySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -524,6 +528,16 @@ struct ProfileView: View {
 
     private var productSuiteProgressSection: some View {
         HFProfileProductSuiteProgressSection(rows: HFRoomMegaExpansionData.productSuiteRows)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var ecosystemPresentationModeSection: some View {
+        HFProfileEcosystemPresentationSection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var highFiveProductStorySection: some View {
+        HFProfileHighFiveProductStorySection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -1350,6 +1364,25 @@ private struct HFRoomSuiteProgressRow: Identifiable {
     let systemImage: String
 }
 
+private struct HFEcosystemPresentationAct: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let pillar: String
+    let route: String
+    let proof: String
+    let status: String
+    let systemImage: String
+}
+
+private struct HFEcosystemProofRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+}
+
 private struct HFRoomBoardExpansion {
     let title: String
     let subtitle: String
@@ -1360,6 +1393,72 @@ private struct HFRoomBoardExpansion {
     let momentumIdentifier: String
     let planIdentifier: String
     let accessibilityLabel: String
+}
+
+private enum HFEcosystemPresentationData {
+    static let acts: [HFEcosystemPresentationAct] = [
+        HFEcosystemPresentationAct(
+            title: "WATCH",
+            subtitle: "Premium streaming and viewing journey",
+            pillar: "Consumer",
+            route: "Home -> Movie Detail -> Profile",
+            proof: "Home, Search, Movie Detail, Library, Downloads",
+            status: "Built",
+            systemImage: "play.rectangle.fill"
+        ),
+        HFEcosystemPresentationAct(
+            title: "CREATE",
+            subtitle: "Creator Studio suite and package prep",
+            pillar: "Studio",
+            route: "Profile -> HighFive Rooms -> Create",
+            proof: "Studio Slate, Project Package, Pitch, Media Kit",
+            status: "Built",
+            systemImage: "wand.and.stars"
+        ),
+        HFEcosystemPresentationAct(
+            title: "CONNECT",
+            subtitle: "Audience energy and public momentum",
+            pillar: "Public",
+            route: "Profile -> HighFive Rooms -> Connect",
+            proof: "Momentum Board, Creator Updates, Conversation Pack",
+            status: "Built",
+            systemImage: "person.2.fill"
+        ),
+        HFEcosystemPresentationAct(
+            title: "LAUNCH",
+            subtitle: "Release calendar and premiere readiness",
+            pillar: "Premiere",
+            route: "Profile -> HighFive Rooms -> Launch",
+            proof: "Calendar, Campaign Momentum, Premiere Pack",
+            status: "Built",
+            systemImage: "flag.checkered"
+        ),
+        HFEcosystemPresentationAct(
+            title: "EXPORT",
+            subtitle: "Professional delivery and handoff planning",
+            pillar: "Pro Path",
+            route: "Profile -> HighFive Rooms -> Export",
+            proof: "Delivery Board, Festival Pack, Handoff Planner",
+            status: "Built",
+            systemImage: "shippingbox.fill"
+        ),
+        HFEcosystemPresentationAct(
+            title: "PROOF",
+            subtitle: "Developer / QA internal validation",
+            pillar: "Internal",
+            route: "Profile -> Developer / QA -> Demo Tour",
+            proof: "Product Spine, Visual Parity, Screenshot Review",
+            status: "Internal",
+            systemImage: "lock.shield.fill"
+        )
+    ]
+
+    static let productStoryRows: [HFEcosystemProofRow] = [
+        HFEcosystemProofRow(title: "Start With Watch", detail: "Home, Search, Movie Detail, Library, Downloads. Consumer streaming first.", status: "Built", systemImage: "play.rectangle.fill"),
+        HFEcosystemProofRow(title: "Expand Into Rooms", detail: "Watch, Create, Connect, Launch, Export. Product suite visible through Profile.", status: "Built", systemImage: "rectangle.3.group.fill"),
+        HFEcosystemProofRow(title: "Prove The Ecosystem", detail: "Demo Tour, Product Spine, Visual Parity, Protected Systems. Developer / QA only.", status: "Internal", systemImage: "checkmark.seal.fill"),
+        HFEcosystemProofRow(title: "Keep Systems Safe", detail: "Protected media, delivery, server, commerce, and audience-contact services remain separated.", status: "Protected", systemImage: "shield.lefthalf.filled")
+    ]
 }
 
 private enum HFRoomMegaExpansionData {
@@ -3797,6 +3896,143 @@ private struct HFProfileProductSuiteProgressSection: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("HighFive Product Suite, local ecosystem progress summary, internal tools remain internal only")
         .accessibilityIdentifier("hf.profile.productSuiteProgress")
+    }
+}
+
+private struct HFProfileEcosystemPresentationSection: View {
+    private let acts = HFEcosystemPresentationData.acts
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.stack.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.gold.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomLocalPreviewBadge(title: "Presentation Preview", accent: HFColors.gold)
+
+                        Text("Ecosystem Presentation Mode")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("Walk the HighFive story from Watch to Create, Connect, Launch, Export, then internal proof.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                    ForEach(acts) { act in
+                        ecosystemActTile(act)
+                    }
+                }
+
+                NavigationLink {
+                    FinalDemoTourView()
+                } label: {
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "play.rectangle.on.rectangle.fill")
+                        Text("Review Product Story")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, HFSpacing.md)
+                    .padding(.vertical, 11)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Review Product Story, open local presentation preview")
+                .accessibilityIdentifier("hf.profile.presentationStoryCard")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Ecosystem Presentation Mode, local presentation preview for Watch Create Connect Launch Export and internal proof")
+        .accessibilityIdentifier("hf.profile.ecosystemPresentationMode")
+    }
+
+    private func ecosystemActTile(_ act: HFEcosystemPresentationAct) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: act.systemImage)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+
+                Text(act.title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Text(act.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+
+            Text(act.proof)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+                .minimumScaleFactor(0.78)
+
+            HFRoomStatusChip(title: act.status, accent: act.status == "Internal" ? Color.gray : HFColors.gold)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(HFColors.glassSurface)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(act.title), \(act.subtitle), proof \(act.proof), status \(act.status)")
+    }
+}
+
+private struct HFProfileHighFiveProductStorySection: View {
+    private let rows = HFEcosystemPresentationData.productStoryRows
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "HighFive Product Story", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.glassStroke) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    Text("HighFive starts as a premium streaming app. Profile opens the product suite: Watch, Create, Connect, Launch, and Export. Developer / QA stays internal.")
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        ForEach(rows) { row in
+                            HFRoomSuiteProgressTile(
+                                row: HFRoomSuiteProgressRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage),
+                                accent: row.status == "Internal" || row.status == "Protected" ? Color.gray : HFColors.gold
+                            )
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("HighFive Product Story, streaming first product suite and internal proof remain separated")
+        .accessibilityIdentifier("hf.profile.highfiveProductStory")
     }
 }
 
@@ -11390,6 +11626,7 @@ private struct DeveloperQAHubView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                presentationProofPathSection
                 releaseReadinessSection
                 productSpineSection
                 consumerScreenQASection
@@ -11631,6 +11868,69 @@ private struct DeveloperQAHubView: View {
                 }
             }
         }
+    }
+
+    private var presentationProofPathSection: some View {
+        hubSection(
+            title: "Presentation Proof Path",
+            subtitle: "Internal route for showing the full HighFive product story and evidence locks."
+        ) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "play.rectangle.on.rectangle.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(HFColors.gold)
+                            .frame(width: 48, height: 48)
+                            .background(HFColors.gold.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFStatusBadge(title: "Internal Only", systemImage: "lock.shield.fill", isProminent: false)
+                            Text("Presentation Proof Path")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Internal route for showing the full HighFive product story and evidence locks.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.sm) {
+                        HFRoomSuiteProgressTile(row: HFRoomSuiteProgressRow(title: "Demo Tour", detail: "Guided product story", status: "Ready", systemImage: "play.rectangle.fill"), accent: HFColors.gold)
+                        HFRoomSuiteProgressTile(row: HFRoomSuiteProgressRow(title: "Product Spine", detail: "Five-pillar map", status: "Ready", systemImage: "point.3.connected.trianglepath.dotted"), accent: HFColors.gold)
+                        HFRoomSuiteProgressTile(row: HFRoomSuiteProgressRow(title: "Visual Parity", detail: "Design review path", status: "Review", systemImage: "rectangle.on.rectangle.angled"), accent: HFColors.gold)
+                        HFRoomSuiteProgressTile(row: HFRoomSuiteProgressRow(title: "Protected Systems", detail: "Safety seal", status: "Locked", systemImage: "shield.lefthalf.filled"), accent: Color.gray)
+                        HFRoomSuiteProgressTile(row: HFRoomSuiteProgressRow(title: "Screenshot Review", detail: "Capture plan", status: "Needed", systemImage: "camera.viewfinder"), accent: HFColors.gold)
+                        HFRoomSuiteProgressTile(row: HFRoomSuiteProgressRow(title: "Evidence Locks", detail: "Prior proofs", status: "Ready", systemImage: "checkmark.seal.fill"), accent: HFColors.gold)
+                    }
+
+                    NavigationLink {
+                        FinalDemoTourView()
+                    } label: {
+                        HStack(spacing: HFSpacing.xs) {
+                            Image(systemName: "arrow.right.circle.fill")
+                            Text("Open Demo Tour")
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.75)
+                        }
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open Demo Tour, internal presentation proof path")
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .accessibilityIdentifier("hf.devqa.presentationProofPath")
     }
 
     private var internalToolsSection: some View {

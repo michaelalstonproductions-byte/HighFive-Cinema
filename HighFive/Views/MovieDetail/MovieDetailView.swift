@@ -37,6 +37,7 @@ struct MovieDetailView: View {
                 viewingContextSection
                 publicMomentumSection
                 titlePathSection
+                watchToReleaseSection
                 relatedSection
                 creatorSection
                 castSection
@@ -355,6 +356,25 @@ struct MovieDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Title Path, watch path collection fit public momentum and delivery readiness")
         .accessibilityIdentifier("hf.consumer.movieDetail.titlePath")
+    }
+
+    private var watchToReleaseSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "From Watch To Release", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 122), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                    HFTitleDecisionCard(title: "Watch path", detail: "Start with this title", systemImage: "play.rectangle.fill", isActive: true)
+                    HFTitleDecisionCard(title: "Public momentum", detail: "Premiere story signal", systemImage: "flame.fill")
+                    HFTitleDecisionCard(title: "Professional delivery", detail: "Polished title journey", systemImage: "sparkles")
+                }
+                .padding(HFSpacing.md)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("From Watch To Release, watch path public momentum and professional delivery")
+        .accessibilityIdentifier("hf.consumer.movieDetail.watchToRelease")
     }
 
     private var genreTags: some View {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FinalDemoTourView: View {
-    private let storyCopy = "HighFive opens with Watch because the consumer experience comes first. HighFive Rooms then reveal the creator ecosystem: creators can prepare projects, connect with audiences, launch titles, and organize professional deliverables. Developer / QA remains internal so the product can be validated without exposing tools to viewers."
+    private let storyCopy = "WATCH first. Then CREATE, CONNECT, LAUNCH, EXPORT. Finish with Developer / QA proof. HighFive starts as a premium streaming app, then opens the product suite through Profile while internal validation stays separate."
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -13,6 +13,8 @@ struct FinalDemoTourView: View {
 
                     hero
                     actsSection
+                    ecosystemProofBoardSection
+                    runOfShowSection
                     screenshotPlanSection
                     productStorySection
                     figmaSourceSection
@@ -41,13 +43,13 @@ struct FinalDemoTourView: View {
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(HFColors.gold)
 
-                    Text("HighFive Cinema Demo Tour")
+                    Text("HighFive Cinema Product Story")
                         .font(HFTypography.display)
                         .foregroundStyle(HFColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text("Watch first. Then create, connect, launch, and prepare content for the world.")
+                Text("WATCH first. Then CREATE, CONNECT, LAUNCH, EXPORT. Finish with Developer / QA proof.")
                     .font(HFTypography.section)
                     .foregroundStyle(HFColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -67,8 +69,8 @@ struct FinalDemoTourView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Consumer and Rooms Demo Tour, internal guided proof path for HighFive Cinema")
-        .accessibilityIdentifier("hf.demoTour.hero")
+        .accessibilityLabel("HighFive Cinema Product Story, Watch first, then Create Connect Launch Export, finishing with Developer and QA proof")
+        .accessibilityIdentifier("hf.demoTour.presentationHero")
     }
 
     private var actsSection: some View {
@@ -107,18 +109,82 @@ struct FinalDemoTourView: View {
 
     private var screenshotPlanSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Screenshot Plan", actionTitle: nil)
+            HFSectionHeader(title: "Screenshot Evidence Plan", actionTitle: nil)
 
             VStack(spacing: HFSpacing.sm) {
-                ForEach(HFFinalDemoTourData.screenshotPlan) { target in
+                ForEach(HFFinalDemoTourData.screenshotEvidencePlan) { target in
                     screenshotPlanRow(target)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Screenshot plan rows for consumer rooms and internal demo tour screenshots")
-        .accessibilityIdentifier("hf.demoTour.screenshotPlan")
+        .accessibilityLabel("Screenshot Evidence Plan, consumer evidence rooms evidence creator suite evidence launch connect evidence watch export evidence and internal QA evidence")
+        .accessibilityIdentifier("hf.demoTour.screenshotEvidencePlan")
+    }
+
+    private var ecosystemProofBoardSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Ecosystem Proof Board", actionTitle: nil)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(HFFinalDemoTourData.ecosystemProofRows) { row in
+                    proofRowCard(row)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Ecosystem Proof Board, consumer shell, rooms suite, creator studio, public momentum, professional path, evidence locks, live systems, and protected systems")
+        .accessibilityIdentifier("hf.demoTour.ecosystemProofBoard")
+    }
+
+    private var runOfShowSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Presentation Run-of-Show", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(HFFinalDemoTourData.presentationRunOfShow) { row in
+                    proofRowCard(row)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Presentation Run of Show, Home, Movie Detail, Profile, Product Suite, each Room, Developer QA")
+        .accessibilityIdentifier("hf.demoTour.runOfShow")
+    }
+
+    private func proofRowCard(_ row: HFDemoProofRow) -> some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.glassStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: row.systemImage)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 34, height: 34)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(row.title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(row.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HFStatusBadge(title: row.status, isProminent: row.status == "Built")
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(row.title), \(row.detail), status \(row.status)")
     }
 
     private func screenshotPlanRow(_ target: HFDemoScreenshotTarget) -> some View {
@@ -275,9 +341,9 @@ struct FinalDemoTourView: View {
 
     private func actIdentifier(for title: String) -> String {
         switch title {
-        case "Act 1 - Watch First": "hf.demoTour.act1"
-        case "Act 2 - HighFive Rooms": "hf.demoTour.act2"
-        case "Act 3 - Internal Validation": "hf.demoTour.act3"
+        case "Act 1 - Watch First": "hf.demoTour.actWatch"
+        case "Act 2 - HighFive Rooms": "hf.demoTour.actRooms"
+        case "Act 3 - Internal Validation": "hf.demoTour.actProof"
         default: "hf.demoTour.act"
         }
     }

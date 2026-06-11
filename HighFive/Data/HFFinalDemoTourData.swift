@@ -1,7 +1,7 @@
 import Foundation
 
 enum HFFinalDemoTourData {
-    static let statusChips = ["Consumer First", "Rooms Verified", "Internal QA", "Needs Screenshots"]
+    static let statusChips = ["Consumer First", "Five Product Rooms", "Creator Suite", "Public Momentum", "Professional Delivery", "Internal QA"]
 
     static let acts: [HFDemoAct] = [
         HFDemoAct(
@@ -249,6 +249,35 @@ enum HFFinalDemoTourData {
         HFDemoScreenshotTarget(filename: "highfive-demo-demo-tour.png", route: "Developer / QA -> Consumer + Rooms Demo Tour", reviewFocus: "Three-act guided proof path.", status: "Needed")
     ]
 
+    static let screenshotEvidencePlan: [HFDemoScreenshotTarget] = [
+        HFDemoScreenshotTarget(filename: "consumer-evidence.png", route: "Home, Search, Movie Detail, Library, Downloads, Profile", reviewFocus: "Consumer Evidence", status: "Planned"),
+        HFDemoScreenshotTarget(filename: "rooms-evidence.png", route: "Watch, Create, Connect, Launch, Export", reviewFocus: "Rooms Evidence", status: "Planned"),
+        HFDemoScreenshotTarget(filename: "creator-suite-evidence.png", route: "Creator Studio", reviewFocus: "Creator Suite Evidence", status: "Planned"),
+        HFDemoScreenshotTarget(filename: "launch-connect-evidence.png", route: "Connect Room and Launch Room", reviewFocus: "Launch + Connect Evidence", status: "Planned"),
+        HFDemoScreenshotTarget(filename: "watch-export-evidence.png", route: "Watch Room and Export Room", reviewFocus: "Watch + Export Evidence", status: "Planned"),
+        HFDemoScreenshotTarget(filename: "internal-qa-evidence.png", route: "Developer / QA", reviewFocus: "Internal QA Evidence", status: "Planned")
+    ]
+
+    static let ecosystemProofRows: [HFDemoProofRow] = [
+        HFDemoProofRow(title: "Consumer shell built", detail: "Home, Search, Movie Detail, Library, Downloads, and Profile lead the app.", status: "Built", systemImage: "play.rectangle.fill"),
+        HFDemoProofRow(title: "Rooms suite built", detail: "Watch, Create, Connect, Launch, and Export live through Profile.", status: "Built", systemImage: "rectangle.3.group.fill"),
+        HFDemoProofRow(title: "Creator Studio deepened", detail: "Studio Slate, Project Package, Pitch Package, Media Kit, and Launch Prep are present.", status: "Built", systemImage: "wand.and.stars"),
+        HFDemoProofRow(title: "Connect + Launch public momentum built", detail: "Audience energy, update planning, release calendar, and premiere packs are present.", status: "Built", systemImage: "person.2.fill"),
+        HFDemoProofRow(title: "Watch + Export professional path built", detail: "Program board, viewing journey, delivery board, festival pack, and handoff planner are present.", status: "Built", systemImage: "shippingbox.fill"),
+        HFDemoProofRow(title: "Evidence locks present", detail: "Prior verification passes captured source checks, screenshots, and review notes.", status: "Locked", systemImage: "checkmark.seal.fill"),
+        HFDemoProofRow(title: "Live systems disconnected", detail: "Presentation mode stays local and static.", status: "Separated", systemImage: "bolt.slash.fill"),
+        HFDemoProofRow(title: "Protected systems untouched", detail: "Sensitive media and app systems remain outside this presentation pass.", status: "Untouched", systemImage: "shield.lefthalf.filled")
+    ]
+
+    static let presentationRunOfShow: [HFDemoProofRow] = [
+        HFDemoProofRow(title: "Start on Home", detail: "Lead with the premium streaming front door.", status: "1", systemImage: "house.fill"),
+        HFDemoProofRow(title: "Open Movie Detail", detail: "Show title decision, public momentum, and related titles.", status: "2", systemImage: "film.fill"),
+        HFDemoProofRow(title: "Open Profile", detail: "Move from viewer identity into the product suite.", status: "3", systemImage: "person.crop.circle.fill"),
+        HFDemoProofRow(title: "Show Product Suite", detail: "Walk Watch, Create, Connect, Launch, and Export as one ecosystem.", status: "4", systemImage: "rectangle.3.group.fill"),
+        HFDemoProofRow(title: "Open each Room", detail: "Show the local product story pillar by pillar.", status: "5", systemImage: "square.grid.3x3.fill"),
+        HFDemoProofRow(title: "Finish in Developer / QA", detail: "Close with internal proof and safety review.", status: "6", systemImage: "lock.shield.fill")
+    ]
+
     static let productStory: [HFDemoStoryItem] = [
         HFDemoStoryItem(label: "WATCH", value: "Premium streaming shell", systemImage: "play.rectangle.fill"),
         HFDemoStoryItem(label: "CREATE", value: "Creator Studio", systemImage: "wand.and.stars"),
@@ -352,6 +381,14 @@ struct HFDemoStoryItem: Identifiable {
     let id = UUID()
     let label: String
     let value: String
+    let systemImage: String
+}
+
+struct HFDemoProofRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
     let systemImage: String
 }
 
