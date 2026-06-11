@@ -115,6 +115,11 @@ struct UnifiedDiscoveryView: View {
 
     private var discoveryFilters: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
+            Text("Genre and mood filters")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HFSpacing.xs) {
                     ForEach(HFMockData.discoveryGenres, id: \.self) { filter in
@@ -127,6 +132,9 @@ struct UnifiedDiscoveryView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Genre and mood filters")
+        .accessibilityIdentifier("hf.consumer.search.genreFilters")
     }
 
     private func movieRail(_ category: Category) -> some View {

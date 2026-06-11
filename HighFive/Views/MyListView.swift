@@ -26,6 +26,8 @@ struct MyListView: View {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 header
                 libraryShelfHero
+                watchShelfSection
+                shelfMomentumSection
                 filterChips
 
                 if savedMovies.isEmpty {
@@ -76,7 +78,7 @@ struct MyListView: View {
                     .frame(width: 52, height: 52)
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("Your watch shelf")
+                        Text("Your Watch Shelf")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
                         Text("Saved titles, in-progress films, and offline-ready picks stay organized here.")
@@ -106,6 +108,43 @@ struct MyListView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Library shelf summary")
+        .accessibilityIdentifier("hf.consumer.library.watchShelf")
+    }
+
+    private var watchShelfSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Your Watch Shelf", actionTitle: nil)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                HFLibraryShelfCard(title: "Saved Titles", detail: "\(HFMockData.movies.filter { streamingStore.isSaved($0) }.count) in your shelf", systemImage: "bookmark.fill", isActive: true)
+                HFLibraryShelfCard(title: "Continue Watching", detail: "\(HFMockData.movies.filter { streamingStore.isSaved($0) && $0.progress != nil }.count) in progress", systemImage: "play.circle.fill")
+                HFLibraryShelfCard(title: "Downloads", detail: "\(HFMockData.movies.filter { streamingStore.isSaved($0) && streamingStore.isDownloaded($0) }.count) offline-ready", systemImage: "arrow.down.circle.fill")
+                HFLibraryShelfCard(title: "Recently Added", detail: "Fresh titles for later", systemImage: "clock.fill")
+                HFLibraryShelfCard(title: "Recommended Next", detail: "A softer path back in", systemImage: "sparkles")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Your Watch Shelf, saved titles, continue watching, downloads, recently added, and recommended next")
+        .accessibilityIdentifier("hf.consumer.library.watchShelf")
+    }
+
+    private var shelfMomentumSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Shelf Momentum", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                HFConsumerMomentumRow(title: "Saved shelf ready", detail: "Saved titles stay organized for later.", status: "Ready", systemImage: "bookmark.fill")
+                HFConsumerMomentumRow(title: "Continue watching local", detail: "In-progress titles stay visible in your shelf.", status: "Local", systemImage: "play.circle.fill")
+                HFConsumerMomentumRow(title: "Downloads preview", detail: "Offline-ready titles connect to Downloads.", status: "Preview", systemImage: "arrow.down.circle.fill")
+                HFConsumerMomentumRow(title: "Watch mood organized", detail: "Filters keep tonight's choice easy to scan.", status: "Ready", systemImage: "line.3.horizontal.decrease.circle.fill")
+                HFConsumerMomentumRow(title: "Local profile shelf", detail: "Your profile can browse this preview without setup.", status: "Local", systemImage: "person.crop.circle.fill")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Library shelf momentum, saved shelf, continue watching, downloads, watch mood, and local profile shelf")
+        .accessibilityIdentifier("hf.consumer.library.shelfMomentum")
     }
 
     private var filterChips: some View {
@@ -147,6 +186,45 @@ struct MyListView: View {
             systemImage: "bookmark.fill"
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+}
+
+private struct HFLibraryShelfCard: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    var isActive = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(isActive ? .black : HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                .clipShape(Circle())
+
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 102, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 }
 

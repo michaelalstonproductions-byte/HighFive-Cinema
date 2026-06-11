@@ -32,7 +32,9 @@ struct MovieDetailView: View {
                 hero
 
                 overview
+                titleDecisionPanel
                 titleSignalPanel
+                viewingContextSection
                 relatedSection
                 creatorSection
                 castSection
@@ -225,6 +227,69 @@ struct MovieDetailView: View {
         .accessibilityLabel("Movie detail readiness panel")
     }
 
+    private var titleDecisionPanel: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Why Watch Tonight", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "sparkles.tv.fill")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(HFColors.gold)
+                            .frame(width: 48, height: 48)
+                            .background(HFColors.gold.opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text(movie.title)
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.78)
+                            Text("A clear title decision surface for mood, story, audience fit, and what to watch next.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        HFTitleDecisionCard(title: "Watch mood", detail: movie.genres.prefix(2).joined(separator: " / "), systemImage: "moon.stars.fill", isActive: true)
+                        HFTitleDecisionCard(title: "Story promise", detail: movie.subtitle, systemImage: "text.book.closed.fill")
+                        HFTitleDecisionCard(title: "Audience fit", detail: movie.rating, systemImage: "person.2.fill")
+                        HFTitleDecisionCard(title: "Premiere context", detail: movie.isOriginal ? "HighFive Original" : "Featured title", systemImage: "sparkles")
+                        HFTitleDecisionCard(title: "Related titles", detail: "\(relatedTitles.count) more like this", systemImage: "rectangle.stack.fill")
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Why Watch Tonight, title decision panel")
+        .accessibilityIdentifier("hf.consumer.movieDetail.decisionPanel")
+    }
+
+    private var viewingContextSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Viewing Context", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                HFConsumerMomentumRow(title: "Watch Now ready", detail: "Start from the cinematic title page.", status: "Ready", systemImage: "play.fill")
+                HFConsumerMomentumRow(title: "Saved shelf ready", detail: streamingStore.isSaved(movie) ? "Already in My List." : "Save when this fits your night.", status: streamingStore.isSaved(movie) ? "Saved" : "Ready", systemImage: "bookmark.fill")
+                HFConsumerMomentumRow(title: "Related titles ready", detail: "More Like This keeps the decision path moving.", status: "Ready", systemImage: "rectangle.stack.fill")
+                HFConsumerMomentumRow(title: "Offline shelf preview", detail: movie.isDownloaded ? "Available Offline appears in Downloads." : "Offline choices stay visible in the consumer shelf.", status: movie.isDownloaded ? "Offline" : "Preview", systemImage: "arrow.down.circle.fill")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Viewing Context, watch now, saved shelf, related titles, and offline shelf")
+        .accessibilityIdentifier("hf.consumer.movieDetail.viewingContext")
+    }
+
     private var genreTags: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
             ForEach(movie.genres, id: \.self) { genre in
@@ -349,8 +414,11 @@ struct MovieDetailView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
+            .accessibilityIdentifier("hf.consumer.movieDetail.related")
         }
-        .accessibilityIdentifier("hf.consumer.movieDetail.related")
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("More Like This related titles")
+        .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
     }
 
     private var bottomScrollClearance: some View {
@@ -404,6 +472,45 @@ struct MovieDetailView: View {
             .padding(.bottom, HFSpacing.sm)
         }
         .background(HFColors.background.opacity(0.72))
+    }
+}
+
+private struct HFTitleDecisionCard: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    var isActive = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(isActive ? .black : HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                .clipShape(Circle())
+
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 104, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 }
 

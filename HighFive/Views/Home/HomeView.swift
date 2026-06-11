@@ -32,6 +32,7 @@ struct HomeView: View {
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
+                homeStreamingMomentumSection
                 watchSectionHeader
 
                 ForEach(HFMockData.premiumHomeRails) { category in
@@ -177,10 +178,12 @@ struct HomeView: View {
                         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
                 }
 
-                HStack(spacing: HFSpacing.xs) {
-                    HFRouteChip(title: "Featured Premiere", systemImage: "play.fill", isActive: true)
-                    HFRouteChip(title: "Originals", systemImage: "star.fill")
-                    HFRouteChip(title: "New This Week", systemImage: "calendar")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                    HFHomeCommandCard(title: "Featured Premiere", subtitle: "Your next watch starts here.", systemImage: "play.fill", isActive: true)
+                    HFHomeCommandCard(title: "Pick Up Where You Left Off", subtitle: "Continue the story.", systemImage: "play.circle.fill")
+                    HFHomeCommandCard(title: "HighFive Originals", subtitle: "Premium local slate.", systemImage: "star.fill")
+                    HFHomeCommandCard(title: "New This Week", subtitle: "Fresh premieres.", systemImage: "calendar")
+                    HFHomeCommandCard(title: "Because You Watched", subtitle: "More like your mood.", systemImage: "sparkles")
                 }
             }
             .padding(HFSpacing.lg)
@@ -195,6 +198,25 @@ struct HomeView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Tonight on HighFive, curated premieres, originals, and saved titles")
+        .accessibilityIdentifier("hf.consumer.home.tonight")
+    }
+
+    private var homeStreamingMomentumSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Streaming Momentum", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                HFConsumerMomentumRow(title: "Featured title ready", detail: heroMovie.title, status: "Ready", systemImage: "sparkles.tv.fill")
+                HFConsumerMomentumRow(title: "Saved shelf active", detail: "My List is one tap away.", status: "Active", systemImage: "bookmark.fill")
+                HFConsumerMomentumRow(title: "Originals highlighted", detail: "HighFive Originals anchor the home rail.", status: "Featured", systemImage: "star.fill")
+                HFConsumerMomentumRow(title: "Offline shelf preview", detail: "Offline picks stay visible in the viewing path.", status: "Preview", systemImage: "arrow.down.circle.fill")
+                HFConsumerMomentumRow(title: "Discovery path ready", detail: "Search and Discover lead into the next watch.", status: "Ready", systemImage: "magnifyingglass")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Home streaming momentum, featured title, saved shelf, originals, offline shelf, and discovery path")
+        .accessibilityIdentifier("hf.consumer.home.momentum")
     }
 
     private var watchSectionHeader: some View {
@@ -544,6 +566,91 @@ private struct HFHomeMetricPill: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, HFSpacing.sm)
             .padding(.vertical, HFSpacing.xs)
+        }
+    }
+}
+
+private struct HFHomeCommandCard: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    var isActive = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(isActive ? .black : HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                .clipShape(Circle())
+
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
+
+            Text(subtitle)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.74)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 112, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+}
+
+struct HFConsumerMomentumRow: View {
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: 16, strokeColor: HFColors.gold.opacity(0.18)) {
+            HStack(spacing: HFSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 34, height: 34)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                    Text(detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.74)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+
+                Text(status)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(height: 24)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
+            }
+            .padding(HFSpacing.sm)
         }
     }
 }

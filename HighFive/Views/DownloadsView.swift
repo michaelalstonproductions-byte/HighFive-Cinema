@@ -13,11 +13,17 @@ struct DownloadsView: View {
         Double(downloads.count) * 1.6
     }
 
+    private var usedStorageLabel: String {
+        let tenths = Int((usedStorage * 10).rounded())
+        return "\(tenths / 10).\(tenths % 10)"
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 downloadHero
+                offlineWatchHubSection
                 storageStatus
                 offlinePlan
 
@@ -71,7 +77,6 @@ struct DownloadsView: View {
             .accessibilityLabel("Find more downloads")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityIdentifier("hf.consumer.downloads.storageCard")
     }
 
     private var downloadHero: some View {
@@ -160,21 +165,68 @@ struct DownloadsView: View {
             .padding(HFSpacing.lg)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.consumer.downloads.storageCard")
+    }
+
+    private var offlineWatchHubSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Offline Watch Hub", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.system(size: 24, weight: .black))
+                            .foregroundStyle(HFColors.gold)
+                            .frame(width: 50, height: 50)
+                            .background(HFColors.gold.opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("Ready when you are.")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Keep available offline titles, shelf planning, and find-more paths together in one calm viewing space.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        HFOfflineHubCard(title: "Available Offline", detail: "\(downloads.count) titles", systemImage: "checkmark.circle.fill", isActive: true)
+                        HFOfflineHubCard(title: "Ready When You Are", detail: "Travel and low-signal nights", systemImage: "airplane")
+                        HFOfflineHubCard(title: "Find More To Download", detail: "Browse more titles", systemImage: "plus.circle.fill")
+                        HFOfflineHubCard(title: "Offline Shelf", detail: "Watch later path", systemImage: "rectangle.stack.fill")
+                        HFOfflineHubCard(title: "Storage Preview", detail: "\(usedStorageLabel) GB planned", systemImage: "internaldrive.fill")
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Offline Watch Hub, available offline, ready when you are, find more, offline shelf, and storage preview")
+        .accessibilityIdentifier("hf.consumer.downloads.offlineWatchHub")
     }
 
     private var offlinePlan: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Offline Plan", actionTitle: nil)
 
-            HStack(spacing: HFSpacing.sm) {
-                HFDownloadPlanTile(title: "Travel", subtitle: "Ready without signal", systemImage: "airplane")
-                HFDownloadPlanTile(title: "Home", subtitle: "Resume instantly", systemImage: "house.fill")
-                HFDownloadPlanTile(title: "Queue", subtitle: "\(downloads.count) saved", systemImage: "list.bullet.rectangle")
+            VStack(spacing: HFSpacing.xs) {
+                HFConsumerMomentumRow(title: "Offline-ready titles", detail: downloads.isEmpty ? "Find more titles for the shelf." : "\(downloads.count) titles ready for later.", status: downloads.isEmpty ? "Open" : "Ready", systemImage: "checkmark.circle.fill")
+                HFConsumerMomentumRow(title: "Storage preview", detail: "\(usedStorageLabel) GB represented in this shelf.", status: "Preview", systemImage: "internaldrive.fill")
+                HFConsumerMomentumRow(title: "Download shelf", detail: "Saved titles stay organized for travel and quiet nights.", status: "Local", systemImage: "rectangle.stack.fill")
+                HFConsumerMomentumRow(title: "Find more path", detail: "Discover leads back to titles worth keeping nearby.", status: "Ready", systemImage: "magnifyingglass")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("Offline plan summary")
+        .accessibilityIdentifier("hf.consumer.downloads.offlinePlan")
     }
 
     private var downloadList: some View {
@@ -256,6 +308,45 @@ struct DownloadsView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Find more to download")
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+}
+
+private struct HFOfflineHubCard: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    var isActive = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(isActive ? .black : HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                .clipShape(Circle())
+
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.74)
+
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 104, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 }
 

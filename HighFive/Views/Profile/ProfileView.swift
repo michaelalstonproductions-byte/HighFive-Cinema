@@ -51,6 +51,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 selectedProfilePanel
+                consumerSummarySection
                 avatarRow
                 manageProfilesButton
 
@@ -193,6 +194,49 @@ struct ProfileView: View {
             )
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var consumerSummarySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Your HighFive", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: selectedProfile.avatarSystemName)
+                            .font(.system(size: 23, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 50, height: 50)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("Your HighFive")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Viewing profile, saved shelf, downloads, and the Rooms gateway stay connected from one consumer-first profile.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        HFProfileConsumerSummaryCard(title: "Viewing profile", detail: selectedProfile.name, systemImage: selectedProfile.avatarSystemName, isActive: true)
+                        HFProfileConsumerSummaryCard(title: "My List", detail: "Saved shelf", systemImage: "bookmark.fill")
+                        HFProfileConsumerSummaryCard(title: "Downloads", detail: "Offline shelf", systemImage: "arrow.down.circle.fill")
+                        HFProfileConsumerSummaryCard(title: "Rooms gateway", detail: "Watch to Export", systemImage: "rectangle.3.group.fill")
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Your HighFive, consumer profile summary with viewing profile, My List, Downloads, and Rooms gateway")
+        .accessibilityIdentifier("hf.profile.consumerSummary")
     }
 
     private var creatorModeCard: some View {
@@ -638,6 +682,45 @@ private struct ProfileMockSheet: Identifiable {
     let title: String
     let message: String
     let systemImage: String
+}
+
+private struct HFProfileConsumerSummaryCard: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    var isActive = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(isActive ? .black : HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                .clipShape(Circle())
+
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.74)
+
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minHeight: 100, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
 }
 
 private struct ProfileMockSheetView: View {

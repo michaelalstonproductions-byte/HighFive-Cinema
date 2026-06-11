@@ -10,8 +10,10 @@ struct SearchView: View {
     @Binding var mode: HFSearchHubMode
     @State private var query = ""
     @State private var selectedFilter = "All"
+    @State private var selectedMood = "Drama"
 
     private let filters = ["All", "Movies", "Series", "Originals", "Downloaded"]
+    private let moodFilters = ["Drama", "Family", "Thriller", "Originals", "New", "Saved"]
     private var suggestedMovies: [Movie] {
         Array(HFMockData.movies.filter { $0.isOriginal || $0.progress != nil }.prefix(5))
     }
@@ -61,6 +63,9 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
                 modeContextPanel
+                discoveryStudioPanel
+                genreMoodFilters
+                discoveryMomentumSection
 
                 if mode == .search {
                     searchContent
@@ -157,6 +162,99 @@ struct SearchView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
             .padding(.trailing, HFSpacing.screenHorizontal)
         }
+        .accessibilityIdentifier("hf.consumer.search.genreFilters")
+    }
+
+    private var discoveryStudioPanel: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Discovery Studio", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "sparkles.tv.fill")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(HFColors.gold)
+                            .frame(width: 48, height: 48)
+                            .background(HFColors.gold.opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("Find something great to watch.")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Move from trending titles to originals, hidden gems, and coming-soon premieres without leaving the local slate.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        HFDiscoveryStudioCard(title: "Trending Now", systemImage: "flame.fill", isActive: true)
+                        HFDiscoveryStudioCard(title: "HighFive Picks", systemImage: "sparkles")
+                        HFDiscoveryStudioCard(title: "Originals", systemImage: "star.fill")
+                        HFDiscoveryStudioCard(title: "Recently Added", systemImage: "clock.fill")
+                        HFDiscoveryStudioCard(title: "Hidden Gems", systemImage: "diamond.fill")
+                        HFDiscoveryStudioCard(title: "Coming Soon", systemImage: "calendar")
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Discovery Studio, local content discovery panel")
+        .accessibilityIdentifier("hf.consumer.search.discoveryStudio")
+    }
+
+    private var genreMoodFilters: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text("Browse by mood")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.xs) {
+                    ForEach(moodFilters, id: \.self) { filter in
+                        HFFilterChip(title: filter, isSelected: selectedMood == filter) {
+                            selectedMood = filter
+                            if mode == .discover {
+                                mode = .search
+                            }
+                            selectedFilter = filter == "Saved" ? "All" : filter
+                        }
+                        .accessibilityLabel("Select \(filter) mood filter")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Genre and mood filters")
+        .accessibilityIdentifier("hf.consumer.search.genreFilters")
+    }
+
+    private var discoveryMomentumSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Discovery Momentum", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                HFConsumerMomentumRow(title: "Picks ready", detail: "Editorial lanes start with trending titles.", status: "Ready", systemImage: "sparkles")
+                HFConsumerMomentumRow(title: "Originals active", detail: "HighFive Originals stay one filter away.", status: "Active", systemImage: "star.fill")
+                HFConsumerMomentumRow(title: "Coming soon shelf", detail: "Premieres remain visible before release.", status: "Preview", systemImage: "calendar")
+                HFConsumerMomentumRow(title: "Saved matches", detail: "Saved titles can guide the next watch.", status: "Local", systemImage: "bookmark.fill")
+                HFConsumerMomentumRow(title: "Search local preview", detail: "Results are drawn from the local streaming slate.", status: "Local", systemImage: "magnifyingglass")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Discovery momentum, picks, originals, coming soon, saved matches, and local search")
+        .accessibilityIdentifier("hf.consumer.search.discoveryMomentum")
     }
 
     private var popularSearches: some View {
@@ -296,6 +394,30 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+    }
+}
+
+private struct HFDiscoveryStudioCard: View {
+    let title: String
+    let systemImage: String
+    var isActive = false
+
+    var body: some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .black))
+            Text(title)
+                .font(HFTypography.micro)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .foregroundStyle(isActive ? .black : HFColors.textPrimary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 34)
+        .padding(.horizontal, HFSpacing.sm)
+        .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.07)))
+        .overlay(Capsule().stroke(isActive ? Color.clear : HFColors.glassStroke, lineWidth: 1))
+        .clipShape(Capsule())
     }
 }
 
