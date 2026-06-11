@@ -36,6 +36,7 @@ struct MovieDetailView: View {
                 titleSignalPanel
                 viewingContextSection
                 publicMomentumSection
+                titlePathSection
                 relatedSection
                 creatorSection
                 castSection
@@ -321,6 +322,39 @@ struct MovieDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Public Momentum, premiere angle audience conversation and related titles path")
         .accessibilityIdentifier("hf.consumer.movieDetail.publicMomentum")
+    }
+
+    private var titlePathSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Title Path", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        HFTitleDecisionCard(title: "Watch path", detail: "Start with this title tonight", systemImage: "play.rectangle.fill", isActive: true)
+                        HFTitleDecisionCard(title: "Collection fit", detail: movie.genres.first ?? "Featured", systemImage: "square.grid.2x2.fill")
+                        HFTitleDecisionCard(title: "Public momentum", detail: movie.isOriginal ? "Original premiere path" : "Featured title path", systemImage: "flame.fill")
+                        HFTitleDecisionCard(title: "Delivery readiness", detail: "Professional package signal", systemImage: "shippingbox.fill")
+                    }
+
+                    Text("Explore More Like This")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Explore More Like This")
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Title Path, watch path collection fit public momentum and delivery readiness")
+        .accessibilityIdentifier("hf.consumer.movieDetail.titlePath")
     }
 
     private var genreTags: some View {

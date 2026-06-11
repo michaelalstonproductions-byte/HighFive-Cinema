@@ -59,6 +59,7 @@ struct ProfileView: View {
                 roomsGatewayHero
                 productSuiteProgressSection
                 publicMomentumSummarySection
+                watchExportSummarySection
                 highFiveRoomsSection
                 buildQAToolsSection
                 signOutButton
@@ -136,6 +137,7 @@ struct ProfileView: View {
                 roomsGatewayHero
                 productSuiteProgressSection
                 publicMomentumSummarySection
+                watchExportSummarySection
                 highFiveRoomsSection
             }
             .padding(.top, HFSpacing.lg)
@@ -527,6 +529,11 @@ struct ProfileView: View {
 
     private var publicMomentumSummarySection: some View {
         HFProfilePublicMomentumSummarySection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var watchExportSummarySection: some View {
+        HFProfileWatchExportSummarySection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -1522,6 +1529,138 @@ private enum HFRoomMegaExpansionData {
         planIdentifier: "hf.room.export.handoffPlan",
         accessibilityLabel: "Delivery Board, local distribution package preview with protected delivery systems"
     )
+
+    static let programBoardColumns: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Featured Programming", subtitle: "Tonight's premium viewing path.", status: "Ready", systemImage: "star.fill", cards: [
+            HFRoomBoardCard(title: "The Friendly", detail: "Warm premiere original.", status: "Ready", systemImage: "film.fill"),
+            HFRoomBoardCard(title: "Warm premiere original", detail: "Story-first feature placement.", status: "Ready", systemImage: "sparkles"),
+            HFRoomBoardCard(title: "Tonight's featured path", detail: "Clear editorial start point.", status: "Ready", systemImage: "arrow.right.circle.fill")
+        ]),
+        HFRoomBoardColumn(title: "HighFive Originals", subtitle: "Creator-led programming lane.", status: "Built", systemImage: "sparkles.tv.fill", cards: [
+            HFRoomBoardCard(title: "Creator-led slate", detail: "Original titles grouped together.", status: "Built", systemImage: "wand.and.stars"),
+            HFRoomBoardCard(title: "Family watch-night title", detail: "Warm shared-viewing placement.", status: "Preview", systemImage: "figure.2.and.child.holdinghands"),
+            HFRoomBoardCard(title: "Premium discovery lane", detail: "Originals stay visible after the hero.", status: "Built", systemImage: "rectangle.stack.fill")
+        ]),
+        HFRoomBoardColumn(title: "Collections", subtitle: "Curated groups for repeat viewing.", status: "Preview", systemImage: "square.grid.2x2.fill", cards: [
+            HFRoomBoardCard(title: "Family Watch Night", detail: "Shared viewing shelf.", status: "Preview", systemImage: "person.2.fill"),
+            HFRoomBoardCard(title: "Late Night Mystery", detail: "Darker genre lane.", status: "Local", systemImage: "moon.stars.fill"),
+            HFRoomBoardCard(title: "Golden Hour Stories", detail: "Warm original collection.", status: "Preview", systemImage: "sun.max.fill")
+        ]),
+        HFRoomBoardColumn(title: "Continue Path", subtitle: "Keep the viewer moving.", status: "Local", systemImage: "play.rectangle.fill", cards: [
+            HFRoomBoardCard(title: "Resume title", detail: "Return to an in-progress story.", status: "Local", systemImage: "arrow.clockwise"),
+            HFRoomBoardCard(title: "Saved shelf", detail: "My List remains the next stop.", status: "Ready", systemImage: "bookmark.fill"),
+            HFRoomBoardCard(title: "Related picks", detail: "More Like This keeps momentum.", status: "Preview", systemImage: "rectangle.stack.fill")
+        ]),
+        HFRoomBoardColumn(title: "Discovery Bridge", subtitle: "Move from one title to the next.", status: "Ready", systemImage: "magnifyingglass", cards: [
+            HFRoomBoardCard(title: "Because You Watched", detail: "Follow the mood into another title.", status: "Ready", systemImage: "sparkles"),
+            HFRoomBoardCard(title: "New This Week", detail: "Fresh titles stay visible.", status: "Ready", systemImage: "calendar.badge.clock"),
+            HFRoomBoardCard(title: "Coming Soon", detail: "Next premiere shelf.", status: "Preview", systemImage: "flag.checkered")
+        ])
+    ]
+
+    static let viewingJourneyStages: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Start With A Premiere", subtitle: "Open with a strong title decision.", status: "Ready", systemImage: "star.fill", cards: [
+            HFRoomBoardCard(title: "Featured title", detail: "The Friendly leads the path.", status: "Ready", systemImage: "film.fill"),
+            HFRoomBoardCard(title: "Watch mood", detail: "Warm, hopeful, premium.", status: "Ready", systemImage: "moon.stars.fill"),
+            HFRoomBoardCard(title: "Editorial reason", detail: "Clear why-this-tonight framing.", status: "Preview", systemImage: "text.book.closed.fill")
+        ]),
+        HFRoomBoardColumn(title: "Continue The Story", subtitle: "Move from title choice to follow-up.", status: "Preview", systemImage: "arrow.turn.down.right", cards: [
+            HFRoomBoardCard(title: "Resume context", detail: "Pick back up cleanly.", status: "Local", systemImage: "arrow.clockwise"),
+            HFRoomBoardCard(title: "Related title", detail: "More Like This stays close.", status: "Ready", systemImage: "rectangle.stack.fill"),
+            HFRoomBoardCard(title: "Next-night path", detail: "Keep the viewer in the collection.", status: "Preview", systemImage: "moon.fill")
+        ]),
+        HFRoomBoardColumn(title: "Save For Later", subtitle: "Build a personal viewing shelf.", status: "Local", systemImage: "bookmark.fill", cards: [
+            HFRoomBoardCard(title: "Saved shelf", detail: "Titles stay organized.", status: "Ready", systemImage: "bookmark.fill"),
+            HFRoomBoardCard(title: "Family watch list", detail: "Shared titles have a home.", status: "Preview", systemImage: "person.2.fill"),
+            HFRoomBoardCard(title: "Mood-based queue", detail: "Choose by evening feel.", status: "Local", systemImage: "slider.horizontal.3")
+        ]),
+        HFRoomBoardColumn(title: "Discover More", subtitle: "Return to premium discovery.", status: "Ready", systemImage: "magnifyingglass", cards: [
+            HFRoomBoardCard(title: "Originals lane", detail: "Creator-led stories stay visible.", status: "Built", systemImage: "sparkles.tv.fill"),
+            HFRoomBoardCard(title: "New this week", detail: "Fresh shelf for repeat visits.", status: "Ready", systemImage: "calendar"),
+            HFRoomBoardCard(title: "Coming soon", detail: "Future premiere cue.", status: "Preview", systemImage: "flag.checkered")
+        ])
+    ]
+
+    static let featuredSlateRows: [HFRoomSuiteProgressRow] = [
+        HFRoomSuiteProgressRow(title: "The Friendly", detail: "Warm family premiere.", status: "Ready", systemImage: "film.fill"),
+        HFRoomSuiteProgressRow(title: "Midnight Borough", detail: "Late-night mystery lane.", status: "Preview", systemImage: "moon.stars.fill"),
+        HFRoomSuiteProgressRow(title: "Golden Hour Kids", detail: "Family collection path.", status: "Local", systemImage: "sun.max.fill"),
+        HFRoomSuiteProgressRow(title: "HighFive Originals", detail: "Creator-led slate.", status: "Built", systemImage: "sparkles.tv.fill"),
+        HFRoomSuiteProgressRow(title: "Coming Soon", detail: "Next premiere shelf.", status: "Preview", systemImage: "flag.checkered")
+    ]
+
+    static let featuredSlateReadinessRows: [HFRoomSuiteProgressRow] = [
+        HFRoomSuiteProgressRow(title: "Featured path", detail: "Program path is ready.", status: "Ready", systemImage: "star.fill"),
+        HFRoomSuiteProgressRow(title: "Originals lane", detail: "Originals are grouped.", status: "Built", systemImage: "sparkles"),
+        HFRoomSuiteProgressRow(title: "Collections", detail: "Collection paths are previewed.", status: "Preview", systemImage: "square.grid.2x2.fill"),
+        HFRoomSuiteProgressRow(title: "Saved shelf", detail: "My List remains local.", status: "Local", systemImage: "bookmark.fill"),
+        HFRoomSuiteProgressRow(title: "Player systems", detail: "Viewing engines remain separated.", status: "Protected", systemImage: "lock.shield.fill")
+    ]
+
+    static let professionalDeliveryColumns: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Handoff Package", subtitle: "Professional title package summary.", status: "Preview", systemImage: "shippingbox.fill", cards: [
+            HFRoomBoardCard(title: "Title package summary", detail: "Core story and readiness snapshot.", status: "Preview", systemImage: "doc.text.fill"),
+            HFRoomBoardCard(title: "Creator note", detail: "Creator context travels with the title.", status: "Draft", systemImage: "person.text.rectangle.fill"),
+            HFRoomBoardCard(title: "Credits row", detail: "Key creative credits grouped.", status: "Local", systemImage: "list.bullet.rectangle.fill"),
+            HFRoomBoardCard(title: "Package status", detail: "Manual review state only.", status: "Preview", systemImage: "checkmark.seal.fill")
+        ]),
+        HFRoomBoardColumn(title: "Festival Materials", subtitle: "Festival-facing language and review slots.", status: "Draft", systemImage: "rosette", cards: [
+            HFRoomBoardCard(title: "Festival synopsis", detail: "Short festival story copy.", status: "Draft", systemImage: "doc.text.fill"),
+            HFRoomBoardCard(title: "Director statement", detail: "Statement copy slot.", status: "Preview", systemImage: "quote.bubble.fill"),
+            HFRoomBoardCard(title: "Credits", detail: "Creative credits remain visible.", status: "Local", systemImage: "person.2.fill"),
+            HFRoomBoardCard(title: "Screener placeholder", detail: "Review wording only.", status: "Preview", systemImage: "rectangle.dashed")
+        ]),
+        HFRoomBoardColumn(title: "Platform Checklist", subtitle: "Future platform package checklist.", status: "Preview", systemImage: "checklist.checked", cards: [
+            HFRoomBoardCard(title: "Title metadata", detail: "Title, genre, and format.", status: "Draft", systemImage: "tag.fill"),
+            HFRoomBoardCard(title: "Artwork set", detail: "Poster and backdrop readiness.", status: "Preview", systemImage: "rectangle.stack.fill"),
+            HFRoomBoardCard(title: "Runtime", detail: "Runtime field for review.", status: "Local", systemImage: "clock.fill"),
+            HFRoomBoardCard(title: "Advisory placeholder", detail: "Advisory language slot.", status: "Preview", systemImage: "exclamationmark.shield.fill")
+        ]),
+        HFRoomBoardColumn(title: "Press Delivery", subtitle: "Press and public package language.", status: "Preview", systemImage: "newspaper.fill", cards: [
+            HFRoomBoardCard(title: "Press copy", detail: "Public story copy.", status: "Preview", systemImage: "text.alignleft"),
+            HFRoomBoardCard(title: "Creator bio", detail: "Creator identity context.", status: "Draft", systemImage: "person.crop.square.fill"),
+            HFRoomBoardCard(title: "Title description", detail: "Short title framing.", status: "Ready", systemImage: "doc.plaintext.fill"),
+            HFRoomBoardCard(title: "Visual materials", detail: "Key art readiness notes.", status: "Preview", systemImage: "photo.stack.fill")
+        ]),
+        HFRoomBoardColumn(title: "Protected Delivery Systems", subtitle: "Professional boundaries stay clear.", status: "Protected", systemImage: "lock.shield.fill", cards: [
+            HFRoomBoardCard(title: "Document handling separated", detail: "No local document workflow is connected.", status: "Protected", systemImage: "doc.badge.gearshape"),
+            HFRoomBoardCard(title: "Processing systems separated", detail: "Professional engines stay outside this room.", status: "Protected", systemImage: "viewfinder"),
+            HFRoomBoardCard(title: "Delivery services separated", detail: "No platform route is connected.", status: "Protected", systemImage: "tv.fill"),
+            HFRoomBoardCard(title: "Review services separated", detail: "Handoff stays planning-only.", status: "Protected", systemImage: "checkmark.shield.fill")
+        ])
+    ]
+
+    static let festivalPlatformReadinessRows: [HFRoomSuiteProgressRow] = [
+        HFRoomSuiteProgressRow(title: "Festival synopsis", detail: "Festival copy is drafted.", status: "Draft", systemImage: "doc.text.fill"),
+        HFRoomSuiteProgressRow(title: "Director statement", detail: "Statement is previewed.", status: "Preview", systemImage: "quote.bubble.fill"),
+        HFRoomSuiteProgressRow(title: "Credits", detail: "Credits remain local.", status: "Local", systemImage: "person.2.fill"),
+        HFRoomSuiteProgressRow(title: "Artwork set", detail: "Artwork readiness is previewed.", status: "Preview", systemImage: "rectangle.stack.fill"),
+        HFRoomSuiteProgressRow(title: "Platform metadata", detail: "Metadata is drafted.", status: "Draft", systemImage: "tag.fill"),
+        HFRoomSuiteProgressRow(title: "Delivery systems", detail: "Delivery services remain separated.", status: "Protected", systemImage: "lock.shield.fill")
+    ]
+
+    static let handoffPlannerStages: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Package Review", subtitle: "Confirm title handoff basics.", status: "Preview", systemImage: "checkmark.seal.fill", cards: [
+            HFRoomBoardCard(title: "Title facts", detail: "Title, genre, and format.", status: "Ready", systemImage: "tag.fill"),
+            HFRoomBoardCard(title: "Public copy", detail: "Short public framing.", status: "Preview", systemImage: "text.alignleft"),
+            HFRoomBoardCard(title: "Creator note", detail: "Creator context prepared.", status: "Draft", systemImage: "person.text.rectangle.fill")
+        ]),
+        HFRoomBoardColumn(title: "Festival Prep", subtitle: "Festival package language.", status: "Draft", systemImage: "rosette", cards: [
+            HFRoomBoardCard(title: "Synopsis", detail: "Festival-facing synopsis.", status: "Draft", systemImage: "doc.text.fill"),
+            HFRoomBoardCard(title: "Statement", detail: "Director statement slot.", status: "Preview", systemImage: "quote.bubble.fill"),
+            HFRoomBoardCard(title: "Credits", detail: "Creative credits grouped.", status: "Local", systemImage: "person.2.fill")
+        ]),
+        HFRoomBoardColumn(title: "Platform Prep", subtitle: "Platform package checklist.", status: "Preview", systemImage: "checklist.checked", cards: [
+            HFRoomBoardCard(title: "Artwork set", detail: "Poster and backdrop review.", status: "Preview", systemImage: "photo.stack.fill"),
+            HFRoomBoardCard(title: "Runtime", detail: "Runtime field ready.", status: "Local", systemImage: "clock.fill"),
+            HFRoomBoardCard(title: "Advisory", detail: "Advisory copy placeholder.", status: "Draft", systemImage: "exclamationmark.shield.fill")
+        ]),
+        HFRoomBoardColumn(title: "Final Handoff", subtitle: "Readiness summary before future workflows.", status: "Protected", systemImage: "lock.shield.fill", cards: [
+            HFRoomBoardCard(title: "Missing items", detail: "Open review rows are visible.", status: "Draft", systemImage: "list.bullet.rectangle.fill"),
+            HFRoomBoardCard(title: "Protected systems", detail: "Professional systems stay separate.", status: "Protected", systemImage: "lock.shield.fill"),
+            HFRoomBoardCard(title: "Readiness summary", detail: "Manual handoff state only.", status: "Preview", systemImage: "checkmark.seal.fill")
+        ])
+    ]
 
     static let releaseMilestones: [HFRoomCalendarMilestone] = [
         HFRoomCalendarMilestone(title: "Announcement", dateLabel: "Preview Week 1", detail: "Public title framing and creator note.", status: "Draft", systemImage: "sparkles"),
@@ -3903,6 +4042,366 @@ private struct HFProfilePublicMomentumSummarySection: View {
     }
 }
 
+private struct HFProfileWatchExportSummarySection: View {
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.purple.opacity(0.34)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "shippingbox.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Color.purple)
+                    .frame(width: 48, height: 48)
+                    .background(Color.purple.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomLocalPreviewBadge(title: "Built", accent: Color.purple)
+                    Text("Watch + Export Professional Path")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Watch and Export now carry programming, viewing journey, featured slate, professional delivery, festival readiness, and handoff planning as local product previews.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Watch and Export Professional Path, local programming and professional delivery planning summary")
+        .accessibilityIdentifier("hf.profile.watchExportSummary")
+    }
+}
+
+private struct HFWatchProgramBoardSection: View {
+    let columns: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "rectangle.stack.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Program Board", accent: accent)
+                            Text("Premium Program Board")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Shape what viewers see next across featured premieres, collections, originals, and discovery paths.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            ForEach(columns) { column in
+                                HFRoomBoardColumnCard(column: column, accent: accent)
+                                    .accessibilityIdentifier(identifier(for: column.title))
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            Text("Review Program Board")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .accessibilityLabel("Review Program Board, safe local preview action")
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Premium Program Board, local programming plan for featured titles originals collections continue path and discovery bridge")
+        .accessibilityIdentifier("hf.room.watch.programBoard")
+    }
+
+    private func identifier(for title: String) -> String {
+        switch title {
+        case "Featured Programming":
+            return "hf.room.watch.featuredProgramming"
+        case "HighFive Originals":
+            return "hf.room.watch.originalsLane"
+        case "Collections":
+            return "hf.room.watch.collectionLane"
+        case "Continue Path":
+            return "hf.room.watch.continuePath"
+        case "Discovery Bridge":
+            return "hf.room.watch.discoveryBridge"
+        default:
+            return "hf.room.watch.programBoard.column"
+        }
+    }
+}
+
+private struct HFViewingJourneyPlannerSection: View {
+    let stages: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Viewing Journey Planner", subtitle: "Show how a viewer moves from featured title to related titles and saved shelf.")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(stages) { stage in
+                        HFRoomBoardColumnCard(column: stage, accent: accent)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+
+            Text("Preview Viewing Journey")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityLabel("Preview Viewing Journey, safe local preview action")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Viewing Journey Planner, local premium viewing journey stages")
+        .accessibilityIdentifier("hf.room.watch.viewingJourneyPlanner")
+    }
+}
+
+private struct HFFeaturedSlatePackSection: View {
+    let rows: [HFRoomSuiteProgressRow]
+    let readinessRows: [HFRoomSuiteProgressRow]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "star.square.on.square.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Featured Slate", accent: accent)
+                            Text("Featured Slate Pack")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("A local programming pack for featured titles, originals, collections, and the coming-soon shelf.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        ForEach(rows) { row in
+                            HFRoomSuiteProgressTile(row: row, accent: accent)
+                        }
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        ForEach(readinessRows) { row in
+                            HFRoomSuiteProgressTile(row: row, accent: accent)
+                        }
+                    }
+
+                    Text("Review Featured Slate")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Review Featured Slate, safe local preview action")
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Featured Slate Pack, local featured title originals collections saved shelf and protected player readiness")
+        .accessibilityIdentifier("hf.room.watch.featuredSlatePack")
+    }
+}
+
+private struct HFProfessionalDeliveryBoardSection: View {
+    let columns: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "briefcase.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Professional", accent: accent)
+                            Text("Professional Delivery Board")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Organize title handoff, festival package, platform checklist, and professional delivery readiness before live delivery systems exist.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            ForEach(columns) { column in
+                                HFRoomBoardColumnCard(column: column, accent: accent)
+                                    .accessibilityIdentifier(identifier(for: column.title))
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            Text("Review Delivery Board")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .accessibilityLabel("Review Delivery Board, safe local preview action")
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Professional Delivery Board, local handoff festival platform press and protected delivery planning")
+        .accessibilityIdentifier("hf.room.export.professionalDelivery")
+    }
+
+    private func identifier(for title: String) -> String {
+        switch title {
+        case "Handoff Package":
+            return "hf.room.export.deliveryBoard"
+        case "Festival Materials":
+            return "hf.room.export.festivalMaterials"
+        case "Platform Checklist":
+            return "hf.room.export.platformChecklist"
+        case "Press Delivery":
+            return "hf.room.export.pressDelivery"
+        case "Protected Delivery Systems":
+            return "hf.room.export.protectedDeliverySystems"
+        default:
+            return "hf.room.export.professionalDelivery.column"
+        }
+    }
+}
+
+private struct HFFestivalPlatformReadinessSection: View {
+    let rows: [HFRoomSuiteProgressRow]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFRoomMomentumSummary(
+                title: "Festival + Platform Readiness Pack",
+                rows: rows,
+                accent: accent,
+                identifier: "hf.room.export.festivalPlatformReadiness"
+            )
+
+            Text("This pack organizes professional handoff language for future delivery workflows while delivery systems remain disconnected.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            Text("Review Readiness Pack")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityLabel("Review Readiness Pack, safe local preview action")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Festival and Platform Readiness Pack, local festival platform and delivery readiness rows")
+    }
+}
+
+private struct HFDistributionHandoffPlannerSection: View {
+    let stages: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Distribution Handoff Planner", subtitle: "Preview package review, festival prep, platform prep, and final handoff readiness.")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(stages) { stage in
+                        HFRoomBoardColumnCard(column: stage, accent: accent)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+
+            Text("Preview Handoff Planner")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityLabel("Preview Handoff Planner, safe local preview action")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Distribution Handoff Planner, local professional handoff planning stages")
+        .accessibilityIdentifier("hf.room.export.handoffPlanner")
+    }
+}
+
 private struct HFPublicMomentumBoardSection: View {
     let columns: [HFRoomBoardColumn]
     let accent: Color
@@ -4351,6 +4850,9 @@ private struct WatchRoomView: View {
 
                 HFWatchViewingHubSection(hub: HFWatchViewingHubPreviewData.hub, accent: HFColors.gold)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.watchBoard, accent: HFColors.gold)
+                HFWatchProgramBoardSection(columns: HFRoomMegaExpansionData.programBoardColumns, accent: HFColors.gold)
+                HFViewingJourneyPlannerSection(stages: HFRoomMegaExpansionData.viewingJourneyStages, accent: HFColors.gold)
+                HFFeaturedSlatePackSection(rows: HFRoomMegaExpansionData.featuredSlateRows, readinessRows: HFRoomMegaExpansionData.featuredSlateReadinessRows, accent: HFColors.gold)
                 HFRoomDepthSnapshotStrip(accent: HFColors.gold)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.watch, accent: HFColors.gold, roomID: "watch")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.watch, accent: HFColors.gold, roomID: "watch")
@@ -9438,6 +9940,9 @@ private struct ExportRoomView: View {
 
                 HFExportDistributionPackageSection(package: HFExportDistributionPackagePreviewData.package, accent: accent)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.deliveryBoard, accent: accent)
+                HFProfessionalDeliveryBoardSection(columns: HFRoomMegaExpansionData.professionalDeliveryColumns, accent: accent)
+                HFFestivalPlatformReadinessSection(rows: HFRoomMegaExpansionData.festivalPlatformReadinessRows, accent: accent)
+                HFDistributionHandoffPlannerSection(stages: HFRoomMegaExpansionData.handoffPlannerStages, accent: accent)
                 HFRoomDepthSnapshotStrip(accent: accent)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.export, accent: accent, roomID: "export")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.export, accent: accent, roomID: "export")
