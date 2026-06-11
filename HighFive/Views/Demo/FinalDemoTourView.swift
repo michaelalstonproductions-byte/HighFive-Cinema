@@ -16,6 +16,7 @@ struct FinalDemoTourView: View {
                     ecosystemProofBoardSection
                     functionalCoreProofSection
                     accountProfileProofSection
+                    catalogServiceProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -205,6 +206,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Account and Profile Proof, local profile layer ready for cloud identity while app state remains connected locally")
         .accessibilityIdentifier("hf.demoTour.accountProfileProof")
         .accessibilityIdentifier("hf.demoTour.localProfileServiceProof")
+    }
+
+    private var catalogServiceProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Catalog Service Proof", actionTitle: nil)
+                Text("HighFive now uses a shared movie catalog foundation across Home, Search, Movie Detail, Library, and Downloads, ready for a future remote provider.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Local Catalog Adapter", systemImage: "rectangle.stack.fill")
+                    HFRouteChip(title: "Remote Ready", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Catalog Service Proof, shared movie catalog foundation ready for future remote provider")
+        .accessibilityIdentifier("hf.demoTour.catalogServiceProof")
+        .accessibilityIdentifier("hf.demoTour.remoteCatalogReadyProof")
     }
 
     private var runOfShowSection: some View {

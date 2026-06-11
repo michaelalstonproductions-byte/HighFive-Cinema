@@ -27,6 +27,7 @@ struct MyListView: View {
                 header
                 libraryShelfHero
                 connectedStateSection
+                catalogLibrarySection
                 profileStateSection
                 watchShelfSection
                 shelfMomentumSection
@@ -140,6 +141,18 @@ struct MyListView: View {
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.functional.library.connectedState")
+    }
+
+    private var catalogLibrarySection: some View {
+        HFInsightCard(
+            title: "Catalog Library",
+            message: "Saved titles resolve through the shared movie catalog.",
+            systemImage: "rectangle.stack.fill.badge.person.crop"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Catalog Library, saved titles resolve through the shared movie catalog")
+        .accessibilityIdentifier("hf.catalog.library.connected")
     }
 
     private var profileStateSection: some View {

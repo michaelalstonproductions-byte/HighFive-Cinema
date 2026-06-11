@@ -15,7 +15,7 @@ struct SearchView: View {
     private let filters = ["All", "Movies", "Series", "Originals", "Downloaded"]
     private let moodFilters = ["Drama", "Family", "Thriller", "Originals", "New", "Saved"]
     private var suggestedMovies: [Movie] {
-        Array(HFMockData.movies.filter { $0.isOriginal || $0.progress != nil }.prefix(5))
+        Array(streamingStore.allCatalogMovies.filter { $0.isOriginal || $0.progress != nil }.prefix(5))
     }
 
     private let columns = [
@@ -23,30 +23,7 @@ struct SearchView: View {
     ]
 
     private var filteredMovies: [Movie] {
-        let base: [Movie]
-        switch selectedFilter {
-        case "Movies":
-            base = HFMockData.movies.filter { !$0.duration.localizedCaseInsensitiveContains("episode") }
-        case "Series":
-            base = HFMockData.movies.filter { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }
-        case "Originals":
-            base = HFMockData.movies.filter(\.isOriginal)
-        case "Downloaded":
-            base = HFMockData.movies.filter { streamingStore.isDownloaded($0) }
-        default:
-            base = HFMockData.movies
-        }
-
-        let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !searchTerm.isEmpty else {
-            return Array(base.prefix(8))
-        }
-
-        return base.filter {
-            $0.title.localizedCaseInsensitiveContains(searchTerm) ||
-            $0.subtitle.localizedCaseInsensitiveContains(searchTerm) ||
-            $0.genres.joined(separator: " ").localizedCaseInsensitiveContains(searchTerm)
-        }
+        streamingStore.searchMovies(query: query, filter: selectedFilter)
     }
 
     var body: some View {
@@ -64,6 +41,7 @@ struct SearchView: View {
 
                 modeContextPanel
                 discoveryStudioPanel
+                catalogSearchSection
                 genreMoodFilters
                 discoveryMomentumSection
 
@@ -120,9 +98,9 @@ struct SearchView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: HFSpacing.xs) {
-                        HFSearchSignalChip(title: "\(HFMockData.movies.count) titles")
-                        HFSearchSignalChip(title: "\(HFMockData.movies.filter(\.isOriginal).count) originals")
-                        HFSearchSignalChip(title: "\(HFMockData.movies.filter { $0.isComingSoon }.count) upcoming")
+                        HFSearchSignalChip(title: "\(streamingStore.allCatalogMovies.count) titles")
+                        HFSearchSignalChip(title: "\(streamingStore.originalsCatalog.count) originals")
+                        HFSearchSignalChip(title: "\(streamingStore.allCatalogMovies.filter { $0.isComingSoon }.count) upcoming")
                     }
                 }
 
@@ -148,6 +126,19 @@ struct SearchView: View {
             resultsGrid
         }
         .accessibilityIdentifier("hf.consumer.discovery.rails")
+    }
+
+    private var catalogSearchSection: some View {
+        HFInsightCard(
+            title: "Catalog Search",
+            message: "Search and Discover use the shared movie catalog.",
+            systemImage: "magnifyingglass.circle.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Catalog Search, Search and Discover use the shared movie catalog")
+        .accessibilityIdentifier("hf.catalog.search.connected")
+        .accessibilityIdentifier("hf.catalog.discover.connected")
     }
 
     private var filterChips: some View {
@@ -265,7 +256,7 @@ struct SearchView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(HFMockData.categories.first { $0.id == "trending" }?.movies.prefix(6) ?? HFMockData.movies.prefix(6)) { movie in
+                    ForEach(streamingStore.catalogRails().first { $0.id == "trending" }?.movies.prefix(6) ?? streamingStore.allCatalogMovies.prefix(6)) { movie in
                         NavigationLink(value: movie) {
                             VStack(spacing: HFSpacing.xs) {
                                 HFPosterCard(movie: movie, width: 124, showTitle: false, posterOnly: true)

@@ -95,6 +95,59 @@ final class HFStreamingStore: ObservableObject {
         "Privacy Ready"
     }
 
+    // MovieCatalogService
+    // LocalCatalogAdapter
+    // RemoteCatalogAdapterReady
+    // hf.services.catalogProvider
+    // hf.services.localCatalogAdapter
+    // hf.services.remoteCatalogReady
+    // hf.services.catalogReadiness
+    // hf.services.catalogIdentity
+    // hf.services.movieLookup
+    var allCatalogMovies: [Movie] {
+        HFMockData.movies
+    }
+
+    var movieCatalogStatus: String {
+        "Local Catalog Adapter Active"
+    }
+
+    var catalogProviderMode: String {
+        "Remote Catalog Provider Not Connected Yet"
+    }
+
+    var originalsCatalog: [Movie] {
+        allCatalogMovies.filter(\.isOriginal)
+    }
+
+    var newThisWeekCatalog: [Movie] {
+        ["friendly", "paranormall-s1", "behind-vision", "artist-development", "big-loss"].compactMap(movie(id:))
+    }
+
+    var downloadableCatalog: [Movie] {
+        allCatalogMovies.filter { isDownloaded($0) || $0.isDownloaded }
+    }
+
+    var premiumHomeCatalogRails: [Category] {
+        [
+            Category(id: "new-this-week", title: "New This Week", subtitle: "Fresh HighFive picks", movies: newThisWeekCatalog),
+            Category(id: "continue-watching", title: "Continue Watching", subtitle: "Pick up where you left off", movies: allCatalogMovies.filter { $0.progress != nil }),
+            Category(id: "recommended", title: "Recommended", subtitle: "Selected from your local viewing profile", movies: ["black-turnip", "sunshine", "arrival-time", "maple-street", "night-file"].compactMap(movie(id:))),
+            Category(id: "only-on-highfive", title: "Only On HighFive", subtitle: "Originals and local showcase titles", movies: originalsCatalog)
+        ]
+    }
+
+    var catalogReadinessRows: [String] {
+        [
+            "Local catalog - Active",
+            "Shared movie identity - Active",
+            "Home/Search/Movie Detail - Connected",
+            "Library/Downloads - Connected",
+            "Remote provider - Not Connected Yet",
+            "Contracts - Ready from architecture plan"
+        ]
+    }
+
     func updateDisplayName(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let index = localProfiles.firstIndex(where: { $0.id == activeProfileID }) else { return }
@@ -125,29 +178,88 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.unifiedStore
     // hf.services.movieCatalog
     var featuredMovie: Movie {
-        movie(for: "friendly") ?? HFMockData.movies[0]
+        movie(id: "friendly") ?? allCatalogMovies[0]
     }
 
     var continueWatchingMovie: Movie {
-        HFMockData.movies.first { $0.progress != nil } ?? featuredMovie
+        allCatalogMovies.first { $0.progress != nil } ?? featuredMovie
     }
 
     var savedMovies: [Movie] {
-        HFMockData.movies.filter { isSaved($0) }
+        allCatalogMovies.filter { isSaved($0) }
     }
 
     // hf.services.downloadState
     var downloadedMovies: [Movie] {
-        HFMockData.movies.filter { isDownloaded($0) }
+        allCatalogMovies.filter { isDownloaded($0) }
     }
 
     // hf.services.libraryState
+    func movie(id: String) -> Movie? {
+        allCatalogMovies.first { $0.id == id }
+    }
+
     func movie(for id: String) -> Movie? {
-        HFMockData.movie(id)
+        movie(id: id)
     }
 
     func relatedMovies(for movie: Movie) -> [Movie] {
-        HFMockData.relatedTitles(for: movie)
+        let genreMatches = allCatalogMovies.filter { candidate in
+            candidate.id != movie.id &&
+            !Set(candidate.genres).isDisjoint(with: Set(movie.genres))
+        }
+        let creatorMatches = allCatalogMovies.filter { $0.id != movie.id && $0.creatorName == movie.creatorName }
+        let fallback = premiumHomeCatalogRails.first { $0.id == "recommended" }?.movies ?? []
+        var seen = Set<String>()
+        return (genreMatches + creatorMatches + fallback).filter { seen.insert($0.id).inserted }.prefix(8).map { $0 }
+    }
+
+    func searchMovies(query: String, filter: String) -> [Movie] {
+        let base: [Movie]
+        switch filter {
+        case "Movies":
+            base = allCatalogMovies.filter { !$0.duration.localizedCaseInsensitiveContains("episode") }
+        case "Series":
+            base = allCatalogMovies.filter { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }
+        case "Originals":
+            base = originalsCatalog
+        case "Downloaded":
+            base = downloadedMovies
+        default:
+            base = allCatalogMovies
+        }
+
+        let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !searchTerm.isEmpty else {
+            return Array(base.prefix(8))
+        }
+
+        return base.filter {
+            $0.title.localizedCaseInsensitiveContains(searchTerm) ||
+            $0.subtitle.localizedCaseInsensitiveContains(searchTerm) ||
+            $0.genres.joined(separator: " ").localizedCaseInsensitiveContains(searchTerm)
+        }
+    }
+
+    func catalogRails(filter: String = "All") -> [Category] {
+        let rails = [
+            Category(id: "trending", title: "Trending Now", subtitle: nil, movies: ["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"].compactMap(movie(id:))),
+            Category(id: "originals", title: "HighFive Originals", subtitle: "Premium original films and series", movies: originalsCatalog.filter { !$0.isComingSoon }),
+            Category(id: "fresh-finds", title: "Fresh Finds", subtitle: "New from the HighFive slate", movies: Array(allCatalogMovies.suffix(10))),
+            Category(id: "coming-soon", title: "Coming Soon", subtitle: "Scripted originals in development", movies: allCatalogMovies.filter { $0.isComingSoon }),
+            Category(id: "my-movies", title: "My Movies", subtitle: "Saved and local titles", movies: allCatalogMovies.filter { isDownloaded($0) || $0.progress != nil })
+        ]
+
+        switch filter {
+        case "Originals":
+            return rails.filter { $0.id == "originals" }
+        case "Drama", "Thriller", "Mystery", "Documentary":
+            return [Category(id: filter.lowercased(), title: "\(filter) Picks", subtitle: nil, movies: allCatalogMovies.filter { $0.genres.contains(filter) })]
+        case "Coming Soon":
+            return rails.filter { $0.id == "coming-soon" }
+        default:
+            return rails
+        }
     }
 
     func isSaved(_ movie: Movie) -> Bool {

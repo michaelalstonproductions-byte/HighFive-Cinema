@@ -24,6 +24,7 @@ struct DownloadsView: View {
                 header
                 downloadHero
                 connectedStateSection
+                catalogDownloadsSection
                 profileStateSection
                 offlineWatchHubSection
                 storageStatus
@@ -223,6 +224,18 @@ struct DownloadsView: View {
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.functional.downloads.connectedState")
+    }
+
+    private var catalogDownloadsSection: some View {
+        HFInsightCard(
+            title: "Catalog Downloads",
+            message: "Offline-ready titles resolve through the shared movie catalog.",
+            systemImage: "rectangle.stack.fill.badge.plus"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Catalog Downloads, offline-ready titles resolve through the shared movie catalog")
+        .accessibilityIdentifier("hf.catalog.downloads.connected")
     }
 
     private var profileStateSection: some View {

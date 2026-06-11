@@ -76,6 +76,7 @@ struct ProfileView: View {
                 ecosystemPresentationModeSection
                 highFiveProductStorySection
                 functionalCoreSummarySection
+                catalogServiceSummarySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -157,6 +158,7 @@ struct ProfileView: View {
                 ecosystemPresentationModeSection
                 highFiveProductStorySection
                 functionalCoreSummarySection
+                catalogServiceSummarySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -750,6 +752,11 @@ struct ProfileView: View {
 
     private var functionalCoreSummarySection: some View {
         HFProfileFunctionalCoreSummarySection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var catalogServiceSummarySection: some View {
+        HFProfileCatalogServiceSummarySection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4360,6 +4367,61 @@ private struct HFProfileFunctionalCoreSummarySection: View {
         .accessibilityLabel("Functional Core, connected app foundation for movies Watch Now My List Downloads local updates release checklist and delivery summary")
         .accessibilityIdentifier("hf.profile.functionalCoreSummary")
         .accessibilityIdentifier("hf.profile.connectedAppSummary")
+    }
+}
+
+private struct HFProfileCatalogServiceSummarySection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.stack.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Catalog Adapter", accent: HFColors.gold)
+                            .accessibilityIdentifier("hf.catalog.localAdapter.active")
+                        Text("Movie Catalog Service")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Remote Catalog Provider")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                        Text("Not Connected Yet")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .accessibilityIdentifier("hf.catalog.provider.notConnected")
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.catalogReadinessRows, id: \.self) { row in
+                        HFConsumerMomentumRow(title: row, detail: "Catalog readiness proof", status: row.contains("Not Connected Yet") ? "Future" : "Active", systemImage: "checkmark.circle.fill")
+                    }
+                }
+
+                HFInsightCard(
+                    title: "Future Integration",
+                    message: "Ready for provider selection and contract wiring.",
+                    systemImage: "arrow.triangle.2.circlepath"
+                )
+                .accessibilityIdentifier("hf.catalog.remoteReady.status")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Movie Catalog Service, Local Catalog Adapter active, Remote Catalog Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.catalog.profile.serviceSummary")
+        .accessibilityIdentifier("hf.catalog.profile.readiness")
+        .accessibilityIdentifier("hf.profile.catalogServiceProof")
     }
 }
 
@@ -8900,6 +8962,9 @@ private struct ConnectRoomView: View {
                 HFConsumerMomentumRow(title: "Updates prepared by \(streamingStore.activeViewingProfile.displayName)", detail: "Local profile identity stays attached to this draft board.", status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
                     .accessibilityIdentifier("hf.account.connect.profileState")
 
+                HFConsumerMomentumRow(title: "Catalog title context", detail: "Local updates are prepared around \(streamingStore.featuredMovie.title).", status: "Catalog", systemImage: "rectangle.stack.fill")
+                    .accessibilityIdentifier("hf.catalog.connect.titleContext")
+
                 TextField("Write a local update", text: localUpdateDraft, axis: .vertical)
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textPrimary)
@@ -9669,6 +9734,9 @@ private struct LaunchRoomView: View {
 
                 HFConsumerMomentumRow(title: "Release checklist for \(streamingStore.activeViewingProfile.displayName)", detail: "Local profile identity stays attached to launch prep.", status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
                     .accessibilityIdentifier("hf.account.launch.profileState")
+
+                HFConsumerMomentumRow(title: "Catalog title context", detail: "Launch progress is framed around \(streamingStore.featuredMovie.title).", status: "Catalog", systemImage: "rectangle.stack.fill")
+                    .accessibilityIdentifier("hf.catalog.launch.titleContext")
 
                 VStack(spacing: HFSpacing.sm) {
                     ForEach(streamingStore.launchChecklistItems.indices, id: \.self) { index in
@@ -10787,6 +10855,9 @@ private struct ExportRoomView: View {
 
                 HFConsumerMomentumRow(title: "Delivery summary prepared by \(streamingStore.activeViewingProfile.displayName)", detail: "Local profile identity stays attached to the text summary.", status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
                     .accessibilityIdentifier("hf.account.export.profileState")
+
+                HFConsumerMomentumRow(title: "Catalog title context", detail: "Delivery summary uses \(streamingStore.featuredMovie.title) from the shared catalog.", status: "Catalog", systemImage: "rectangle.stack.fill")
+                    .accessibilityIdentifier("hf.catalog.export.titleContext")
 
                 if !streamingStore.generatedDeliverySummary.isEmpty {
                     Text(streamingStore.generatedDeliverySummary)

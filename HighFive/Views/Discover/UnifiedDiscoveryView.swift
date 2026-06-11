@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct UnifiedDiscoveryView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var selectedFilter = "All"
 
     private var showMovies: Bool {
@@ -22,25 +23,7 @@ struct UnifiedDiscoveryView: View {
     }
 
     private var streamingDiscoveryRails: [Category] {
-        let rails = [
-            HFMockData.categories.first { $0.id == "trending" },
-            HFMockData.categories.first { $0.id == "originals" },
-            HFMockData.categories.first { $0.id == "fresh-finds" },
-            HFMockData.categories.first { $0.id == "coming-soon" },
-            HFMockData.categories.first { $0.id == "my-movies" }
-        ].compactMap { $0 }
-
-        switch selectedFilter {
-        case "Originals":
-            return rails.filter { $0.id == "originals" }
-        case "Drama", "Thriller", "Mystery", "Documentary":
-            let movies = HFMockData.movies.filter { $0.genres.contains(selectedFilter) }
-            return [Category(id: selectedFilter.lowercased(), title: "\(selectedFilter) Picks", subtitle: nil, movies: movies)]
-        case "Coming Soon":
-            return rails.filter { $0.id == "coming-soon" }
-        default:
-            return rails
-        }
+        streamingStore.catalogRails(filter: selectedFilter)
     }
 
     private var header: some View {
@@ -60,7 +43,7 @@ struct UnifiedDiscoveryView: View {
     }
 
     private var discoverSpotlight: some View {
-        let spotlight = HFMockData.movie("paranormall-s1") ?? HFMockData.movies[0]
+        let spotlight = streamingStore.movie(id: "paranormall-s1") ?? streamingStore.featuredMovie
 
         return NavigationLink(value: spotlight) {
             ZStack(alignment: .bottomLeading) {

@@ -34,6 +34,7 @@ struct HomeView: View {
                 homeCategoryPills
                 homePremiereMetrics
                 activeProfileSection
+                catalogConnectedSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -42,7 +43,7 @@ struct HomeView: View {
                 homeStreamingMomentumSection
                 watchSectionHeader
 
-                ForEach(HFMockData.premiumHomeRails) { category in
+                ForEach(streamingStore.premiumHomeCatalogRails) { category in
                     movieRail(category)
                 }
                 .accessibilityIdentifier("hf.consumer.home.posterRails")
@@ -152,8 +153,8 @@ struct HomeView: View {
 
     private var homePremiereMetrics: some View {
         HStack(spacing: HFSpacing.sm) {
-            HFHomeMetricPill(value: "\(HFMockData.movies.filter(\.isOriginal).count)", label: "Originals", systemImage: "sparkles")
-            HFHomeMetricPill(value: "\(HFMockData.movies.filter { $0.progress != nil }.count)", label: "In Progress", systemImage: "play.circle.fill")
+            HFHomeMetricPill(value: "\(streamingStore.originalsCatalog.count)", label: "Originals", systemImage: "sparkles")
+            HFHomeMetricPill(value: "\(streamingStore.allCatalogMovies.filter { $0.progress != nil }.count)", label: "In Progress", systemImage: "play.circle.fill")
             HFHomeMetricPill(value: "\(streamingStore.downloadedMovies.count)", label: "Offline", systemImage: "arrow.down.circle.fill")
         }
         .padding(.horizontal, screenPadding)
@@ -172,6 +173,18 @@ struct HomeView: View {
         .accessibilityLabel("Watching as \(streamingStore.activeViewingProfile.displayName), local profile connects Home My List Downloads and Rooms")
         .accessibilityIdentifier("hf.account.home.activeProfile")
         .accessibilityIdentifier("hf.account.home.profileConnection")
+    }
+
+    private var catalogConnectedSection: some View {
+        HFInsightCard(
+            title: "Catalog Connected",
+            message: "Home is powered by the shared movie catalog.",
+            systemImage: "rectangle.stack.fill"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Catalog Connected, Home is powered by the shared movie catalog")
+        .accessibilityIdentifier("hf.catalog.home.connected")
     }
 
     private var programmingPulseSection: some View {
@@ -459,7 +472,7 @@ struct HomeView: View {
 
     private var heroPosterStack: some View {
         VStack(spacing: -14) {
-            ForEach(Array(HFMockData.recommended.movies.prefix(1)), id: \.id) { movie in
+            ForEach(Array(streamingStore.relatedMovies(for: heroMovie).prefix(1)), id: \.id) { movie in
                 HFPosterCard(movie: movie, width: max(58, HFResponsiveFit.heroPosterWidth(width: screenWidth) * 0.52), showTitle: false, posterOnly: true)
                     .rotationEffect(.degrees(-6))
                     .shadow(color: HFColors.shadow, radius: 12, x: 0, y: 10)
@@ -533,7 +546,7 @@ struct HomeView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(HFMockData.onlyOnHighFive.movies.prefix(8)) { movie in
+                    ForEach(streamingStore.originalsCatalog.prefix(8)) { movie in
                         NavigationLink(value: movie) {
                             VStack(alignment: .leading, spacing: HFSpacing.xs) {
                                 HFPosterCard(movie: movie, width: 152, showTitle: false, showProgress: movie.progress != nil)

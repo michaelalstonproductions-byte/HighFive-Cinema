@@ -19,7 +19,11 @@ struct MovieDetailView: View {
     }
 
     private var relatedTitles: [Movie] {
-        HFMockData.relatedTitles(for: movie)
+        streamingStore.relatedMovies(for: catalogMovie)
+    }
+
+    private var catalogMovie: Movie {
+        streamingStore.movie(id: movie.id) ?? movie
     }
 
     private var detailBottomClearance: CGFloat {
@@ -36,6 +40,7 @@ struct MovieDetailView: View {
                 titleSignalPanel
                 viewingContextSection
                 publicMomentumSection
+                catalogIdentitySection
                 titlePathSection
                 watchToReleaseSection
                 relatedSection
@@ -386,6 +391,18 @@ struct MovieDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Title Path, watch path collection fit public momentum and delivery readiness")
         .accessibilityIdentifier("hf.consumer.movieDetail.titlePath")
+    }
+
+    private var catalogIdentitySection: some View {
+        HFInsightCard(
+            title: "Catalog Identity",
+            message: "\(catalogMovie.title) is resolved through the shared movie catalog.",
+            systemImage: "rectangle.stack.badge.play.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Catalog Identity, this title is resolved through the shared movie catalog")
+        .accessibilityIdentifier("hf.catalog.movieDetail.identity")
     }
 
     private var watchToReleaseSection: some View {
