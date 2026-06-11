@@ -1,6 +1,14 @@
 import Foundation
 import Combine
 
+struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
+    let id: String
+    var displayName: String
+    var role: String
+    var avatarSymbol: String
+    var accentName: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -9,12 +17,16 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var localConnectUpdates: [String]
     @Published private(set) var launchChecklistStates: [Bool]
     @Published private(set) var generatedDeliverySummary: String
+    @Published private(set) var localProfiles: [HFLocalViewingProfile]
+    @Published private(set) var activeProfileID: String
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
     private let recentSearchesKey = "hf.recentSearches"
     private let connectUpdatesKey = "hf.localConnectUpdates"
     private let launchChecklistKey = "hf.launchChecklistStates"
+    private let activeProfileKey = "hf.localProfile.activeID"
+    private let profileDisplayNamePrefix = "hf.localProfile.displayName."
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -26,8 +38,23 @@ final class HFStreamingStore: ObservableObject {
 
     init(defaultSavedIDs: Set<String> = ["friendly", "paranormall-s1"]) {
         let defaults = UserDefaults.standard
-        savedMovieIDs = Set(defaults.stringArray(forKey: savedKey) ?? Array(defaultSavedIDs))
-        downloadedMovieIDs = Set(defaults.stringArray(forKey: downloadsKey) ?? HFMockData.movies.filter(\.isDownloaded).map(\.id))
+        let profiles = Self.makeLocalProfiles(defaults: defaults)
+        let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
+        let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
+        localProfiles = profiles
+        activeProfileID = resolvedActiveProfileID
+        savedMovieIDs = Self.loadProfileIDs(
+            defaults: defaults,
+            scopedKey: Self.scopedKey(savedKey, resolvedActiveProfileID),
+            fallbackKey: savedKey,
+            fallbackIDs: defaultSavedIDs
+        )
+        downloadedMovieIDs = Self.loadProfileIDs(
+            defaults: defaults,
+            scopedKey: Self.scopedKey(downloadsKey, resolvedActiveProfileID),
+            fallbackKey: downloadsKey,
+            fallbackIDs: Set(HFMockData.movies.filter(\.isDownloaded).map(\.id))
+        )
         recentSearches = defaults.stringArray(forKey: recentSearchesKey) ?? HFMockData.searchSuggestions.prefix(3).map(\.title)
         localConnectUpdateDraft = "The Friendly watch-night prompt is ready for local review."
         localConnectUpdates = defaults.stringArray(forKey: connectUpdatesKey) ?? [
@@ -37,6 +64,62 @@ final class HFStreamingStore: ObservableObject {
         let savedLaunchStates = defaults.array(forKey: launchChecklistKey) as? [Bool]
         launchChecklistStates = savedLaunchStates?.count == launchChecklistItems.count ? savedLaunchStates ?? [] : Array(repeating: false, count: launchChecklistItems.count)
         generatedDeliverySummary = ""
+    }
+
+    // hf.services.accountProfile
+    // hf.services.localProfileStore
+    // hf.services.activeViewingProfile
+    var activeViewingProfile: HFLocalViewingProfile {
+        localProfiles.first { $0.id == activeProfileID } ?? localProfiles[0]
+    }
+
+    var profileInitials: String {
+        let parts = activeViewingProfile.displayName
+            .split(separator: " ")
+            .prefix(2)
+            .compactMap(\.first)
+        let initials = String(parts).uppercased()
+        return initials.isEmpty ? "HF" : initials
+    }
+
+    var accountMode: String {
+        "Local Profile Active"
+    }
+
+    var cloudAccountStatus: String {
+        "Cloud Account Not Connected Yet"
+    }
+
+    // hf.services.profilePrivacyState
+    var profilePrivacyState: String {
+        "Privacy Ready"
+    }
+
+    func updateDisplayName(_ name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let index = localProfiles.firstIndex(where: { $0.id == activeProfileID }) else { return }
+        localProfiles[index].displayName = trimmed
+        UserDefaults.standard.set(trimmed, forKey: profileDisplayNamePrefix + activeProfileID)
+    }
+
+    func selectProfile(_ profile: HFLocalViewingProfile) {
+        guard localProfiles.contains(where: { $0.id == profile.id }) else { return }
+        persist(savedMovieIDs, key: scopedSavedKey)
+        persist(downloadedMovieIDs, key: scopedDownloadsKey)
+        activeProfileID = profile.id
+        UserDefaults.standard.set(activeProfileID, forKey: activeProfileKey)
+        savedMovieIDs = Self.loadProfileIDs(
+            defaults: .standard,
+            scopedKey: scopedSavedKey,
+            fallbackKey: savedKey,
+            fallbackIDs: Set(["friendly", "paranormall-s1"])
+        )
+        downloadedMovieIDs = Self.loadProfileIDs(
+            defaults: .standard,
+            scopedKey: scopedDownloadsKey,
+            fallbackKey: downloadsKey,
+            fallbackIDs: Set(HFMockData.movies.filter(\.isDownloaded).map(\.id))
+        )
     }
 
     // hf.services.unifiedStore
@@ -77,7 +160,7 @@ final class HFStreamingStore: ObservableObject {
         } else {
             savedMovieIDs.insert(movie.id)
         }
-        persist(savedMovieIDs, key: savedKey)
+        persist(savedMovieIDs, key: scopedSavedKey)
     }
 
     func isDownloaded(_ movie: Movie) -> Bool {
@@ -90,12 +173,12 @@ final class HFStreamingStore: ObservableObject {
         } else {
             downloadedMovieIDs.insert(movie.id)
         }
-        persist(downloadedMovieIDs, key: downloadsKey)
+        persist(downloadedMovieIDs, key: scopedDownloadsKey)
     }
 
     func removeAllDownloads() {
         downloadedMovieIDs.removeAll()
-        persist(downloadedMovieIDs, key: downloadsKey)
+        persist(downloadedMovieIDs, key: scopedDownloadsKey)
     }
 
     func addRecentSearch(_ query: String) {
@@ -149,13 +232,62 @@ final class HFStreamingStore: ObservableObject {
         [
             "\(savedMovies.count) saved titles",
             "\(downloadedMovies.count) offline-ready titles",
+            "Active local profile: \(activeViewingProfile.displayName)",
             "\(localConnectUpdates.count) local updates",
             "\(launchChecklistProgress)/\(launchChecklistItems.count) launch items reviewed",
             generatedDeliverySummary.isEmpty ? "Delivery summary ready to generate" : "Delivery summary generated"
         ]
     }
 
+    private var scopedSavedKey: String {
+        Self.scopedKey(savedKey, activeProfileID)
+    }
+
+    private var scopedDownloadsKey: String {
+        Self.scopedKey(downloadsKey, activeProfileID)
+    }
+
     private func persist(_ ids: Set<String>, key: String) {
         UserDefaults.standard.set(Array(ids).sorted(), forKey: key)
+    }
+
+    private static func scopedKey(_ base: String, _ profileID: String) -> String {
+        "\(base).\(profileID)"
+    }
+
+    private static func loadProfileIDs(defaults: UserDefaults, scopedKey: String, fallbackKey: String, fallbackIDs: Set<String>) -> Set<String> {
+        if let scoped = defaults.stringArray(forKey: scopedKey) {
+            return Set(scoped)
+        }
+        if let fallback = defaults.stringArray(forKey: fallbackKey) {
+            return Set(fallback)
+        }
+        return fallbackIDs
+    }
+
+    private static func makeLocalProfiles(defaults: UserDefaults) -> [HFLocalViewingProfile] {
+        [
+            HFLocalViewingProfile(
+                id: "profile-michael",
+                displayName: defaults.string(forKey: "hf.localProfile.displayName.profile-michael") ?? "Michael",
+                role: "Viewer",
+                avatarSymbol: "person.crop.circle.fill",
+                accentName: "Gold"
+            ),
+            HFLocalViewingProfile(
+                id: "profile-family",
+                displayName: defaults.string(forKey: "hf.localProfile.displayName.profile-family") ?? "Family",
+                role: "Family",
+                avatarSymbol: "person.2.circle.fill",
+                accentName: "Orange"
+            ),
+            HFLocalViewingProfile(
+                id: "profile-creator",
+                displayName: defaults.string(forKey: "hf.localProfile.displayName.profile-creator") ?? "Creator",
+                role: "Creator",
+                avatarSymbol: "video.circle.fill",
+                accentName: "Cyan"
+            )
+        ]
     }
 }

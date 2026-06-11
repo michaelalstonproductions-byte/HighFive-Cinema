@@ -15,6 +15,7 @@ struct FinalDemoTourView: View {
                     actsSection
                     ecosystemProofBoardSection
                     functionalCoreProofSection
+                    accountProfileProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -171,6 +172,39 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Connected App Proof, Home Movie Detail Library Downloads Connect Launch Export and Profile are wired to the same local-first app foundation")
         .accessibilityIdentifier("hf.demoTour.functionalCoreProof")
         .accessibilityIdentifier("hf.demoTour.connectedAppProof")
+    }
+
+    private var accountProfileProofSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Account + Profile Proof", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFStatusBadge(title: "Local Profile", isProminent: true)
+                        Text("HighFive now has a local profile layer ready for cloud identity, while saved state, downloaded state, updates, checklist, and delivery summary remain connected locally.")
+                            .font(HFTypography.body)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Account and Profile Proof, local profile layer ready for cloud identity while app state remains connected locally")
+        .accessibilityIdentifier("hf.demoTour.accountProfileProof")
+        .accessibilityIdentifier("hf.demoTour.localProfileServiceProof")
     }
 
     private var runOfShowSection: some View {

@@ -27,6 +27,7 @@ struct MyListView: View {
                 header
                 libraryShelfHero
                 connectedStateSection
+                profileStateSection
                 watchShelfSection
                 shelfMomentumSection
                 filterChips
@@ -139,6 +140,18 @@ struct MyListView: View {
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.functional.library.connectedState")
+    }
+
+    private var profileStateSection: some View {
+        HFInsightCard(
+            title: "Saved for \(streamingStore.activeViewingProfile.displayName)",
+            message: "My List uses your active local profile.",
+            systemImage: streamingStore.activeViewingProfile.avatarSymbol
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Saved for \(streamingStore.activeViewingProfile.displayName), My List uses your active local profile")
+        .accessibilityIdentifier("hf.account.library.profileState")
     }
 
     private var shelfMomentumSection: some View {

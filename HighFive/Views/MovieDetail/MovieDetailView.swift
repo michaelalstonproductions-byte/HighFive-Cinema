@@ -156,6 +156,20 @@ struct MovieDetailView: View {
                             .accessibilityIdentifier("hf.functional.movie.downloadToggle")
                             .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Downloaded and available offline" : "Download for offline-ready viewing")
                         }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Saved to \(streamingStore.activeViewingProfile.displayName)")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.gold)
+                                .accessibilityIdentifier("hf.account.movieDetail.saveForProfile")
+                            Text("Offline state for \(streamingStore.activeViewingProfile.displayName)")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .accessibilityIdentifier("hf.account.movieDetail.downloadForProfile")
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Saved to \(streamingStore.activeViewingProfile.displayName), offline state for \(streamingStore.activeViewingProfile.displayName)")
+                        .accessibilityIdentifier("hf.account.movieDetail.profileState")
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

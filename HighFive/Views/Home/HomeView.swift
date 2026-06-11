@@ -33,6 +33,7 @@ struct HomeView: View {
                 header
                 homeCategoryPills
                 homePremiereMetrics
+                activeProfileSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -158,6 +159,19 @@ struct HomeView: View {
         .padding(.horizontal, screenPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Home summary, originals, in progress titles, and offline titles")
+    }
+
+    private var activeProfileSection: some View {
+        HFInsightCard(
+            title: "Watching as \(streamingStore.activeViewingProfile.displayName)",
+            message: "Your local profile connects Home, My List, Downloads, and Rooms.",
+            systemImage: streamingStore.activeViewingProfile.avatarSymbol
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Watching as \(streamingStore.activeViewingProfile.displayName), local profile connects Home My List Downloads and Rooms")
+        .accessibilityIdentifier("hf.account.home.activeProfile")
+        .accessibilityIdentifier("hf.account.home.profileConnection")
     }
 
     private var programmingPulseSection: some View {

@@ -8,6 +8,7 @@ struct ProfileView: View {
     @State private var showsSignOutAlert = false
     @State private var showsNotifications = false
     @State private var activeMockSheet: ProfileMockSheet?
+    @State private var profileNameDraft = ""
     @StateObject private var notificationStore = HFNotificationCenterStore()
 
     private let menuItems: [(title: String, systemImage: String)] = [
@@ -17,6 +18,16 @@ struct ProfileView: View {
         ("Account Preview", "person.crop.circle.fill"),
         ("Help", "questionmark.circle.fill")
     ]
+
+    private var activeUserProfile: UserProfile {
+        UserProfile(
+            id: streamingStore.activeViewingProfile.id,
+            name: streamingStore.activeViewingProfile.displayName,
+            avatarSystemName: streamingStore.activeViewingProfile.avatarSymbol,
+            accentName: streamingStore.activeViewingProfile.accentName,
+            isKidsProfile: false
+        )
+    }
 
     var body: some View {
         Group {
@@ -53,6 +64,9 @@ struct ProfileView: View {
                 header
                 selectedProfilePanel
                 consumerSummarySection
+                accountProfileSection
+                accountReadinessSection
+                accountProfileProofSection
                 avatarRow
                 manageProfilesButton
 
@@ -181,15 +195,15 @@ struct ProfileView: View {
     private var selectedProfilePanel: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
             HStack(spacing: HFSpacing.md) {
-                HFProfileAvatarCard(profile: selectedProfile, isSelected: true, compact: true)
+                HFProfileAvatarCard(profile: activeUserProfile, isSelected: true, compact: true)
                 VStack(alignment: .leading, spacing: HFSpacing.xxs) {
                     Text("Watching as")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.gold)
-                    Text(selectedProfile.name)
+                    Text(streamingStore.activeViewingProfile.displayName)
                         .font(HFTypography.section)
                         .foregroundStyle(HFColors.textPrimary)
-                    Text(selectedProfile.isKidsProfile ? "Kids profile" : "Standard profile")
+                    Text(streamingStore.activeViewingProfile.role)
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
                 }
@@ -214,7 +228,7 @@ struct ProfileView: View {
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     HStack(alignment: .top, spacing: HFSpacing.md) {
-                        Image(systemName: selectedProfile.avatarSystemName)
+                        Image(systemName: streamingStore.activeViewingProfile.avatarSymbol)
                             .font(.system(size: 23, weight: .black))
                             .foregroundStyle(.black)
                             .frame(width: 50, height: 50)
@@ -235,7 +249,7 @@ struct ProfileView: View {
                     }
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                        HFProfileConsumerSummaryCard(title: "Viewing profile", detail: selectedProfile.name, systemImage: selectedProfile.avatarSystemName, isActive: true)
+                        HFProfileConsumerSummaryCard(title: "Viewing profile", detail: streamingStore.activeViewingProfile.displayName, systemImage: streamingStore.activeViewingProfile.avatarSymbol, isActive: true)
                         HFProfileConsumerSummaryCard(title: "My List", detail: "Saved shelf", systemImage: "bookmark.fill")
                         HFProfileConsumerSummaryCard(title: "Downloads", detail: "Offline shelf", systemImage: "arrow.down.circle.fill")
                         HFProfileConsumerSummaryCard(title: "Rooms gateway", detail: "Watch to Export", systemImage: "rectangle.3.group.fill")
@@ -248,6 +262,196 @@ struct ProfileView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Your HighFive, consumer profile summary with viewing profile, My List, Downloads, and Rooms gateway")
         .accessibilityIdentifier("hf.profile.consumerSummary")
+    }
+
+    private var accountProfileSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                            .fill(HFColors.goldGradient)
+                        Text(streamingStore.profileInitials)
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(.black)
+                    }
+                    .frame(width: 52, height: 52)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: streamingStore.accountMode, accent: HFColors.gold)
+                        Text("Your HighFive Profile")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Your local viewing identity connects Home, My List, Downloads, and Rooms.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: streamingStore.activeViewingProfile.avatarSymbol)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text(streamingStore.activeViewingProfile.displayName)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(streamingStore.activeViewingProfile.role)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+                    Spacer()
+                    HFRoomStatusChip(title: "Active", accent: HFColors.gold)
+                }
+                .padding(HFSpacing.sm)
+                .background(Color.white.opacity(0.055))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                .accessibilityIdentifier("hf.account.profile.activeProfile")
+
+                TextField("Display name", text: $profileNameDraft)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .textInputAutocapitalization(.words)
+                    .padding(HFSpacing.md)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                            .stroke(HFColors.glassStroke, lineWidth: 1)
+                    )
+                    .accessibilityIdentifier("hf.account.profile.editName")
+                    .accessibilityIdentifier("hf.account.profile.displayName")
+
+                Button {
+                    streamingStore.updateDisplayName(profileNameDraft)
+                    selectedProfile = UserProfile(
+                        id: streamingStore.activeViewingProfile.id,
+                        name: streamingStore.activeViewingProfile.displayName,
+                        avatarSystemName: streamingStore.activeViewingProfile.avatarSymbol,
+                        accentName: streamingStore.activeViewingProfile.accentName,
+                        isKidsProfile: false
+                    )
+                    profileNameDraft = streamingStore.activeViewingProfile.displayName
+                } label: {
+                    HStack(spacing: HFSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Save Profile Name")
+                    }
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.account.profile.saveName")
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Choose viewing profile")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        ForEach(streamingStore.localProfiles) { profile in
+                            Button {
+                                streamingStore.selectProfile(profile)
+                                selectedProfile = UserProfile(
+                                    id: profile.id,
+                                    name: streamingStore.activeViewingProfile.displayName,
+                                    avatarSystemName: profile.avatarSymbol,
+                                    accentName: profile.accentName,
+                                    isKidsProfile: false
+                                )
+                                profileNameDraft = streamingStore.activeViewingProfile.displayName
+                            } label: {
+                                HFAccountProfilePickerCard(
+                                    profile: profile,
+                                    isActive: profile.id == streamingStore.activeProfileID
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .accessibilityIdentifier("hf.account.profile.profilePicker")
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFConsumerMomentumRow(title: "Cloud Account Not Connected Yet", detail: "Provider-ready local profile state only.", status: "Deferred", systemImage: "person.crop.circle.badge.exclamationmark")
+                        .accessibilityIdentifier("hf.account.profile.cloudStatus")
+                    HFConsumerMomentumRow(title: streamingStore.profilePrivacyState, detail: "Local profile state is ready for a future service decision.", status: "Ready", systemImage: "hand.raised.fill")
+                        .accessibilityIdentifier("hf.account.profile.privacyState")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .onAppear {
+            if profileNameDraft.isEmpty {
+                profileNameDraft = streamingStore.activeViewingProfile.displayName
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Your HighFive Profile, Local Profile Active, Cloud Account Not Connected Yet, Privacy Ready")
+        .accessibilityIdentifier("hf.account.profile.section")
+    }
+
+    private var accountReadinessSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Provider Ready", accent: HFColors.gold)
+                        Text("Account Readiness")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local profile behavior is active while future account services remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFAccountReadinessRow(title: "Local profile", status: "Active", systemImage: "person.crop.circle.fill")
+                    HFAccountReadinessRow(title: "Saved list", status: "Local", systemImage: "bookmark.fill")
+                    HFAccountReadinessRow(title: "Downloads", status: "Local State", systemImage: "arrow.down.circle.fill")
+                    HFAccountReadinessRow(title: "Cloud account", status: "Not Connected Yet", systemImage: "icloud.slash.fill")
+                    HFAccountReadinessRow(title: "Payments", status: "Not Connected Yet", systemImage: "creditcard")
+                    HFAccountReadinessRow(title: "Streaming access", status: "Not Connected Yet", systemImage: "play.rectangle.fill")
+                    HFAccountReadinessRow(title: "Privacy review", status: "Ready for service decision", systemImage: "hand.raised.fill")
+                }
+                .accessibilityIdentifier("hf.account.profile.localState")
+                .accessibilityIdentifier("hf.account.profile.serviceReadiness")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Account Readiness, local profile active, saved list local, downloads local state, cloud account not connected yet, privacy ready")
+        .accessibilityIdentifier("hf.account.profile.readiness")
+    }
+
+    private var accountProfileProofSection: some View {
+        HFInsightCard(
+            title: "Connected Profile Proof",
+            message: "Local profile identity now connects saved state, downloaded state, updates, checklist, and delivery summary.",
+            systemImage: "person.crop.circle.badge.checkmark"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Connected Profile Proof, local profile identity connects saved state downloaded state updates checklist and delivery summary")
+        .accessibilityIdentifier("hf.profile.accountProfileProof")
     }
 
     private var creatorModeCard: some View {
@@ -718,6 +922,78 @@ private struct ProfileMockSheet: Identifiable {
     let title: String
     let message: String
     let systemImage: String
+}
+
+private struct HFAccountProfilePickerCard: View {
+    let profile: HFLocalViewingProfile
+    let isActive: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: profile.avatarSymbol)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(isActive ? .black : HFColors.gold)
+                .frame(width: 32, height: 32)
+                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                .clipShape(Circle())
+
+            Text(profile.displayName)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Text(profile.role)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(isActive ? HFColors.gold.opacity(0.13) : Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isActive ? HFColors.goldStroke : HFColors.glassStroke, lineWidth: 1)
+        )
+        .accessibilityLabel("Use This Profile, \(profile.displayName), \(profile.role)")
+    }
+}
+
+private struct HFAccountReadinessRow: View {
+    let title: String
+    let status: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 32, height: 32)
+                .background(HFColors.gold.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(status == "Active" || status.hasPrefix("Ready") ? .black : HFColors.gold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 24)
+                .background(status == "Active" || status.hasPrefix("Ready") ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.10)))
+                .clipShape(Capsule())
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
 }
 
 private struct HFProfileConsumerSummaryCard: View {
@@ -8621,6 +8897,9 @@ private struct ConnectRoomView: View {
                 HFConsumerMomentumRow(title: "Connected Local Updates", detail: "Audience updates are stored locally for preview.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
                     .accessibilityIdentifier("hf.functional.connect.connectedState")
 
+                HFConsumerMomentumRow(title: "Updates prepared by \(streamingStore.activeViewingProfile.displayName)", detail: "Local profile identity stays attached to this draft board.", status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
+                    .accessibilityIdentifier("hf.account.connect.profileState")
+
                 TextField("Write a local update", text: localUpdateDraft, axis: .vertical)
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textPrimary)
@@ -9387,6 +9666,9 @@ private struct LaunchRoomView: View {
 
                 HFConsumerMomentumRow(title: "Connected Launch Progress", detail: "Checklist progress updates locally.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
                     .accessibilityIdentifier("hf.functional.launch.connectedState")
+
+                HFConsumerMomentumRow(title: "Release checklist for \(streamingStore.activeViewingProfile.displayName)", detail: "Local profile identity stays attached to launch prep.", status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
+                    .accessibilityIdentifier("hf.account.launch.profileState")
 
                 VStack(spacing: HFSpacing.sm) {
                     ForEach(streamingStore.launchChecklistItems.indices, id: \.self) { index in
@@ -10502,6 +10784,9 @@ private struct ExportRoomView: View {
 
                 HFConsumerMomentumRow(title: "Connected Delivery Summary", detail: "Package summary is generated from local app state.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
                     .accessibilityIdentifier("hf.functional.export.connectedState")
+
+                HFConsumerMomentumRow(title: "Delivery summary prepared by \(streamingStore.activeViewingProfile.displayName)", detail: "Local profile identity stays attached to the text summary.", status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
+                    .accessibilityIdentifier("hf.account.export.profileState")
 
                 if !streamingStore.generatedDeliverySummary.isEmpty {
                     Text(streamingStore.generatedDeliverySummary)

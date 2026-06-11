@@ -24,6 +24,7 @@ struct DownloadsView: View {
                 header
                 downloadHero
                 connectedStateSection
+                profileStateSection
                 offlineWatchHubSection
                 storageStatus
                 offlinePlan
@@ -222,6 +223,18 @@ struct DownloadsView: View {
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.functional.downloads.connectedState")
+    }
+
+    private var profileStateSection: some View {
+        HFInsightCard(
+            title: "Offline for \(streamingStore.activeViewingProfile.displayName)",
+            message: "Downloaded state follows your active local profile.",
+            systemImage: streamingStore.activeViewingProfile.avatarSymbol
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Offline for \(streamingStore.activeViewingProfile.displayName), downloaded state follows your active local profile")
+        .accessibilityIdentifier("hf.account.downloads.profileState")
     }
 
     private var offlinePlan: some View {
