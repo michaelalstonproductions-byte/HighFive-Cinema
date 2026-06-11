@@ -32,6 +32,7 @@ struct HomeView: View {
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
+                premiereMomentumSection
                 homeStreamingMomentumSection
                 watchSectionHeader
 
@@ -217,6 +218,22 @@ struct HomeView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Home streaming momentum, featured title, saved shelf, originals, offline shelf, and discovery path")
         .accessibilityIdentifier("hf.consumer.home.momentum")
+    }
+
+    private var premiereMomentumSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Premieres Building Momentum", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                HFConsumerMomentumRow(title: "The Friendly", detail: "Premiere plan ready.", status: "Ready", systemImage: "sparkles.tv.fill")
+                HFConsumerMomentumRow(title: "Midnight Borough", detail: "Audience prompts drafted.", status: "Draft", systemImage: "moon.stars.fill")
+                HFConsumerMomentumRow(title: "Golden Hour Kids", detail: "Family watch-night angle.", status: "Preview", systemImage: "sun.max.fill")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Premieres Building Momentum, public premiere planning hints for featured titles")
+        .accessibilityIdentifier("hf.consumer.home.premiereMomentum")
     }
 
     private var watchSectionHeader: some View {

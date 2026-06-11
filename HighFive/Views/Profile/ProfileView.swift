@@ -58,6 +58,7 @@ struct ProfileView: View {
                 menu
                 roomsGatewayHero
                 productSuiteProgressSection
+                publicMomentumSummarySection
                 highFiveRoomsSection
                 buildQAToolsSection
                 signOutButton
@@ -134,6 +135,7 @@ struct ProfileView: View {
                 header
                 roomsGatewayHero
                 productSuiteProgressSection
+                publicMomentumSummarySection
                 highFiveRoomsSection
             }
             .padding(.top, HFSpacing.lg)
@@ -520,6 +522,11 @@ struct ProfileView: View {
 
     private var productSuiteProgressSection: some View {
         HFProfileProductSuiteProgressSection(rows: HFRoomMegaExpansionData.productSuiteRows)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var publicMomentumSummarySection: some View {
+        HFProfilePublicMomentumSummarySection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -1355,6 +1362,7 @@ private enum HFRoomMegaExpansionData {
         HFRoomSuiteProgressRow(title: "CONNECT", detail: "Audience Planner + Board", status: "Built", systemImage: "person.2.fill"),
         HFRoomSuiteProgressRow(title: "LAUNCH", detail: "Campaign Planner + Release Calendar", status: "Built", systemImage: "flag.checkered"),
         HFRoomSuiteProgressRow(title: "EXPORT", detail: "Distribution Package + Delivery Board", status: "Built", systemImage: "shippingbox.fill"),
+        HFRoomSuiteProgressRow(title: "MOMENTUM", detail: "Launch + Connect public path", status: "Built", systemImage: "flame.fill"),
         HFRoomSuiteProgressRow(title: "INTERNAL", detail: "Developer / QA", status: "Internal Only", systemImage: "lock.shield.fill")
     ]
 
@@ -1529,6 +1537,116 @@ private enum HFRoomMegaExpansionData {
         HFRoomSuiteProgressRow(title: "Audience build", detail: "Audience warmup remains local.", status: "Local", systemImage: "person.3.fill"),
         HFRoomSuiteProgressRow(title: "Materials review", detail: "Public materials are previewed.", status: "Preview", systemImage: "photo.stack.fill"),
         HFRoomSuiteProgressRow(title: "Live release services", detail: "Release services remain separated.", status: "Protected", systemImage: "lock.shield.fill")
+    ]
+
+    static let publicMomentumColumns: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Creator Updates", subtitle: "Prepared public update beats.", status: "Draft", systemImage: "text.bubble.fill", cards: [
+            HFRoomBoardCard(title: "Behind-the-scenes note", detail: "A warm production memory.", status: "Draft", systemImage: "note.text"),
+            HFRoomBoardCard(title: "Creator reflection", detail: "Story-first creator voice.", status: "Preview", systemImage: "quote.bubble.fill"),
+            HFRoomBoardCard(title: "Premiere reminder copy", detail: "A soft release-week cue.", status: "Local", systemImage: "calendar.badge.clock"),
+            HFRoomBoardCard(title: "Post-release thank-you", detail: "A closing creator note.", status: "Preview", systemImage: "heart.fill")
+        ]),
+        HFRoomBoardColumn(title: "Audience Energy", subtitle: "Prompts that gather viewers around a title.", status: "Preview", systemImage: "person.3.fill", cards: [
+            HFRoomBoardCard(title: "Warm reaction prompt", detail: "Invite a story-first response.", status: "Ready", systemImage: "heart.text.square.fill"),
+            HFRoomBoardCard(title: "Favorite scene question", detail: "Guide attention to a memorable moment.", status: "Local", systemImage: "sparkles"),
+            HFRoomBoardCard(title: "Family watch-night angle", detail: "Frame who this title is for.", status: "Preview", systemImage: "figure.2.and.child.holdinghands"),
+            HFRoomBoardCard(title: "Who would you watch this with?", detail: "A simple shared-viewing prompt.", status: "Ready", systemImage: "person.2.fill")
+        ]),
+        HFRoomBoardColumn(title: "Premiere Conversation", subtitle: "Opening-night prompt set.", status: "Preview", systemImage: "flag.checkered", cards: [
+            HFRoomBoardCard(title: "Opening-night prompt", detail: "Start from the premiere mood.", status: "Ready", systemImage: "moon.stars.fill"),
+            HFRoomBoardCard(title: "Community highlight", detail: "Surface a warm audience moment.", status: "Local", systemImage: "sparkles.rectangle.stack.fill"),
+            HFRoomBoardCard(title: "Watch mood question", detail: "Ask what the title made viewers feel.", status: "Preview", systemImage: "questionmark.bubble.fill"),
+            HFRoomBoardCard(title: "Creator response idea", detail: "A prepared reply theme.", status: "Draft", systemImage: "person.text.rectangle.fill")
+        ]),
+        HFRoomBoardColumn(title: "Community Readiness", subtitle: "Local readiness for the public layer.", status: "Protected", systemImage: "checkmark.shield.fill", cards: [
+            HFRoomBoardCard(title: "Prompt pack ready", detail: "Conversation starters are organized.", status: "Ready", systemImage: "checkmark.seal.fill"),
+            HFRoomBoardCard(title: "Update copy drafted", detail: "Creator notes are prepared.", status: "Draft", systemImage: "doc.text.fill"),
+            HFRoomBoardCard(title: "Audience tone aligned", detail: "Warm, premium, story-first.", status: "Local", systemImage: "dial.low.fill"),
+            HFRoomBoardCard(title: "Live systems protected", detail: "Participation services stay separate.", status: "Protected", systemImage: "lock.shield.fill")
+        ])
+    ]
+
+    static let creatorUpdatePlannerStages: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Before Premiere", subtitle: "Shape the first public note.", status: "Draft", systemImage: "calendar", cards: [
+            HFRoomBoardCard(title: "Creator note", detail: "Set the title's personal context.", status: "Draft", systemImage: "note.text"),
+            HFRoomBoardCard(title: "Watch mood", detail: "Warm, hopeful, family-forward.", status: "Ready", systemImage: "moon.stars.fill"),
+            HFRoomBoardCard(title: "Title promise", detail: "Kindness, memory, and watch-night comfort.", status: "Preview", systemImage: "sparkles")
+        ]),
+        HFRoomBoardColumn(title: "Premiere Week", subtitle: "Prepare the audience-facing moment.", status: "Preview", systemImage: "flag.checkered", cards: [
+            HFRoomBoardCard(title: "Audience prompt", detail: "Ask viewers what stayed with them.", status: "Preview", systemImage: "questionmark.bubble.fill"),
+            HFRoomBoardCard(title: "Community angle", detail: "Invite shared family viewing.", status: "Local", systemImage: "person.3.fill"),
+            HFRoomBoardCard(title: "Public blurb", detail: "Short release copy is ready to review.", status: "Draft", systemImage: "text.alignleft")
+        ]),
+        HFRoomBoardColumn(title: "After Premiere", subtitle: "Keep the story moving.", status: "Local", systemImage: "arrow.up.forward.circle.fill", cards: [
+            HFRoomBoardCard(title: "Reflection prompt", detail: "What did the ending leave behind?", status: "Preview", systemImage: "text.bubble.fill"),
+            HFRoomBoardCard(title: "Creator thank-you", detail: "A warm closing note.", status: "Draft", systemImage: "heart.fill"),
+            HFRoomBoardCard(title: "Next-watch path", detail: "Guide viewers toward related titles.", status: "Ready", systemImage: "rectangle.stack.fill")
+        ]),
+        HFRoomBoardColumn(title: "Ongoing Community", subtitle: "Future public story beats.", status: "Preview", systemImage: "repeat.circle.fill", cards: [
+            HFRoomBoardCard(title: "Recurring update idea", detail: "Creator notes after launch week.", status: "Preview", systemImage: "text.bubble.fill"),
+            HFRoomBoardCard(title: "Title discussion prompt", detail: "Keep the conversation story-first.", status: "Local", systemImage: "bubble.left.and.bubble.right.fill"),
+            HFRoomBoardCard(title: "Future release bridge", detail: "Connect audience energy into Launch.", status: "Draft", systemImage: "flag.checkered")
+        ])
+    ]
+
+    static let conversationPrompts: [HFRoomBoardCard] = [
+        HFRoomBoardCard(title: "What moment stayed with you?", detail: "Reflect on the emotional hook.", status: "Ready", systemImage: "sparkles"),
+        HFRoomBoardCard(title: "Who would you watch this with?", detail: "Invite a shared viewing answer.", status: "Ready", systemImage: "person.2.fill"),
+        HFRoomBoardCard(title: "What scene should others notice?", detail: "Guide viewers to a standout beat.", status: "Preview", systemImage: "eye.fill"),
+        HFRoomBoardCard(title: "Why this title tonight?", detail: "Frame the premiere choice.", status: "Local", systemImage: "moon.stars.fill"),
+        HFRoomBoardCard(title: "What did the ending make you feel?", detail: "Prompt an emotional response.", status: "Preview", systemImage: "heart.text.square.fill"),
+        HFRoomBoardCard(title: "Which character felt closest to home?", detail: "Keep conversation warm and personal.", status: "Draft", systemImage: "person.fill")
+    ]
+
+    static let conversationReadinessRows: [HFRoomSuiteProgressRow] = [
+        HFRoomSuiteProgressRow(title: "Prompts", detail: "Conversation starters are ready.", status: "Ready", systemImage: "text.bubble.fill"),
+        HFRoomSuiteProgressRow(title: "Creator response", detail: "Response themes are previewed.", status: "Preview", systemImage: "person.text.rectangle.fill"),
+        HFRoomSuiteProgressRow(title: "Audience groups", detail: "Groups remain local.", status: "Local", systemImage: "person.3.fill"),
+        HFRoomSuiteProgressRow(title: "Live community", detail: "Participation services remain separate.", status: "Protected", systemImage: "lock.shield.fill")
+    ]
+
+    static let publicReleaseMilestones: [HFRoomCalendarMilestone] = [
+        HFRoomCalendarMilestone(title: "Announcement", dateLabel: "Preview Week 1", detail: "Public title framing, creator note, and first poster direction.", status: "Draft", systemImage: "sparkles"),
+        HFRoomCalendarMilestone(title: "Trailer / Preview Window", dateLabel: "Preview Week 2", detail: "First public blurb, still-frame row, and watch mood.", status: "Preview", systemImage: "rectangle.stack.fill"),
+        HFRoomCalendarMilestone(title: "Premiere Week", dateLabel: "Preview Week 4", detail: "Premiere copy, community prompt, and creator update.", status: "Local", systemImage: "flag.checkered"),
+        HFRoomCalendarMilestone(title: "Opening Night", dateLabel: "Preview Night", detail: "Watch-night framing and audience conversation starter.", status: "Ready", systemImage: "moon.stars.fill"),
+        HFRoomCalendarMilestone(title: "Post-Release Push", dateLabel: "Preview Week 5", detail: "Creator reflection, related titles, and continuing audience energy.", status: "Preview", systemImage: "arrow.up.forward.circle.fill")
+    ]
+
+    static let campaignMomentumColumns: [HFRoomBoardColumn] = [
+        HFRoomBoardColumn(title: "Campaign Identity", subtitle: "Public story frame.", status: "Preview", systemImage: "megaphone.fill", cards: [
+            HFRoomBoardCard(title: "Headline", detail: "Warm premiere for a HighFive Original.", status: "Draft", systemImage: "textformat.size"),
+            HFRoomBoardCard(title: "Public promise", detail: "A heartfelt family watch-night story.", status: "Preview", systemImage: "sparkles"),
+            HFRoomBoardCard(title: "Creator note", detail: "Personal context for the release.", status: "Local", systemImage: "person.text.rectangle.fill"),
+            HFRoomBoardCard(title: "Tone line", detail: "Warm, premium, story-first.", status: "Ready", systemImage: "dial.low.fill")
+        ]),
+        HFRoomBoardColumn(title: "Materials Window", subtitle: "Public materials to review.", status: "Draft", systemImage: "photo.stack.fill", cards: [
+            HFRoomBoardCard(title: "Poster direction", detail: "Soft gold light and intimate portraits.", status: "Draft", systemImage: "photo.fill"),
+            HFRoomBoardCard(title: "Press copy", detail: "Short and long public blurbs.", status: "Preview", systemImage: "newspaper.fill"),
+            HFRoomBoardCard(title: "Still-frame row", detail: "Key emotional moments.", status: "Local", systemImage: "rectangle.stack.fill"),
+            HFRoomBoardCard(title: "Title metadata", detail: "Genre, format, and advisory placeholder.", status: "Preview", systemImage: "tag.fill")
+        ]),
+        HFRoomBoardColumn(title: "Audience Build", subtitle: "Momentum into premiere week.", status: "Local", systemImage: "person.3.fill", cards: [
+            HFRoomBoardCard(title: "Creator update", detail: "Release-week creator voice.", status: "Preview", systemImage: "text.bubble.fill"),
+            HFRoomBoardCard(title: "Community prompt", detail: "Opening-night conversation starter.", status: "Ready", systemImage: "questionmark.bubble.fill"),
+            HFRoomBoardCard(title: "Watch-night hook", detail: "Who would you watch this with?", status: "Local", systemImage: "moon.stars.fill"),
+            HFRoomBoardCard(title: "Premiere reminder copy", detail: "Soft public cue for launch week.", status: "Draft", systemImage: "calendar.badge.clock")
+        ]),
+        HFRoomBoardColumn(title: "Release Readiness", subtitle: "Final local review board.", status: "Protected", systemImage: "checkmark.shield.fill", cards: [
+            HFRoomBoardCard(title: "Title page copy", detail: "Public synopsis and headline.", status: "Preview", systemImage: "doc.text.fill"),
+            HFRoomBoardCard(title: "Campaign copy", detail: "Headline and promise aligned.", status: "Draft", systemImage: "megaphone.fill"),
+            HFRoomBoardCard(title: "Media kit check", detail: "Public materials reviewed.", status: "Local", systemImage: "shippingbox.fill"),
+            HFRoomBoardCard(title: "Safety boundary", detail: "Live release services remain separate.", status: "Protected", systemImage: "lock.shield.fill")
+        ])
+    ]
+
+    static let premiereReadinessRows: [HFRoomSuiteProgressRow] = [
+        HFRoomSuiteProgressRow(title: "Public framing", detail: "Title promise is ready.", status: "Ready", systemImage: "sparkles"),
+        HFRoomSuiteProgressRow(title: "Campaign headline", detail: "Headline is previewed.", status: "Preview", systemImage: "megaphone.fill"),
+        HFRoomSuiteProgressRow(title: "Media materials", detail: "Materials are drafted.", status: "Draft", systemImage: "photo.stack.fill"),
+        HFRoomSuiteProgressRow(title: "Audience prompts", detail: "Prompts remain local.", status: "Local", systemImage: "text.bubble.fill"),
+        HFRoomSuiteProgressRow(title: "Creator update", detail: "Update copy is previewed.", status: "Preview", systemImage: "person.text.rectangle.fill"),
+        HFRoomSuiteProgressRow(title: "Live release services", detail: "Release services remain separate.", status: "Protected", systemImage: "lock.shield.fill")
     ]
 }
 
@@ -3749,6 +3867,361 @@ private struct HFRoomSuiteProgressTile: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(row.title), \(row.detail), \(row.status)")
+    }
+}
+
+private struct HFProfilePublicMomentumSummarySection: View {
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.34)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(Color.cyan)
+                    .frame(width: 48, height: 48)
+                    .background(Color.cyan.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFRoomLocalPreviewBadge(title: "Built", accent: Color.cyan)
+                    Text("Launch + Connect Momentum")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Connect and Launch now carry audience energy, creator updates, public release calendar, and premiere readiness as local product previews.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch and Connect Momentum, local audience and premiere planning summary")
+        .accessibilityIdentifier("hf.profile.publicMomentumSummary")
+    }
+}
+
+private struct HFPublicMomentumBoardSection: View {
+    let columns: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Local Momentum", accent: accent)
+                            Text("Public Momentum Board")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Plan creator updates, audience prompts, and premiere conversation before live community systems are connected.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer(minLength: 0)
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            ForEach(columns) { column in
+                                HFRoomBoardColumnCard(column: column, accent: accent)
+                                    .accessibilityIdentifier(identifier(for: column.title))
+                            }
+                        }
+                        .padding(.vertical, 2)
+                        .accessibilityIdentifier("hf.room.connect.momentumBoard")
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Public Momentum Board, local creator updates audience prompts and premiere conversation planning")
+            .accessibilityIdentifier("hf.room.connect.publicMomentum")
+
+            Text("Review Momentum Board")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .accessibilityLabel("Review Momentum Board, safe local preview action")
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func identifier(for title: String) -> String {
+        switch title {
+        case "Creator Updates":
+            return "hf.room.connect.creatorUpdates"
+        case "Premiere Conversation":
+            return "hf.room.connect.premiereConversation"
+        case "Community Readiness":
+            return "hf.room.connect.communityReadinessBoard"
+        default:
+            return "hf.room.connect.momentumBoard.column"
+        }
+    }
+}
+
+private struct HFCreatorUpdatePlannerSection: View {
+    let stages: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Creator Update Planner", subtitle: "Prepare safe public update moments around the title.")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(stages) { stage in
+                        HFRoomBoardColumnCard(column: stage, accent: accent)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+
+            Text("Preview Creator Update")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityLabel("Preview Creator Update, safe local preview action")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Update Planner, local public update planning stages")
+        .accessibilityIdentifier("hf.room.connect.creatorUpdatePlanner")
+    }
+}
+
+private struct HFPremiereConversationPackSection: View {
+    let prompts: [HFRoomBoardCard]
+    let readinessRows: [HFRoomSuiteProgressRow]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.36)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Prompt Pack", accent: accent)
+                            Text("Premiere Conversation Pack")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Tone: Warm, premium, story-first, family-forward.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        ForEach(prompts) { prompt in
+                            HFRoomBoardMiniCard(card: prompt, accent: accent)
+                        }
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], alignment: .leading, spacing: HFSpacing.sm) {
+                        ForEach(readinessRows) { row in
+                            HFRoomSuiteProgressTile(row: row, accent: accent)
+                        }
+                    }
+
+                    Text("Review Conversation Pack")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Review Conversation Pack, safe local preview action")
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Premiere Conversation Pack, local prompt pack with readiness rows")
+        .accessibilityIdentifier("hf.room.connect.conversationPack")
+    }
+}
+
+private struct HFPublicReleaseCalendarSection: View {
+    let milestones: [HFRoomCalendarMilestone]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Public Calendar", accent: accent)
+                            Text("Public Release Calendar")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Plan the path from announcement to premiere without live campaign systems.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    VStack(spacing: HFSpacing.sm) {
+                        ForEach(milestones) { milestone in
+                            HFReleaseMilestoneRow(milestone: milestone, accent: accent)
+                        }
+                    }
+                    .accessibilityIdentifier("hf.room.launch.releaseMilestoneStack")
+
+                    Text("Review Release Calendar")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Review Release Calendar, safe local preview action")
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Public Release Calendar, local announcement to premiere milestone preview")
+        .accessibilityIdentifier("hf.room.launch.publicReleaseCalendar")
+    }
+}
+
+private struct HFCampaignMomentumBoardSection: View {
+    let columns: [HFRoomBoardColumn]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "megaphone.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(accent)
+                            .frame(width: 50, height: 50)
+                            .background(accent.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            HFRoomLocalPreviewBadge(title: "Momentum Board", accent: accent)
+                            Text("Campaign Momentum Board")
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("Shape campaign identity, materials, audience build, and release readiness as a local Launch Room preview.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: HFSpacing.sm) {
+                            ForEach(columns) { column in
+                                HFRoomBoardColumnCard(column: column, accent: accent)
+                                    .accessibilityIdentifier(column.title == "Release Readiness" ? "hf.room.launch.releaseReadinessBoard" : "hf.room.launch.campaignMomentumBoard.column")
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    Text("Review Campaign Momentum")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(accent)
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Review Campaign Momentum, safe local preview action")
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Campaign Momentum Board, local campaign identity materials audience build and release readiness")
+        .accessibilityIdentifier("hf.room.launch.campaignMomentumBoard")
+    }
+}
+
+private struct HFPremiereReadinessPackSection: View {
+    let rows: [HFRoomSuiteProgressRow]
+    let accent: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFRoomMomentumSummary(title: "Premiere Readiness Pack", rows: rows, accent: accent, identifier: "hf.room.launch.premiereReadinessPack")
+
+            Text("This package can inform the Launch Room and Connect Room while live release systems remain disconnected.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            Text("Review Premiere Pack")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, HFSpacing.md)
+                .padding(.vertical, 11)
+                .background(accent)
+                .clipShape(Capsule())
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityLabel("Review Premiere Pack, safe local preview action")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Premiere Readiness Pack, local public framing campaign headline media materials audience prompts and creator update")
     }
 }
 
@@ -7264,6 +7737,13 @@ private struct ConnectRoomView: View {
 
                 HFConnectAudiencePlannerSection(plan: HFConnectAudiencePlannerPreviewData.plan, accent: Color.cyan)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.audienceBoard, accent: Color.cyan)
+                HFPublicMomentumBoardSection(columns: HFRoomMegaExpansionData.publicMomentumColumns, accent: Color.cyan)
+                HFCreatorUpdatePlannerSection(stages: HFRoomMegaExpansionData.creatorUpdatePlannerStages, accent: Color.cyan)
+                HFPremiereConversationPackSection(
+                    prompts: HFRoomMegaExpansionData.conversationPrompts,
+                    readinessRows: HFRoomMegaExpansionData.conversationReadinessRows,
+                    accent: Color.cyan
+                )
                 HFRoomDepthSnapshotStrip(accent: Color.cyan)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.connect, accent: Color.cyan, roomID: "connect")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.connect, accent: Color.cyan, roomID: "connect")
@@ -7935,6 +8415,9 @@ private struct LaunchRoomView: View {
                     controlRows: HFRoomMegaExpansionData.launchControlRows,
                     accent: accent
                 )
+                HFPublicReleaseCalendarSection(milestones: HFRoomMegaExpansionData.publicReleaseMilestones, accent: accent)
+                HFCampaignMomentumBoardSection(columns: HFRoomMegaExpansionData.campaignMomentumColumns, accent: accent)
+                HFPremiereReadinessPackSection(rows: HFRoomMegaExpansionData.premiereReadinessRows, accent: accent)
                 HFRoomDepthSnapshotStrip(accent: accent)
                 HFRoomWorkflowDrilldownSection(plan: HFRoomWorkflowDrilldownPlans.launch, accent: accent, roomID: "launch")
                 HFRoomGuidedWorkflowSection(plan: HFRoomWorkflowPlans.launch, accent: accent, roomID: "launch")

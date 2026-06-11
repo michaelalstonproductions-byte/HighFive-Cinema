@@ -35,6 +35,7 @@ struct MovieDetailView: View {
                 titleDecisionPanel
                 titleSignalPanel
                 viewingContextSection
+                publicMomentumSection
                 relatedSection
                 creatorSection
                 castSection
@@ -288,6 +289,38 @@ struct MovieDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Viewing Context, watch now, saved shelf, related titles, and offline shelf")
         .accessibilityIdentifier("hf.consumer.movieDetail.viewingContext")
+    }
+
+    private var publicMomentumSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Public Momentum", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                        HFTitleDecisionCard(title: "Premiere angle", detail: movie.isOriginal ? "Original premiere" : "Featured title", systemImage: "flag.checkered", isActive: true)
+                        HFTitleDecisionCard(title: "Audience conversation", detail: "Story-first watch prompt", systemImage: "person.2.fill")
+                        HFTitleDecisionCard(title: "Related titles path", detail: "\(relatedTitles.count) titles to continue", systemImage: "rectangle.stack.fill")
+                    }
+
+                    Text("Explore More Like This")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.vertical, 11)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Explore More Like This")
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Public Momentum, premiere angle audience conversation and related titles path")
+        .accessibilityIdentifier("hf.consumer.movieDetail.publicMomentum")
     }
 
     private var genreTags: some View {
