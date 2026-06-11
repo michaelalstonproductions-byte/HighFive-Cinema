@@ -6,7 +6,7 @@ struct DownloadsView: View {
     @State private var showsRemoveAllAlert = false
 
     private var downloads: [Movie] {
-        HFMockData.movies.filter { streamingStore.isDownloaded($0) }
+        streamingStore.downloadedMovies
     }
 
     private var usedStorage: Double {
@@ -23,6 +23,7 @@ struct DownloadsView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 downloadHero
+                connectedStateSection
                 offlineWatchHubSection
                 storageStatus
                 offlinePlan
@@ -211,6 +212,16 @@ struct DownloadsView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Offline Watch Hub, available offline, ready when you are, find more, offline shelf, and storage preview")
         .accessibilityIdentifier("hf.consumer.downloads.offlineWatchHub")
+    }
+
+    private var connectedStateSection: some View {
+        HFInsightCard(
+            title: "Connected Offline State",
+            message: "Downloaded titles update from Movie Detail.",
+            systemImage: "point.3.connected.trianglepath.dotted"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.functional.downloads.connectedState")
     }
 
     private var offlinePlan: some View {

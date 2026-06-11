@@ -520,6 +520,7 @@ private struct HFLaunchHomeRevealScreen: View {
                 .padding(.horizontal, 30)
             }
         }
+        .accessibilityIdentifier("hf.functional.onboarding.entersHome")
     }
 }
 

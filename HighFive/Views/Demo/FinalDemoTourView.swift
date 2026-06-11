@@ -155,7 +155,7 @@ struct FinalDemoTourView: View {
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         HFStatusBadge(title: "Local First", isProminent: true)
-                        Text("Home, Movie Detail, Library, Downloads, Connect, Launch, and Export now share a local-first working path.")
+                        Text("Home, Movie Detail, Library, Downloads, Connect, Launch, Export, and Profile are wired to the same local-first app foundation.")
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -168,8 +168,9 @@ struct FinalDemoTourView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Functional Core Proof, Home Movie Detail Library Downloads Connect Launch and Export share a local-first working path")
+        .accessibilityLabel("Connected App Proof, Home Movie Detail Library Downloads Connect Launch Export and Profile are wired to the same local-first app foundation")
         .accessibilityIdentifier("hf.demoTour.functionalCoreProof")
+        .accessibilityIdentifier("hf.demoTour.connectedAppProof")
     }
 
     private var runOfShowSection: some View {

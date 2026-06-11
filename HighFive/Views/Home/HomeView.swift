@@ -12,7 +12,11 @@ struct HomeView: View {
     @StateObject private var notificationStore = HFNotificationCenterStore()
 
     private var heroMovie: Movie {
-        HFMockData.movie("friendly") ?? HFMockData.movies[0]
+        streamingStore.featuredMovie
+    }
+
+    private var continueWatchingMovie: Movie {
+        streamingStore.continueWatchingMovie
     }
 
     private var screenWidth: CGFloat {
@@ -149,7 +153,7 @@ struct HomeView: View {
         HStack(spacing: HFSpacing.sm) {
             HFHomeMetricPill(value: "\(HFMockData.movies.filter(\.isOriginal).count)", label: "Originals", systemImage: "sparkles")
             HFHomeMetricPill(value: "\(HFMockData.movies.filter { $0.progress != nil }.count)", label: "In Progress", systemImage: "play.circle.fill")
-            HFHomeMetricPill(value: "\(HFMockData.movies.filter(\.isDownloaded).count)", label: "Offline", systemImage: "arrow.down.circle.fill")
+            HFHomeMetricPill(value: "\(streamingStore.downloadedMovies.count)", label: "Offline", systemImage: "arrow.down.circle.fill")
         }
         .padding(.horizontal, screenPadding)
         .accessibilityElement(children: .combine)
@@ -462,7 +466,7 @@ struct HomeView: View {
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.52)) {
                 HStack(spacing: HFSpacing.md) {
                     ZStack {
-                        ForEach(Array(HFMockData.newThisWeek.movies.prefix(3).enumerated()), id: \.element.id) { index, movie in
+                    ForEach(Array(streamingStore.relatedMovies(for: heroMovie).prefix(3).enumerated()), id: \.element.id) { index, movie in
                             HFPosterCard(movie: movie, width: 88, showTitle: false, posterOnly: true)
                                 .rotationEffect(.degrees(Double(index - 1) * 8))
                                 .offset(x: CGFloat(index - 1) * 36, y: CGFloat(abs(index - 1)) * 8)
@@ -476,7 +480,7 @@ struct HomeView: View {
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.gold)
                             .kerning(1.2)
-                        Text("The Friendly leads a slate built for a late-night HighFive premiere.")
+                Text("\(heroMovie.title) leads a slate built for a late-night HighFive premiere.")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(3)
@@ -555,13 +559,11 @@ struct HomeView: View {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(category.movies) { movie in
                         if category.id == "continue-watching" {
-                            Button {
-                                previewMovie = movie
-                            } label: {
+                            NavigationLink(value: movie.id == continueWatchingMovie.id ? continueWatchingMovie : movie) {
                                 HFPosterCard(movie: movie, width: HFResponsiveFit.posterRailWidth(width: screenWidth), showProgress: true)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Continue watching \(movie.title)")
+                            .accessibilityLabel("Continue watching \(movie.title) in Movie Detail")
                             .accessibilityIdentifier("hf.functional.home.continueWatchingRoute")
                         } else {
                             NavigationLink(value: movie) {

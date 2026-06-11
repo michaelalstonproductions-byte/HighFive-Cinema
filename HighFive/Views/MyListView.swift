@@ -13,11 +13,11 @@ struct MyListView: View {
     private var savedMovies: [Movie] {
         switch selectedFilter {
         case "Continue Watching":
-            return HFMockData.movies.filter { streamingStore.isSaved($0) && $0.progress != nil }
+            return streamingStore.savedMovies.filter { $0.progress != nil }
         case "Downloads":
-            return HFMockData.movies.filter { streamingStore.isSaved($0) && streamingStore.isDownloaded($0) }
+            return streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }
         default:
-            return HFMockData.movies.filter { streamingStore.isSaved($0) }
+            return streamingStore.savedMovies
         }
     }
 
@@ -26,6 +26,7 @@ struct MyListView: View {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 header
                 libraryShelfHero
+                connectedStateSection
                 watchShelfSection
                 shelfMomentumSection
                 filterChips
@@ -92,9 +93,9 @@ struct MyListView: View {
                 }
 
                 HStack(spacing: HFSpacing.sm) {
-                    HFLibraryCountTile(value: "\(HFMockData.movies.filter { streamingStore.isSaved($0) }.count)", label: "Saved")
-                    HFLibraryCountTile(value: "\(HFMockData.movies.filter { streamingStore.isSaved($0) && $0.progress != nil }.count)", label: "Resume")
-                    HFLibraryCountTile(value: "\(HFMockData.movies.filter { streamingStore.isSaved($0) && streamingStore.isDownloaded($0) }.count)", label: "Offline")
+                    HFLibraryCountTile(value: "\(streamingStore.savedMovies.count)", label: "Saved")
+                    HFLibraryCountTile(value: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count)", label: "Resume")
+                    HFLibraryCountTile(value: "\(streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }.count)", label: "Offline")
                 }
             }
             .padding(HFSpacing.lg)
@@ -117,9 +118,9 @@ struct MyListView: View {
             HFSectionHeader(title: "Your Watch Shelf", actionTitle: nil)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                HFLibraryShelfCard(title: "Saved Titles", detail: "\(HFMockData.movies.filter { streamingStore.isSaved($0) }.count) in your shelf", systemImage: "bookmark.fill", isActive: true)
-                HFLibraryShelfCard(title: "Continue Watching", detail: "\(HFMockData.movies.filter { streamingStore.isSaved($0) && $0.progress != nil }.count) in progress", systemImage: "play.circle.fill")
-                HFLibraryShelfCard(title: "Downloads", detail: "\(HFMockData.movies.filter { streamingStore.isSaved($0) && streamingStore.isDownloaded($0) }.count) offline-ready", systemImage: "arrow.down.circle.fill")
+                HFLibraryShelfCard(title: "Saved Titles", detail: "\(streamingStore.savedMovies.count) in your shelf", systemImage: "bookmark.fill", isActive: true)
+                HFLibraryShelfCard(title: "Continue Watching", detail: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count) in progress", systemImage: "play.circle.fill")
+                HFLibraryShelfCard(title: "Downloads", detail: "\(streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }.count) offline-ready", systemImage: "arrow.down.circle.fill")
                 HFLibraryShelfCard(title: "Recently Added", detail: "Fresh titles for later", systemImage: "clock.fill")
                 HFLibraryShelfCard(title: "Recommended Next", detail: "A softer path back in", systemImage: "sparkles")
             }
@@ -128,6 +129,16 @@ struct MyListView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Your Watch Shelf, saved titles, continue watching, downloads, recently added, and recommended next")
         .accessibilityIdentifier("hf.consumer.library.watchShelf")
+    }
+
+    private var connectedStateSection: some View {
+        HFInsightCard(
+            title: "Connected State",
+            message: "Saved movies update from Movie Detail.",
+            systemImage: "point.3.connected.trianglepath.dotted"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.functional.library.connectedState")
     }
 
     private var shelfMomentumSection: some View {

@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @Binding var selectedProfile: UserProfile
     var onOpenMyList: (() -> Void)?
+    @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var showsProfileSwitcher = false
     @State private var showsSignOutAlert = false
     @State private var showsNotifications = false
@@ -4044,34 +4045,45 @@ private struct HFProfileHighFiveProductStorySection: View {
 }
 
 private struct HFProfileFunctionalCoreSummarySection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
-                Image(systemName: "point.3.connected.trianglepath.dotted")
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundStyle(HFColors.gold)
-                    .frame(width: 48, height: 48)
-                    .background(HFColors.gold.opacity(0.13))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    HFRoomStatusChip(title: "Local App Behavior", accent: HFColors.gold)
-                    Text("Functional Core")
-                        .font(HFTypography.section)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Watch, save, download-state, local updates, release checklist, and delivery summary are now connected as local app behavior.")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local App Behavior", accent: HFColors.gold)
+                        Text("Functional Core")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Movies, Watch Now, My List, Downloads, local updates, release checklist, and delivery summary now share a connected local app foundation.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
                 }
 
-                Spacer(minLength: 0)
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.currentFunctionalProofRows, id: \.self) { row in
+                        HFConsumerMomentumRow(title: row, detail: "Unified local app state", status: "Connected", systemImage: "checkmark.circle.fill")
+                    }
+                }
             }
             .padding(HFSpacing.lg)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Functional Core, Watch save download-state local updates release checklist and delivery summary are connected as local app behavior")
+        .accessibilityLabel("Functional Core, connected app foundation for movies Watch Now My List Downloads local updates release checklist and delivery summary")
         .accessibilityIdentifier("hf.profile.functionalCoreSummary")
+        .accessibilityIdentifier("hf.profile.connectedAppSummary")
     }
 }
 
@@ -8493,11 +8505,7 @@ private struct HFConnectAudienceBoundaryCard: View {
 }
 
 private struct ConnectRoomView: View {
-    @State private var localUpdateDraft = "The Friendly watch-night prompt is ready for local review."
-    @State private var localUpdates = [
-        "Draft: Invite viewers to choose who they would watch The Friendly with.",
-        "Preview: Share a behind-the-scenes note before premiere week."
-    ]
+    @EnvironmentObject private var streamingStore: HFStreamingStore
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -8610,7 +8618,10 @@ private struct ConnectRoomView: View {
                     }
                 }
 
-                TextField("Write a local update", text: $localUpdateDraft, axis: .vertical)
+                HFConsumerMomentumRow(title: "Connected Local Updates", detail: "Audience updates are stored locally for preview.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
+                    .accessibilityIdentifier("hf.functional.connect.connectedState")
+
+                TextField("Write a local update", text: localUpdateDraft, axis: .vertical)
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(2...4)
@@ -8642,7 +8653,7 @@ private struct ConnectRoomView: View {
                 .accessibilityLabel("Add Local Update")
 
                 VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    ForEach(Array(localUpdates.enumerated()), id: \.offset) { index, update in
+                    ForEach(Array(streamingStore.localConnectUpdates.enumerated()), id: \.offset) { index, update in
                         HFLocalUpdateRow(index: index + 1, update: update, accent: Color.cyan)
                     }
                 }
@@ -8657,10 +8668,14 @@ private struct ConnectRoomView: View {
     }
 
     private func addLocalUpdate() {
-        let trimmed = localUpdateDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        localUpdates.insert("Local update: \(trimmed)", at: 0)
-        localUpdateDraft = ""
+        streamingStore.addLocalConnectUpdate(streamingStore.localConnectUpdateDraft)
+    }
+
+    private var localUpdateDraft: Binding<String> {
+        Binding(
+            get: { streamingStore.localConnectUpdateDraft },
+            set: { streamingStore.localConnectUpdateDraft = $0 }
+        )
     }
 }
 
@@ -9277,16 +9292,9 @@ private enum LaunchRoomData {
 }
 
 private struct LaunchRoomView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var selectedLaunchSection: LaunchSection = .overview
-    @State private var launchChecklistStates = [false, false, false, false, false]
     private let accent = HFColors.gold
-    private let launchChecklistItems = [
-        "Campaign headline reviewed",
-        "Premiere copy reviewed",
-        "Audience prompt prepared",
-        "Media kit checked",
-        "Release calendar reviewed"
-    ]
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -9339,7 +9347,7 @@ private struct LaunchRoomView: View {
     }
 
     private var launchChecklistProgress: Int {
-        launchChecklistStates.filter { $0 }.count
+        streamingStore.launchChecklistProgress
     }
 
     private var localReleaseChecklistSection: some View {
@@ -9366,24 +9374,27 @@ private struct LaunchRoomView: View {
                 }
 
                 HStack(spacing: HFSpacing.sm) {
-                    Text("\(launchChecklistProgress)/\(launchChecklistItems.count)")
+                    Text("\(launchChecklistProgress)/\(streamingStore.launchChecklistItems.count)")
                         .font(.system(size: 30, weight: .black))
                         .foregroundStyle(HFColors.textPrimary)
                     Text("reviewed")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.gold)
                     Spacer()
-                    HFRoomStatusChip(title: launchChecklistProgress == launchChecklistItems.count ? "Ready" : "In Review", accent: accent)
+                    HFRoomStatusChip(title: launchChecklistProgress == streamingStore.launchChecklistItems.count ? "Ready" : "In Review", accent: accent)
                 }
                 .accessibilityIdentifier("hf.functional.launch.checklistProgress")
 
+                HFConsumerMomentumRow(title: "Connected Launch Progress", detail: "Checklist progress updates locally.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
+                    .accessibilityIdentifier("hf.functional.launch.connectedState")
+
                 VStack(spacing: HFSpacing.sm) {
-                    ForEach(launchChecklistItems.indices, id: \.self) { index in
+                    ForEach(streamingStore.launchChecklistItems.indices, id: \.self) { index in
                         Toggle(isOn: Binding(
-                            get: { launchChecklistStates[index] },
-                            set: { launchChecklistStates[index] = $0 }
+                            get: { streamingStore.launchChecklistStates[index] },
+                            set: { streamingStore.toggleLaunchChecklistItem(index, isComplete: $0) }
                         )) {
-                            Text(launchChecklistItems[index])
+                            Text(streamingStore.launchChecklistItems[index])
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -9419,7 +9430,7 @@ private struct LaunchRoomView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Local Release Checklist, \(launchChecklistProgress) of \(launchChecklistItems.count) reviewed")
+        .accessibilityLabel("Local Release Checklist, \(launchChecklistProgress) of \(streamingStore.launchChecklistItems.count) reviewed")
         .accessibilityIdentifier("hf.functional.launch.localChecklist")
     }
 
@@ -10398,8 +10409,8 @@ private enum ExportRoomData {
 }
 
 private struct ExportRoomView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var selectedExportSection: ExportSection = .overview
-    @State private var generatedDeliverySummary = ""
     private let accent = Color.purple
 
     var body: some View {
@@ -10472,7 +10483,7 @@ private struct ExportRoomView: View {
                 }
 
                 Button {
-                    generateDeliverySummary()
+                    streamingStore.generateDeliverySummary(for: streamingStore.featuredMovie)
                 } label: {
                     HStack(spacing: HFSpacing.xs) {
                         Image(systemName: "wand.and.stars")
@@ -10489,8 +10500,11 @@ private struct ExportRoomView: View {
                 .accessibilityIdentifier("hf.functional.export.generateSummary")
                 .accessibilityLabel("Generate Summary")
 
-                if !generatedDeliverySummary.isEmpty {
-                    Text(generatedDeliverySummary)
+                HFConsumerMomentumRow(title: "Connected Delivery Summary", detail: "Package summary is generated from local app state.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
+                    .accessibilityIdentifier("hf.functional.export.connectedState")
+
+                if !streamingStore.generatedDeliverySummary.isEmpty {
+                    Text(streamingStore.generatedDeliverySummary)
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -10504,7 +10518,7 @@ private struct ExportRoomView: View {
                         )
                         .accessibilityIdentifier("hf.functional.export.summaryText")
 
-                    ShareLink(item: generatedDeliverySummary) {
+                    ShareLink(item: streamingStore.generatedDeliverySummary) {
                         HStack(spacing: HFSpacing.xs) {
                             Image(systemName: "square.and.arrow.up")
                             Text("Share Summary")
@@ -10527,17 +10541,6 @@ private struct ExportRoomView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Generate Delivery Summary, local text package summary")
         .accessibilityIdentifier("hf.functional.export.deliverySummary")
-    }
-
-    private func generateDeliverySummary() {
-        generatedDeliverySummary = """
-        HighFive Cinema Delivery Summary
-        Title: The Friendly
-        Watch surface: Movie Detail, Watch Now path, related titles, and My List route.
-        Launch handoff: Campaign headline, premiere copy, audience prompt, media kit, and release calendar reviewed locally.
-        Export package: Deliverables, media kit, festival materials, platform checklist, and distribution handoff are ready for text review.
-        Status: Local summary only.
-        """
     }
 
     private var exportSectionSelector: some View {
