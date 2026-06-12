@@ -34,7 +34,17 @@
 - StoreKit entitlement validation is required if payments/subscriptions are added directly.
 - Offline media requires clear storage, expiry, and entitlement behavior.
 
-## 4. Backend Security
+## 4. Account Provider Requirements
+
+- Clerk is the preferred account provider for planning; Auth0 and custom auth are fallbacks.
+- No account provider SDK, URL, key, token, or client configuration is committed during #038.
+- Account provider identities must map into HighFive-owned user IDs.
+- Account deletion and account data export paths must be designed before #041 authentication implementation.
+- Local profile mode must remain available for simulator demos and rollback.
+- Sign in with Apple requirements must be reviewed before third-party auth ships.
+- Raw credentials, refresh tokens, passwords, service-role credentials, and provider secrets must never be stored in app UI state.
+
+## 5. Backend Security
 
 - Use authorization checks for every user-scoped resource.
 - Use row-level or equivalent resource-level access rules.
@@ -45,7 +55,7 @@
 - Add rate limits and abuse prevention before public write endpoints.
 - Keep admin tooling separate from consumer UI.
 
-## 5. Production Readiness Gates
+## 6. Production Readiness Gates
 
 Before adding each live system:
 

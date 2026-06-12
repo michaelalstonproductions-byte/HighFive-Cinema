@@ -113,11 +113,13 @@
 ## #038.0A — Account Provider Architecture
 
 - Purpose: Design account identity boundaries for Clerk, Auth0, or custom auth without connecting a provider.
-- Files likely touched: AuthService docs, account architecture docs, verifier scripts.
+- Preferred stack: Clerk account provider with HighFive-owned user IDs and Supabase hybrid identity records.
+- Fallback stack: Auth0 for enterprise identity needs, or custom auth only if HighFive accepts full security/support ownership.
+- Files likely touched: AuthService docs, account architecture docs, privacy/security docs, data model docs, verifier scripts.
 - Services introduced: None live; architecture only.
 - Tests/evidence: Contract review, privacy checklist, no SDK/import/URL/secret scan.
 - Rollback plan: Keep local profile mode and revert account architecture docs.
-- User decisions required: Clerk vs Auth0 vs custom, account requirement for beta, account deletion owner.
+- User decisions required: Clerk vs Auth0 vs custom, account requirement for beta, Apple sign-in requirement, account deletion/export owner.
 
 ## #039.0A — Streaming Provider Integration
 

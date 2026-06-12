@@ -146,7 +146,19 @@ Analytics provider
 | Environment selection | Every provider | Local remains default; staging and production must be explicit. |
 | Rollback path | Every provider | Each adapter needs a route back to local mode. |
 
-## 9. Known Limitations
+## 9. Account Provider Architecture Summary
+
+| Area | Decision |
+| --- | --- |
+| Preferred provider | Clerk |
+| Fallback providers | Auth0 or custom auth |
+| App boundary | `AuthService` and `UserProfileService` |
+| Backend requirement | HighFive-owned user ID and provider identity mapping |
+| Local fallback | Local profile mode remains default until #041 |
+| App Store dependency | Sign in with Apple review if third-party account sign-in is offered |
+| Privacy dependency | Account deletion and export paths before live account launch |
+
+## 10. Known Limitations
 
 - No real backend exists yet.
 - No provider has been selected.

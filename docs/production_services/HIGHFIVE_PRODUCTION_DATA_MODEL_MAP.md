@@ -7,11 +7,47 @@ This document maps current local app concepts to future production models. It is
 - Purpose: Account owner for viewer or creator capabilities.
 - Current local source: None.
 - Production fields: `id`, `accountStatus`, `emailHash`, `createdAt`, `updatedAt`, `deletedAt`.
-- Relationships: Has Profile, LibraryItems, NotificationPreferences, SubscriptionEntitlements.
+- Relationships: Has AccountProviderIdentities, AuthSessions, Profile, LibraryItems, NotificationPreferences, SubscriptionEntitlements.
 - Privacy level: High.
 - Sync rules: Server authoritative, local cache only after login.
 - Offline behavior: Read cached identity state; block sensitive writes while offline.
 - Needed API endpoints: create session, get current user, delete account.
+- Future owner service: AuthService.
+
+## AccountProviderIdentity
+
+- Purpose: Map Clerk, Auth0, or custom provider identity to a HighFive-owned User ID.
+- Current local source: None.
+- Production fields: `id`, `userId`, `provider`, `providerSubjectHash`, `emailHash`, `createdAt`, `updatedAt`, `revokedAt`.
+- Relationships: Belongs to User.
+- Privacy level: High.
+- Sync rules: Server authoritative only.
+- Offline behavior: Cached signed-in status may be displayed, but identity mapping changes require server access.
+- Needed API endpoints: link provider identity, refresh provider identity, revoke provider identity.
+- Future owner service: AuthService.
+
+## AuthSession
+
+- Purpose: Represent app-safe account session state without storing raw provider credentials.
+- Current local source: Local profile preview state only.
+- Production fields: `id`, `userId`, `sessionStatus`, `expiresAt`, `lastValidatedAt`, `createdAt`.
+- Relationships: Belongs to User.
+- Privacy level: High.
+- Sync rules: Provider and server authoritative.
+- Offline behavior: Read cached non-sensitive status; refresh before sensitive writes.
+- Needed API endpoints: current session, refresh session, sign out.
+- Future owner service: AuthService.
+
+## AccountDeletionRequest
+
+- Purpose: Track account deletion requests required before remote account launch.
+- Current local source: None.
+- Production fields: `id`, `userId`, `status`, `requestedAt`, `completedAt`, `supportReference`.
+- Relationships: Belongs to User.
+- Privacy level: High.
+- Sync rules: Server authoritative.
+- Offline behavior: Cannot create or complete while offline.
+- Needed API endpoints: request deletion, get deletion status.
 - Future owner service: AuthService.
 
 ## Profile

@@ -36,16 +36,21 @@ privacy:
 methods:
   currentSession() -> Session?
   beginSignIn(provider) -> AuthResult
+  finishSignIn(callbackPayload) -> AuthResult
+  refreshSession() -> Session?
   signOut() -> Void
   requestAccountDeletion() -> DeletionRequest
+  exportAccountData() -> AccountExportRequest
 returns:
   account/session status
 errors:
-  cancelled, unauthorized, providerUnavailable
+  cancelled, unauthorized, providerUnavailable, sessionExpired, accountDisabled, backendIdentityMissing
 caching/offline:
   cached session status only; no sensitive credential storage in UI
 privacy:
   account deletion and data export must be supported
+provider boundary:
+  Clerk is preferred; Auth0 or custom auth are fallbacks; implementation waits for #041
 ```
 
 ### UserProfileService
