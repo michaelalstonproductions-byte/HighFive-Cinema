@@ -9,6 +9,21 @@ struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
     var accentName: String
 }
 
+enum HFPlaybackSourceStatus: Equatable {
+    case playableLocal
+    case sourceNotConnected
+}
+
+struct HFPlaybackSource: Equatable {
+    let movieID: String
+    let title: String
+    let status: HFPlaybackSourceStatus
+    let localURL: URL?
+    let providerName: String
+    let readinessLabel: String
+    let limitation: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -19,6 +34,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var generatedDeliverySummary: String
     @Published private(set) var localProfiles: [HFLocalViewingProfile]
     @Published private(set) var activeProfileID: String
+    @Published private(set) var lastPlayerMovieID: String?
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -27,6 +43,7 @@ final class HFStreamingStore: ObservableObject {
     private let launchChecklistKey = "hf.launchChecklistStates"
     private let activeProfileKey = "hf.localProfile.activeID"
     private let profileDisplayNamePrefix = "hf.localProfile.displayName."
+    private let lastPlayerMovieKey = "hf.player.lastMovieID"
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -64,6 +81,7 @@ final class HFStreamingStore: ObservableObject {
         let savedLaunchStates = defaults.array(forKey: launchChecklistKey) as? [Bool]
         launchChecklistStates = savedLaunchStates?.count == launchChecklistItems.count ? savedLaunchStates ?? [] : Array(repeating: false, count: launchChecklistItems.count)
         generatedDeliverySummary = ""
+        lastPlayerMovieID = defaults.string(forKey: lastPlayerMovieKey)
     }
 
     // hf.services.accountProfile
@@ -148,6 +166,54 @@ final class HFStreamingStore: ObservableObject {
         ]
     }
 
+    // Playback Source Resolver
+    // Local Playback Source
+    // RemoteStreamingProviderReady
+    // hf.services.playerService
+    // hf.services.playbackSourceResolver
+    // hf.services.localPlaybackSource
+    // hf.services.remoteStreamingProviderReady
+    // hf.services.playerReadiness
+    // hf.services.continueWatchingState
+    var playerProviderStatus: String {
+        "Remote Streaming Provider Not Connected Yet"
+    }
+
+    var playerServiceMode: String {
+        "Player Service Local Resolver"
+    }
+
+    var playerReadinessRows: [String] {
+        let localStatus = playbackSource(for: continueWatchingMovie).status == .playableLocal ? "Active" : "Missing"
+        return [
+            "Catalog title - Active",
+            "Player route - Active",
+            "Playback source resolver - Active",
+            "Local source - \(localStatus)",
+            "Remote streaming provider - Not Connected Yet",
+            "Rights checks - Not Connected Yet"
+        ]
+    }
+
+    func playbackSource(for movie: Movie) -> HFPlaybackSource {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        return HFPlaybackSource(
+            movieID: catalogMovie.id,
+            title: catalogMovie.title,
+            status: .sourceNotConnected,
+            localURL: nil,
+            providerName: "Remote Streaming Provider",
+            readinessLabel: "Streaming source not connected yet",
+            limitation: "Player route ready. Streaming source not connected yet."
+        )
+    }
+
+    func markStartedWatching(_ movie: Movie) {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        lastPlayerMovieID = catalogMovie.id
+        UserDefaults.standard.set(catalogMovie.id, forKey: lastPlayerMovieKey)
+    }
+
     func updateDisplayName(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let index = localProfiles.firstIndex(where: { $0.id == activeProfileID }) else { return }
@@ -182,7 +248,10 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var continueWatchingMovie: Movie {
-        allCatalogMovies.first { $0.progress != nil } ?? featuredMovie
+        if let lastPlayerMovieID, let movie = movie(id: lastPlayerMovieID) {
+            return movie
+        }
+        return allCatalogMovies.first { $0.progress != nil } ?? featuredMovie
     }
 
     var savedMovies: [Movie] {

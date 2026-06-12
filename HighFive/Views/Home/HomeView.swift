@@ -35,6 +35,7 @@ struct HomeView: View {
                 homePremiereMetrics
                 activeProfileSection
                 catalogConnectedSection
+                playerReadySection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -57,7 +58,8 @@ struct HomeView: View {
         .accessibilityIdentifier("hf.consumer.home.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(item: $previewMovie) { movie in
-            HFMockPlayerSheet(movie: movie)
+            HFPlayerServiceSheet(movie: movie)
+                .environmentObject(streamingStore)
         }
         .sheet(isPresented: $showsNotifications) {
             HFNotificationSheet(store: notificationStore)
@@ -185,6 +187,19 @@ struct HomeView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Catalog Connected, Home is powered by the shared movie catalog")
         .accessibilityIdentifier("hf.catalog.home.connected")
+    }
+
+    private var playerReadySection: some View {
+        HFInsightCard(
+            title: "Player Ready",
+            message: "Continue Watching opens the same catalog title path.",
+            systemImage: "play.rectangle.fill"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player Ready, Continue Watching opens the same catalog title path")
+        .accessibilityIdentifier("hf.player.home.continueWatching")
+        .accessibilityIdentifier("hf.player.home.playerReady")
     }
 
     private var programmingPulseSection: some View {
@@ -427,6 +442,7 @@ struct HomeView: View {
 
                 HStack(spacing: HFSpacing.sm) {
                     Button {
+                        streamingStore.markStartedWatching(heroMovie)
                         previewMovie = heroMovie
                     } label: {
                         HStack(spacing: HFSpacing.xs) {

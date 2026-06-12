@@ -77,6 +77,7 @@ struct ProfileView: View {
                 highFiveProductStorySection
                 functionalCoreSummarySection
                 catalogServiceSummarySection
+                playerServiceSummarySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -159,6 +160,7 @@ struct ProfileView: View {
                 highFiveProductStorySection
                 functionalCoreSummarySection
                 catalogServiceSummarySection
+                playerServiceSummarySection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -757,6 +759,11 @@ struct ProfileView: View {
 
     private var catalogServiceSummarySection: some View {
         HFProfileCatalogServiceSummarySection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var playerServiceSummarySection: some View {
+        HFProfilePlayerServiceSummarySection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4425,6 +4432,50 @@ private struct HFProfileCatalogServiceSummarySection: View {
     }
 }
 
+private struct HFProfilePlayerServiceSummarySection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "play.rectangle.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Playback Source Resolver", accent: HFColors.gold)
+                        Text("Player Service")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Watch Now route, catalog identity, and playback source readiness are connected locally.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.playerReadinessRows, id: \.self) { row in
+                        HFConsumerMomentumRow(title: row, detail: "Player service readiness", status: row.contains("Not Connected Yet") || row.contains("Missing") ? "Future" : "Active", systemImage: "checkmark.circle.fill")
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player Service, Watch Now route, catalog identity, and playback source resolver are active locally")
+        .accessibilityIdentifier("hf.player.profile.serviceSummary")
+        .accessibilityIdentifier("hf.player.profile.readiness")
+        .accessibilityIdentifier("hf.profile.playerServiceProof")
+    }
+}
+
 private struct HFRoomBoardExpansionSection: View {
     let expansion: HFRoomBoardExpansion
     let accent: Color
@@ -5448,10 +5499,11 @@ private struct HFReleaseMilestoneRow: View {
 }
 
 private struct WatchRoomView: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var searchMode: HFSearchHubMode = .discover
 
     private var featuredMovie: Movie {
-        HFMockData.movie("the-friendly") ?? HFMockData.movies[0]
+        streamingStore.featuredMovie
     }
 
     var body: some View {
@@ -5473,6 +5525,7 @@ private struct WatchRoomView: View {
                     items: ["Streaming-first", "Saved titles", "Offline-ready"]
                 )
 
+                playerReadinessSection
                 HFWatchViewingHubSection(hub: HFWatchViewingHubPreviewData.hub, accent: HFColors.gold)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.watchBoard, accent: HFColors.gold)
                 HFWatchProgramBoardSection(columns: HFRoomMegaExpansionData.programBoardColumns, accent: HFColors.gold)
@@ -5535,6 +5588,45 @@ private struct WatchRoomView: View {
         .navigationTitle("Watch Room")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("hf.room.watch.root")
+    }
+
+    private var playerReadinessSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "play.rectangle.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Player Service Readiness")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Catalog title and player route are active. Streaming source remains provider-ready only.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.playerReadinessRows, id: \.self) { row in
+                        HFConsumerMomentumRow(title: row, detail: "Watch Room player readiness", status: row.contains("Not Connected Yet") || row.contains("Missing") ? "Future" : "Active", systemImage: "checkmark.circle.fill")
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player Service Readiness, catalog title active, player route active, streaming source not connected yet")
+        .accessibilityIdentifier("hf.room.watch.playerReadiness")
+        .accessibilityIdentifier("hf.room.watch.streamingSourceStatus")
     }
 }
 

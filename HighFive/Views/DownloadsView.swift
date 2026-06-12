@@ -25,6 +25,7 @@ struct DownloadsView: View {
                 downloadHero
                 connectedStateSection
                 catalogDownloadsSection
+                playerContextSection
                 profileStateSection
                 offlineWatchHubSection
                 storageStatus
@@ -236,6 +237,18 @@ struct DownloadsView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Catalog Downloads, offline-ready titles resolve through the shared movie catalog")
         .accessibilityIdentifier("hf.catalog.downloads.connected")
+    }
+
+    private var playerContextSection: some View {
+        HFInsightCard(
+            title: "Offline Playback Readiness",
+            message: "Offline state is local. Media source connection is still required for real playback.",
+            systemImage: "play.slash.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Offline Playback Readiness, offline state is local and media source connection is still required for real playback")
+        .accessibilityIdentifier("hf.player.downloads.context")
     }
 
     private var profileStateSection: some View {

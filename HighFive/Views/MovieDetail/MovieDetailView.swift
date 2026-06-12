@@ -41,6 +41,7 @@ struct MovieDetailView: View {
                 viewingContextSection
                 publicMomentumSection
                 catalogIdentitySection
+                playerServiceSection
                 titlePathSection
                 watchToReleaseSection
                 relatedSection
@@ -55,7 +56,8 @@ struct MovieDetailView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .sheet(item: $previewMovie) { movie in
-            HFMockPlayerSheet(movie: movie)
+            HFPlayerServiceSheet(movie: movie)
+                .environmentObject(streamingStore)
                 .accessibilityIdentifier("hf.functional.player.sheet")
         }
         .toolbar {
@@ -135,7 +137,8 @@ struct MovieDetailView: View {
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         HFButton("Watch Now", systemImage: "play.fill") {
-                            previewMovie = movie
+                            streamingStore.markStartedWatching(catalogMovie)
+                            previewMovie = catalogMovie
                         }
                         .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
                         .accessibilityLabel("Watch Now")
@@ -405,6 +408,20 @@ struct MovieDetailView: View {
         .accessibilityIdentifier("hf.catalog.movieDetail.identity")
     }
 
+    private var playerServiceSection: some View {
+        HFInsightCard(
+            title: "Player Service",
+            message: "Watch Now resolves \(catalogMovie.title) through the playback source resolver.",
+            systemImage: "play.rectangle.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player Service, Watch Now resolves the selected catalog title through the playback source resolver")
+        .accessibilityIdentifier("hf.player.catalog.sourceConnection")
+        .accessibilityIdentifier("hf.player.catalog.movieID")
+        .accessibilityIdentifier("hf.player.catalog.title")
+    }
+
     private var watchToReleaseSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "From Watch To Release", actionTitle: nil)
@@ -590,7 +607,8 @@ struct MovieDetailView: View {
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
                 HStack(spacing: HFSpacing.sm) {
                     HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
-                        previewMovie = movie
+                        streamingStore.markStartedWatching(catalogMovie)
+                        previewMovie = catalogMovie
                     }
                     .accessibilityIdentifier("hf.functional.player.watchNow")
                     HFButton(
@@ -608,6 +626,161 @@ struct MovieDetailView: View {
             .padding(.bottom, HFSpacing.sm)
         }
         .background(HFColors.background.opacity(0.72))
+    }
+}
+
+struct HFPlayerServiceSheet: View {
+    let movie: Movie
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    private var catalogMovie: Movie {
+        streamingStore.movie(id: movie.id) ?? movie
+    }
+
+    private var source: HFPlaybackSource {
+        streamingStore.playbackSource(for: catalogMovie)
+    }
+
+    var body: some View {
+        ZStack {
+            HFColors.screenBackground
+                .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                    header
+                    artwork
+                    readinessCard
+                    sourceRows
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .accessibilityIdentifier("hf.functional.player.watchNow")
+        .accessibilityIdentifier("hf.player.surface")
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("HighFive Player")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(catalogMovie.title)
+                    .font(HFTypography.display)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text("Catalog title active")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .accessibilityIdentifier("hf.player.catalog.identity")
+            }
+
+            Spacer()
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .frame(width: 42, height: 42)
+                    .background(Color.white.opacity(0.12))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close Player")
+            .accessibilityIdentifier("hf.functional.player.close")
+            .accessibilityIdentifier("hf.player.closeButton")
+        }
+    }
+
+    private var artwork: some View {
+        ZStack(alignment: .bottomLeading) {
+            if HFPosterAssetHealth.hasImage(named: catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName),
+               let assetName = catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                HFPosterFallback(title: catalogMovie.title)
+            }
+
+            LinearGradient(
+                colors: [.clear, Color.black.opacity(0.82)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Player route ready.")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Streaming source not connected yet.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .accessibilityIdentifier("hf.player.source.notConnected")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .frame(height: 320)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                .stroke(HFColors.goldStroke, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player route ready. Streaming source not connected yet.")
+    }
+
+    private var readinessCard: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: "play.rectangle.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Playback Source Resolver")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(source.readinessLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+                }
+
+                Text(source.limitation)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Playback Source Resolver, streaming source not connected yet")
+        .accessibilityIdentifier("hf.player.readiness")
+    }
+
+    private var sourceRows: some View {
+        VStack(spacing: HFSpacing.xs) {
+            HFConsumerMomentumRow(title: "Catalog title", detail: catalogMovie.title, status: "Active", systemImage: "rectangle.stack.fill")
+                .accessibilityIdentifier("hf.player.catalog.title")
+            HFConsumerMomentumRow(title: "Movie ID", detail: catalogMovie.id, status: "Catalog", systemImage: "number")
+                .accessibilityIdentifier("hf.player.catalog.movieID")
+            HFConsumerMomentumRow(title: "Local Playback Source", detail: source.status == .playableLocal ? "Active" : "Local source missing", status: source.status == .playableLocal ? "Active" : "Missing", systemImage: "play.slash.fill")
+                .accessibilityIdentifier("hf.player.source.status")
+            HFConsumerMomentumRow(title: "Remote Streaming Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+                .accessibilityIdentifier("hf.player.provider.status")
+        }
     }
 }
 

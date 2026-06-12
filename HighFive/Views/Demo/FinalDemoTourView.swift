@@ -17,6 +17,7 @@ struct FinalDemoTourView: View {
                     functionalCoreProofSection
                     accountProfileProofSection
                     catalogServiceProofSection
+                    playerServiceProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -228,6 +229,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Catalog Service Proof, shared movie catalog foundation ready for future remote provider")
         .accessibilityIdentifier("hf.demoTour.catalogServiceProof")
         .accessibilityIdentifier("hf.demoTour.remoteCatalogReadyProof")
+    }
+
+    private var playerServiceProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Player Service Proof", actionTitle: nil)
+                Text("Watch Now now resolves a catalog movie through the player service. If no playable source is connected, the player route shows an honest source-not-connected state.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Playback Source Resolver", systemImage: "play.rectangle.fill")
+                    HFRouteChip(title: "Streaming Source Ready Boundary", systemImage: "network.slash")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player Service Proof, Watch Now resolves a catalog movie through the player service and shows an honest source-not-connected state when no playable source exists")
+        .accessibilityIdentifier("hf.demoTour.playerServiceProof")
+        .accessibilityIdentifier("hf.demoTour.streamingSourceReadyProof")
     }
 
     private var runOfShowSection: some View {

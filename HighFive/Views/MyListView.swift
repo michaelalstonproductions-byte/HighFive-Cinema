@@ -28,6 +28,7 @@ struct MyListView: View {
                 libraryShelfHero
                 connectedStateSection
                 catalogLibrarySection
+                playerContextSection
                 profileStateSection
                 watchShelfSection
                 shelfMomentumSection
@@ -153,6 +154,18 @@ struct MyListView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Catalog Library, saved titles resolve through the shared movie catalog")
         .accessibilityIdentifier("hf.catalog.library.connected")
+    }
+
+    private var playerContextSection: some View {
+        HFInsightCard(
+            title: "Playable From Library",
+            message: "Saved titles use the shared player route.",
+            systemImage: "play.rectangle.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Playable From Library, saved titles use the shared player route")
+        .accessibilityIdentifier("hf.player.library.context")
     }
 
     private var profileStateSection: some View {
