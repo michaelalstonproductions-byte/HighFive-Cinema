@@ -26,20 +26,20 @@ This phase does not add live services, production SDKs, accounts, payment code, 
 
 | Domain | Purpose | Current local placeholder | Production service needed | Sensitive data | Risk | First phase |
 | --- | --- | --- | --- | --- | --- | --- |
-| Identity / Accounts | Identify users and sessions | No real login | Auth provider and account service | Account identifiers, email if collected | High | Phase 28A |
-| User Profile | Store profile and preferences | Local profile mock data | Profile service | Display name, preferences | Medium | Phase 28A |
-| Movie Catalog / CMS | Serve movie metadata and rails | `HFMockData` | CMS/catalog API | Low unless personalized | Medium | Phase 29A |
-| Video Streaming / Hosting | Provide playable media | Player route or placeholder | Video hosting and playback source service | Viewing access, source URLs | High | Phase 30A |
-| Playback Entitlements | Decide access | None | Entitlement service | Purchase/subscription state | High | Phase 30A |
-| Offline Downloads | Manage offline media rights | Local downloaded flag | Download service and offline policy | Viewing history, license state | High | Phase 32A |
-| My List / Library Sync | Sync saved/progress state | Local saved/downloaded IDs | Library sync service | Viewing history, saved titles | High | Phase 31A |
-| Connect Updates / Communication | Publish creator/audience updates | Local draft/list | Updates service and moderation | User text, creator content | High | Phase 33A |
-| Launch Campaigns | Manage release plans | Local checklist | Campaign service | Campaign plans, dates | Medium | Phase 34A |
+| Identity / Accounts | Identify users and sessions | No real login | Clerk, Auth0, or custom account service | Account identifiers, email if collected | High | Phase 38A |
+| User Profile | Store profile and preferences | Local profile mock data | Profile service behind account provider | Display name, preferences | Medium | Phase 38A |
+| Movie Catalog / CMS | Serve movie metadata and rails | `HFMockData` | Backend service layer | Low unless personalized | Medium | Phase 40A |
+| Video Streaming / Hosting | Provide playable media | Player route or placeholder | Cloudflare Stream or Mux adapter | Viewing access, source URLs | High | Phase 39A |
+| Playback Entitlements | Decide access | None | Payment/entitlement service | Purchase/subscription state | High | Phase 42A |
+| Offline Downloads | Manage offline media rights | Local downloaded flag | Download service and offline policy | Viewing history, license state | High | Phase 44A |
+| My List / Library Sync | Sync saved/progress state | Local saved/downloaded IDs | Library sync service | Viewing history, saved titles | High | Phase 43A |
+| Connect Updates / Communication | Publish creator/audience updates | Local draft/list | Custom, Stream, or Sendbird adapter | User text, creator content | High | Phase 45A |
+| Launch Campaigns | Manage release plans | Local checklist | Campaign service on backend layer | Campaign plans, dates | Medium | Phase 46A |
 | Creator Studio Projects | Store creator project data | Static room surfaces | Project service | Project metadata, assets | High | Phase 34A |
-| Export / Delivery Packages | Track delivery summaries | Local text summary | Delivery package service | Project/package data | High | Phase 35A |
-| Payments / Subscriptions | Monetize access | None | StoreKit or entitlement bridge | Payment entitlement state | High | Phase 36A |
-| Notifications | Notify opted-in users | None | Notification service | Device notification preference | High | Phase 37A |
-| Analytics / Crash Reporting | Improve stability and product | None | Privacy-reviewed telemetry | Usage events, crash context | High | Phase 38A |
+| Export / Delivery Packages | Track delivery summaries | Local text summary | Delivery package service on backend layer | Project/package data | High | Phase 47A |
+| Payments / Subscriptions | Monetize access | None | RevenueCat + StoreKit or Stripe web bridge | Payment entitlement state | High | Phase 42A |
+| Notifications | Notify opted-in users | None | APNs or OneSignal adapter | Device notification preference | High | Phase 48A |
+| Analytics / Crash Reporting | Improve stability and product | None | PostHog, Mixpanel, or custom analytics | Usage events, crash context | High | Phase 48A |
 | Admin / Moderation | Review catalog, updates, users | None | Admin console and moderation queue | Moderation history | High | Phase 33A |
 | Security / Privacy | Protect data and compliance | Safety docs/verifiers | Security review, privacy policy, audit | All user and creator data | High | Phase 27B onward |
 
@@ -87,20 +87,66 @@ Production services should integrate through new app-facing contracts first. Pro
 
 | Phase | Scope | Notes |
 | --- | --- | --- |
-| Phase 27B | Service contracts + local/remote adapter skeletons | Protocols only, no live providers |
-| Phase 28A | Identity + profile sync | Provider choice required |
-| Phase 29A | Movie catalog remote sync | Staging catalog first |
-| Phase 30A | Video hosting + playback source integration | HLS and entitlement rules |
-| Phase 31A | Library/My List sync | Account-scoped saved/progress data |
-| Phase 32A | Offline downloads architecture | Do not rush media storage and rights |
-| Phase 33A | Connect communication backend | Moderation and safety first |
-| Phase 34A | Launch campaign backend | Campaign records and approvals |
-| Phase 35A | Export/delivery backend | Text/package records before media engines |
-| Phase 36A | Payments/subscriptions | StoreKit or entitlement provider after decision |
-| Phase 37A | Notifications | Only after communication strategy |
-| Phase 38A | Analytics/crash/privacy review | Privacy-safe telemetry only |
+| Phase 37A | Provider selection + integration plan | Docs only, no live providers |
+| Phase 38A | Account provider architecture | Clerk, Auth0, or custom decision |
+| Phase 39A | Streaming provider integration | Cloudflare Stream or Mux behind PlaybackService |
+| Phase 40A | Backend service layer | Supabase, custom API, or hybrid |
+| Phase 41A | Authentication | Implement selected account provider |
+| Phase 42A | Payment provider integration | RevenueCat + StoreKit or Stripe web bridge |
+| Phase 43A | Cloud library sync | Account-scoped saved/progress data |
+| Phase 44A | Real downloads | Do not rush media storage and rights |
+| Phase 45A | Communication backend | Custom, Stream, or Sendbird with moderation |
+| Phase 46A | Launch campaign backend | Campaign records and approvals |
+| Phase 47A | Delivery backend | Text/package records before media engines |
+| Phase 48A | Production hardening | Notifications, analytics, privacy, rollback |
+| Phase 49A | Beta readiness | TestFlight and staging service evidence |
+| Phase 50A | Production launch candidate | Final QA and launch evidence lock |
 
-## 7. Known Limitations
+## 7. Backend Dependency Graph
+
+```text
+Account provider
+  -> AuthService
+  -> BackendServiceLayer
+
+BackendServiceLayer
+  -> MovieCatalogService
+  -> LibraryService
+  -> LaunchService
+  -> ExportPackageService
+  -> NotificationService preferences
+  -> PaymentEntitlementService records
+
+Streaming provider
+  -> PlaybackService
+  -> PaymentEntitlementService
+  -> DownloadService
+
+Payment provider
+  -> PaymentEntitlementService
+  -> PlaybackService gates
+  -> DownloadService gates
+
+Communication provider
+  -> ConnectService
+  -> NotificationService only after consent and category approval
+
+Analytics provider
+  -> AnalyticsService
+  -> privacy-approved event allowlist only
+```
+
+## 8. Provider Requirements Summary
+
+| Requirement | Applies to | Notes |
+| --- | --- | --- |
+| Credentials | All live providers | None are collected or committed during #037. |
+| Server infrastructure | Auth, backend, payments, library, downloads, communication, launch, delivery, notifications | Required before live provider behavior is enabled. |
+| App Store configuration | StoreKit, APNs, account sign-in behavior, privacy labels | Required before payment, push, account, analytics, or data collection ships. |
+| Environment selection | Every provider | Local remains default; staging and production must be explicit. |
+| Rollback path | Every provider | Each adapter needs a route back to local mode. |
+
+## 9. Known Limitations
 
 - No real backend exists yet.
 - No provider has been selected.

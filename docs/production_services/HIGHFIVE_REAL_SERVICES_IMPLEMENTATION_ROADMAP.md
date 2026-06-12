@@ -99,38 +99,130 @@
 - Rollback plan: Local generated summary only.
 - User decisions required: Whether media delivery is in scope or text/package only.
 
-## #037.0A — Payments / Entitlements
+## #037.0A — Provider Selection + Integration Plan
 
-- Purpose: Add StoreKit or entitlement provider after decision.
-- Files likely touched: PaymentEntitlementService, Profile, playback entitlement gate.
-- Services introduced: Payment/entitlement system.
-- Tests/evidence: Restore, entitlement refresh, expired access, privacy review.
+- Purpose: Lock candidate providers, integration order, ownership, risks, and rollback rules before live integrations.
+- Preferred stack: Cloudflare Stream, Clerk, Supabase hybrid, RevenueCat + StoreKit, APNs, PostHog, and custom curated updates.
+- Fallback stack: Mux, Auth0/custom, custom API, Stripe web where Apple rules allow, OneSignal later, Mixpanel/custom analytics, Stream/Sendbird only if real chat is approved.
+- Files likely touched: production service docs and evidence scripts only.
+- Services introduced: None.
+- Tests/evidence: Docs verifier, protected scan, blocked implementation scan, no app-code scan.
+- Rollback plan: Revert docs/scripts only.
+- User decisions required: Confirm provider shortlist and decide primary vs fallback candidates.
+
+## #038.0A — Account Provider Architecture
+
+- Purpose: Design account identity boundaries for Clerk, Auth0, or custom auth without connecting a provider.
+- Files likely touched: AuthService docs, account architecture docs, verifier scripts.
+- Services introduced: None live; architecture only.
+- Tests/evidence: Contract review, privacy checklist, no SDK/import/URL/secret scan.
+- Rollback plan: Keep local profile mode and revert account architecture docs.
+- User decisions required: Clerk vs Auth0 vs custom, account requirement for beta, account deletion owner.
+
+## #039.0A — Streaming Provider Integration
+
+- Purpose: Prepare Cloudflare Stream or Mux playback-source integration behind HighFive-owned playback contracts.
+- Files likely touched: PlaybackService docs/contracts first; app code only after provider approval.
+- Services introduced: Staging video provider only when explicitly approved.
+- Tests/evidence: HLS staging smoke test, source expiry handling, entitlement denial, local fallback.
+- Rollback plan: Disable remote playback adapter and return to local player placeholder.
+- User decisions required: Cloudflare Stream vs Mux, DRM policy, source URL expiry policy.
+
+## #040.0A — Backend Service Layer
+
+- Purpose: Establish Supabase, custom API, or hybrid backend boundaries for catalog, library, launch, delivery, and service health.
+- Files likely touched: backend architecture docs, service layer contracts, environment configuration docs.
+- Services introduced: None until staging provider and environment are approved.
+- Tests/evidence: Adapter contract tests, no secret scan, environment-gating proof.
+- Rollback plan: Keep local adapters as the default path.
+- User decisions required: Supabase vs custom API vs hybrid, admin ownership, migration ownership.
+
+## #041.0A — Authentication
+
+- Purpose: Implement selected auth provider behind AuthService after #038 architecture approval.
+- Files likely touched: AuthService adapter, Profile account state, onboarding/account gates if approved.
+- Services introduced: Selected staging auth provider.
+- Tests/evidence: Sign in/out, session restore, account deletion request path, local fallback, privacy review.
+- Rollback plan: Disable remote auth adapter and return Profile to local-only mode.
+- User decisions required: Login requirement, Apple sign-in requirement, creator/viewer account split.
+
+## #042.0A — Payment Provider Integration
+
+- Purpose: Add RevenueCat + StoreKit or Stripe web entitlement bridge after payment policy approval.
+- Files likely touched: PaymentEntitlementService adapter, Profile, playback entitlement gate.
+- Services introduced: Selected payment/entitlement provider in staging.
+- Tests/evidence: Restore, entitlement refresh, expired access, refund/revocation, privacy review.
 - Rollback plan: Disable paid gates and keep free local mode in Debug.
-- User decisions required: StoreKit direct vs entitlement provider.
+- User decisions required: RevenueCat + StoreKit vs Stripe web, product tiers, Apple rules review.
 
-## #038.0A — Notifications
+## #043.0A — Cloud Library Sync
 
-- Purpose: Add notification preferences and delivery only after communication/launch strategy.
-- Files likely touched: NotificationService, Profile preferences, Connect/Launch triggers.
-- Services introduced: Notification provider and OS permission flow.
-- Tests/evidence: Permission denied, preference sync, no unexpected prompts.
-- Rollback plan: Disable notification registration.
-- User decisions required: Notification categories and consent copy.
+- Purpose: Sync saved titles, progress, and profile-scoped library state across devices.
+- Files likely touched: LibraryService adapter, HFStreamingStore bridge, Library, Movie Detail.
+- Services introduced: User-scoped library backend.
+- Tests/evidence: Save/unsave, progress sync, conflict handling, offline queue, privacy review.
+- Rollback plan: Switch configuration back to local-only library mode.
+- User decisions required: Account requirement, viewing-history retention, cross-device sync scope.
 
-## #039.0A — Analytics / Crash / Privacy Review
+## #044.0A — Real Downloads
 
-- Purpose: Add privacy-safe telemetry after policy approval.
-- Files likely touched: AnalyticsService, app diagnostics, privacy docs.
-- Services introduced: Crash or analytics provider.
-- Tests/evidence: Opt-out, disabled state, crash signal, no sensitive payloads.
-- Rollback plan: Disable telemetry adapter.
-- User decisions required: Provider, event list, privacy policy.
+- Purpose: Implement real offline media availability, storage, and license/entitlement policy.
+- Files likely touched: DownloadService, Downloads UI, playback/offline policy boundaries.
+- Services introduced: Offline availability and license service after provider approval.
+- Tests/evidence: Expiry, entitlement denial, storage failure, deletion, airplane-mode checks.
+- Rollback plan: Disable remote download adapter and return to local offline-state preview.
+- User decisions required: Offline rights, expiry rules, storage limits, DRM/offline policy.
 
-## #040.0A — Production Release Candidate
+## #045.0A — Communication Backend
 
-- Purpose: Full QA, evidence, privacy, and TestFlight readiness.
-- Files likely touched: release docs, QA scripts, final app configuration.
-- Services introduced: None new; hardening only.
-- Tests/evidence: Build, install, launch, integration smoke tests, privacy review, rollback.
-- Rollback plan: Return to last evidence-locked staging build.
-- User decisions required: Release scope and launch criteria.
+- Purpose: Connect Custom, Stream, or Sendbird communication backend behind ConnectService.
+- Files likely touched: ConnectService adapter, Connect Room UI, moderation status.
+- Services introduced: Selected communication provider in staging.
+- Tests/evidence: Draft, send/submit, moderation pending, block/report path, provider outage fallback.
+- Rollback plan: Return to local update drafts only.
+- User decisions required: Custom vs Stream vs Sendbird, chat vs curated updates, moderation owner.
+
+## #046.0A — Launch Campaign Backend
+
+- Purpose: Store real campaign plans, launch milestones, and release calendar state.
+- Files likely touched: LaunchService adapter, Launch Room UI.
+- Services introduced: Campaign backend using selected backend service layer.
+- Tests/evidence: Milestone sync, campaign read/update, permission denial, stale data handling.
+- Rollback plan: Return to local checklist mode.
+- User decisions required: Campaign permissions, approval flow, public/private campaign state.
+
+## #047.0A — Delivery Backend
+
+- Purpose: Store delivery package records and handoff status using selected backend/storage approach.
+- Files likely touched: ExportPackageService adapter, Export Room UI.
+- Services introduced: Delivery package backend.
+- Tests/evidence: Save package, generate summary, stale summary handling, permission denial.
+- Rollback plan: Return to local generated summary only.
+- User decisions required: Text/package only vs media delivery, retention policy, handoff owners.
+
+## #048.0A — Production Hardening
+
+- Purpose: Harden security, privacy, observability, fallback behavior, and release configuration.
+- Files likely touched: privacy docs, security checklist, environment configuration, QA scripts.
+- Services introduced: APNs/OneSignal and PostHog/Mixpanel/custom analytics only if already approved.
+- Tests/evidence: Privacy review, opt-out, notification permission denial, crash/analytics disabled mode, rollback drill.
+- Rollback plan: Disable notification and analytics adapters; return to last evidence-locked staging build.
+- User decisions required: APNs vs OneSignal, PostHog vs Mixpanel vs custom, privacy policy approval.
+
+## #049.0A — Beta Readiness
+
+- Purpose: Validate TestFlight readiness for the selected service stack.
+- Files likely touched: release docs, QA scripts, beta checklist, known-issues docs.
+- Services introduced: None new; readiness validation only.
+- Tests/evidence: Full install/launch flow, staging service smoke test, privacy strings, support process.
+- Rollback plan: Hold beta and return to previous evidence-locked build.
+- User decisions required: Beta scope, tester cohort, support owner, known limitation acceptance.
+
+## #050.0A — Production Launch Candidate
+
+- Purpose: Final production launch candidate with selected providers, rollback plan, privacy approval, and evidence lock.
+- Files likely touched: release docs, final QA scripts, production configuration docs.
+- Services introduced: None new; final hardening and verification only.
+- Tests/evidence: Full QA matrix, integration smoke tests, provider dashboard checks, privacy review, rollback proof.
+- Rollback plan: Revert to last beta-ready evidence lock and disable production service flags.
+- User decisions required: Launch scope, go/no-go approval, production monitoring owner.
