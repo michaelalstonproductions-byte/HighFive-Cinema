@@ -38,6 +38,7 @@ struct HomeView: View {
                 playerReadySection
                 libraryDownloadsSignalSection
                 communicationSignalSection
+                launchSignalSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -228,6 +229,19 @@ struct HomeView: View {
         .accessibilityLabel("Audience Updates Ready, creators can prepare local updates around featured titles")
         .accessibilityIdentifier("hf.home.communicationSignal")
         .accessibilityIdentifier("hf.home.audienceUpdatesSignal")
+    }
+
+    private var launchSignalSection: some View {
+        HFInsightCard(
+            title: "Launch Path Ready",
+            message: "Featured titles can move from watch path into a local release plan.",
+            systemImage: "flag.checkered"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Path Ready, featured titles can move from watch path into a local release plan")
+        .accessibilityIdentifier("hf.home.launchSignal")
+        .accessibilityIdentifier("hf.home.releasePlanSignal")
     }
 
     private var programmingPulseSection: some View {

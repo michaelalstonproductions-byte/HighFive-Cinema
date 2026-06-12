@@ -94,6 +94,52 @@ struct HFCommunicationReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
+enum HFLaunchCampaignProviderStatus {
+    case localAdapterActive
+    case remoteProviderNotConnected
+}
+
+enum HFLaunchMilestoneStatus: String, Codable, Equatable {
+    case draft = "Draft"
+    case ready = "Ready"
+    case localReview = "Local Review"
+    case notPublished = "Not Published"
+}
+
+struct HFLaunchCampaignRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var movieID: String
+    var title: String
+    var audience: String
+    var status: String
+    var providerStatus: String
+    var updatedAtLabel: String
+}
+
+struct HFLaunchMilestoneRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFLaunchChannelRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var purpose: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFLaunchCampaignReadinessRow: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -696,6 +742,131 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.connectUpdates
     func addLocalConnectUpdate(_ text: String) {
         addAudienceUpdate(body: text, channelID: selectedAudienceChannelID)
+    }
+
+    // Launch Campaign Service
+    // Local Launch Campaign Adapter
+    // Remote Campaign Provider
+    // Release Calendar
+    // Launch Milestones
+    // Local-to-Remote Launch Adapter
+    // Campaign Readiness
+    // Not Published
+    // hf.services.launchCampaign
+    // hf.services.localLaunchCampaignAdapter
+    // hf.services.remoteCampaignProviderReady
+    // hf.services.launchCampaignReadiness
+    // hf.services.releaseCalendar
+    // hf.services.launchMilestones
+    // hf.services.localToRemoteLaunchAdapter
+    // hf.services.launchCommunicationBridge
+    // hf.services.launchExportHandoff
+    var launchCampaignServiceMode: String {
+        "Local Launch Campaign Adapter Active"
+    }
+
+    var launchCampaignProviderStatus: HFLaunchCampaignProviderStatus {
+        .remoteProviderNotConnected
+    }
+
+    var localLaunchCampaignAdapterStatus: String {
+        "Local Launch Campaign Adapter Active"
+    }
+
+    var launchCampaignRecord: HFLaunchCampaignRecord {
+        HFLaunchCampaignRecord(
+            id: "launch-campaign-\(featuredMovie.id)",
+            movieID: featuredMovie.id,
+            title: "\(featuredMovie.title) Release Plan",
+            audience: "Featured title audience",
+            status: launchChecklistProgress == launchChecklistItems.count ? HFLaunchMilestoneStatus.ready.rawValue : HFLaunchMilestoneStatus.localReview.rawValue,
+            providerStatus: "Remote Campaign Provider Not Connected Yet",
+            updatedAtLabel: "Local campaign plan"
+        )
+    }
+
+    var releaseCalendarRows: [HFLaunchMilestoneRecord] {
+        [
+            HFLaunchMilestoneRecord(id: "calendar-package-lock", title: "Package review", detail: "Local release package is in review.", status: "Local Review", systemImage: "checklist.checked"),
+            HFLaunchMilestoneRecord(id: "calendar-premiere-copy", title: "Premiere copy", detail: "Copy is prepared locally for the featured title.", status: launchChecklistStates.indices.contains(1) && launchChecklistStates[1] ? "Ready" : "Draft", systemImage: "text.quote"),
+            HFLaunchMilestoneRecord(id: "calendar-audience-prompt", title: "Audience prompt", detail: "Communication bridge can use local audience updates.", status: launchChecklistStates.indices.contains(2) && launchChecklistStates[2] ? "Ready" : "Local Review", systemImage: "text.bubble.fill"),
+            HFLaunchMilestoneRecord(id: "calendar-handoff", title: "Export handoff", detail: "Delivery summary can support campaign package context.", status: generatedDeliverySummary.isEmpty ? "Local Review" : "Ready", systemImage: "shippingbox.fill")
+        ]
+    }
+
+    var launchMilestoneRecords: [HFLaunchMilestoneRecord] {
+        launchChecklistItems.enumerated().map { index, item in
+            HFLaunchMilestoneRecord(
+                id: "launch-milestone-\(index)",
+                title: item,
+                detail: "Structured local milestone for \(featuredMovie.title).",
+                status: launchChecklistStates.indices.contains(index) && launchChecklistStates[index] ? HFLaunchMilestoneStatus.ready.rawValue : HFLaunchMilestoneStatus.notPublished.rawValue,
+                systemImage: launchChecklistStates.indices.contains(index) && launchChecklistStates[index] ? "checkmark.seal.fill" : "circle.dotted"
+            )
+        }
+    }
+
+    var launchCampaignReadinessRows: [HFLaunchCampaignReadinessRow] {
+        [
+            HFLaunchCampaignReadinessRow(id: "local-review", title: "Local review", detail: "Active for launch checklist and milestones.", status: "Active", systemImage: "checkmark.circle.fill"),
+            HFLaunchCampaignReadinessRow(id: "communication-adapter", title: "Communication adapter", detail: "Audience update bridge is local.", status: "Active", systemImage: "text.bubble.fill"),
+            HFLaunchCampaignReadinessRow(id: "export-handoff", title: "Export handoff", detail: "Delivery summary can support launch package context.", status: "Local", systemImage: "shippingbox.fill"),
+            HFLaunchCampaignReadinessRow(id: "remote-provider", title: "Remote Campaign Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFLaunchCampaignReadinessRow(id: "publishing-tools", title: "Publishing tools", detail: "Not Connected Yet", status: "Future", systemImage: "paperplane"),
+            HFLaunchCampaignReadinessRow(id: "audience-access", title: "Audience access tools", detail: "Not Connected Yet", status: "Future", systemImage: "person.badge.key.fill"),
+            HFLaunchCampaignReadinessRow(id: "campaign-measurement", title: "Campaign measurement", detail: "Not Connected Yet", status: "Future", systemImage: "chart.bar.xaxis")
+        ]
+    }
+
+    var localToRemoteLaunchAdapterRows: [HFLaunchCampaignReadinessRow] {
+        [
+            HFLaunchCampaignReadinessRow(id: "campaign-record", title: "Campaign record", detail: launchCampaignRecord.title, status: launchCampaignRecord.status, systemImage: "flag.checkered"),
+            HFLaunchCampaignReadinessRow(id: "catalog-title", title: "Catalog title", detail: featuredMovie.title, status: "Catalog", systemImage: "film.stack.fill"),
+            HFLaunchCampaignReadinessRow(id: "active-profile", title: "Local profile", detail: activeViewingProfile.displayName, status: "Local", systemImage: activeViewingProfile.avatarSymbol),
+            HFLaunchCampaignReadinessRow(id: "remote-provider", title: "Remote Campaign Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+        ]
+    }
+
+    var launchCampaignProofRows: [HFLaunchCampaignReadinessRow] {
+        [
+            HFLaunchCampaignReadinessRow(id: "local-adapter", title: "Local Launch Campaign Adapter", detail: "Active", status: "Active", systemImage: "flag.checkered"),
+            HFLaunchCampaignReadinessRow(id: "release-calendar", title: "Release Calendar", detail: "Local", status: "Local", systemImage: "calendar"),
+            HFLaunchCampaignReadinessRow(id: "campaign-milestones", title: "Campaign Milestones", detail: "Local", status: "Local", systemImage: "checklist.checked"),
+            HFLaunchCampaignReadinessRow(id: "communication-bridge", title: "Communication Bridge", detail: "Local", status: "Local", systemImage: "text.bubble.fill"),
+            HFLaunchCampaignReadinessRow(id: "export-handoff", title: "Export Handoff", detail: "Local", status: "Local", systemImage: "shippingbox.fill"),
+            HFLaunchCampaignReadinessRow(id: "remote-provider", title: "Remote Campaign Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFLaunchCampaignReadinessRow(id: "audience-access", title: "Publishing / Audience Access", detail: "Not Connected Yet", status: "Future", systemImage: "person.badge.key.fill")
+        ]
+    }
+
+    var launchCommunicationBridgeRows: [HFLaunchCampaignReadinessRow] {
+        [
+            HFLaunchCampaignReadinessRow(id: "audience-updates", title: "Local Audience Updates", detail: "\(localAudienceUpdates.count) local records", status: "Local", systemImage: "text.bubble.fill"),
+            HFLaunchCampaignReadinessRow(id: "channel", title: "Audience channel", detail: selectedAudienceChannelTitle, status: "Local", systemImage: "rectangle.stack.fill"),
+            HFLaunchCampaignReadinessRow(id: "campaign-package", title: "Campaign package", detail: "Local communication bridge ready", status: "Local", systemImage: "arrow.triangle.2.circlepath")
+        ]
+    }
+
+    var launchExportHandoffRows: [HFLaunchCampaignReadinessRow] {
+        [
+            HFLaunchCampaignReadinessRow(id: "delivery-summary", title: "Delivery summary", detail: generatedDeliverySummary.isEmpty ? "Ready to generate" : "Generated locally", status: generatedDeliverySummary.isEmpty ? "Local Review" : "Ready", systemImage: "doc.text.fill"),
+            HFLaunchCampaignReadinessRow(id: "featured-title", title: "Catalog title", detail: featuredMovie.title, status: "Catalog", systemImage: "rectangle.stack.fill"),
+            HFLaunchCampaignReadinessRow(id: "campaign-provider", title: "Remote Campaign Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+        ]
+    }
+
+    var campaignPackageSummary: String {
+        "\(featuredMovie.title) campaign package is local: \(launchChecklistProgress)/\(launchChecklistItems.count) milestones reviewed, communication bridge local, export handoff local, Remote Campaign Provider Not Connected Yet."
+    }
+
+    func markLaunchMilestoneReady(id: String) {
+        guard let indexText = id.split(separator: "-").last, let index = Int(indexText), launchChecklistStates.indices.contains(index) else { return }
+        toggleLaunchChecklistItem(index, isComplete: true)
+    }
+
+    func resetLaunchMilestone(id: String) {
+        guard let indexText = id.split(separator: "-").last, let index = Int(indexText), launchChecklistStates.indices.contains(index) else { return }
+        toggleLaunchChecklistItem(index, isComplete: false)
     }
 
     // hf.services.launchChecklist

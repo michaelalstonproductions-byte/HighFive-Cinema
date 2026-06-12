@@ -20,6 +20,7 @@ struct FinalDemoTourView: View {
                     playerServiceProofSection
                     cloudLibraryDownloadsProofSection
                     communicationServiceProofSection
+                    launchCampaignServiceProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -297,6 +298,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Communication Service Proof, local communication adapter and local to remote adapter are ready while providers remain not connected yet")
         .accessibilityIdentifier("hf.demoTour.communicationProof")
         .accessibilityIdentifier("hf.demoTour.localRemoteCommunicationAdapterProof")
+    }
+
+    private var launchCampaignServiceProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Launch Campaign Service Proof", actionTitle: nil)
+                Text("HighFive now has a local launch campaign adapter for release calendar, milestones, campaign readiness, communication bridge, and export handoff. Remote campaign providers, publishing, audience access, and measurement remain not connected yet.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Local Launch Campaign Adapter", systemImage: "flag.checkered")
+                    HFRouteChip(title: "Local-to-Remote Launch Adapter", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Campaign Service Proof, local launch campaign adapter and local to remote launch adapter are ready while providers remain not connected yet")
+        .accessibilityIdentifier("hf.demoTour.launchCampaignProof")
+        .accessibilityIdentifier("hf.demoTour.localRemoteLaunchAdapterProof")
     }
 
     private var runOfShowSection: some View {

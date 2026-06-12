@@ -80,6 +80,7 @@ struct ProfileView: View {
                 playerServiceSummarySection
                 libraryDownloadsServiceSection
                 communicationServicesSection
+                launchCampaignServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -165,6 +166,7 @@ struct ProfileView: View {
                 playerServiceSummarySection
                 libraryDownloadsServiceSection
                 communicationServicesSection
+                launchCampaignServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -778,6 +780,11 @@ struct ProfileView: View {
 
     private var communicationServicesSection: some View {
         HFProfileCommunicationServicesSection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var launchCampaignServicesSection: some View {
+        HFProfileLaunchCampaignServicesSection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4580,6 +4587,51 @@ private struct HFProfileCommunicationServicesSection: View {
         .accessibilityIdentifier("hf.profile.communicationProof")
         .accessibilityIdentifier("hf.profile.communicationProviderStatus")
         .accessibilityIdentifier("hf.profile.moderationReadiness")
+    }
+}
+
+private struct HFProfileLaunchCampaignServicesSection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Launch Campaign Adapter", accent: HFColors.gold)
+                        Text("Launch Campaign Services")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Release calendar, milestones, communication bridge, and export handoff are connected locally while remote campaign providers remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.launchCampaignProofRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Campaign Services, Local Launch Campaign Adapter active, Remote Campaign Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.profile.launchCampaignServices")
+        .accessibilityIdentifier("hf.profile.launchCampaignProof")
+        .accessibilityIdentifier("hf.profile.launchCampaignProviderStatus")
+        .accessibilityIdentifier("hf.profile.launchCampaignReadiness")
     }
 }
 
@@ -9067,6 +9119,7 @@ private struct ConnectRoomView: View {
                 communicationServiceSection
                 audienceChannelsSection
                 localToRemoteAdapterSection
+                launchCampaignBridgeSection
                 moderationReadinessSection
                 HFConnectAudiencePlannerSection(plan: HFConnectAudiencePlannerPreviewData.plan, accent: Color.cyan)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.audienceBoard, accent: Color.cyan)
@@ -9310,6 +9363,42 @@ private struct ConnectRoomView: View {
         .accessibilityLabel("Local-to-Remote Adapter, local update schema ready, Remote Communication Provider Not Connected Yet")
         .accessibilityIdentifier("hf.connect.localToRemoteAdapter")
         .accessibilityIdentifier("hf.services.localToRemoteCommunicationAdapter")
+    }
+
+    private var launchCampaignBridgeSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color.cyan)
+                        .frame(width: 48, height: 48)
+                        .background(Color.cyan.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Launch Campaign Bridge")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local audience updates can support future campaign packages while providers remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.launchCommunicationBridgeRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch Campaign Bridge, local audience updates support future campaign packages while providers remain disconnected")
+        .accessibilityIdentifier("hf.connect.launchCampaignBridge")
     }
 
     private var moderationReadinessSection: some View {
@@ -10038,6 +10127,11 @@ private struct LaunchRoomView: View {
                 )
 
                 localReleaseChecklistSection
+                launchCampaignServiceSection
+                releaseCalendarServiceSection
+                campaignMilestonesServiceSection
+                localToRemoteLaunchAdapterSection
+                campaignReadinessServiceSection
                 HFLaunchCampaignPlannerSection(campaign: HFLaunchCampaignPlannerPreviewData.campaign, accent: accent)
                 HFReleaseCalendarExpansionSection(
                     milestones: HFRoomMegaExpansionData.releaseMilestones,
@@ -10119,6 +10213,11 @@ private struct LaunchRoomView: View {
                 HFConsumerMomentumRow(title: "Communication Adapter Context", detail: "Release updates are structured locally for future communication service delivery.", status: "Local", systemImage: "text.bubble.fill")
                     .accessibilityIdentifier("hf.launch.communicationAdapterContext")
 
+                HFConsumerMomentumRow(title: "Campaign status", detail: streamingStore.launchCampaignRecord.status, status: "Local", systemImage: "flag.checkered")
+                    .accessibilityIdentifier("hf.launch.campaignStatus")
+                    .accessibilityIdentifier("hf.launch.campaignLocalReview")
+                    .accessibilityIdentifier("hf.launch.campaignNotPublished")
+
                 VStack(spacing: HFSpacing.sm) {
                     ForEach(streamingStore.launchChecklistItems.indices, id: \.self) { index in
                         Toggle(isOn: Binding(
@@ -10163,6 +10262,165 @@ private struct LaunchRoomView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Local Release Checklist, \(launchChecklistProgress) of \(streamingStore.launchChecklistItems.count) reviewed")
         .accessibilityIdentifier("hf.functional.launch.localChecklist")
+    }
+
+    private var launchCampaignServiceSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "flag.checkered")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Launch Campaign Adapter", accent: accent)
+                        Text("Launch Campaign Service")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Campaign plans stay local today and are structured for a future Remote Campaign Provider.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HFConsumerMomentumRow(title: streamingStore.launchCampaignRecord.title, detail: streamingStore.campaignPackageSummary, status: streamingStore.launchCampaignRecord.status, systemImage: "flag.checkered")
+                    .accessibilityIdentifier("hf.launch.campaignRecord")
+                HFConsumerMomentumRow(title: "Campaign profile", detail: streamingStore.activeViewingProfile.displayName, status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
+                    .accessibilityIdentifier("hf.launch.campaignProfile")
+                HFConsumerMomentumRow(title: "Campaign catalog title", detail: streamingStore.featuredMovie.title, status: "Catalog", systemImage: "rectangle.stack.fill")
+                    .accessibilityIdentifier("hf.launch.campaignCatalogTitle")
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.launchCampaignProofRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Campaign Service, Local Launch Campaign Adapter active, Remote Campaign Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.launch.campaignService")
+        .accessibilityIdentifier("hf.services.launchCampaign")
+        .accessibilityIdentifier("hf.services.localLaunchCampaignAdapter")
+        .accessibilityIdentifier("hf.services.remoteCampaignProviderReady")
+    }
+
+    private var releaseCalendarServiceSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Release Calendar", subtitle: "Provider-ready local calendar records for the featured title.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(streamingStore.releaseCalendarRows) { row in
+                    HFLaunchServiceRecordRow(row: row, accent: accent)
+                        .accessibilityIdentifier("hf.launch.releaseCalendarItem")
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Release Calendar, local release calendar records")
+        .accessibilityIdentifier("hf.launch.releaseCalendar")
+        .accessibilityIdentifier("hf.services.releaseCalendar")
+    }
+
+    private var campaignMilestonesServiceSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Launch Milestones", subtitle: "Structured local campaign milestones keep the checklist connected.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(streamingStore.launchMilestoneRecords) { row in
+                    HFLaunchServiceRecordRow(row: row, accent: accent)
+                        .accessibilityIdentifier("hf.launch.campaignMilestone")
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch Milestones, campaign headline, premiere copy, audience prompt, media kit, and release calendar")
+        .accessibilityIdentifier("hf.launch.campaignMilestones")
+        .accessibilityIdentifier("hf.services.launchMilestones")
+    }
+
+    private var localToRemoteLaunchAdapterSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Local-to-Remote Launch Adapter")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Campaign plans are structured locally today and ready for a future remote campaign provider.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.localToRemoteLaunchAdapterRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Local-to-Remote Launch Adapter, local campaign schema ready, Remote Campaign Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.launch.localToRemoteAdapter")
+        .accessibilityIdentifier("hf.services.localToRemoteLaunchAdapter")
+    }
+
+    private var campaignReadinessServiceSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Campaign Readiness")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local review connects communication and export handoff while remote campaign services remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.launchCampaignReadinessRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Campaign Readiness, local review active, Remote Campaign Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.launch.campaignReadiness")
+        .accessibilityIdentifier("hf.services.launchCampaignReadiness")
+        .accessibilityIdentifier("hf.services.launchCommunicationBridge")
+        .accessibilityIdentifier("hf.services.launchExportHandoff")
     }
 
     private var launchSectionSelector: some View {
@@ -10422,6 +10680,42 @@ private struct LaunchTimelineCard: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(step.title), \(step.timing), \(step.status), \(step.focus)")
+    }
+}
+
+private struct HFLaunchServiceRecordRow: View {
+    let row: HFLaunchMilestoneRecord
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: row.systemImage)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(row.title)
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                        HFRoomStatusChip(title: row.status, accent: accent)
+                    }
+                    Text(row.detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(row.title), \(row.status), \(row.detail)")
     }
 }
 
@@ -11242,6 +11536,9 @@ private struct ExportRoomView: View {
 
                 HFConsumerMomentumRow(title: "Communication Adapter Context", detail: "Delivery summaries can support future communication packages while remote providers remain disconnected.", status: "Local", systemImage: "text.bubble.fill")
                     .accessibilityIdentifier("hf.export.communicationAdapterContext")
+
+                HFConsumerMomentumRow(title: "Launch Campaign Handoff", detail: "Delivery summaries can support launch handoff packages while campaign providers remain disconnected.", status: "Local", systemImage: "flag.checkered")
+                    .accessibilityIdentifier("hf.export.launchCampaignHandoff")
 
                 if !streamingStore.generatedDeliverySummary.isEmpty {
                     Text(streamingStore.generatedDeliverySummary)

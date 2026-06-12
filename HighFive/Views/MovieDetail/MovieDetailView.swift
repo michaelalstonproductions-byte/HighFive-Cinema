@@ -44,6 +44,7 @@ struct MovieDetailView: View {
                 playerServiceSection
                 offlineEligibilitySection
                 communicationPathSection
+                launchPathSection
                 titlePathSection
                 watchToReleaseSection
                 relatedSection
@@ -481,6 +482,19 @@ struct MovieDetailView: View {
         .accessibilityLabel("Audience Update Path, this title can feed local creator notes and premiere updates")
         .accessibilityIdentifier("hf.movieDetail.communicationPath")
         .accessibilityIdentifier("hf.movieDetail.audienceUpdateContext")
+    }
+
+    private var launchPathSection: some View {
+        HFInsightCard(
+            title: "Release Plan Path",
+            message: "This title can feed a local campaign plan and release checklist.",
+            systemImage: "flag.checkered"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Release Plan Path, this title can feed a local campaign plan and release checklist")
+        .accessibilityIdentifier("hf.movieDetail.launchPath")
+        .accessibilityIdentifier("hf.movieDetail.releasePlanContext")
     }
 
     private var watchToReleaseSection: some View {
