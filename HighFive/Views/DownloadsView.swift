@@ -31,6 +31,7 @@ struct DownloadsView: View {
                 offlineAssetRecordsSection
                 providerReadinessSection
                 playerSourceDependencySection
+                exportDeliveryBoundarySection
                 profileStateSection
                 offlineWatchHubSection
                 storageStatus
@@ -352,6 +353,18 @@ struct DownloadsView: View {
         .accessibilityIdentifier("hf.downloads.mediaSourceRequired")
         .accessibilityIdentifier("hf.player.downloads.boundary")
         .accessibilityIdentifier("hf.downloads.profileSyncBoundary")
+    }
+
+    private var exportDeliveryBoundarySection: some View {
+        HFInsightCard(
+            title: "Export Delivery Boundary",
+            message: "Offline state remains local and does not create delivery media files.",
+            systemImage: "shippingbox.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Delivery Boundary, offline state remains local and does not create delivery media files")
+        .accessibilityIdentifier("hf.downloads.exportDeliveryBoundary")
     }
 
     private var profileStateSection: some View {

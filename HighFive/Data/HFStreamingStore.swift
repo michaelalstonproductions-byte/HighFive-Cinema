@@ -140,6 +140,53 @@ struct HFLaunchCampaignReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
+enum HFExportDeliveryProviderStatus {
+    case localAdapterActive
+    case remoteProviderNotConnected
+}
+
+enum HFDeliveryPackageStatus: String, Codable, Equatable {
+    case draft = "Draft"
+    case localReview = "Local Review"
+    case ready = "Ready"
+    case notSubmitted = "Not Submitted"
+}
+
+struct HFDeliveryPackageRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var movieID: String
+    var title: String
+    var ownerProfileID: String
+    var summary: String
+    var status: String
+    var providerStatus: String
+    var updatedAtLabel: String
+}
+
+struct HFDeliveryRequirementRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFDistributionHandoffRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFExportDeliveryReadinessRow: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -869,6 +916,133 @@ final class HFStreamingStore: ObservableObject {
         toggleLaunchChecklistItem(index, isComplete: false)
     }
 
+    // Export Delivery Service
+    // Local Export Delivery Adapter
+    // Remote Delivery Provider
+    // Delivery Package
+    // Delivery Requirements
+    // Distribution Handoff
+    // Local-to-Remote Export Adapter
+    // Export Readiness
+    // Not Submitted
+    // hf.services.exportDelivery
+    // hf.services.localExportDeliveryAdapter
+    // hf.services.remoteDeliveryProviderReady
+    // hf.services.exportDeliveryReadiness
+    // hf.services.deliveryPackage
+    // hf.services.deliveryRequirements
+    // hf.services.distributionHandoff
+    // hf.services.localToRemoteExportAdapter
+    // hf.services.exportLaunchHandoff
+    // hf.services.exportCommunicationPackage
+    var exportDeliveryServiceMode: String {
+        "Local Export Delivery Adapter Active"
+    }
+
+    var exportDeliveryProviderStatus: HFExportDeliveryProviderStatus {
+        .remoteProviderNotConnected
+    }
+
+    var localExportDeliveryAdapterStatus: String {
+        "Local Export Delivery Adapter Active"
+    }
+
+    var deliveryPackageRecord: HFDeliveryPackageRecord {
+        HFDeliveryPackageRecord(
+            id: "delivery-package-\(featuredMovie.id)",
+            movieID: featuredMovie.id,
+            title: "\(featuredMovie.title) Delivery Package",
+            ownerProfileID: activeViewingProfile.id,
+            summary: generatedDeliverySummary.isEmpty ? "Local delivery summary ready to generate." : generatedDeliverySummary,
+            status: generatedDeliverySummary.isEmpty ? HFDeliveryPackageStatus.localReview.rawValue : HFDeliveryPackageStatus.ready.rawValue,
+            providerStatus: "Remote Delivery Provider Not Connected Yet",
+            updatedAtLabel: generatedDeliverySummary.isEmpty ? "Local review" : "Generated locally"
+        )
+    }
+
+    var deliveryRequirementRows: [HFDeliveryRequirementRecord] {
+        [
+            HFDeliveryRequirementRecord(id: "poster-artwork", title: "Poster / artwork checklist", detail: "Local readiness notes only.", status: "Local", systemImage: "photo.stack.fill"),
+            HFDeliveryRequirementRecord(id: "festival-synopsis", title: "Festival synopsis", detail: "Local summary copy can support review.", status: "Local", systemImage: "rosette"),
+            HFDeliveryRequirementRecord(id: "platform-notes", title: "Platform notes", detail: "Provider-ready notes without live submission.", status: "Local", systemImage: "checklist.checked"),
+            HFDeliveryRequirementRecord(id: "accessibility-copy", title: "Accessibility copy", detail: "Local text readiness for future packages.", status: "Local", systemImage: "textformat.alt"),
+            HFDeliveryRequirementRecord(id: "final-media-asset", title: "Final media asset", detail: "Source required before delivery media exists.", status: "Not Connected Yet", systemImage: "play.slash.fill")
+        ]
+    }
+
+    var distributionHandoffRows: [HFDistributionHandoffRecord] {
+        [
+            HFDistributionHandoffRecord(id: "launch-handoff", title: "Launch campaign handoff", detail: "Local campaign package can inform delivery notes.", status: "Local", systemImage: "flag.checkered"),
+            HFDistributionHandoffRecord(id: "communication-package", title: "Communication package", detail: "Local audience updates can inform package context.", status: "Local", systemImage: "text.bubble.fill"),
+            HFDistributionHandoffRecord(id: "catalog-identity", title: "Catalog identity", detail: featuredMovie.title, status: "Active", systemImage: "rectangle.stack.fill"),
+            HFDistributionHandoffRecord(id: "cloud-library", title: "Cloud library boundary", detail: "Saved title state remains local.", status: "Local", systemImage: "bookmark.fill"),
+            HFDistributionHandoffRecord(id: "remote-distribution", title: "Remote distribution provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+        ]
+    }
+
+    var exportDeliveryReadinessRows: [HFExportDeliveryReadinessRow] {
+        [
+            HFExportDeliveryReadinessRow(id: "local-review", title: "Local review", detail: "Active for delivery package text.", status: "Active", systemImage: "checkmark.circle.fill"),
+            HFExportDeliveryReadinessRow(id: "catalog-identity", title: "Catalog identity", detail: featuredMovie.title, status: "Active", systemImage: "rectangle.stack.fill"),
+            HFExportDeliveryReadinessRow(id: "launch-handoff", title: "Launch campaign handoff", detail: "Local campaign adapter connected.", status: "Local", systemImage: "flag.checkered"),
+            HFExportDeliveryReadinessRow(id: "communication-package", title: "Communication package", detail: "Local audience updates connected.", status: "Local", systemImage: "text.bubble.fill"),
+            HFExportDeliveryReadinessRow(id: "cloud-library", title: "Cloud library boundary", detail: "Local library state can identify selected titles.", status: "Local", systemImage: "bookmark.fill"),
+            HFExportDeliveryReadinessRow(id: "remote-provider", title: "Remote Delivery Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFExportDeliveryReadinessRow(id: "platform-submission", title: "Platform Submission", detail: "Not Connected Yet", status: "Future", systemImage: "paperplane"),
+            HFExportDeliveryReadinessRow(id: "media-render-file-export", title: "Media Render / File Export", detail: "Not Connected Yet", status: "Future", systemImage: "shippingbox.fill")
+        ]
+    }
+
+    var localToRemoteExportAdapterRows: [HFExportDeliveryReadinessRow] {
+        [
+            HFExportDeliveryReadinessRow(id: "package-record", title: "Delivery Package", detail: deliveryPackageRecord.title, status: deliveryPackageRecord.status, systemImage: "shippingbox.fill"),
+            HFExportDeliveryReadinessRow(id: "catalog-title", title: "Catalog title", detail: featuredMovie.title, status: "Catalog", systemImage: "film.stack.fill"),
+            HFExportDeliveryReadinessRow(id: "active-profile", title: "Local profile", detail: activeViewingProfile.displayName, status: "Local", systemImage: activeViewingProfile.avatarSymbol),
+            HFExportDeliveryReadinessRow(id: "remote-provider", title: "Remote Delivery Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+        ]
+    }
+
+    var exportDeliveryProofRows: [HFExportDeliveryReadinessRow] {
+        [
+            HFExportDeliveryReadinessRow(id: "local-adapter", title: "Local Export Delivery Adapter", detail: "Active", status: "Active", systemImage: "shippingbox.fill"),
+            HFExportDeliveryReadinessRow(id: "delivery-package", title: "Delivery Package", detail: "Local", status: "Local", systemImage: "doc.text.fill"),
+            HFExportDeliveryReadinessRow(id: "distribution-handoff", title: "Distribution Handoff", detail: "Local", status: "Local", systemImage: "arrow.triangle.2.circlepath"),
+            HFExportDeliveryReadinessRow(id: "launch-handoff", title: "Launch Campaign Handoff", detail: "Local", status: "Local", systemImage: "flag.checkered"),
+            HFExportDeliveryReadinessRow(id: "remote-provider", title: "Remote Delivery Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFExportDeliveryReadinessRow(id: "platform-submission", title: "Platform Submission", detail: "Not Connected Yet", status: "Future", systemImage: "paperplane"),
+            HFExportDeliveryReadinessRow(id: "media-render-file-export", title: "Media Render / File Export", detail: "Not Connected Yet", status: "Future", systemImage: "video.slash.fill")
+        ]
+    }
+
+    var exportLaunchHandoffRows: [HFExportDeliveryReadinessRow] {
+        [
+            HFExportDeliveryReadinessRow(id: "campaign-package", title: "Launch campaign plan", detail: launchCampaignRecord.title, status: launchCampaignRecord.status, systemImage: "flag.checkered"),
+            HFExportDeliveryReadinessRow(id: "release-calendar", title: "Release Calendar", detail: "\(releaseCalendarRows.count) local rows", status: "Local", systemImage: "calendar"),
+            HFExportDeliveryReadinessRow(id: "delivery-package", title: "Delivery Package", detail: deliveryPackageRecord.status, status: "Local", systemImage: "shippingbox.fill")
+        ]
+    }
+
+    var exportCommunicationPackageRows: [HFExportDeliveryReadinessRow] {
+        [
+            HFExportDeliveryReadinessRow(id: "audience-updates", title: "Local Audience Updates", detail: "\(localAudienceUpdates.count) local records", status: "Local", systemImage: "text.bubble.fill"),
+            HFExportDeliveryReadinessRow(id: "channel", title: "Audience channel", detail: selectedAudienceChannelTitle, status: "Local", systemImage: "rectangle.stack.fill"),
+            HFExportDeliveryReadinessRow(id: "delivery-notes", title: "Delivery notes", detail: "Audience context can inform local package notes.", status: "Local", systemImage: "note.text")
+        ]
+    }
+
+    var exportCatalogContextRows: [HFExportDeliveryReadinessRow] {
+        [
+            HFExportDeliveryReadinessRow(id: "catalog-title", title: "Catalog title", detail: featuredMovie.title, status: "Catalog", systemImage: "film.stack.fill"),
+            HFExportDeliveryReadinessRow(id: "player-source", title: "Player source boundary", detail: playbackSource(for: featuredMovie).readinessLabel, status: "Source", systemImage: "play.rectangle.fill"),
+            HFExportDeliveryReadinessRow(id: "library-boundary", title: "Cloud Library boundary", detail: isSaved(featuredMovie) ? "Saved locally" : "Ready for local saved state", status: "Local", systemImage: "bookmark.fill"),
+            HFExportDeliveryReadinessRow(id: "offline-boundary", title: "Offline state boundary", detail: "Offline state does not create delivery media files.", status: "Local", systemImage: "arrow.down.circle.fill")
+        ]
+    }
+
+    func updateDeliveryPackageStatus(_ status: HFDeliveryPackageStatus) -> String {
+        status.rawValue
+    }
+
     // hf.services.launchChecklist
     var launchChecklistProgress: Int {
         launchChecklistStates.filter { $0 }.count
@@ -888,8 +1062,9 @@ final class HFStreamingStore: ObservableObject {
         Title: \(selectedMovie.title)
         Watch surface: Movie Detail, Watch Now path, related titles, and My List route.
         Launch handoff: Campaign headline, premiere copy, audience prompt, media kit, and release calendar reviewed locally.
-        Export package: Deliverables, media kit, festival materials, platform checklist, and distribution handoff are ready for text review.
-        Status: Local summary only.
+        Communication package: \(localAudienceUpdates.count) local audience updates, \(selectedAudienceChannelTitle) channel context, Remote Delivery Provider Not Connected Yet.
+        Export package: Delivery Package, Delivery Requirements, Distribution Handoff, and Local-to-Remote Export Adapter are ready for text review.
+        Status: \(HFDeliveryPackageStatus.notSubmitted.rawValue), local summary only.
         """
     }
 

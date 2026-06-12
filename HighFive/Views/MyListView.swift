@@ -31,6 +31,7 @@ struct MyListView: View {
                 playerContextSection
                 cloudLibraryServiceSection
                 librarySyncReadinessSection
+                exportDeliveryBoundarySection
                 savedStateProofSection
                 profileStateSection
                 watchShelfSection
@@ -218,6 +219,18 @@ struct MyListView: View {
         .accessibilityLabel("Library Sync Readiness, local today and ready for cloud sync once services are connected")
         .accessibilityIdentifier("hf.library.syncReadiness")
         .accessibilityIdentifier("hf.services.librarySync")
+    }
+
+    private var exportDeliveryBoundarySection: some View {
+        HFInsightCard(
+            title: "Export Delivery Boundary",
+            message: "Saved titles can feed local delivery summaries once selected for release.",
+            systemImage: "shippingbox.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Delivery Boundary, saved titles can feed local delivery summaries once selected for release")
+        .accessibilityIdentifier("hf.library.exportDeliveryBoundary")
     }
 
     private var savedStateProofSection: some View {

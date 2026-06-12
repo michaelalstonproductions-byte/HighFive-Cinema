@@ -45,6 +45,7 @@ struct MovieDetailView: View {
                 offlineEligibilitySection
                 communicationPathSection
                 launchPathSection
+                deliveryPathSection
                 titlePathSection
                 watchToReleaseSection
                 relatedSection
@@ -495,6 +496,19 @@ struct MovieDetailView: View {
         .accessibilityLabel("Release Plan Path, this title can feed a local campaign plan and release checklist")
         .accessibilityIdentifier("hf.movieDetail.launchPath")
         .accessibilityIdentifier("hf.movieDetail.releasePlanContext")
+    }
+
+    private var deliveryPathSection: some View {
+        HFInsightCard(
+            title: "Delivery Package Path",
+            message: "This title can feed a local delivery summary and handoff package.",
+            systemImage: "shippingbox.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Delivery Package Path, this title can feed a local delivery summary and handoff package")
+        .accessibilityIdentifier("hf.movieDetail.deliveryPath")
+        .accessibilityIdentifier("hf.movieDetail.deliveryPackageContext")
     }
 
     private var watchToReleaseSection: some View {

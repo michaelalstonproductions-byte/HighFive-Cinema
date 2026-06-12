@@ -39,6 +39,7 @@ struct HomeView: View {
                 libraryDownloadsSignalSection
                 communicationSignalSection
                 launchSignalSection
+                exportDeliverySignalSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -242,6 +243,19 @@ struct HomeView: View {
         .accessibilityLabel("Launch Path Ready, featured titles can move from watch path into a local release plan")
         .accessibilityIdentifier("hf.home.launchSignal")
         .accessibilityIdentifier("hf.home.releasePlanSignal")
+    }
+
+    private var exportDeliverySignalSection: some View {
+        HFInsightCard(
+            title: "Delivery Path Ready",
+            message: "Featured titles can move from watch path into a local delivery package.",
+            systemImage: "shippingbox.fill"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Delivery Path Ready, featured titles can move from watch path into a local delivery package")
+        .accessibilityIdentifier("hf.home.exportDeliverySignal")
+        .accessibilityIdentifier("hf.home.deliveryPathSignal")
     }
 
     private var programmingPulseSection: some View {

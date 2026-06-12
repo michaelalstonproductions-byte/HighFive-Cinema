@@ -81,6 +81,7 @@ struct ProfileView: View {
                 libraryDownloadsServiceSection
                 communicationServicesSection
                 launchCampaignServicesSection
+                exportDeliveryServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -785,6 +786,11 @@ struct ProfileView: View {
 
     private var launchCampaignServicesSection: some View {
         HFProfileLaunchCampaignServicesSection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var exportDeliveryServicesSection: some View {
+        HFProfileExportDeliveryServicesSection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4632,6 +4638,51 @@ private struct HFProfileLaunchCampaignServicesSection: View {
         .accessibilityIdentifier("hf.profile.launchCampaignProof")
         .accessibilityIdentifier("hf.profile.launchCampaignProviderStatus")
         .accessibilityIdentifier("hf.profile.launchCampaignReadiness")
+    }
+}
+
+private struct HFProfileExportDeliveryServicesSection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Export Delivery Adapter", accent: HFColors.gold)
+                        Text("Export Delivery Services")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Delivery Package, Distribution Handoff, Launch Campaign Handoff, and provider readiness are connected locally while remote delivery providers remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.exportDeliveryProofRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Delivery Services, Local Export Delivery Adapter active, Remote Delivery Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.profile.exportDeliveryServices")
+        .accessibilityIdentifier("hf.profile.exportDeliveryProof")
+        .accessibilityIdentifier("hf.profile.exportDeliveryProviderStatus")
+        .accessibilityIdentifier("hf.profile.exportDeliveryReadiness")
     }
 }
 
@@ -9120,6 +9171,7 @@ private struct ConnectRoomView: View {
                 audienceChannelsSection
                 localToRemoteAdapterSection
                 launchCampaignBridgeSection
+                exportDeliveryPackageContextSection
                 moderationReadinessSection
                 HFConnectAudiencePlannerSection(plan: HFConnectAudiencePlannerPreviewData.plan, accent: Color.cyan)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.audienceBoard, accent: Color.cyan)
@@ -9399,6 +9451,42 @@ private struct ConnectRoomView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Launch Campaign Bridge, local audience updates support future campaign packages while providers remain disconnected")
         .accessibilityIdentifier("hf.connect.launchCampaignBridge")
+    }
+
+    private var exportDeliveryPackageContextSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color.cyan)
+                        .frame(width: 48, height: 48)
+                        .background(Color.cyan.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Export Delivery Context")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local audience updates can support delivery notes while remote providers remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.exportCommunicationPackageRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Delivery Context, local audience updates can support delivery notes while remote providers remain disconnected")
+        .accessibilityIdentifier("hf.connect.exportDeliveryPackageContext")
     }
 
     private var moderationReadinessSection: some View {
@@ -10132,6 +10220,7 @@ private struct LaunchRoomView: View {
                 campaignMilestonesServiceSection
                 localToRemoteLaunchAdapterSection
                 campaignReadinessServiceSection
+                exportDeliveryHandoffSection
                 HFLaunchCampaignPlannerSection(campaign: HFLaunchCampaignPlannerPreviewData.campaign, accent: accent)
                 HFReleaseCalendarExpansionSection(
                     milestones: HFRoomMegaExpansionData.releaseMilestones,
@@ -10421,6 +10510,42 @@ private struct LaunchRoomView: View {
         .accessibilityIdentifier("hf.services.launchCampaignReadiness")
         .accessibilityIdentifier("hf.services.launchCommunicationBridge")
         .accessibilityIdentifier("hf.services.launchExportHandoff")
+    }
+
+    private var exportDeliveryHandoffSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Export Delivery Handoff")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Launch campaign plans can support future delivery handoff packages while providers remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.exportLaunchHandoffRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Delivery Handoff, launch campaign plans can support future delivery handoff packages while providers remain disconnected")
+        .accessibilityIdentifier("hf.launch.exportDeliveryHandoff")
     }
 
     private var launchSectionSelector: some View {
@@ -11457,7 +11582,13 @@ private struct ExportRoomView: View {
                     items: ["Deliverables", "Media kit", "Handoff"]
                 )
 
+                exportDeliveryServiceSection
                 deliverySummarySection
+                deliveryPackageSection
+                deliveryRequirementsSection
+                distributionHandoffSection
+                localToRemoteExportAdapterSection
+                exportReadinessSection
                 HFExportDistributionPackageSection(package: HFExportDistributionPackagePreviewData.package, accent: accent)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.deliveryBoard, accent: accent)
                 HFProfessionalDeliveryBoardSection(columns: HFRoomMegaExpansionData.professionalDeliveryColumns, accent: accent)
@@ -11523,6 +11654,7 @@ private struct ExportRoomView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("hf.functional.export.generateSummary")
+                .accessibilityIdentifier("hf.export.generateDeliverySummary")
                 .accessibilityLabel("Generate Summary")
 
                 HFConsumerMomentumRow(title: "Connected Delivery Summary", detail: "Package summary is generated from local app state.", status: "Connected", systemImage: "point.3.connected.trianglepath.dotted")
@@ -11540,6 +11672,11 @@ private struct ExportRoomView: View {
                 HFConsumerMomentumRow(title: "Launch Campaign Handoff", detail: "Delivery summaries can support launch handoff packages while campaign providers remain disconnected.", status: "Local", systemImage: "flag.checkered")
                     .accessibilityIdentifier("hf.export.launchCampaignHandoff")
 
+                HFConsumerMomentumRow(title: "Delivery Summary Status", detail: streamingStore.deliveryPackageRecord.status, status: "Local", systemImage: "doc.text.fill")
+                    .accessibilityIdentifier("hf.export.deliverySummaryStatus")
+                    .accessibilityIdentifier("hf.export.deliverySummaryLocalOnly")
+                    .accessibilityIdentifier("hf.export.deliveryNotSubmitted")
+
                 if !streamingStore.generatedDeliverySummary.isEmpty {
                     Text(streamingStore.generatedDeliverySummary)
                         .font(HFTypography.caption)
@@ -11554,6 +11691,7 @@ private struct ExportRoomView: View {
                                 .stroke(HFColors.glassStroke, lineWidth: 1)
                         )
                         .accessibilityIdentifier("hf.functional.export.summaryText")
+                        .accessibilityIdentifier("hf.export.deliverySummaryText")
 
                     ShareLink(item: streamingStore.generatedDeliverySummary) {
                         HStack(spacing: HFSpacing.xs) {
@@ -11578,6 +11716,184 @@ private struct ExportRoomView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Generate Delivery Summary, local text package summary")
         .accessibilityIdentifier("hf.functional.export.deliverySummary")
+    }
+
+    private var exportDeliveryServiceSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.40)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Export Delivery Adapter", accent: accent)
+                        Text("Export Delivery Service")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Delivery packages stay local today and are structured for a future Remote Delivery Provider.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFConsumerMomentumRow(title: "Local Export Delivery Adapter", detail: "Active", status: "Active", systemImage: "point.3.connected.trianglepath.dotted")
+                    HFConsumerMomentumRow(title: "Delivery Package", detail: "Local", status: "Local", systemImage: "doc.text.fill")
+                    HFConsumerMomentumRow(title: "Delivery Requirements", detail: "Local", status: "Local", systemImage: "checklist.checked")
+                    HFConsumerMomentumRow(title: "Distribution Handoff", detail: "Local", status: "Local", systemImage: "arrow.triangle.2.circlepath")
+                    HFConsumerMomentumRow(title: "Launch Campaign Handoff", detail: "Local", status: "Local", systemImage: "flag.checkered")
+                    HFConsumerMomentumRow(title: "Communication Package", detail: "Local", status: "Local", systemImage: "text.bubble.fill")
+                    HFConsumerMomentumRow(title: "Remote Delivery Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+                    HFConsumerMomentumRow(title: "Platform Submission", detail: "Not Connected Yet", status: "Future", systemImage: "paperplane")
+                    HFConsumerMomentumRow(title: "Media Render / File Export", detail: "Not Connected Yet", status: "Future", systemImage: "video.slash.fill")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Export Delivery Service, Local Export Delivery Adapter active, Remote Delivery Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.export.deliveryService")
+        .accessibilityIdentifier("hf.services.exportDelivery")
+        .accessibilityIdentifier("hf.services.localExportDeliveryAdapter")
+        .accessibilityIdentifier("hf.services.remoteDeliveryProviderReady")
+    }
+
+    private var deliveryPackageSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                StudioRoomSectionHeader(title: "Delivery Package", subtitle: "Structured local package record for the featured title.")
+                HFConsumerMomentumRow(title: streamingStore.deliveryPackageRecord.title, detail: streamingStore.deliveryPackageRecord.summary, status: streamingStore.deliveryPackageRecord.status, systemImage: "doc.text.fill")
+                    .accessibilityIdentifier("hf.export.deliveryPackageStatus")
+                HFConsumerMomentumRow(title: "Delivery package profile", detail: streamingStore.activeViewingProfile.displayName, status: "Local", systemImage: streamingStore.activeViewingProfile.avatarSymbol)
+                    .accessibilityIdentifier("hf.export.deliveryPackageProfile")
+                HFConsumerMomentumRow(title: "Delivery package catalog title", detail: streamingStore.featuredMovie.title, status: "Catalog", systemImage: "rectangle.stack.fill")
+                    .accessibilityIdentifier("hf.export.deliveryPackageCatalogTitle")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Delivery Package, local delivery package record")
+        .accessibilityIdentifier("hf.export.deliveryPackage")
+        .accessibilityIdentifier("hf.services.deliveryPackage")
+    }
+
+    private var deliveryRequirementsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Delivery Requirements", subtitle: "Provider-ready local requirements without media files.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(streamingStore.deliveryRequirementRows) { row in
+                    HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                        .accessibilityIdentifier("hf.export.deliveryRequirement")
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Delivery Requirements, poster artwork checklist, festival synopsis, platform notes, accessibility copy, final media asset source required")
+        .accessibilityIdentifier("hf.export.deliveryRequirements")
+        .accessibilityIdentifier("hf.services.deliveryRequirements")
+    }
+
+    private var distributionHandoffSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Distribution Handoff", subtitle: "Local handoff map across launch, communication, catalog, and library boundaries.")
+
+            VStack(spacing: HFSpacing.sm) {
+                ForEach(streamingStore.distributionHandoffRows) { row in
+                    HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                        .accessibilityIdentifier("hf.export.distributionHandoffItem")
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Distribution Handoff, launch campaign handoff, communication package, catalog identity, cloud library boundary, Remote Delivery Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.export.distributionHandoff")
+        .accessibilityIdentifier("hf.services.distributionHandoff")
+    }
+
+    private var localToRemoteExportAdapterSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Local-to-Remote Export Adapter")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Delivery packages are structured locally today and ready for a future remote delivery provider.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.localToRemoteExportAdapterRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Local-to-Remote Export Adapter, delivery package schema ready, Remote Delivery Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.export.localToRemoteAdapter")
+        .accessibilityIdentifier("hf.services.localToRemoteExportAdapter")
+    }
+
+    private var exportReadinessSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(accent)
+                        .frame(width: 48, height: 48)
+                        .background(accent.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Export Readiness")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local review connects catalog, launch campaign, communication package, and cloud library boundaries while remote delivery services remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.exportDeliveryReadinessRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Readiness, Local review active, Remote Delivery Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.export.deliveryReadiness")
+        .accessibilityIdentifier("hf.services.exportDeliveryReadiness")
+        .accessibilityIdentifier("hf.services.exportLaunchHandoff")
+        .accessibilityIdentifier("hf.services.exportCommunicationPackage")
     }
 
     private var exportSectionSelector: some View {

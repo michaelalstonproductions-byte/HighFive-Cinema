@@ -21,6 +21,7 @@ struct FinalDemoTourView: View {
                     cloudLibraryDownloadsProofSection
                     communicationServiceProofSection
                     launchCampaignServiceProofSection
+                    exportDeliveryServiceProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -320,6 +321,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Launch Campaign Service Proof, local launch campaign adapter and local to remote launch adapter are ready while providers remain not connected yet")
         .accessibilityIdentifier("hf.demoTour.launchCampaignProof")
         .accessibilityIdentifier("hf.demoTour.localRemoteLaunchAdapterProof")
+    }
+
+    private var exportDeliveryServiceProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Export Delivery Service Proof", actionTitle: nil)
+                Text("HighFive now has a local export delivery adapter for delivery package records, requirements, distribution handoff, launch campaign handoff, and communication package context. Remote delivery providers, platform submission, media render, and file export remain not connected yet.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Local Export Delivery Adapter", systemImage: "shippingbox.fill")
+                    HFRouteChip(title: "Local-to-Remote Export Adapter", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Export Delivery Service Proof, local export delivery adapter and local to remote export adapter are ready while providers remain not connected yet")
+        .accessibilityIdentifier("hf.demoTour.exportDeliveryProof")
+        .accessibilityIdentifier("hf.demoTour.localRemoteExportAdapterProof")
     }
 
     private var runOfShowSection: some View {
