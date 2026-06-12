@@ -40,6 +40,7 @@ struct HomeView: View {
                 communicationSignalSection
                 launchSignalSection
                 exportDeliverySignalSection
+                entitlementSignalSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -256,6 +257,19 @@ struct HomeView: View {
         .accessibilityLabel("Delivery Path Ready, featured titles can move from watch path into a local delivery package")
         .accessibilityIdentifier("hf.home.exportDeliverySignal")
         .accessibilityIdentifier("hf.home.deliveryPathSignal")
+    }
+
+    private var entitlementSignalSection: some View {
+        HFInsightCard(
+            title: "Access Path Ready",
+            message: "HighFive can organize access tiers locally while future providers remain disconnected.",
+            systemImage: "checkmark.shield.fill"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Access Path Ready, HighFive can organize access tiers locally while future providers remain disconnected")
+        .accessibilityIdentifier("hf.home.entitlementSignal")
+        .accessibilityIdentifier("hf.home.accessPathSignal")
     }
 
     private var programmingPulseSection: some View {

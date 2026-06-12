@@ -82,6 +82,7 @@ struct ProfileView: View {
                 communicationServicesSection
                 launchCampaignServicesSection
                 exportDeliveryServicesSection
+                paymentEntitlementServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -791,6 +792,11 @@ struct ProfileView: View {
 
     private var exportDeliveryServicesSection: some View {
         HFProfileExportDeliveryServicesSection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var paymentEntitlementServicesSection: some View {
+        HFProfilePaymentEntitlementServicesSection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4683,6 +4689,79 @@ private struct HFProfileExportDeliveryServicesSection: View {
         .accessibilityIdentifier("hf.profile.exportDeliveryProof")
         .accessibilityIdentifier("hf.profile.exportDeliveryProviderStatus")
         .accessibilityIdentifier("hf.profile.exportDeliveryReadiness")
+    }
+}
+
+private struct HFProfilePaymentEntitlementServicesSection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                header
+                readinessRows
+                localToRemoteAdapterRows
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Payment and Entitlement Services, Local Entitlement Adapter active, Remote Payment Provider Not Connected Yet, Store Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.profile.paymentEntitlementServices")
+        .accessibilityIdentifier("hf.profile.paymentEntitlementProof")
+        .accessibilityIdentifier("hf.profile.paymentProviderStatus")
+        .accessibilityIdentifier("hf.profile.storeProviderStatus")
+        .accessibilityIdentifier("hf.profile.entitlementReadiness")
+        .accessibilityIdentifier("hf.services.paymentEntitlement")
+        .accessibilityIdentifier("hf.services.localEntitlementAdapter")
+        .accessibilityIdentifier("hf.services.remotePaymentProviderReady")
+        .accessibilityIdentifier("hf.services.storeProviderReady")
+        .accessibilityIdentifier("hf.services.entitlementReadiness")
+        .accessibilityIdentifier("hf.services.accessTiers")
+        .accessibilityIdentifier("hf.services.localToRemotePaymentAdapter")
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: HFSpacing.md) {
+            Image(systemName: "checkmark.shield.fill")
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 48, height: 48)
+                .background(HFColors.gold.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFRoomStatusChip(title: "Local Entitlement Adapter", accent: HFColors.gold)
+                Text("Payment + Entitlement Services")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Access Tiers, Profile Access, Player, Library, Downloads, Export, and Launch boundaries are organized locally while future providers remain disconnected.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var readinessRows: some View {
+        VStack(spacing: HFSpacing.xs) {
+            ForEach(streamingStore.paymentReadinessRows) { row in
+                HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+            }
+        }
+    }
+
+    private var localToRemoteAdapterRows: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HFSectionHeader(title: "Local-to-Remote Payment Adapter", actionTitle: nil)
+            ForEach(streamingStore.localToRemotePaymentAdapterRows) { row in
+                HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+            }
+        }
+        .accessibilityIdentifier("hf.payment.localToRemoteAdapter")
+        .accessibilityIdentifier("hf.payment.accessTierRecord")
+        .accessibilityIdentifier("hf.payment.entitlementRecord")
     }
 }
 
@@ -10221,6 +10300,7 @@ private struct LaunchRoomView: View {
                 localToRemoteLaunchAdapterSection
                 campaignReadinessServiceSection
                 exportDeliveryHandoffSection
+                paymentEntitlementBoundarySection
                 HFLaunchCampaignPlannerSection(campaign: HFLaunchCampaignPlannerPreviewData.campaign, accent: accent)
                 HFReleaseCalendarExpansionSection(
                     milestones: HFRoomMegaExpansionData.releaseMilestones,
@@ -10546,6 +10626,23 @@ private struct LaunchRoomView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Export Delivery Handoff, launch campaign plans can support future delivery handoff packages while providers remain disconnected")
         .accessibilityIdentifier("hf.launch.exportDeliveryHandoff")
+    }
+
+    private var paymentEntitlementBoundarySection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                StudioRoomSectionHeader(title: "Campaign Access Boundary", subtitle: "Launch campaign packages remain local. Payment and entitlement providers are not connected yet.")
+                ForEach(streamingStore.launchEntitlementRows) { row in
+                    HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Campaign Access Boundary, Launch campaign packages remain local, payment and entitlement providers are not connected yet")
+        .accessibilityIdentifier("hf.launch.paymentEntitlementBoundary")
+        .accessibilityIdentifier("hf.services.launchEntitlementBoundary")
     }
 
     private var launchSectionSelector: some View {
@@ -11589,6 +11686,7 @@ private struct ExportRoomView: View {
                 distributionHandoffSection
                 localToRemoteExportAdapterSection
                 exportReadinessSection
+                paymentEntitlementBoundarySection
                 HFExportDistributionPackageSection(package: HFExportDistributionPackagePreviewData.package, accent: accent)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.deliveryBoard, accent: accent)
                 HFProfessionalDeliveryBoardSection(columns: HFRoomMegaExpansionData.professionalDeliveryColumns, accent: accent)
@@ -11716,6 +11814,23 @@ private struct ExportRoomView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Generate Delivery Summary, local text package summary")
         .accessibilityIdentifier("hf.functional.export.deliverySummary")
+    }
+
+    private var paymentEntitlementBoundarySection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                StudioRoomSectionHeader(title: "Delivery Access Boundary", subtitle: "Delivery packages remain local. Payment and entitlement providers are not connected yet.")
+                ForEach(streamingStore.exportEntitlementRows) { row in
+                    HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Delivery Access Boundary, Delivery packages remain local, payment and entitlement providers are not connected yet")
+        .accessibilityIdentifier("hf.export.paymentEntitlementBoundary")
+        .accessibilityIdentifier("hf.services.exportEntitlementBoundary")
     }
 
     private var exportDeliveryServiceSection: some View {

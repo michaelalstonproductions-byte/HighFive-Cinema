@@ -22,6 +22,7 @@ struct FinalDemoTourView: View {
                     communicationServiceProofSection
                     launchCampaignServiceProofSection
                     exportDeliveryServiceProofSection
+                    paymentEntitlementServiceProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -343,6 +344,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Export Delivery Service Proof, local export delivery adapter and local to remote export adapter are ready while providers remain not connected yet")
         .accessibilityIdentifier("hf.demoTour.exportDeliveryProof")
         .accessibilityIdentifier("hf.demoTour.localRemoteExportAdapterProof")
+    }
+
+    private var paymentEntitlementServiceProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Payment + Entitlement Service Proof", actionTitle: nil)
+                Text("HighFive now has a local entitlement adapter and access tier boundary ready for future payment and store providers. Real monetization, recurring plans, store framework validation, server validation, and payment providers remain not connected yet.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Local Entitlement Adapter", systemImage: "checkmark.shield.fill")
+                    HFRouteChip(title: "Local-to-Remote Payment Adapter", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Payment and Entitlement Service Proof, local entitlement adapter and local to remote payment adapter are ready while providers remain not connected yet")
+        .accessibilityIdentifier("hf.demoTour.paymentEntitlementProof")
+        .accessibilityIdentifier("hf.demoTour.localRemotePaymentAdapterProof")
     }
 
     private var runOfShowSection: some View {

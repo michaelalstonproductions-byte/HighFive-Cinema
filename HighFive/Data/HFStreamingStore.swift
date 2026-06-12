@@ -187,6 +187,43 @@ struct HFExportDeliveryReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
+enum HFPaymentProviderStatus {
+    case localAdapterActive
+    case remoteProviderNotConnected
+}
+
+enum HFEntitlementStatus: String, Codable, Equatable {
+    case localPreview = "Local Preview Only"
+    case included = "Included"
+    case providerRequired = "Provider Required"
+    case notValidated = "Not Validated"
+}
+
+struct HFAccessTierRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFEntitlementRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var scope: String
+    var status: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFPaymentReadinessRow: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -353,9 +390,14 @@ final class HFStreamingStore: ObservableObject {
         return [
             "Catalog title - Active",
             "Player route - Active",
+            "Player Entitlement Boundary - Local",
+            "Local entitlement adapter - Active",
             "Playback source resolver - Active",
             "Local source - \(localStatus)",
             "Remote streaming provider - Not Connected Yet",
+            "Remote payment provider - Not Connected Yet",
+            "Store provider - Not Connected Yet",
+            "Server entitlement validation - Not Connected Yet",
             "Rights checks - Not Connected Yet"
         ]
     }
@@ -1041,6 +1083,146 @@ final class HFStreamingStore: ObservableObject {
 
     func updateDeliveryPackageStatus(_ status: HFDeliveryPackageStatus) -> String {
         status.rawValue
+    }
+
+    // Payment + Entitlement Service
+    // Local Entitlement Adapter
+    // Remote Payment Provider
+    // Store Provider
+    // Access Tiers
+    // Entitlement Readiness
+    // Local Preview Only
+    // No Purchase Active
+    // hf.services.paymentEntitlement
+    // hf.services.localEntitlementAdapter
+    // hf.services.remotePaymentProviderReady
+    // hf.services.storeProviderReady
+    // hf.services.entitlementReadiness
+    // hf.services.accessTiers
+    // hf.services.localToRemotePaymentAdapter
+    // hf.services.playerEntitlementBoundary
+    // hf.services.libraryEntitlementBoundary
+    // hf.services.downloadEntitlementBoundary
+    // hf.services.exportEntitlementBoundary
+    // hf.services.launchEntitlementBoundary
+    var paymentEntitlementServiceMode: String {
+        "Local Entitlement Adapter Active"
+    }
+
+    var localEntitlementAdapterStatus: String {
+        "Local Entitlement Adapter Active"
+    }
+
+    var paymentProviderStatus: HFPaymentProviderStatus {
+        .remoteProviderNotConnected
+    }
+
+    var storeProviderStatus: String {
+        "Store Provider Not Connected Yet"
+    }
+
+    var activeProfileAccessTier: String {
+        "\(activeViewingProfile.displayName) - Local Preview Only"
+    }
+
+    var accessTierRows: [HFAccessTierRecord] {
+        [
+            HFAccessTierRecord(id: "viewer-preview", title: "Viewer Preview", detail: "Streaming shell access is represented locally.", status: "Local Preview Only", systemImage: "person.crop.circle.fill"),
+            HFAccessTierRecord(id: "highfive-originals", title: "HighFive Originals", detail: "Original title scope is organized locally.", status: "Local Preview Only", systemImage: "sparkles.tv.fill"),
+            HFAccessTierRecord(id: "creator-package", title: "Creator Package", detail: "Export and launch package scope remains local.", status: "Local Preview Only", systemImage: "shippingbox.fill")
+        ]
+    }
+
+    var entitlementRecords: [HFEntitlementRecord] {
+        [
+            HFEntitlementRecord(id: "featured-title", title: featuredMovie.title, scope: "Movie access scope", status: HFEntitlementStatus.localPreview.rawValue, detail: "No server validation. Watch Now remains available.", systemImage: "play.rectangle.fill"),
+            HFEntitlementRecord(id: "library-shelf", title: "Library shelf", scope: "Saved title access", status: HFEntitlementStatus.localPreview.rawValue, detail: "Saved state uses local readiness only.", systemImage: "bookmark.fill"),
+            HFEntitlementRecord(id: "offline-state", title: "Offline shelf", scope: "Downloads access", status: HFEntitlementStatus.notValidated.rawValue, detail: "Offline state is local and not provider validated.", systemImage: "arrow.down.circle.fill")
+        ]
+    }
+
+    var paymentReadinessRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "local-adapter", title: "Local Entitlement Adapter", detail: "Active", status: "Active", systemImage: "checkmark.shield.fill"),
+            HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "\(accessTierRows.count) local preview rows", status: "Local Preview Only", systemImage: "rectangle.3.group.fill"),
+            HFPaymentReadinessRow(id: "profile-access", title: "Profile Access", detail: activeProfileAccessTier, status: "Local Preview Only", systemImage: activeViewingProfile.avatarSymbol),
+            HFPaymentReadinessRow(id: "player-boundary", title: "Player Entitlement Boundary", detail: "Local", status: "Local", systemImage: "play.rectangle.fill"),
+            HFPaymentReadinessRow(id: "library-downloads", title: "Library / Downloads Access Boundary", detail: "Local", status: "Local", systemImage: "bookmark.fill"),
+            HFPaymentReadinessRow(id: "export-launch", title: "Export / Launch Package Access", detail: "Local", status: "Local", systemImage: "shippingbox.fill"),
+            HFPaymentReadinessRow(id: "remote-payment", title: "Remote Payment Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
+            HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: "Not Connected Yet", status: "Future", systemImage: "lock.slash.fill")
+        ]
+    }
+
+    var localToRemotePaymentAdapterRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "local-profile", title: "Local profile", detail: activeViewingProfile.displayName, status: "Active", systemImage: activeViewingProfile.avatarSymbol),
+            HFPaymentReadinessRow(id: "access-tier-record", title: "Access tier record", detail: activeProfileAccessTier, status: "Local Preview Only", systemImage: "rectangle.3.group.fill"),
+            HFPaymentReadinessRow(id: "movie-access-scope", title: "Movie access scope", detail: featuredMovie.title, status: "Local", systemImage: "film.stack.fill"),
+            HFPaymentReadinessRow(id: "player-boundary", title: "Player boundary", detail: "Local entitlement readiness only", status: "Local", systemImage: "play.rectangle.fill"),
+            HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
+            HFPaymentReadinessRow(id: "remote-payment-provider", title: "Remote Payment Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFPaymentReadinessRow(id: "server-validation", title: "Server entitlement validation", detail: "Not Connected Yet", status: "Future", systemImage: "lock.slash.fill")
+        ]
+    }
+
+    var playerEntitlementBoundaryRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "catalog-identity", title: "Catalog identity", detail: featuredMovie.title, status: "Active", systemImage: "rectangle.stack.fill"),
+            HFPaymentReadinessRow(id: "player-route", title: "Player route", detail: "Active", status: "Active", systemImage: "play.rectangle.fill"),
+            HFPaymentReadinessRow(id: "local-entitlement-adapter", title: "Local entitlement adapter", detail: "Active", status: "Active", systemImage: "checkmark.shield.fill"),
+            HFPaymentReadinessRow(id: "remote-payment-provider", title: "Remote payment provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFPaymentReadinessRow(id: "store-provider", title: "Store provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
+            HFPaymentReadinessRow(id: "server-validation", title: "Server entitlement validation", detail: "Not Connected Yet", status: "Future", systemImage: "lock.slash.fill")
+        ]
+    }
+
+    var libraryEntitlementRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "saved-titles", title: "Saved titles", detail: "\(savedMovies.count) local records", status: "Local", systemImage: "bookmark.fill"),
+            HFPaymentReadinessRow(id: "access-boundary", title: "Access Boundary", detail: "Saved titles use local entitlement readiness only.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var downloadEntitlementRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "offline-state", title: "Offline state", detail: "\(downloadedMovies.count) local records", status: "Local", systemImage: "arrow.down.circle.fill"),
+            HFPaymentReadinessRow(id: "offline-access", title: "Offline Access Boundary", detail: "Real entitlement validation is not connected yet.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var exportEntitlementRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "delivery-package", title: "Delivery package", detail: deliveryPackageRecord.title, status: "Local", systemImage: "shippingbox.fill"),
+            HFPaymentReadinessRow(id: "access-boundary", title: "Delivery Access Boundary", detail: "Payment and entitlement providers are not connected yet.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var launchEntitlementRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "campaign-package", title: "Campaign package", detail: launchCampaignRecord.title, status: "Local", systemImage: "flag.checkered"),
+            HFPaymentReadinessRow(id: "access-boundary", title: "Campaign Access Boundary", detail: "Payment and entitlement providers are not connected yet.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var paymentProofRows: [HFPaymentReadinessRow] {
+        [
+            HFPaymentReadinessRow(id: "local-adapter", title: "Local Entitlement Adapter", detail: "Active", status: "Active", systemImage: "checkmark.shield.fill"),
+            HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "Local Preview Only", status: "Local Preview Only", systemImage: "rectangle.3.group.fill"),
+            HFPaymentReadinessRow(id: "remote-payment-provider", title: "Remote Payment Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
+            HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: "Not Connected Yet", status: "Future", systemImage: "lock.slash.fill")
+        ]
+    }
+
+    func entitlementStatus(for movie: Movie) -> HFEntitlementStatus {
+        movie.isComingSoon ? .providerRequired : .localPreview
+    }
+
+    func entitlementCopy(for movie: Movie) -> String {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        return "\(catalogMovie.title) uses local access readiness only. Store and entitlement providers are not connected yet."
     }
 
     // hf.services.launchChecklist

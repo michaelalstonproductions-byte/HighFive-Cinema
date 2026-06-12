@@ -42,6 +42,7 @@ struct MovieDetailView: View {
                 publicMomentumSection
                 catalogIdentitySection
                 playerServiceSection
+                entitlementPathSection
                 offlineEligibilitySection
                 communicationPathSection
                 launchPathSection
@@ -511,6 +512,20 @@ struct MovieDetailView: View {
         .accessibilityIdentifier("hf.movieDetail.deliveryPackageContext")
     }
 
+    private var entitlementPathSection: some View {
+        HFInsightCard(
+            title: "Access Ready",
+            message: streamingStore.entitlementCopy(for: catalogMovie),
+            systemImage: "checkmark.shield.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Access Ready, this title is connected to local access readiness, Store and entitlement providers are not connected yet")
+        .accessibilityIdentifier("hf.movieDetail.entitlementPath")
+        .accessibilityIdentifier("hf.movieDetail.accessReadiness")
+        .accessibilityIdentifier("hf.movieDetail.playerEntitlementBoundary")
+    }
+
     private var watchToReleaseSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "From Watch To Release", actionTitle: nil)
@@ -867,8 +882,16 @@ struct HFPlayerServiceSheet: View {
                 .accessibilityIdentifier("hf.player.catalog.movieID")
             HFConsumerMomentumRow(title: "Local Playback Source", detail: source.status == .playableLocal ? "Active" : "Local source missing", status: source.status == .playableLocal ? "Active" : "Missing", systemImage: "play.slash.fill")
                 .accessibilityIdentifier("hf.player.source.status")
+            ForEach(streamingStore.playerEntitlementBoundaryRows) { row in
+                HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    .accessibilityIdentifier("hf.player.entitlementBoundary")
+            }
             HFConsumerMomentumRow(title: "Remote Streaming Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
                 .accessibilityIdentifier("hf.player.provider.status")
+            HFConsumerMomentumRow(title: "Payment provider status", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+                .accessibilityIdentifier("hf.player.paymentProviderStatus")
+            HFConsumerMomentumRow(title: "Access status", detail: "Local Preview Only", status: "Local", systemImage: "checkmark.shield.fill")
+                .accessibilityIdentifier("hf.player.accessStatus")
         }
     }
 }

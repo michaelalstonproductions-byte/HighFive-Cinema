@@ -32,6 +32,7 @@ struct MyListView: View {
                 cloudLibraryServiceSection
                 librarySyncReadinessSection
                 exportDeliveryBoundarySection
+                entitlementBoundarySection
                 savedStateProofSection
                 profileStateSection
                 watchShelfSection
@@ -231,6 +232,19 @@ struct MyListView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Export Delivery Boundary, saved titles can feed local delivery summaries once selected for release")
         .accessibilityIdentifier("hf.library.exportDeliveryBoundary")
+    }
+
+    private var entitlementBoundarySection: some View {
+        HFInsightCard(
+            title: "Access Boundary",
+            message: "Saved titles use local entitlement readiness only.",
+            systemImage: "checkmark.shield.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Access Boundary, saved titles use local entitlement readiness only")
+        .accessibilityIdentifier("hf.library.entitlementBoundary")
+        .accessibilityIdentifier("hf.services.libraryEntitlementBoundary")
     }
 
     private var savedStateProofSection: some View {

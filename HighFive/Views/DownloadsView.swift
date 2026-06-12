@@ -32,6 +32,7 @@ struct DownloadsView: View {
                 providerReadinessSection
                 playerSourceDependencySection
                 exportDeliveryBoundarySection
+                entitlementBoundarySection
                 profileStateSection
                 offlineWatchHubSection
                 storageStatus
@@ -365,6 +366,19 @@ struct DownloadsView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Export Delivery Boundary, offline state remains local and does not create delivery media files")
         .accessibilityIdentifier("hf.downloads.exportDeliveryBoundary")
+    }
+
+    private var entitlementBoundarySection: some View {
+        HFInsightCard(
+            title: "Offline Access Boundary",
+            message: "Offline state remains local. Real entitlement validation is not connected yet.",
+            systemImage: "checkmark.shield.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Offline Access Boundary, offline state remains local and real entitlement validation is not connected yet")
+        .accessibilityIdentifier("hf.downloads.entitlementBoundary")
+        .accessibilityIdentifier("hf.services.downloadEntitlementBoundary")
     }
 
     private var profileStateSection: some View {
