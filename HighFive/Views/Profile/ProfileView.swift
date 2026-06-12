@@ -79,6 +79,7 @@ struct ProfileView: View {
                 catalogServiceSummarySection
                 playerServiceSummarySection
                 libraryDownloadsServiceSection
+                communicationServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -163,6 +164,7 @@ struct ProfileView: View {
                 catalogServiceSummarySection
                 playerServiceSummarySection
                 libraryDownloadsServiceSection
+                communicationServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -771,6 +773,11 @@ struct ProfileView: View {
 
     private var libraryDownloadsServiceSection: some View {
         HFProfileLibraryDownloadsServiceSection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var communicationServicesSection: some View {
+        HFProfileCommunicationServicesSection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4528,6 +4535,51 @@ private struct HFProfileLibraryDownloadsServiceSection: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Library and Downloads Services, Cloud Library Service local ready, Offline Asset Service local ready, Remote Download Provider Not Connected Yet")
         .accessibilityIdentifier("hf.profile.libraryDownloadsService")
+    }
+}
+
+private struct HFProfileCommunicationServicesSection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "text.bubble.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Communication Adapter", accent: HFColors.gold)
+                        Text("Communication Services")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Audience updates and channel records stay local while remote communication and moderation providers remain disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.communicationProofRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Communication Services, Local Communication Adapter active, Remote Communication Provider Not Connected Yet, Moderation Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.profile.communicationServices")
+        .accessibilityIdentifier("hf.profile.communicationProof")
+        .accessibilityIdentifier("hf.profile.communicationProviderStatus")
+        .accessibilityIdentifier("hf.profile.moderationReadiness")
     }
 }
 
@@ -9012,6 +9064,10 @@ private struct ConnectRoomView: View {
                 )
 
                 localAudienceUpdatesSection
+                communicationServiceSection
+                audienceChannelsSection
+                localToRemoteAdapterSection
+                moderationReadinessSection
                 HFConnectAudiencePlannerSection(plan: HFConnectAudiencePlannerPreviewData.plan, accent: Color.cyan)
                 HFRoomBoardExpansionSection(expansion: HFRoomMegaExpansionData.audienceBoard, accent: Color.cyan)
                 HFPublicMomentumBoardSection(columns: HFRoomMegaExpansionData.publicMomentumColumns, accent: Color.cyan)
@@ -9124,6 +9180,7 @@ private struct ConnectRoomView: View {
                             .stroke(HFColors.glassStroke, lineWidth: 1)
                     )
                     .accessibilityIdentifier("hf.functional.connect.updateInput")
+                    .accessibilityIdentifier("hf.communication.updateInput")
 
                 Button {
                     addLocalUpdate()
@@ -9141,14 +9198,16 @@ private struct ConnectRoomView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("hf.functional.connect.addLocalUpdate")
+                .accessibilityIdentifier("hf.communication.addLocalUpdate")
                 .accessibilityLabel("Add Local Update")
 
                 VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    ForEach(Array(streamingStore.localConnectUpdates.enumerated()), id: \.offset) { index, update in
+                    ForEach(Array(streamingStore.localAudienceUpdates.enumerated()), id: \.element.id) { index, update in
                         HFLocalUpdateRow(index: index + 1, update: update, accent: Color.cyan)
                     }
                 }
                 .accessibilityIdentifier("hf.functional.connect.updateList")
+                .accessibilityIdentifier("hf.communication.localUpdateList")
             }
             .padding(HFSpacing.lg)
         }
@@ -9156,6 +9215,138 @@ private struct ConnectRoomView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Local Audience Updates, draft preview list, not sent")
         .accessibilityIdentifier("hf.functional.connect.localUpdates")
+    }
+
+    private var communicationServiceSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color.cyan)
+                        .frame(width: 48, height: 48)
+                        .background(Color.cyan.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Communication Adapter", accent: Color.cyan)
+                        Text("Communication Service")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local Audience Updates are structured for a future Remote Communication Provider.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.communicationReadinessRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Communication Service, Local Communication Adapter active, Remote Communication Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.connect.communicationService")
+        .accessibilityIdentifier("hf.services.communication")
+        .accessibilityIdentifier("hf.services.localCommunicationAdapter")
+        .accessibilityIdentifier("hf.services.remoteCommunicationProviderReady")
+        .accessibilityIdentifier("hf.services.communicationReadiness")
+    }
+
+    private var audienceChannelsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            StudioRoomSectionHeader(title: "Audience Channels", subtitle: "Local channel records for preparing audience-facing updates.")
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                ForEach(streamingStore.audienceChannels) { channel in
+                    HFCommunicationChannelCard(channel: channel, accent: Color.cyan)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Audience Channels, Premiere Updates, Creator Notes, Audience Prompts, Release Reminders")
+        .accessibilityIdentifier("hf.connect.audienceChannels")
+        .accessibilityIdentifier("hf.services.audienceChannels")
+    }
+
+    private var localToRemoteAdapterSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color.cyan)
+                        .frame(width: 48, height: 48)
+                        .background(Color.cyan.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Local-to-Remote Adapter")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Updates are prepared locally today and structured for a future remote communication provider.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.localToRemoteAdapterRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Local-to-Remote Adapter, local update schema ready, Remote Communication Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.connect.localToRemoteAdapter")
+        .accessibilityIdentifier("hf.services.localToRemoteCommunicationAdapter")
+    }
+
+    private var moderationReadinessSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.cyan.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Color.cyan)
+                        .frame(width: 48, height: 48)
+                        .background(Color.cyan.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Moderation Readiness")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local review and safety checks are present while remote moderation remains disconnected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.communicationModerationRows) { row in
+                        HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Moderation Readiness, local review active, remote moderation provider Not Connected Yet")
+        .accessibilityIdentifier("hf.communication.moderationReadiness")
+        .accessibilityIdentifier("hf.services.communicationModeration")
     }
 
     private func addLocalUpdate() {
@@ -9172,7 +9363,7 @@ private struct ConnectRoomView: View {
 
 private struct HFLocalUpdateRow: View {
     let index: Int
-    let update: String
+    let update: HFAudienceUpdateRecord
     let accent: Color
 
     var body: some View {
@@ -9185,11 +9376,15 @@ private struct HFLocalUpdateRow: View {
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                Text(update)
+                Text(update.body)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
-                HFRoomStatusChip(title: "Not sent", accent: accent)
+                Text("\(update.safetyLabel) • \(update.updatedAtLabel)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                HFRoomStatusChip(title: update.status, accent: accent)
+                    .accessibilityIdentifier("hf.communication.updateStatus")
             }
 
             Spacer(minLength: 0)
@@ -9197,6 +9392,42 @@ private struct HFLocalUpdateRow: View {
         .padding(HFSpacing.sm)
         .background(Color.white.opacity(0.055))
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Local audience update by local profile for catalog title, \(update.status)")
+        .accessibilityIdentifier("hf.communication.updateAuthorProfile")
+        .accessibilityIdentifier("hf.communication.updateCatalogTitle")
+    }
+}
+
+private struct HFCommunicationChannelCard: View {
+    let channel: HFAudienceChannel
+    let accent: Color
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: channel.systemImage)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                Text(channel.title)
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(channel.purpose)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HFRoomStatusChip(title: channel.status, accent: accent)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(channel.title), \(channel.status), \(channel.purpose)")
+        .accessibilityIdentifier("hf.connect.audienceChannel")
     }
 }
 
@@ -9884,6 +10115,9 @@ private struct LaunchRoomView: View {
 
                 HFConsumerMomentumRow(title: "Catalog title context", detail: "Launch progress is framed around \(streamingStore.featuredMovie.title).", status: "Catalog", systemImage: "rectangle.stack.fill")
                     .accessibilityIdentifier("hf.catalog.launch.titleContext")
+
+                HFConsumerMomentumRow(title: "Communication Adapter Context", detail: "Release updates are structured locally for future communication service delivery.", status: "Local", systemImage: "text.bubble.fill")
+                    .accessibilityIdentifier("hf.launch.communicationAdapterContext")
 
                 VStack(spacing: HFSpacing.sm) {
                     ForEach(streamingStore.launchChecklistItems.indices, id: \.self) { index in
@@ -11005,6 +11239,9 @@ private struct ExportRoomView: View {
 
                 HFConsumerMomentumRow(title: "Catalog title context", detail: "Delivery summary uses \(streamingStore.featuredMovie.title) from the shared catalog.", status: "Catalog", systemImage: "rectangle.stack.fill")
                     .accessibilityIdentifier("hf.catalog.export.titleContext")
+
+                HFConsumerMomentumRow(title: "Communication Adapter Context", detail: "Delivery summaries can support future communication packages while remote providers remain disconnected.", status: "Local", systemImage: "text.bubble.fill")
+                    .accessibilityIdentifier("hf.export.communicationAdapterContext")
 
                 if !streamingStore.generatedDeliverySummary.isEmpty {
                     Text(streamingStore.generatedDeliverySummary)

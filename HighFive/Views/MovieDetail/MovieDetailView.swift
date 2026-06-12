@@ -43,6 +43,7 @@ struct MovieDetailView: View {
                 catalogIdentitySection
                 playerServiceSection
                 offlineEligibilitySection
+                communicationPathSection
                 titlePathSection
                 watchToReleaseSection
                 relatedSection
@@ -467,6 +468,19 @@ struct MovieDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Offline Eligibility, Local Offline State, Media source required before real download, Remote Download Provider Not Connected Yet")
         .accessibilityIdentifier("hf.download.movieDetail.queueAction")
+    }
+
+    private var communicationPathSection: some View {
+        HFInsightCard(
+            title: "Audience Update Path",
+            message: "This title can feed local creator notes and premiere updates.",
+            systemImage: "text.bubble.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Audience Update Path, this title can feed local creator notes and premiere updates")
+        .accessibilityIdentifier("hf.movieDetail.communicationPath")
+        .accessibilityIdentifier("hf.movieDetail.audienceUpdateContext")
     }
 
     private var watchToReleaseSection: some View {

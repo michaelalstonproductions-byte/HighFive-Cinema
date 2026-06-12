@@ -55,6 +55,45 @@ struct HFDownloadQueueItem: Identifiable, Codable, Equatable {
     var reason: String
 }
 
+enum HFCommunicationProviderStatus {
+    case localAdapterActive
+    case remoteProviderNotConnected
+}
+
+enum HFCommunicationUpdateStatus: String, Codable, Equatable {
+    case draft = "Draft"
+    case preview = "Preview"
+    case ready = "Ready"
+    case notSent = "Not Sent"
+}
+
+struct HFAudienceChannel: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var purpose: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFAudienceUpdateRecord: Identifiable, Codable, Equatable {
+    let id: String
+    var channelID: String
+    var movieID: String
+    var authorProfileID: String
+    var body: String
+    var status: String
+    var safetyLabel: String
+    var updatedAtLabel: String
+}
+
+struct HFCommunicationReadinessRow: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -66,6 +105,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var localProfiles: [HFLocalViewingProfile]
     @Published private(set) var activeProfileID: String
     @Published private(set) var lastPlayerMovieID: String?
+    @Published var selectedAudienceChannelID: String
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -113,6 +153,7 @@ final class HFStreamingStore: ObservableObject {
         launchChecklistStates = savedLaunchStates?.count == launchChecklistItems.count ? savedLaunchStates ?? [] : Array(repeating: false, count: launchChecklistItems.count)
         generatedDeliverySummary = ""
         lastPlayerMovieID = defaults.string(forKey: lastPlayerMovieKey)
+        selectedAudienceChannelID = "premiere-updates"
     }
 
     // hf.services.accountProfile
@@ -540,13 +581,121 @@ final class HFStreamingStore: ObservableObject {
         UserDefaults.standard.set(recentSearches, forKey: recentSearchesKey)
     }
 
-    // hf.services.connectUpdates
-    func addLocalConnectUpdate(_ text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    // Communication Service
+    // Local Communication Adapter
+    // Remote Communication Provider
+    // Local-to-Remote Adapter
+    // Moderation Readiness
+    // Local Audience Updates
+    // hf.services.communication
+    // hf.services.localCommunicationAdapter
+    // hf.services.remoteCommunicationProviderReady
+    // hf.services.communicationReadiness
+    // hf.services.communicationModeration
+    // hf.services.localToRemoteCommunicationAdapter
+    // hf.services.audienceChannels
+    var communicationServiceMode: String {
+        "Local Communication Adapter Active"
+    }
+
+    var communicationProviderStatus: HFCommunicationProviderStatus {
+        .remoteProviderNotConnected
+    }
+
+    var audienceChannels: [HFAudienceChannel] {
+        [
+            HFAudienceChannel(id: "premiere-updates", title: "Premiere Updates", purpose: "Prepare release-window notes around the featured catalog title.", status: "Local", systemImage: "sparkles.tv.fill"),
+            HFAudienceChannel(id: "creator-notes", title: "Creator Notes", purpose: "Shape creator context before future delivery.", status: "Local", systemImage: "note.text"),
+            HFAudienceChannel(id: "audience-prompts", title: "Audience Prompts", purpose: "Draft watch-night prompts without live replies.", status: "Preview", systemImage: "questionmark.bubble.fill"),
+            HFAudienceChannel(id: "release-reminders", title: "Release Reminders", purpose: "Prepare reminder copy while remote alerts stay disconnected.", status: "Draft", systemImage: "calendar.badge.clock")
+        ]
+    }
+
+    var localAudienceUpdates: [HFAudienceUpdateRecord] {
+        localConnectUpdates.enumerated().map { offset, update in
+            let channel = audienceChannels[offset % audienceChannels.count]
+            return HFAudienceUpdateRecord(
+                id: "local-update-\(offset)",
+                channelID: channel.id,
+                movieID: featuredMovie.id,
+                authorProfileID: activeViewingProfile.id,
+                body: update,
+                status: offset == 0 ? HFCommunicationUpdateStatus.preview.rawValue : HFCommunicationUpdateStatus.notSent.rawValue,
+                safetyLabel: "Local review",
+                updatedAtLabel: "Local draft"
+            )
+        }
+    }
+
+    var communicationReadinessRows: [HFCommunicationReadinessRow] {
+        [
+            HFCommunicationReadinessRow(id: "local-adapter", title: "Local Communication Adapter", detail: "Audience updates remain local.", status: "Active", systemImage: "point.3.connected.trianglepath.dotted"),
+            HFCommunicationReadinessRow(id: "channels", title: "Audience Channels", detail: "Premiere Updates, Creator Notes, Audience Prompts, and Release Reminders.", status: "Local", systemImage: "rectangle.stack.fill"),
+            HFCommunicationReadinessRow(id: "drafts", title: "Update Drafts", detail: "Draft, Preview, Ready, and Not Sent states are local.", status: "Local", systemImage: "text.bubble.fill"),
+            HFCommunicationReadinessRow(id: "moderation", title: "Moderation Readiness", detail: "Local review and safety checks are prepared.", status: "Local Review", systemImage: "checkmark.shield.fill"),
+            HFCommunicationReadinessRow(id: "remote-provider", title: "Remote Communication Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFCommunicationReadinessRow(id: "remote-alerts", title: "Push Notifications", detail: "Not Connected Yet", status: "Future", systemImage: "bell.slash.fill")
+        ]
+    }
+
+    var communicationModerationRows: [HFCommunicationReadinessRow] {
+        [
+            HFCommunicationReadinessRow(id: "local-review", title: "Local review", detail: "Active for local audience updates.", status: "Active", systemImage: "checkmark.circle.fill"),
+            HFCommunicationReadinessRow(id: "safety-check", title: "Safety check", detail: "Prepared as a local readiness step.", status: "Local", systemImage: "shield.lefthalf.filled"),
+            HFCommunicationReadinessRow(id: "remote-moderation", title: "Remote moderation provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFCommunicationReadinessRow(id: "reporting", title: "Reporting tools", detail: "Not Connected Yet", status: "Future", systemImage: "exclamationmark.bubble.fill"),
+            HFCommunicationReadinessRow(id: "abuse-prevention", title: "Abuse prevention", detail: "Future service", status: "Future", systemImage: "lock.shield.fill")
+        ]
+    }
+
+    var localToRemoteAdapterRows: [HFCommunicationReadinessRow] {
+        [
+            HFCommunicationReadinessRow(id: "schema", title: "Channel", detail: selectedAudienceChannelTitle, status: "Local", systemImage: "rectangle.stack.fill"),
+            HFCommunicationReadinessRow(id: "catalog", title: "Catalog title", detail: featuredMovie.title, status: "Catalog", systemImage: "film.stack.fill"),
+            HFCommunicationReadinessRow(id: "profile", title: "Author profile", detail: activeViewingProfile.displayName, status: "Local", systemImage: activeViewingProfile.avatarSymbol),
+            HFCommunicationReadinessRow(id: "remote", title: "Remote Communication Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+        ]
+    }
+
+    var communicationProofRows: [HFCommunicationReadinessRow] {
+        [
+            HFCommunicationReadinessRow(id: "local-adapter-proof", title: "Local Communication Adapter", detail: "Active", status: "Active", systemImage: "point.3.connected.trianglepath.dotted"),
+            HFCommunicationReadinessRow(id: "audience-updates-proof", title: "Audience Updates", detail: "Local", status: "Local", systemImage: "text.bubble.fill"),
+            HFCommunicationReadinessRow(id: "channels-proof", title: "Channels", detail: "Local", status: "Local", systemImage: "rectangle.stack.fill"),
+            HFCommunicationReadinessRow(id: "remote-provider-proof", title: "Remote Communication Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
+            HFCommunicationReadinessRow(id: "remote-alerts-proof", title: "Push Notifications", detail: "Not Connected Yet", status: "Future", systemImage: "bell.slash.fill"),
+            HFCommunicationReadinessRow(id: "moderation-proof", title: "Moderation Provider", detail: "Not Connected Yet", status: "Future", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var selectedAudienceChannelTitle: String {
+        audienceChannels.first { $0.id == selectedAudienceChannelID }?.title ?? audienceChannels[0].title
+    }
+
+    func addAudienceUpdate(body: String, channelID: String? = nil) {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        localConnectUpdates.insert("Local update: \(trimmed)", at: 0)
+        let resolvedChannelID = channelID ?? selectedAudienceChannelID
+        selectedAudienceChannelID = resolvedChannelID
+        let channelTitle = audienceChannels.first { $0.id == resolvedChannelID }?.title ?? selectedAudienceChannelTitle
+        localConnectUpdates.insert("Not Sent • \(channelTitle) • \(featuredMovie.title) • \(activeViewingProfile.displayName): \(trimmed)", at: 0)
         localConnectUpdateDraft = ""
         UserDefaults.standard.set(localConnectUpdates, forKey: connectUpdatesKey)
+    }
+
+    func removeAudienceUpdate(id: String) {
+        guard let indexText = id.split(separator: "-").last, let index = Int(indexText), localConnectUpdates.indices.contains(index) else { return }
+        localConnectUpdates.remove(at: index)
+        UserDefaults.standard.set(localConnectUpdates, forKey: connectUpdatesKey)
+    }
+
+    func updateStatus(for record: HFAudienceUpdateRecord) -> String {
+        record.status
+    }
+
+    // hf.services.connectUpdates
+    func addLocalConnectUpdate(_ text: String) {
+        addAudienceUpdate(body: text, channelID: selectedAudienceChannelID)
     }
 
     // hf.services.launchChecklist

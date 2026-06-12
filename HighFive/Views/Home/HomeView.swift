@@ -37,6 +37,7 @@ struct HomeView: View {
                 catalogConnectedSection
                 playerReadySection
                 libraryDownloadsSignalSection
+                communicationSignalSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -214,6 +215,19 @@ struct HomeView: View {
         .accessibilityLabel("Library and Offline Ready, saved list and offline state are connected locally and ready for cloud sync")
         .accessibilityIdentifier("hf.home.cloudLibrarySignal")
         .accessibilityIdentifier("hf.home.downloadsSignal")
+    }
+
+    private var communicationSignalSection: some View {
+        HFInsightCard(
+            title: "Audience Updates Ready",
+            message: "Creators can prepare local updates around featured titles.",
+            systemImage: "text.bubble.fill"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Audience Updates Ready, creators can prepare local updates around featured titles")
+        .accessibilityIdentifier("hf.home.communicationSignal")
+        .accessibilityIdentifier("hf.home.audienceUpdatesSignal")
     }
 
     private var programmingPulseSection: some View {

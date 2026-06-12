@@ -19,6 +19,7 @@ struct FinalDemoTourView: View {
                     catalogServiceProofSection
                     playerServiceProofSection
                     cloudLibraryDownloadsProofSection
+                    communicationServiceProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -274,6 +275,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Cloud Library and Downloads Proof, connected local library and offline asset architecture, provider dependent services not connected yet")
         .accessibilityIdentifier("hf.demoTour.cloudLibraryProof")
         .accessibilityIdentifier("hf.demoTour.offlineDownloadsProof")
+    }
+
+    private var communicationServiceProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Communication Service Proof", actionTitle: nil)
+                Text("HighFive now has a local communication adapter for audience updates, creator notes, and premiere prompts. Remote communication, notifications, and moderation providers remain not connected yet.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Local Communication Adapter", systemImage: "text.bubble.fill")
+                    HFRouteChip(title: "Local-to-Remote Adapter", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Communication Service Proof, local communication adapter and local to remote adapter are ready while providers remain not connected yet")
+        .accessibilityIdentifier("hf.demoTour.communicationProof")
+        .accessibilityIdentifier("hf.demoTour.localRemoteCommunicationAdapterProof")
     }
 
     private var runOfShowSection: some View {
