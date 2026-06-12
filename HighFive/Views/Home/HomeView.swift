@@ -36,6 +36,7 @@ struct HomeView: View {
                 activeProfileSection
                 catalogConnectedSection
                 playerReadySection
+                libraryDownloadsSignalSection
                 heroSection
                 tonightFeatureSection
                 programmingPulseSection
@@ -200,6 +201,19 @@ struct HomeView: View {
         .accessibilityLabel("Player Ready, Continue Watching opens the same catalog title path")
         .accessibilityIdentifier("hf.player.home.continueWatching")
         .accessibilityIdentifier("hf.player.home.playerReady")
+    }
+
+    private var libraryDownloadsSignalSection: some View {
+        HFInsightCard(
+            title: "Library + Offline Ready",
+            message: "Your saved list and offline state are connected locally and ready for cloud sync.",
+            systemImage: "icloud.and.arrow.down"
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Library and Offline Ready, saved list and offline state are connected locally and ready for cloud sync")
+        .accessibilityIdentifier("hf.home.cloudLibrarySignal")
+        .accessibilityIdentifier("hf.home.downloadsSignal")
     }
 
     private var programmingPulseSection: some View {

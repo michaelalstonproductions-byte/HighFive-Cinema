@@ -18,6 +18,7 @@ struct FinalDemoTourView: View {
                     accountProfileProofSection
                     catalogServiceProofSection
                     playerServiceProofSection
+                    cloudLibraryDownloadsProofSection
                     runOfShowSection
                     screenshotPlanSection
                     productStorySection
@@ -251,6 +252,28 @@ struct FinalDemoTourView: View {
         .accessibilityLabel("Player Service Proof, Watch Now resolves a catalog movie through the player service and shows an honest source-not-connected state when no playable source exists")
         .accessibilityIdentifier("hf.demoTour.playerServiceProof")
         .accessibilityIdentifier("hf.demoTour.streamingSourceReadyProof")
+    }
+
+    private var cloudLibraryDownloadsProofSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSectionHeader(title: "Cloud Library + Downloads Proof", actionTitle: nil)
+                Text("HighFive now has a connected local library and offline asset architecture. Real cloud sync and media downloads remain provider-dependent and not connected yet.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Cloud Library Service", systemImage: "bookmark.fill")
+                    HFRouteChip(title: "Offline Asset Service", systemImage: "arrow.down.circle.fill")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Cloud Library and Downloads Proof, connected local library and offline asset architecture, provider dependent services not connected yet")
+        .accessibilityIdentifier("hf.demoTour.cloudLibraryProof")
+        .accessibilityIdentifier("hf.demoTour.offlineDownloadsProof")
     }
 
     private var runOfShowSection: some View {

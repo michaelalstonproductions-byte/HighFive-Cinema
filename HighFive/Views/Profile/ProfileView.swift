@@ -78,6 +78,7 @@ struct ProfileView: View {
                 functionalCoreSummarySection
                 catalogServiceSummarySection
                 playerServiceSummarySection
+                libraryDownloadsServiceSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -161,6 +162,7 @@ struct ProfileView: View {
                 functionalCoreSummarySection
                 catalogServiceSummarySection
                 playerServiceSummarySection
+                libraryDownloadsServiceSection
                 publicMomentumSummarySection
                 watchExportSummarySection
                 highFiveRoomsSection
@@ -764,6 +766,11 @@ struct ProfileView: View {
 
     private var playerServiceSummarySection: some View {
         HFProfilePlayerServiceSummarySection()
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var libraryDownloadsServiceSection: some View {
+        HFProfileLibraryDownloadsServiceSection()
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -4473,6 +4480,54 @@ private struct HFProfilePlayerServiceSummarySection: View {
         .accessibilityIdentifier("hf.player.profile.serviceSummary")
         .accessibilityIdentifier("hf.player.profile.readiness")
         .accessibilityIdentifier("hf.profile.playerServiceProof")
+    }
+}
+
+private struct HFProfileLibraryDownloadsServiceSection: View {
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+
+    var body: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "icloud.and.arrow.down.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: "Local Ready", accent: HFColors.gold)
+                        Text("Library + Downloads Services")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Cloud Library Service and Offline Asset Service are connected locally for \(streamingStore.activeViewingProfile.displayName).")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFConsumerMomentumRow(title: "Cloud Library Service", detail: "Local Ready", status: "Active", systemImage: "bookmark.fill")
+                        .accessibilityIdentifier("hf.profile.cloudLibraryProof")
+                    HFConsumerMomentumRow(title: "Saved List Sync", detail: "Not Connected Yet", status: "Future", systemImage: "icloud.slash.fill")
+                    HFConsumerMomentumRow(title: "Offline Asset Service", detail: "Local Ready", status: "Active", systemImage: "arrow.down.circle.fill")
+                        .accessibilityIdentifier("hf.profile.offlineAssetProof")
+                    HFConsumerMomentumRow(title: "Remote Download Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+                        .accessibilityIdentifier("hf.profile.downloadProviderStatus")
+                    HFConsumerMomentumRow(title: "Media storage", detail: "Not Connected Yet", status: "Future", systemImage: "tray")
+                    HFConsumerMomentumRow(title: "Privacy / Account Boundary", detail: "Ready", status: "Ready", systemImage: "person.crop.circle.badge.checkmark")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Library and Downloads Services, Cloud Library Service local ready, Offline Asset Service local ready, Remote Download Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.profile.libraryDownloadsService")
     }
 }
 

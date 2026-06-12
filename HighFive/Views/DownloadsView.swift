@@ -26,6 +26,11 @@ struct DownloadsView: View {
                 connectedStateSection
                 catalogDownloadsSection
                 playerContextSection
+                offlineAssetServiceSection
+                downloadQueueSection
+                offlineAssetRecordsSection
+                providerReadinessSection
+                playerSourceDependencySection
                 profileStateSection
                 offlineWatchHubSection
                 storageStatus
@@ -139,7 +144,7 @@ struct DownloadsView: View {
                         Text("Offline Capacity")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB saved")
+                        Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB planned")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.gold)
                     }
@@ -162,7 +167,7 @@ struct DownloadsView: View {
                 }
                 .frame(height: 7)
 
-                Text("Keep favorite titles ready for travel, commutes, and low-signal nights.")
+                Text("Local offline state is ready for travel planning. Media source connection is still required for real playback.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -251,10 +256,108 @@ struct DownloadsView: View {
         .accessibilityIdentifier("hf.player.downloads.context")
     }
 
+    private var offlineAssetServiceSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Offline Asset Service", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                ForEach(streamingStore.downloadReadinessRows, id: \.self) { row in
+                    HFConsumerMomentumRow(
+                        title: row,
+                        detail: row.contains("Source required") ? "Media source required before real download." : "Offline architecture readiness",
+                        status: row.contains("Not Connected Yet") || row.contains("Source required") || row.contains("Not Created Yet") ? "Future" : "Active",
+                        systemImage: row.contains("Not Connected Yet") || row.contains("Source required") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
+                    )
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Offline Asset Service, Local Offline State, catalog identity, player source dependency, Remote Download Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.downloads.offlineAssetService")
+        .accessibilityIdentifier("hf.services.offlineAssetService")
+        .accessibilityIdentifier("hf.services.downloadReadiness")
+    }
+
+    private var downloadQueueSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Download Queue", actionTitle: nil)
+
+            if streamingStore.downloadQueueItems.isEmpty {
+                HFInsightCard(
+                    title: "No queued offline assets yet.",
+                    message: "Mark a title offline from Movie Detail.",
+                    systemImage: "tray"
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            } else {
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.downloadQueueItems) { item in
+                        HFConsumerMomentumRow(title: item.title, detail: item.reason, status: item.status, systemImage: "arrow.down.circle.fill")
+                            .accessibilityIdentifier("hf.downloads.queueItem")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Download Queue, local offline asset queue")
+        .accessibilityIdentifier("hf.downloads.queue")
+        .accessibilityIdentifier("hf.services.downloadQueue")
+    }
+
+    private var offlineAssetRecordsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Offline Asset Records", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                if streamingStore.offlineAssetRecords.isEmpty {
+                    HFConsumerMomentumRow(title: "Local Offline State", detail: "No local offline records for this profile yet.", status: "Ready", systemImage: "tray")
+                } else {
+                    ForEach(streamingStore.offlineAssetRecords) { record in
+                        HFConsumerMomentumRow(title: record.title, detail: record.detail, status: record.status, systemImage: "rectangle.stack.fill")
+                    }
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Offline Asset Records, Local Offline State")
+        .accessibilityIdentifier("hf.downloads.offlineAssetRecords")
+    }
+
+    private var providerReadinessSection: some View {
+        HFInsightCard(
+            title: "Remote Download Provider",
+            message: "Not Connected Yet",
+            systemImage: "network.slash"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Remote Download Provider, Not Connected Yet")
+        .accessibilityIdentifier("hf.downloads.providerReadiness")
+        .accessibilityIdentifier("hf.services.offlineProviderReady")
+    }
+
+    private var playerSourceDependencySection: some View {
+        HFInsightCard(
+            title: "Media source required before real download.",
+            message: "Download eligibility follows the player source resolver. Local shared state active. Profile-aware sync ready.",
+            systemImage: "play.slash.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Media source required before real download, player source dependency")
+        .accessibilityIdentifier("hf.downloads.playerSourceDependency")
+        .accessibilityIdentifier("hf.downloads.mediaSourceRequired")
+        .accessibilityIdentifier("hf.player.downloads.boundary")
+        .accessibilityIdentifier("hf.downloads.profileSyncBoundary")
+    }
+
     private var profileStateSection: some View {
         HFInsightCard(
             title: "Offline for \(streamingStore.activeViewingProfile.displayName)",
-            message: "Downloaded state follows your active local profile.",
+            message: "Downloaded state follows your active local profile. Local shared state active. Profile-aware sync ready.",
             systemImage: streamingStore.activeViewingProfile.avatarSymbol
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)

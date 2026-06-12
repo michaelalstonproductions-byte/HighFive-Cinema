@@ -42,6 +42,7 @@ struct MovieDetailView: View {
                 publicMomentumSection
                 catalogIdentitySection
                 playerServiceSection
+                offlineEligibilitySection
                 titlePathSection
                 watchToReleaseSection
                 relatedSection
@@ -155,14 +156,18 @@ struct MovieDetailView: View {
                             .accessibilityLabel(streamingStore.isSaved(movie) ? "Remove from My List" : "Add to My List")
 
                             HFButton(
-                                streamingStore.isDownloaded(movie) ? "Downloaded" : "Download",
+                                streamingStore.isDownloaded(movie) ? "Remove Offline" : "Mark Offline",
                                 systemImage: streamingStore.isDownloaded(movie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
                                 style: .secondary
                             ) {
-                                streamingStore.toggleDownload(movie)
+                                if streamingStore.isDownloaded(movie) {
+                                    streamingStore.removeOfflineAsset(for: movie)
+                                } else {
+                                    streamingStore.queueOfflineAsset(for: movie)
+                                }
                             }
                             .accessibilityIdentifier("hf.functional.movie.downloadToggle")
-                            .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Downloaded and available offline" : "Download for offline-ready viewing")
+                            .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Remove local offline state" : "Queue local offline state")
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
@@ -420,6 +425,48 @@ struct MovieDetailView: View {
         .accessibilityIdentifier("hf.player.catalog.sourceConnection")
         .accessibilityIdentifier("hf.player.catalog.movieID")
         .accessibilityIdentifier("hf.player.catalog.title")
+    }
+
+    private var offlineEligibilitySection: some View {
+        let eligibility = streamingStore.offlineEligibility(for: catalogMovie)
+        return HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 44, height: 44)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Offline Eligibility")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(eligibility.reason)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFConsumerMomentumRow(title: "Download Eligibility", detail: eligibility.reason, status: eligibility.statusLabel, systemImage: "checkmark.circle.fill")
+                        .accessibilityIdentifier("hf.download.movieDetail.eligibility")
+                    HFConsumerMomentumRow(title: "Local offline state", detail: streamingStore.isDownloaded(catalogMovie) ? "Active for \(streamingStore.activeViewingProfile.displayName)" : "Ready to queue local state", status: streamingStore.isDownloaded(catalogMovie) ? "Active" : "Ready", systemImage: "arrow.down.circle.fill")
+                        .accessibilityIdentifier("hf.download.movieDetail.offlineStatus")
+                    HFConsumerMomentumRow(title: "Remote Download Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
+                        .accessibilityIdentifier("hf.download.movieDetail.providerStatus")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Offline Eligibility, Local Offline State, Media source required before real download, Remote Download Provider Not Connected Yet")
+        .accessibilityIdentifier("hf.download.movieDetail.queueAction")
     }
 
     private var watchToReleaseSection: some View {

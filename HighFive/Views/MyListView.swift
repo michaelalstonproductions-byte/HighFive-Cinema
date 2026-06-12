@@ -29,6 +29,9 @@ struct MyListView: View {
                 connectedStateSection
                 catalogLibrarySection
                 playerContextSection
+                cloudLibraryServiceSection
+                librarySyncReadinessSection
+                savedStateProofSection
                 profileStateSection
                 watchShelfSection
                 shelfMomentumSection
@@ -171,13 +174,62 @@ struct MyListView: View {
     private var profileStateSection: some View {
         HFInsightCard(
             title: "Saved for \(streamingStore.activeViewingProfile.displayName)",
-            message: "My List uses your active local profile.",
+            message: "My List uses your active local profile. Local shared state active. Profile-aware sync ready.",
             systemImage: streamingStore.activeViewingProfile.avatarSymbol
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Saved for \(streamingStore.activeViewingProfile.displayName), My List uses your active local profile")
         .accessibilityIdentifier("hf.account.library.profileState")
+        .accessibilityIdentifier("hf.library.profileSyncBoundary")
+    }
+
+    private var cloudLibraryServiceSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Cloud Library Service", actionTitle: nil)
+
+            VStack(spacing: HFSpacing.xs) {
+                ForEach(streamingStore.libraryReadinessRows, id: \.self) { row in
+                    HFConsumerMomentumRow(
+                        title: row,
+                        detail: row.contains("Not Connected Yet") ? "Cloud sync readiness only" : "Library architecture readiness",
+                        status: row.contains("Not Connected Yet") || row.contains("Future") ? "Future" : "Active",
+                        systemImage: row.contains("Not Connected Yet") ? "icloud.slash.fill" : "checkmark.circle.fill"
+                    )
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Cloud Library Service, saved list local, active profile local, catalog identity active, cloud sync Not Connected Yet")
+        .accessibilityIdentifier("hf.library.cloudLibraryService")
+        .accessibilityIdentifier("hf.services.cloudLibrary")
+        .accessibilityIdentifier("hf.services.cloudLibraryReadiness")
+    }
+
+    private var librarySyncReadinessSection: some View {
+        HFInsightCard(
+            title: "Library Sync Readiness",
+            message: "Your Library is local today and ready for cloud sync once account and service infrastructure are connected.",
+            systemImage: "icloud.and.arrow.up"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Library Sync Readiness, local today and ready for cloud sync once services are connected")
+        .accessibilityIdentifier("hf.library.syncReadiness")
+        .accessibilityIdentifier("hf.services.librarySync")
+    }
+
+    private var savedStateProofSection: some View {
+        HFInsightCard(
+            title: "Saved State Proof",
+            message: "\(streamingStore.savedMovies.count) saved titles resolve through catalog identity for \(streamingStore.activeViewingProfile.displayName).",
+            systemImage: "bookmark.fill"
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Saved State Proof, saved titles resolve through catalog identity")
+        .accessibilityIdentifier("hf.library.savedStateProof")
     }
 
     private var shelfMomentumSection: some View {
