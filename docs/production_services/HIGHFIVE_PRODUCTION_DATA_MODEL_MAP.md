@@ -222,13 +222,25 @@ This document maps current local app concepts to future production models. It is
 
 - Purpose: Access rights for premium catalog and playback.
 - Current local source: None.
-- Production fields: `userId`, `productId`, `entitlementState`, `expiresAt`, `source`, `updatedAt`.
-- Relationships: User, PlaybackSource.
+- Production fields: `id`, `userId`, `entitlementKey`, `entitlementState`, `source`, `startsAt`, `expiresAt`, `lastValidatedAt`, `validationStatus`, `revokedAt`, `environment`, `updatedAt`.
+- Relationships: User, EntitlementRecord, PlaybackSource, OfflineAsset.
 - Privacy level: High.
 - Sync rules: Server authoritative after payment validation.
 - Offline behavior: Cached entitlement with expiry.
-- Needed API endpoints: get entitlements, refresh entitlement.
+- Needed API endpoints: get entitlements, refresh entitlement, validate server entitlements.
 - Future owner service: PaymentEntitlementService.
+
+## EntitlementRecord
+
+- Purpose: Server-authoritative access record created after payment provider validation.
+- Current local source: None.
+- Production fields: `id`, `userId`, `entitlementKey`, `source`, `state`, `startsAt`, `expiresAt`, `lastValidatedAt`, `validationStatus`, `revokedAt`, `refundReference`, `environment`, `updatedAt`.
+- Relationships: User, SubscriptionEntitlement, LibraryItem, PlaybackSource, OfflineAsset.
+- Privacy level: High.
+- Sync rules: BackendServiceLayer is authoritative; device state is validation-required until server validation succeeds.
+- Offline behavior: Cached access can be used only within approved expiry/grace policy; refund, revocation, or expired state denies production paid access.
+- Needed API endpoints: list entitlement records, validate entitlement, handle refund/revocation, refresh expiry.
+- Future owner service: PaymentEntitlementService and BackendServiceLayer.
 
 ## NotificationPreference
 

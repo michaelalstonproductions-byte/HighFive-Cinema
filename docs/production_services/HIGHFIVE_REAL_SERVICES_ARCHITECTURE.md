@@ -158,7 +158,21 @@ Analytics provider
 | App Store dependency | Sign in with Apple review if third-party account sign-in is offered |
 | Privacy dependency | Account deletion and export paths before live account launch |
 
-## 10. Known Limitations
+## 10. Payment Provider Architecture Summary
+
+| Area | Decision |
+| --- | --- |
+| Preferred provider | RevenueCat + StoreKit |
+| Fallback provider | Stripe web only where Apple rules allow |
+| App boundary | `PaymentEntitlementService` |
+| Provider adapter | `StoreProviderAdapter` |
+| Backend requirement | BackendServiceLayer-owned entitlement records and server entitlement validation |
+| Auth requirement | AuthService and HighFive-owned user ID before production paid access |
+| Local fallback | Local preview remains default until live payments are explicitly approved |
+| App Store dependency | Product configuration, restore architecture, review notes, and paid access policy |
+| Privacy dependency | Payment details stay with provider; HighFive stores entitlement state only |
+
+## 11. Known Limitations
 
 - No real backend exists yet.
 - No provider has been selected.

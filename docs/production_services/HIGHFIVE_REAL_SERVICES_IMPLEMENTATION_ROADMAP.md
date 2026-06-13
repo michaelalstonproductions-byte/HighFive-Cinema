@@ -150,12 +150,21 @@
 
 ## #042.0A — Payment Provider Integration
 
-- Purpose: Add RevenueCat + StoreKit or Stripe web entitlement bridge after payment policy approval.
-- Files likely touched: PaymentEntitlementService adapter, Profile, playback entitlement gate.
-- Services introduced: Selected payment/entitlement provider in staging.
-- Tests/evidence: Restore, entitlement refresh, expired access, refund/revocation, privacy review.
-- Rollback plan: Disable paid gates and keep free local mode in Debug.
-- User decisions required: RevenueCat + StoreKit vs Stripe web, product tiers, Apple rules review.
+- Purpose: Lock RevenueCat + StoreKit preferred architecture, Stripe web fallback limits, entitlement records, validation policy, restore architecture, and service boundaries before payment implementation.
+- Files likely touched: production service docs only.
+- Services introduced: None.
+- Tests/evidence: Required-term verification, protected scan, blocked implementation scan, docs credential assignment scan.
+- Rollback plan: Revert docs only; local preview remains the default.
+- User decisions required: RevenueCat + StoreKit implementation timing, product tiers, App Store product configuration, Apple rules review, backend validation owner.
+
+## #042.0B — Payment Provider Architecture Evidence Lock
+
+- Purpose: Evidence-lock the payment provider architecture and source scans.
+- Files likely touched: verifier and report scripts only.
+- Services introduced: None.
+- Tests/evidence: Architecture source verifier, protected scan, blocked implementation scan, docs credential assignment scan.
+- Rollback plan: Revert evidence scripts only.
+- User decisions required: Confirm architecture completeness before live payment work.
 
 ## #043.0A — Cloud Library Sync
 

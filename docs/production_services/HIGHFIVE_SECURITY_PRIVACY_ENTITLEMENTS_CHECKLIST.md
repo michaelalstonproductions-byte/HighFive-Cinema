@@ -44,7 +44,17 @@
 - Sign in with Apple requirements must be reviewed before third-party auth ships.
 - Raw credentials, refresh tokens, passwords, service-role credentials, and provider secrets must never be stored in app UI state.
 
-## 5. Backend Security
+## 5. Payment Provider Requirements
+
+- RevenueCat + StoreKit is the preferred payment approach for iOS paid digital access.
+- Stripe web is a fallback only where Apple rules allow and after App Store review.
+- No RevenueCat SDK/config, StoreKit implementation, Stripe SDK/config, purchase UI, product IDs, URLs, tokens, secrets, API keys, or provider config are committed during #042.0A.
+- PaymentEntitlementService must depend on AuthService, BackendServiceLayer, and HighFive-owned user ID records before production access is enforced.
+- StoreProviderAdapter must isolate provider state from SwiftUI screens.
+- Payment details remain with the payment provider; HighFive stores entitlement records, validation state, expiry, refund/revocation state, and audit references only.
+- Restore purchase architecture, receipt / transaction validation, server entitlement validation, refund/revocation handling, expired entitlement handling, and rollback policy must be reviewed before paid access ships.
+
+## 6. Backend Security
 
 - Use authorization checks for every user-scoped resource.
 - Use row-level or equivalent resource-level access rules.
@@ -55,7 +65,7 @@
 - Add rate limits and abuse prevention before public write endpoints.
 - Keep admin tooling separate from consumer UI.
 
-## 6. Production Readiness Gates
+## 7. Production Readiness Gates
 
 Before adding each live system:
 

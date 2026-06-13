@@ -176,14 +176,38 @@ privacy:
 methods:
   fetchEntitlements(userId) -> [SubscriptionEntitlement]
   refreshEntitlements() -> [SubscriptionEntitlement]
+  currentAccessState(userId, movieId, accessKind) -> PaymentAccessState
+  validateServerEntitlements(userId) -> ServerEntitlementValidationResult
 returns:
   access state for playback and premium features
 errors:
-  unavailable, validationFailed, unauthorized
+  unavailable, validationFailed, unauthorized, entitlementExpired, restoreRequired, providerNotConnected
 caching/offline:
   cache entitlement with expiry
 privacy:
   payment details stay with payment provider; app stores entitlement state only
+provider boundary:
+  RevenueCat + StoreKit is preferred; Stripe web is fallback only where Apple rules allow; implementation waits for #042 approval
+```
+
+### StoreProviderAdapter
+
+```text
+methods:
+  currentProviderState(userId) -> StoreProviderState
+  fetchAvailableProducts(userId) -> StoreProductReadiness
+  refreshCustomerState(userId) -> StoreCustomerState
+  restoreCustomerPurchases(userId) -> StoreRestoreResult
+returns:
+  provider readiness, validation-required state, restore-required state, and entitlement mapping input
+errors:
+  providerNotConnected, providerUnavailable, purchaseDenied, validationRequired, entitlementExpired
+caching/offline:
+  local preview only until provider is explicitly connected
+privacy:
+  app never stores raw payment details or provider secrets
+provider boundary:
+  isolates RevenueCat + StoreKit or approved Stripe web state from SwiftUI screens
 ```
 
 ### NotificationService
