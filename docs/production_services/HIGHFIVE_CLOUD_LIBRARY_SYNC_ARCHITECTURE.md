@@ -20,6 +20,7 @@ The architecture must support:
 - HighFive-owned user ID dependency for every library record.
 - MovieCatalogService dependency for canonical title identity.
 - PaymentEntitlementService boundary dependency for access-aware library context.
+- PlaybackService dependency for playback progress source context.
 - DownloadService boundary for local download state, not media file sync.
 - Local preview fallback until live sync is explicitly approved.
 
@@ -50,6 +51,7 @@ LibraryService
   -> BackendServiceLayer
   -> MovieCatalogService
   -> PaymentEntitlementService
+  -> PlaybackService
   -> DownloadService boundary
 ```
 
@@ -62,6 +64,7 @@ Rules:
 - AuthService owns session state and the HighFive-owned user ID required for production sync.
 - MovieCatalogService owns canonical movie identity and catalog availability used by library records.
 - PaymentEntitlementService remains the paid-access authority. LibraryService may store and display account context but must not grant paid playback or downloads.
+- PlaybackService remains the playback-state source for watch progress and Continue Watching inputs; Cloud Library Sync stores synced metadata only.
 - DownloadService owns local download state and offline media policy; Cloud Library Sync does not sync media files.
 
 ## 4. LibraryService Contract
@@ -87,6 +90,7 @@ Required behavior:
 - Depend on BackendServiceLayer for account-scoped library records.
 - Depend on MovieCatalogService for canonical movie IDs and metadata availability.
 - Depend on PaymentEntitlementService for access-aware context only; it must not duplicate entitlement decisions.
+- Depend on PlaybackService for playback progress and Continue Watching source context only; it must not own playback implementation.
 - Respect DownloadService boundary by syncing only metadata and local download state references, not media files.
 - Preserve local preview fallback for simulator demos and rollback.
 - Support optimistic local update state, offline queue state, sync retry state, stale data state, delete pending state, and conflict resolution state.
@@ -417,6 +421,7 @@ What Waits:
 - HighFive-owned user ID dependency defined.
 - MovieCatalogService dependency defined.
 - PaymentEntitlementService boundary dependency defined.
+- PlaybackService dependency defined.
 - saved titles sync model defined.
 - watch progress sync model defined.
 - continue watching sync model defined.
