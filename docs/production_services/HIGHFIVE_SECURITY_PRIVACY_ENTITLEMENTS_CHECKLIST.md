@@ -54,7 +54,16 @@
 - Payment details remain with the payment provider; HighFive stores entitlement records, validation state, expiry, refund/revocation state, and audit references only.
 - Restore purchase architecture, receipt / transaction validation, server entitlement validation, refund/revocation handling, expired entitlement handling, and rollback policy must be reviewed before paid access ships.
 
-## 6. Backend Security
+## 6. Cloud Library Sync Requirements
+
+- Supabase hybrid through BackendServiceLayer is the preferred cloud library backend path; Custom API is the fallback.
+- No Supabase SDK/config, CloudKit implementation, backend URLs, URLSession, tokens, secrets, API keys, provider config, file storage, real cloud sync, real media downloads, or app code are added during #043.0A.
+- LibraryService must depend on AuthService, BackendServiceLayer, MovieCatalogService, PaymentEntitlementService, and HighFive-owned user ID records before production sync is enforced.
+- CloudLibraryProviderAdapter must isolate provider sync state from SwiftUI screens.
+- Saved titles, watch progress, continue watching, favorites / My List, viewing history, and download state metadata are high privacy.
+- Offline queue, conflict resolution, optimistic local update, sync retry, stale data, unsave, deletion, and account deletion behavior must be reviewed before live cloud sync ships.
+
+## 7. Backend Security
 
 - Use authorization checks for every user-scoped resource.
 - Use row-level or equivalent resource-level access rules.
@@ -65,7 +74,7 @@
 - Add rate limits and abuse prevention before public write endpoints.
 - Keep admin tooling separate from consumer UI.
 
-## 7. Production Readiness Gates
+## 8. Production Readiness Gates
 
 Before adding each live system:
 

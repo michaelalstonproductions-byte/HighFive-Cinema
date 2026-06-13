@@ -75,15 +75,42 @@ privacy:
 methods:
   fetchLibrary(userId) -> [LibraryItem]
   setSaved(movieId, saved) -> LibraryItem
+  setFavorite(movieId, favorite) -> LibraryItem
   updateProgress(movieId, progress) -> LibraryItem
+  fetchContinueWatching(userId) -> [ContinueWatchingItem]
+  enqueueOfflineLibraryMutation(mutation) -> OfflineQueueState
+  resolveConflict(recordId, resolution) -> LibraryConflictResult
 returns:
   account-scoped library items
 errors:
-  unauthorized, conflict, unavailable
+  unauthorized, conflict, unavailable, stale, retryRequired, accountRequired, syncDenied
 caching/offline:
   optimistic local state with reconciliation
 privacy:
   viewing history is sensitive
+provider boundary:
+  Supabase hybrid through BackendServiceLayer is preferred; Custom API is fallback; CloudLibraryProviderAdapter waits for #043 approval
+```
+
+### CloudLibraryProviderAdapter
+
+```text
+methods:
+  currentProviderState(userId) -> CloudLibraryProviderState
+  fetchRecords(userId, cursor) -> CloudLibraryFetchResult
+  pushMutation(userId, mutation) -> CloudLibraryMutationResult
+  pullChanges(userId, sinceToken) -> CloudLibraryDeltaResult
+  resolveConflict(userId, conflict) -> CloudLibraryConflictResult
+returns:
+  provider readiness, sync queued, syncing, synced, stale, conflict detected, retry required, account required, and provider unavailable state
+errors:
+  providerNotConnected, providerUnavailable, syncDenied, conflictDetected, stale, retryRequired
+caching/offline:
+  metadata-only offline queue; no file storage or media downloads
+privacy:
+  saved titles, watch progress, continue watching, favorites, and download state metadata are high privacy
+provider boundary:
+  isolates Supabase hybrid or Custom API sync behavior from SwiftUI screens
 ```
 
 ### PlaybackService

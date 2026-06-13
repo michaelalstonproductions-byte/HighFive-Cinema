@@ -49,6 +49,7 @@ PlaybackService
 LibraryService
   -> AuthService
   -> BackendServiceLayer
+  -> CloudLibraryProviderAdapter for saved titles, watch progress, continue watching, and My List sync later
   -> MovieCatalogService
 
 DownloadService

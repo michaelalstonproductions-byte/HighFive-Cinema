@@ -102,13 +102,25 @@ This document maps current local app concepts to future production models. It is
 
 - Purpose: Saved/progress/downloaded state for a user and movie.
 - Current local source: `HFStreamingStore` saved and downloaded identifiers.
-- Production fields: `userId`, `movieId`, `saved`, `progress`, `downloaded`, `lastWatchedAt`, `updatedAt`.
-- Relationships: Joins User and Movie.
+- Production fields: `id`, `userId`, `movieId`, `saved`, `favorite`, `watchProgress`, `continueWatchingEligible`, `lastWatchedAt`, `localDownloadState`, `syncState`, `version`, `updatedAt`, `deletedAt`.
+- Relationships: Joins User and Movie; references MovieCatalogService catalog identity and PaymentEntitlementService access context.
 - Privacy level: High.
 - Sync rules: User-scoped server authoritative with local optimistic updates.
-- Offline behavior: Queue save/progress changes and reconcile later.
-- Needed API endpoints: list library, update saved state, update progress.
+- Offline behavior: Queue save, unsave, favorite, progress, and continue watching metadata changes and reconcile later.
+- Needed API endpoints: list library, update saved state, update favorite state, update progress, fetch continue watching, resolve conflict.
 - Future owner service: LibraryService.
+
+## CloudLibrarySyncMutation
+
+- Purpose: Metadata-only offline queue item for library sync.
+- Current local source: None.
+- Production fields: `id`, `userId`, `movieId`, `mutationType`, `payloadClass`, `baseVersion`, `createdAt`, `retryAfter`, `attemptCount`, `syncState`.
+- Relationships: User, LibraryItem, Movie.
+- Privacy level: High.
+- Sync rules: Replayed only through LibraryService and BackendServiceLayer after AuthService validates account state.
+- Offline behavior: Local queue only; no media files, file storage provider, backend URLs, credentials, or raw provider payloads.
+- Needed API endpoints: push mutation, pull changes, resolve conflict.
+- Future owner service: LibraryService and CloudLibraryProviderAdapter.
 
 ## OfflineAsset
 

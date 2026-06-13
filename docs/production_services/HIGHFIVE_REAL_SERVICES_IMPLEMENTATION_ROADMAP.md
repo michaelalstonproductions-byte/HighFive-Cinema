@@ -168,12 +168,21 @@
 
 ## #043.0A — Cloud Library Sync
 
-- Purpose: Sync saved titles, progress, and profile-scoped library state across devices.
-- Files likely touched: LibraryService adapter, HFStreamingStore bridge, Library, Movie Detail.
-- Services introduced: User-scoped library backend.
-- Tests/evidence: Save/unsave, progress sync, conflict handling, offline queue, privacy review.
-- Rollback plan: Switch configuration back to local-only library mode.
-- User decisions required: Account requirement, viewing-history retention, cross-device sync scope.
+- Purpose: Lock Cloud Library Sync architecture for saved titles, watch progress, continue watching, My List/favorites, offline queue, conflict resolution, privacy, and rollback before implementation.
+- Files likely touched: production service docs only.
+- Services introduced: None.
+- Tests/evidence: Required-term verification, protected scan, blocked implementation scan, docs credential assignment scan.
+- Rollback plan: Revert docs only; local preview remains the default.
+- User decisions required: Supabase hybrid versus Custom API timing, viewing-history retention, account deletion policy, cross-device sync scope.
+
+## #043.0B — Cloud Library Sync Architecture Evidence Lock
+
+- Purpose: Evidence-lock the Cloud Library Sync architecture and source scans.
+- Files likely touched: verifier and report scripts only.
+- Services introduced: None.
+- Tests/evidence: Architecture source verifier, protected scan, blocked implementation scan, docs credential assignment scan.
+- Rollback plan: Revert evidence scripts only.
+- User decisions required: Confirm architecture completeness before live cloud library sync work.
 
 ## #044.0A — Real Downloads
 

@@ -172,7 +172,22 @@ Analytics provider
 | App Store dependency | Product configuration, restore architecture, review notes, and paid access policy |
 | Privacy dependency | Payment details stay with provider; HighFive stores entitlement state only |
 
-## 11. Known Limitations
+## 11. Cloud Library Sync Architecture Summary
+
+| Area | Decision |
+| --- | --- |
+| Preferred backend path | Supabase hybrid through BackendServiceLayer |
+| Fallback backend path | Custom API |
+| App boundary | `LibraryService` |
+| Provider adapter | `CloudLibraryProviderAdapter` |
+| Backend requirement | Account-scoped library records, conflict metadata, retry state, stale state, and account deletion handling |
+| Auth requirement | AuthService and HighFive-owned user ID before production sync |
+| Catalog dependency | MovieCatalogService owns canonical movie identity |
+| Entitlement dependency | PaymentEntitlementService remains paid-access authority |
+| Local fallback | Local preview remains default until live cloud library sync is explicitly approved |
+| Privacy dependency | Viewing history, watch progress, saved titles, favorites, and download metadata require privacy review |
+
+## 12. Known Limitations
 
 - No real backend exists yet.
 - No provider has been selected.
