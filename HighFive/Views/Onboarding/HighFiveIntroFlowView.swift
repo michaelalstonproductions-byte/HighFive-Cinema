@@ -72,10 +72,18 @@ struct HighFiveIntroFlowView: View {
 }
 
 private enum HighFiveLocalVideoResolver {
+    private static let resourceSubdirectories: [String?] = [
+        nil,
+        "App/Resources/Intro",
+        "App/Resources/PreviewClips",
+        "Resources/Intro",
+        "PreviewClips"
+    ]
+
     static var introURL: URL? {
         localVideoURL(named: [
-            "timeline1",
             "Timeline1",
+            "timeline1",
             "HigherKey",
             "higherkey",
             "HighFive",
@@ -90,8 +98,8 @@ private enum HighFiveLocalVideoResolver {
 
     static var timelineURL: URL? {
         localVideoURL(named: [
-            "timeline1",
             "Timeline1",
+            "timeline1",
             "timeline_1",
             "Timeline_1",
             "higherkey_timeline1",
@@ -102,8 +110,17 @@ private enum HighFiveLocalVideoResolver {
     private static func localVideoURL(named names: [String]) -> URL? {
         for name in names {
             for extensionName in ["mp4", "mov", "m4v"] {
-                if let url = Bundle.main.url(forResource: name, withExtension: extensionName) {
-                    return url
+                for subdirectory in resourceSubdirectories {
+                    let url: URL?
+                    if let subdirectory {
+                        url = Bundle.main.url(forResource: name, withExtension: extensionName, subdirectory: subdirectory)
+                    } else {
+                        url = Bundle.main.url(forResource: name, withExtension: extensionName)
+                    }
+
+                    if let url {
+                        return url
+                    }
                 }
             }
         }
@@ -364,7 +381,7 @@ struct HighFiveTimelinePracticeView: View {
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
 
-                    Text("Scrub, pause, and preview before entering HighFive.")
+                    Text("Scrub, pause, and test the intro video after Tilt + Peek training.")
                         .font(HFTypography.body)
                         .foregroundStyle(.white.opacity(0.74))
                         .multilineTextAlignment(.center)
@@ -444,7 +461,7 @@ struct HighFiveTimelinePracticeView: View {
             .foregroundStyle(HFColors.textSecondary)
 
             if localVideoURL == nil {
-                Text("timeline1 local video asset not found. Showing local timeline practice simulation.")
+                Text("Timeline1 intro video asset not found. Showing local timeline practice simulation.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .multilineTextAlignment(.center)
