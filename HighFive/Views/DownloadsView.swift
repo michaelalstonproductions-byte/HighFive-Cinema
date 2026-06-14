@@ -23,8 +23,18 @@ struct DownloadsView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 downloadHero
-                connectedStateSection
                 backendStatusSection
+
+                if downloads.isEmpty {
+                    emptyState
+                } else {
+                    downloadList
+                }
+
+                findMoreButton
+                storageStatus
+                offlineWatchHubSection
+                connectedStateSection
                 catalogDownloadsSection
                 playerContextSection
                 offlineAssetServiceSection
@@ -35,17 +45,7 @@ struct DownloadsView: View {
                 exportDeliveryBoundarySection
                 entitlementBoundarySection
                 profileStateSection
-                offlineWatchHubSection
-                storageStatus
                 offlinePlan
-
-                if downloads.isEmpty {
-                    emptyState
-                } else {
-                    downloadList
-                }
-
-                findMoreButton
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -239,7 +239,7 @@ struct DownloadsView: View {
     private var connectedStateSection: some View {
         HFInsightCard(
             title: "Connected Offline State",
-            message: "Downloaded titles update from Movie Detail.",
+            message: "Local offline state updates from Movie Detail.",
             systemImage: "point.3.connected.trianglepath.dotted"
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -249,7 +249,7 @@ struct DownloadsView: View {
     private var backendStatusSection: some View {
         HFInsightCard(
             title: "Offline Downloads Backend",
-            message: "\(streamingStore.downloadsBackendStatus.statusLabel). \(streamingStore.downloadsBackendStatus.detail)",
+            message: "\(streamingStore.downloadsBackendStatus.statusLabel). Local offline state only; no media download provider is active.",
             systemImage: streamingStore.downloadsBackendStatus.systemImage
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -408,7 +408,7 @@ struct DownloadsView: View {
     private var profileStateSection: some View {
         HFInsightCard(
             title: "Offline for \(streamingStore.activeViewingProfile.displayName)",
-            message: "Downloaded state follows your active local profile. Local shared state active. Profile-aware sync ready.",
+            message: "Local offline state follows your active profile. Sync is not connected yet.",
             systemImage: streamingStore.activeViewingProfile.avatarSymbol
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -436,7 +436,7 @@ struct DownloadsView: View {
 
     private var downloadList: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Available Offline", actionTitle: nil)
+            HFSectionHeader(title: "Local Offline Shelf", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(downloads) { movie in
@@ -488,9 +488,9 @@ struct DownloadsView: View {
     private var emptyState: some View {
         HFEmptyState(
             title: "No Offline Titles Yet",
-            message: "Download a title from the available slate and it will appear here.",
+            message: "Mark a title offline from Movie Detail and it will appear here as local preview state.",
             systemImage: "arrow.down.circle",
-            actionTitle: "Find More To Download",
+            actionTitle: "Find Offline Titles",
             action: onFindMore
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -502,7 +502,7 @@ struct DownloadsView: View {
         } label: {
             HStack(spacing: HFSpacing.xs) {
                 Image(systemName: "plus.circle.fill")
-                Text("Find More To Download")
+                Text("Find Offline Titles")
             }
             .font(HFTypography.smallAction)
             .foregroundStyle(.black)
@@ -512,7 +512,7 @@ struct DownloadsView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Find more to download")
+        .accessibilityLabel("Find offline titles")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 }

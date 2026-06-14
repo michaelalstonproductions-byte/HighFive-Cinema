@@ -40,16 +40,17 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
                 modeContextPanel
-                discoveryStudioPanel
-                catalogSearchSection
                 genreMoodFilters
-                discoveryMomentumSection
 
                 if mode == .search {
                     searchContent
                 } else {
                     UnifiedDiscoveryView()
                 }
+
+                discoveryStudioPanel
+                catalogSearchSection
+                discoveryMomentumSection
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -103,9 +104,11 @@ struct SearchView: View {
                     Text(mode == .search ? "Find a title fast" : "Browse the premium slate")
                         .font(HFTypography.cardTitle)
                         .foregroundStyle(HFColors.textPrimary)
-                    Text(mode == .search ? "Search local titles, genres, originals, and offline-ready movies." : "Discover originals, coming-soon stories, saved picks, and continue-watching paths.")
+                    Text(mode == .search ? "Local results, clear filters, and one-tap title paths." : "Originals, saved picks, and continue-watching paths.")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.86)
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: HFSpacing.xs) {

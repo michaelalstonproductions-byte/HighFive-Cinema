@@ -26,18 +26,7 @@ struct MyListView: View {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 header
                 libraryShelfHero
-                connectedStateSection
                 backendStatusSection
-                catalogLibrarySection
-                playerContextSection
-                cloudLibraryServiceSection
-                librarySyncReadinessSection
-                exportDeliveryBoundarySection
-                entitlementBoundarySection
-                savedStateProofSection
-                profileStateSection
-                watchShelfSection
-                shelfMomentumSection
                 filterChips
 
                 if savedMovies.isEmpty {
@@ -53,6 +42,18 @@ struct MyListView: View {
                     savedSummary
                     savedGrid
                 }
+
+                watchShelfSection
+                connectedStateSection
+                catalogLibrarySection
+                playerContextSection
+                cloudLibraryServiceSection
+                librarySyncReadinessSection
+                exportDeliveryBoundarySection
+                entitlementBoundarySection
+                savedStateProofSection
+                profileStateSection
+                shelfMomentumSection
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -164,7 +165,7 @@ struct MyListView: View {
     private var backendStatusSection: some View {
         HFInsightCard(
             title: "Cloud Library Backend",
-            message: "\(streamingStore.libraryBackendStatus.statusLabel). \(streamingStore.libraryBackendStatus.detail)",
+            message: "\(streamingStore.libraryBackendStatus.statusLabel). Local saved state stays available on this phone.",
             systemImage: streamingStore.libraryBackendStatus.systemImage
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)

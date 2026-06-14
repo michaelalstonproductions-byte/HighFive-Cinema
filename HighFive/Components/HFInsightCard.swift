@@ -7,11 +7,11 @@ struct HFInsightCard: View {
 
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(HFColors.gold)
-                    .frame(width: 46, height: 46)
+                    .frame(width: 40, height: 40)
                     .background(HFColors.gold.opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
@@ -24,12 +24,14 @@ struct HFInsightCard: View {
                     Text(message)
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.86)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
             }
-            .padding(HFSpacing.md)
+            .padding(HFSpacing.sm)
         }
     }
 }

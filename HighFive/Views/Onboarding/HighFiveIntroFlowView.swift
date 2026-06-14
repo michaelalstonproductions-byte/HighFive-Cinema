@@ -148,7 +148,7 @@ private struct HighFiveCinematicIntroView: View {
             onPrimary: onNext,
             onSecondary: onSkip
         ) {
-            VStack(spacing: 24) {
+            VStack(spacing: 18) {
                 ZStack {
                     if let localVideoURL {
                         VideoPlayer(player: player)
@@ -203,10 +203,12 @@ private struct HighFiveCinematicIntroView: View {
                 .accessibilityIdentifier("hf.intro.cinematic")
 
                 if localVideoURL == nil {
-                    Text("Local intro video asset not found. Showing cinematic local fallback.")
+                    Text("Local intro video not found. Cinematic preview is active.")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
                         .padding(.horizontal, 34)
                 }
             }
@@ -272,32 +274,15 @@ struct HighFiveTrainingControlsView: View {
             onPrimary: onNext,
             onSecondary: nil
         ) {
-            VStack(spacing: 28) {
+            VStack(spacing: 20) {
                 tiltPeekDiagram
                     .accessibilityIdentifier("hf.training.diagram")
 
-                VStack(spacing: 10) {
-                    Text("Tilt to move")
-                        .font(.system(size: 30, weight: .black, design: .default))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
+                VStack(spacing: 8) {
+                    HighFiveTrainingStepPill(number: "1", title: "Tilt to move", subtitle: "Shift your view")
                         .accessibilityIdentifier("hf.training.tiltToMove")
-
-                    Text("Shift your view")
-                        .font(.system(size: 17, weight: .semibold, design: .default))
-                        .foregroundStyle(HFColors.gold)
-                        .multilineTextAlignment(.center)
-
-                    Text("Peek to explore")
-                        .font(.system(size: 26, weight: .black, design: .default))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
+                    HighFiveTrainingStepPill(number: "2", title: "Peek to explore", subtitle: "Reveal what's around you")
                         .accessibilityIdentifier("hf.training.peekToExplore")
-
-                    Text("Reveal what's around you")
-                        .font(.system(size: 16, weight: .medium, design: .default))
-                        .foregroundStyle(.white.opacity(0.72))
-                        .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 30)
             }
@@ -381,7 +366,7 @@ struct HighFiveTimelinePracticeView: View {
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
 
-                    Text("Scrub, pause, and test the intro video after Tilt + Peek training.")
+                    Text("Scrub, pause, and preview before entering HighFive.")
                         .font(HFTypography.body)
                         .foregroundStyle(.white.opacity(0.74))
                         .multilineTextAlignment(.center)
@@ -461,13 +446,51 @@ struct HighFiveTimelinePracticeView: View {
             .foregroundStyle(HFColors.textSecondary)
 
             if localVideoURL == nil {
-                Text("Timeline1 intro video asset not found. Showing local timeline practice simulation.")
+                Text("Timeline1 video not found. Local practice simulation is active.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
             }
         }
         .padding(.horizontal, 30)
+    }
+}
+
+private struct HighFiveTrainingStepPill: View {
+    let number: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(number)
+                .font(.system(size: 15, weight: .black, design: .default))
+                .foregroundStyle(.black)
+                .frame(width: 32, height: 32)
+                .background(HFColors.goldGradient)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 22, weight: .black, design: .default))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                Text(subtitle)
+                    .font(.system(size: 14, weight: .semibold, design: .default))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 64)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(HFColors.gold.opacity(0.22), lineWidth: 1))
     }
 }
 

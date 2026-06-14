@@ -31,9 +31,17 @@ struct HomeView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: HFSpacing.xl) {
                 header
+                heroSection
+                backendStatusSection
+                watchSectionHeader
+                ForEach(streamingStore.premiumHomeCatalogRails) { category in
+                    movieRail(category)
+                }
+                .accessibilityIdentifier("hf.consumer.home.posterRails")
+                goldDiscoveryRail
+                smartRecommendationsSection
                 homeCategoryPills
                 homePremiereMetrics
-                backendStatusSection
                 activeProfileSection
                 catalogConnectedSection
                 playerReadySection
@@ -42,30 +50,20 @@ struct HomeView: View {
                 launchSignalSection
                 exportDeliverySignalSection
                 entitlementSignalSection
-                heroSection
                 tonightFeatureSection
                 programmingPulseSection
                 premiereMomentumSection
                 watchFirstStorySection
                 homeStreamingMomentumSection
-                watchSectionHeader
-
-                ForEach(streamingStore.premiumHomeCatalogRails) { category in
-                    movieRail(category)
-                }
-                .accessibilityIdentifier("hf.consumer.home.posterRails")
-
-                goldDiscoveryRail
-                smartRecommendationsSection
             }
-            .padding(.top, HFSpacing.xxl)
+            .padding(.top, HFSpacing.xxl + 44)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.home.root")
         .accessibilityIdentifier("hf.home.screen")
         .safeAreaInset(edge: .top) {
             Color.clear
-                .frame(height: 4)
+                .frame(height: 24)
                 .accessibilityIdentifier("hf.safeArea.topProtected")
         }
         .safeAreaInset(edge: .bottom) {
@@ -184,7 +182,7 @@ struct HomeView: View {
     private var backendStatusSection: some View {
         HFInsightCard(
             title: streamingStore.backendStatus.displayTitle,
-            message: "\(streamingStore.backendStatus.detail) Account, Library, Downloads, Payments, Creator Studio, Social Kit, and VOD remain honest service adapters.",
+            message: "Local Mode is active. Backend services are visible, provider-ready, and not connected yet.",
             systemImage: streamingStore.backendStatus.systemImage
         )
         .padding(.horizontal, screenPadding)
@@ -463,7 +461,7 @@ struct HomeView: View {
             NavigationLink(value: heroMovie) {
                 ZStack(alignment: .bottomLeading) {
                     heroArtwork(heroMovie)
-                        .frame(height: HFResponsiveFit.heroImageHeight(width: screenWidth))
+                        .frame(height: HFResponsiveFit.isCompactPhone(width: screenWidth) ? 390 : 410)
                         .clipShape(RoundedRectangle(cornerRadius: HFResponsiveFit.heroCardCornerRadius(width: screenWidth), style: .continuous))
 
                     HFColors.cinematicGoldScrim
@@ -499,7 +497,7 @@ struct HomeView: View {
                             .kerning(1.6)
 
                         Text(heroMovie.title)
-                            .font(.system(size: HFResponsiveFit.isCompactPhone(width: screenWidth) ? 38 : 44, weight: .black, design: .default))
+                            .font(.system(size: HFResponsiveFit.isCompactPhone(width: screenWidth) ? 34 : 38, weight: .black, design: .default))
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.66)
@@ -576,7 +574,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, HFSpacing.lg)
             .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFResponsiveFit.heroContentBottomPadding(width: screenWidth))
+            .padding(.bottom, HFSpacing.xl)
         }
         .overlay(
             RoundedRectangle(cornerRadius: HFResponsiveFit.heroCardCornerRadius(width: screenWidth), style: .continuous)

@@ -264,7 +264,7 @@ struct MovieDetailView: View {
 
                 HStack(spacing: HFSpacing.xs) {
                     HFDetailSignalChip(title: movie.creatorName, systemImage: "building.2.fill")
-                    HFDetailSignalChip(title: streamingStore.isDownloaded(movie) ? "Offline-ready" : "Streaming", systemImage: streamingStore.isDownloaded(movie) ? "arrow.down.circle.fill" : "wifi")
+                    HFDetailSignalChip(title: streamingStore.isDownloaded(movie) ? "Local offline" : "Local preview", systemImage: streamingStore.isDownloaded(movie) ? "arrow.down.circle.fill" : "play.rectangle.fill")
                     if let progress = movie.progress {
                         HFDetailSignalChip(title: "\(Int(progress * 100))% watched", systemImage: "play.circle.fill")
                     }
@@ -331,7 +331,7 @@ struct MovieDetailView: View {
                 HFConsumerMomentumRow(title: "Watch Now ready", detail: "Start from the cinematic title page.", status: "Ready", systemImage: "play.fill")
                 HFConsumerMomentumRow(title: "Saved shelf ready", detail: streamingStore.isSaved(movie) ? "Already in My List." : "Save when this fits your night.", status: streamingStore.isSaved(movie) ? "Saved" : "Ready", systemImage: "bookmark.fill")
                 HFConsumerMomentumRow(title: "Related titles ready", detail: "More Like This keeps the decision path moving.", status: "Ready", systemImage: "rectangle.stack.fill")
-                HFConsumerMomentumRow(title: "Offline shelf", detail: streamingStore.isDownloaded(movie) ? "Available Offline appears in Downloads." : "Tap Download to mark this title offline-ready.", status: streamingStore.isDownloaded(movie) ? "Downloaded" : "Ready", systemImage: "arrow.down.circle.fill")
+                HFConsumerMomentumRow(title: "Offline shelf", detail: streamingStore.isDownloaded(movie) ? "Local offline state appears in Downloads." : "Mark this title offline-ready for local preview.", status: streamingStore.isDownloaded(movie) ? "Local" : "Ready", systemImage: "arrow.down.circle.fill")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }

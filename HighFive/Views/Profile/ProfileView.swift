@@ -74,6 +74,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 selectedProfilePanel
+                profileShortcutsSection
                 backendServicesSection
                 consumerSummarySection
                 accountProfileSection
@@ -507,9 +508,11 @@ struct ProfileView: View {
                         Text("Backend Services")
                             .font(HFTypography.section)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text(streamingStore.backendStatus.detail)
+                        Text("Local Mode and provider readiness stay visible without live service claims.")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.86)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
@@ -520,7 +523,7 @@ struct ProfileView: View {
                     ForEach(streamingStore.backendServiceStatuses) { service in
                         HFConsumerMomentumRow(
                             title: service.title,
-                            detail: service.detail,
+                            detail: conciseBackendDetail(service),
                             status: service.statusLabel,
                             systemImage: service.systemImage
                         )
@@ -536,6 +539,27 @@ struct ProfileView: View {
         .accessibilityIdentifier("hf.profile.backendServices")
         .accessibilityIdentifier("hf.backend.status")
         .accessibilityIdentifier("hf.backend.providerReady")
+    }
+
+    private func conciseBackendDetail(_ service: HFBackendServiceStatus) -> String {
+        switch service.id {
+        case "account":
+            return "Local profile fallback"
+        case "library":
+            return "Local saved state"
+        case "downloads":
+            return "Local offline state"
+        case "payments":
+            return "No live payment provider"
+        case "creator-studio":
+            return "Local Draft workspace"
+        case "social-kit":
+            return "No live posting"
+        case "vod-package":
+            return "No live VOD provider"
+        default:
+            return service.detail
+        }
     }
 
     private var creatorModeCard: some View {

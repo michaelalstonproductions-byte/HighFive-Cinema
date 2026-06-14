@@ -23,6 +23,7 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 focusTabs
+                localDraftActions
                 backendReadinessSection
 
                 switch selectedFocus {
@@ -40,7 +41,6 @@ struct CreatorStudioView: View {
                     socialMediaKitSection
                 }
 
-                localDraftActions
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
@@ -78,9 +78,11 @@ struct CreatorStudioView: View {
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
 
-                    Text("Local Draft workspace for creator packaging, social planning, and VOD readiness.")
+                    Text("Package the current title, review the social kit, and preview VOD readiness locally.")
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.86)
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: HFSpacing.xs) {
@@ -124,7 +126,7 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 sectionLead(
                     title: "Backend Readiness",
-                    detail: streamingStore.backendStatus.detail,
+                    detail: "Local Draft actions stay available while Creator, Social, and VOD providers remain Not Connected Yet.",
                     systemImage: "server.rack",
                     accent: HFColors.gold
                 )
