@@ -33,6 +33,7 @@ struct HomeView: View {
                 header
                 homeCategoryPills
                 homePremiereMetrics
+                backendStatusSection
                 activeProfileSection
                 catalogConnectedSection
                 playerReadySection
@@ -178,6 +179,24 @@ struct HomeView: View {
         .padding(.horizontal, screenPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Home summary, originals, in progress titles, and offline titles")
+    }
+
+    private var backendStatusSection: some View {
+        HFInsightCard(
+            title: streamingStore.backendStatus.displayTitle,
+            message: "\(streamingStore.backendStatus.detail) Account, Library, Downloads, Payments, Creator Studio, Social Kit, and VOD remain honest service adapters.",
+            systemImage: streamingStore.backendStatus.systemImage
+        )
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Backend status \(streamingStore.backendStatus.displayTitle), \(streamingStore.backendStatus.detail)")
+        .accessibilityIdentifier("hf.backend.status")
+        .accessibilityIdentifier("hf.backend.localMode")
+        .accessibilityIdentifier("hf.backend.notConnected")
+        .accessibilityIdentifier("hf.backend.configured")
+        .accessibilityIdentifier("hf.backend.credentialsMissing")
+        .accessibilityIdentifier("hf.backend.providerReady")
+        .accessibilityIdentifier("hf.home.backendStatus")
     }
 
     private var activeProfileSection: some View {

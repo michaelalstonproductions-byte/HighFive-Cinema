@@ -74,6 +74,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 selectedProfilePanel
+                backendServicesSection
                 consumerSummarySection
                 accountProfileSection
                 accountReadinessSection
@@ -182,6 +183,7 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                backendServicesSection
                 roomsGatewayHero
                 productSuiteProgressSection
                 ecosystemPresentationModeSection
@@ -487,6 +489,53 @@ struct ProfileView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Connected Profile Proof, local profile identity connects saved state downloaded state updates checklist and delivery summary")
         .accessibilityIdentifier("hf.profile.accountProfileProof")
+    }
+
+    private var backendServicesSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: streamingStore.backendStatus.systemImage)
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFRoomStatusChip(title: streamingStore.backendStatus.statusLabel, accent: HFColors.gold)
+                        Text("Backend Services")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(streamingStore.backendStatus.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.backendServiceStatuses) { service in
+                        HFConsumerMomentumRow(
+                            title: service.title,
+                            detail: service.detail,
+                            status: service.statusLabel,
+                            systemImage: service.systemImage
+                        )
+                        .accessibilityIdentifier(service.accessibilityIdentifier)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Backend Services, \(streamingStore.backendStatus.statusLabel)")
+        .accessibilityIdentifier("hf.profile.backendServices")
+        .accessibilityIdentifier("hf.backend.status")
+        .accessibilityIdentifier("hf.backend.providerReady")
     }
 
     private var creatorModeCard: some View {

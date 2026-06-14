@@ -245,6 +245,7 @@ final class HFStreamingStore: ObservableObject {
     private let activeProfileKey = "hf.localProfile.activeID"
     private let profileDisplayNamePrefix = "hf.localProfile.displayName."
     private let lastPlayerMovieKey = "hf.player.lastMovieID"
+    private let backendService: HFBackendService
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -254,7 +255,11 @@ final class HFStreamingStore: ObservableObject {
         "Release calendar reviewed"
     ]
 
-    init(defaultSavedIDs: Set<String> = ["friendly", "paranormall-s1"]) {
+    init(
+        defaultSavedIDs: Set<String> = ["friendly", "paranormall-s1"],
+        backendService: HFBackendService = HFBackendServiceFactory.make()
+    ) {
+        self.backendService = backendService
         let defaults = UserDefaults.standard
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
@@ -284,6 +289,46 @@ final class HFStreamingStore: ObservableObject {
         generatedDeliverySummary = ""
         lastPlayerMovieID = defaults.string(forKey: lastPlayerMovieKey)
         selectedAudienceChannelID = "premiere-updates"
+    }
+
+    var backendRuntimeStatus: HFBackendRuntimeStatus {
+        backendService.currentStatus()
+    }
+
+    var backendStatus: HFBackendServiceStatus {
+        backendService.currentStatus().status
+    }
+
+    var accountBackendStatus: HFBackendServiceStatus {
+        backendService.accountStatus()
+    }
+
+    var libraryBackendStatus: HFBackendServiceStatus {
+        backendService.libraryStatus()
+    }
+
+    var downloadsBackendStatus: HFBackendServiceStatus {
+        backendService.downloadsStatus()
+    }
+
+    var paymentBackendStatus: HFBackendServiceStatus {
+        backendService.paymentStatus()
+    }
+
+    var creatorStudioBackendStatus: HFBackendServiceStatus {
+        backendService.creatorStudioStatus()
+    }
+
+    var socialKitBackendStatus: HFBackendServiceStatus {
+        backendService.socialKitStatus()
+    }
+
+    var vodBackendStatus: HFBackendServiceStatus {
+        backendService.vodPackageStatus()
+    }
+
+    var backendServiceStatuses: [HFBackendServiceStatus] {
+        backendService.currentStatus().services
     }
 
     // hf.services.accountProfile

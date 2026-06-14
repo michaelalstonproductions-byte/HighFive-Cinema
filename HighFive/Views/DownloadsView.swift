@@ -24,6 +24,7 @@ struct DownloadsView: View {
                 header
                 downloadHero
                 connectedStateSection
+                backendStatusSection
                 catalogDownloadsSection
                 playerContextSection
                 offlineAssetServiceSection
@@ -243,6 +244,18 @@ struct DownloadsView: View {
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.functional.downloads.connectedState")
+    }
+
+    private var backendStatusSection: some View {
+        HFInsightCard(
+            title: "Offline Downloads Backend",
+            message: "\(streamingStore.downloadsBackendStatus.statusLabel). \(streamingStore.downloadsBackendStatus.detail)",
+            systemImage: streamingStore.downloadsBackendStatus.systemImage
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Offline Downloads backend status \(streamingStore.downloadsBackendStatus.statusLabel)")
+        .accessibilityIdentifier("hf.downloads.backendStatus")
     }
 
     private var catalogDownloadsSection: some View {

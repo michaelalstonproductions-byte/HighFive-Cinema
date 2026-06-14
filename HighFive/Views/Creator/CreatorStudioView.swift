@@ -23,6 +23,7 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 focusTabs
+                backendReadinessSection
 
                 switch selectedFocus {
                 case .dashboard:
@@ -116,6 +117,52 @@ struct CreatorStudioView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+    }
+
+    private var backendReadinessSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Backend Readiness",
+                    detail: streamingStore.backendStatus.detail,
+                    systemImage: "server.rack",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioReadinessRow(
+                        title: "Creator Studio Backend",
+                        detail: streamingStore.creatorStudioBackendStatus.statusLabel,
+                        status: streamingStore.creatorStudioBackendStatus.isConfigured ? "Configured" : "Not Connected Yet",
+                        systemImage: streamingStore.creatorStudioBackendStatus.systemImage,
+                        accent: HFColors.gold
+                    )
+                    .accessibilityIdentifier("hf.creatorStudio.backendStatus")
+
+                    HFCreatorStudioReadinessRow(
+                        title: "Social Media Backend",
+                        detail: streamingStore.socialKitBackendStatus.statusLabel,
+                        status: streamingStore.socialKitBackendStatus.isConfigured ? "Configured" : "Not Connected Yet",
+                        systemImage: streamingStore.socialKitBackendStatus.systemImage,
+                        accent: Color.orange
+                    )
+                    .accessibilityIdentifier("hf.creatorStudio.socialBackendStatus")
+
+                    HFCreatorStudioReadinessRow(
+                        title: "VOD Backend",
+                        detail: streamingStore.vodBackendStatus.statusLabel,
+                        status: streamingStore.vodBackendStatus.isConfigured ? "Configured" : "Not Connected Yet",
+                        systemImage: streamingStore.vodBackendStatus.systemImage,
+                        accent: HFColors.gold
+                    )
+                    .accessibilityIdentifier("hf.creatorStudio.vodBackendStatus")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Studio backend readiness \(streamingStore.backendStatus.statusLabel)")
     }
 
     private var dashboardSection: some View {

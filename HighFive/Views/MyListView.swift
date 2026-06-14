@@ -27,6 +27,7 @@ struct MyListView: View {
                 header
                 libraryShelfHero
                 connectedStateSection
+                backendStatusSection
                 catalogLibrarySection
                 playerContextSection
                 cloudLibraryServiceSection
@@ -158,6 +159,18 @@ struct MyListView: View {
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.functional.library.connectedState")
+    }
+
+    private var backendStatusSection: some View {
+        HFInsightCard(
+            title: "Cloud Library Backend",
+            message: "\(streamingStore.libraryBackendStatus.statusLabel). \(streamingStore.libraryBackendStatus.detail)",
+            systemImage: streamingStore.libraryBackendStatus.systemImage
+        )
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Cloud Library backend status \(streamingStore.libraryBackendStatus.statusLabel)")
+        .accessibilityIdentifier("hf.library.backendStatus")
     }
 
     private var catalogLibrarySection: some View {
