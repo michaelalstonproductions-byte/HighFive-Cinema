@@ -53,11 +53,22 @@ struct MyListView: View {
                     savedGrid
                 }
             }
-            .padding(.top, HFSpacing.lg)
+            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.library.root")
         .accessibilityIdentifier("hf.functional.library.savedState")
+        .accessibilityIdentifier("hf.library.screen")
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.topProtected")
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.bottomProtected")
+        }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
@@ -302,6 +313,7 @@ struct MyListView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Open \(movie.title)")
+                    .accessibilityIdentifier("hf.route.libraryToMovieDetail")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)

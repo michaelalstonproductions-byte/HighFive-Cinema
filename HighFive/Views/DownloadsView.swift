@@ -46,11 +46,22 @@ struct DownloadsView: View {
 
                 findMoreButton
             }
-            .padding(.top, HFSpacing.lg)
+            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.downloads.root")
         .accessibilityIdentifier("hf.functional.downloads.downloadedState")
+        .accessibilityIdentifier("hf.downloads.screen")
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.topProtected")
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.bottomProtected")
+        }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .alert("Remove Offline Titles?", isPresented: $showsRemoveAllAlert) {
             Button("Cancel", role: .cancel) {}
@@ -421,6 +432,7 @@ struct DownloadsView: View {
                             HFMovieCard(movie: movie)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.route.downloadsToMovieDetail")
 
                         Button {
                             streamingStore.toggleDownload(movie)

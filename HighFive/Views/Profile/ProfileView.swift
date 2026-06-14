@@ -38,6 +38,17 @@ struct ProfileView: View {
             }
         }
         .accessibilityIdentifier("hf.profile.root")
+        .accessibilityIdentifier("hf.profile.screen")
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.topProtected")
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.bottomProtected")
+        }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(isPresented: $showsProfileSwitcher) {
             ProfileSwitcherView(selectedProfile: $selectedProfile, showsHeader: true)
@@ -89,7 +100,7 @@ struct ProfileView: View {
                 buildQAToolsSection
                 signOutButton
             }
-            .padding(.top, HFSpacing.lg)
+            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
     }
@@ -99,10 +110,16 @@ struct ProfileView: View {
         switch target {
         case .roomsGateway:
             profileRoomsGatewayQAView
+        case .creatorStudio:
+            CreatorStudioView()
+        case .socialMediaKit:
+            CreatorStudioView(initialFocus: .socialMediaKit)
+        case .vodPackage:
+            CreatorStudioView(initialFocus: .vodPackage)
         case .watch:
             WatchRoomView()
         case .create:
-            CreateRoomView()
+            CreatorStudioView()
         case .connect:
             ConnectRoomView()
         case .launch:
@@ -133,6 +150,9 @@ struct ProfileView: View {
 
     private enum HFProfileQALaunchTarget {
         case roomsGateway
+        case creatorStudio
+        case socialMediaKit
+        case vodPackage
         case watch
         case create
         case connect
@@ -145,6 +165,9 @@ struct ProfileView: View {
     private static var qaLaunchTarget: HFProfileQALaunchTarget? {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("--hf-start-profile-rooms") { return .roomsGateway }
+        if arguments.contains("--hf-start-creator-studio") { return .creatorStudio }
+        if arguments.contains("--hf-start-social-media-kit") { return .socialMediaKit }
+        if arguments.contains("--hf-start-vod-package") { return .vodPackage }
         if arguments.contains("--hf-start-watch-room") { return .watch }
         if arguments.contains("--hf-start-create-room") { return .create }
         if arguments.contains("--hf-start-connect-room") { return .connect }
@@ -173,7 +196,7 @@ struct ProfileView: View {
                 watchExportSummarySection
                 highFiveRoomsSection
             }
-            .padding(.top, HFSpacing.lg)
+            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
     }
@@ -467,10 +490,10 @@ struct ProfileView: View {
     }
 
     private var creatorModeCard: some View {
-        NavigationLink {
-            CreatorEntryView()
-        } label: {
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                NavigationLink {
+                    CreatorStudioView()
+                } label: {
+                    HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
                 HStack(spacing: HFSpacing.md) {
                     ZStack {
                         Circle()
@@ -501,6 +524,7 @@ struct ProfileView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open Creator Mode")
+        .accessibilityIdentifier("hf.route.profileToCreatorStudio")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -683,7 +707,7 @@ struct ProfileView: View {
                 .accessibilityLabel("Watch Room, streaming home and saved titles")
 
                 NavigationLink {
-                    CreateRoomView()
+                    CreatorStudioView()
                 } label: {
                     HFProductRoomEntryCard(
                         title: "Create",
@@ -695,6 +719,7 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Create Room, creator studio preview")
+                .accessibilityIdentifier("hf.route.profileToCreatorStudio")
 
                 NavigationLink {
                     ConnectRoomView()
@@ -709,6 +734,7 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Connect Room, community preview")
+                .accessibilityIdentifier("hf.route.profileToConnect")
 
                 NavigationLink {
                     LaunchRoomView()
@@ -723,6 +749,7 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Launch Room, premiere and campaign preview for release readiness")
+                .accessibilityIdentifier("hf.route.profileToLaunch")
 
                 NavigationLink {
                     ExportRoomView()
@@ -737,6 +764,7 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Export Room, deliverables and distribution readiness preview")
+                .accessibilityIdentifier("hf.route.profileToExport")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

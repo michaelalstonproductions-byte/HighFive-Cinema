@@ -51,10 +51,21 @@ struct SearchView: View {
                     UnifiedDiscoveryView()
                 }
             }
-            .padding(.top, HFSpacing.lg)
+            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.search.root")
+        .accessibilityIdentifier("hf.search.screen")
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.topProtected")
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.bottomProtected")
+        }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
@@ -273,6 +284,7 @@ struct SearchView: View {
                             .frame(height: 202)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.route.searchToMovieDetail")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -352,6 +364,7 @@ struct SearchView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open \(movie.title)")
+                        .accessibilityIdentifier("hf.route.searchToMovieDetail")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -380,6 +393,7 @@ struct SearchView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open \(movie.title)")
+                        .accessibilityIdentifier("hf.route.searchToMovieDetail")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)

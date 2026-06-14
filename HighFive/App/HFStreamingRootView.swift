@@ -38,6 +38,13 @@ struct HFStreamingRootView: View {
         return arguments.contains("--hf-skip-onboarding") || Self.shouldStartAfterOnboarding
     }
 
+    private static var shouldForceLaunchIntro: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-onboarding")
+            || arguments.contains("--hf-start-training-controls")
+            || arguments.contains("--hf-start-timeline-practice")
+    }
+
     private static var shouldResetLaunchIntro: Bool {
         ProcessInfo.processInfo.arguments.contains("--hf-reset-onboarding")
     }
@@ -49,6 +56,9 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-library")
             || arguments.contains("--hf-start-downloads")
             || arguments.contains("--hf-start-movie-detail")
+            || arguments.contains("--hf-start-creator-studio")
+            || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-vod-package")
             || Self.shouldStartInProfile
     }
 
@@ -61,6 +71,9 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-connect-room")
             || arguments.contains("--hf-start-launch-room")
             || arguments.contains("--hf-start-export-room")
+            || arguments.contains("--hf-start-creator-studio")
+            || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-vod-package")
             || arguments.contains("--hf-start-developer-qa")
             || arguments.contains("--hf-start-demo-tour")
     }
@@ -82,18 +95,27 @@ struct HFStreamingRootView: View {
                     streamingShell
                 }
             } else {
-                HFLaunchIntroSequenceView {
+                HighFiveIntroFlowView(
+                    initialStep: HighFiveIntroStep.initialFromLaunchArguments,
+                    onFinish: {
                     completeLaunchIntro()
-                }
+                    }
+                )
             }
         }
         .tint(HFColors.gold)
         .preferredColorScheme(.dark)
         .environmentObject(streamingStore)
+        .onAppear {
+            if Self.shouldResetLaunchIntro {
+                hasCompletedOnboarding = false
+                hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro && !Self.shouldForceLaunchIntro
+            }
+        }
     }
 
     private var shouldShowStreamingShell: Bool {
-        hasCompletedLaunchIntro || (hasCompletedOnboarding && !Self.shouldResetLaunchIntro)
+        hasCompletedLaunchIntro || (hasCompletedOnboarding && !Self.shouldResetLaunchIntro && !Self.shouldForceLaunchIntro)
     }
 
     private func completeLaunchIntro() {
@@ -159,7 +181,7 @@ struct HFStreamingRootView: View {
                 }
 
                 HFTabBar(items: tabItems, selection: $selectedTab)
-                    .accessibilityIdentifier("hf.profile.bottomTabs")
+                    .accessibilityIdentifier("hf.tabs.locked")
             }
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)

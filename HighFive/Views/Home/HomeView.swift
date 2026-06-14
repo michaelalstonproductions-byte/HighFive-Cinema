@@ -57,10 +57,21 @@ struct HomeView: View {
                 goldDiscoveryRail
                 smartRecommendationsSection
             }
-            .padding(.top, HFSpacing.lg)
+            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance)
         }
         .accessibilityIdentifier("hf.consumer.home.root")
+        .accessibilityIdentifier("hf.home.screen")
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.topProtected")
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 4)
+                .accessibilityIdentifier("hf.safeArea.bottomProtected")
+        }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(item: $previewMovie) { movie in
             HFPlayerServiceSheet(movie: movie)
@@ -448,6 +459,7 @@ struct HomeView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("hf.route.homeToMovieDetail")
 
             heroPosterStack
                 .frame(width: 92, height: 132, alignment: .topTrailing)
@@ -531,6 +543,7 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Watch Now")
                     .accessibilityIdentifier("hf.functional.player.watchNow")
+                    .accessibilityIdentifier("hf.route.watchNow")
 
                     HFButton(
                         streamingStore.isSaved(heroMovie) ? "In My List" : "Save",
