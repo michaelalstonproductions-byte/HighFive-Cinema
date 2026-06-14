@@ -1,5 +1,8 @@
-import AVKit
+import AVFoundation
+import Combine
+import CoreMotion
 import SwiftUI
+import UIKit
 
 enum HighFiveIntroStep: Int, CaseIterable {
     case intro
@@ -148,75 +151,73 @@ private struct HighFiveCinematicIntroView: View {
             onPrimary: onNext,
             onSecondary: onSkip
         ) {
-            VStack(spacing: 18) {
-                ZStack {
-                    if let localVideoURL {
-                        VideoPlayer(player: player)
-                            .frame(width: 306, height: 408)
-                            .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-                            .overlay(
-                                LinearGradient(
-                                    colors: [.clear, Color.black.opacity(0.78)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
-                            )
-                            .accessibilityIdentifier("hf.intro.videoPlayer")
-                            .onAppear {
-                                player = AVPlayer(url: localVideoURL)
-                                player?.isMuted = true
-                                player?.play()
-                            }
-                            .onDisappear {
-                                player?.pause()
-                                player = nil
-                            }
-                    } else {
-                        HighFiveIntroFallbackCard(isAnimating: isAnimating)
-                            .accessibilityIdentifier("hf.intro.videoFallback")
-                    }
+            HighFiveVerticalStageContainer(maxStageHeight: 570, reservedHeight: localVideoURL == nil ? 46 : 0) { stageSize in
+                VStack(spacing: 12) {
+                    HighFiveVerticalDepthVideoStage(
+                        player: player,
+                        hasLocalVideo: localVideoURL != nil,
+                        playerIdentifier: "hf.intro.videoPlayer",
+                        fallbackIdentifier: "hf.intro.videoFallback",
+                        fallback: {
+                            HighFiveIntroFallbackCard(isAnimating: isAnimating)
+                        },
+                        overlay: {
+                            HighFiveDepthActivationOverlay(identifier: "hf.intro.depthActive", topPadding: 54)
 
-                    VStack(spacing: 10) {
-                        Text("HigherKey")
-                            .font(.system(size: 16, weight: .black, design: .default))
-                            .foregroundStyle(HFColors.gold)
-                            .textCase(.uppercase)
-                            .accessibilityIdentifier("hf.intro.higherkey")
+                            VStack(spacing: 10) {
+                                Text("HigherKey")
+                                    .font(.system(size: 16, weight: .black, design: .default))
+                                    .foregroundStyle(HFColors.gold)
+                                    .textCase(.uppercase)
+                                    .accessibilityIdentifier("hf.intro.higherkey")
 
-                        Text("HighFive Cinema")
-                            .font(.system(size: 34, weight: .black, design: .default))
-                            .foregroundStyle(.white)
+                                Text("HighFive Cinema")
+                                    .font(.system(size: 34, weight: .black, design: .default))
+                                    .foregroundStyle(.white)
+                                    .multilineTextAlignment(.center)
+                                    .minimumScaleFactor(0.72)
+                                    .accessibilityIdentifier("hf.intro.highfiveCinema")
+
+                                Text("Streaming now.")
+                                    .font(.system(size: 17, weight: .semibold, design: .default))
+                                    .foregroundStyle(.white.opacity(0.82))
+                            }
+                            .padding(.horizontal, 22)
+                            .padding(.bottom, 30)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        }
+                    )
+                    .frame(width: stageSize.width, height: stageSize.height)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("hf.intro.verticalVideo")
+
+                    if localVideoURL == nil {
+                        Text("Local intro video not found. Cinematic preview is active.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
                             .multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.72)
-                            .accessibilityIdentifier("hf.intro.highfiveCinema")
-
-                        Text("Streaming now.")
-                            .font(.system(size: 17, weight: .semibold, design: .default))
-                            .foregroundStyle(.white.opacity(0.82))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.82)
+                            .padding(.horizontal, 34)
                     }
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 30)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
                 }
-                .frame(width: 306, height: 408)
                 .accessibilityIdentifier("hf.intro.cinematic")
-
-                if localVideoURL == nil {
-                    Text("Local intro video not found. Cinematic preview is active.")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-                        .padding(.horizontal, 34)
-                }
             }
         }
         .onAppear {
+            if let localVideoURL {
+                player = AVPlayer(url: localVideoURL)
+                player?.isMuted = true
+                player?.play()
+            }
+
             withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
                 isAnimating = true
             }
+        }
+        .onDisappear {
+            player?.pause()
+            player = nil
         }
     }
 }
@@ -256,7 +257,6 @@ private struct HighFiveIntroFallbackCard: View {
                     .offset(y: CGFloat(index * 26) - 10)
             }
         }
-        .frame(width: 306, height: 408)
     }
 }
 
@@ -359,25 +359,33 @@ struct HighFiveTimelinePracticeView: View {
             onPrimary: onEnterHome,
             onSecondary: nil
         ) {
-            VStack(spacing: 22) {
+            VStack(spacing: 16) {
                 VStack(spacing: 8) {
                     Text("Practice the Timeline")
-                        .font(.system(size: 32, weight: .black, design: .default))
+                        .font(.system(size: 30, weight: .black, design: .default))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
 
                     Text("Scrub, pause, and preview before entering HighFive.")
                         .font(HFTypography.body)
                         .foregroundStyle(.white.opacity(0.74))
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.82)
                         .padding(.horizontal, 28)
                 }
 
-                timelinePreview
+                HighFiveVerticalStageContainer(maxStageHeight: 390, reservedHeight: 0) { stageSize in
+                    timelinePreview
+                        .frame(width: stageSize.width, height: stageSize.height)
+                }
 
                 timelineControls
                     .accessibilityIdentifier("hf.training.timelineScrubber")
             }
+            .padding(.top, 54)
             .accessibilityIdentifier("hf.training.timelinePractice")
         }
         .onDisappear {
@@ -389,18 +397,41 @@ struct HighFiveTimelinePracticeView: View {
     @ViewBuilder
     private var timelinePreview: some View {
         if let localVideoURL {
-            VideoPlayer(player: player)
-                .frame(width: 314, height: 198)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(HFColors.gold.opacity(0.36), lineWidth: 1))
-                .accessibilityIdentifier("hf.training.timelineVideo")
+            HighFiveVerticalDepthVideoStage(
+                player: player,
+                cornerRadius: 26,
+                hasLocalVideo: true,
+                playerIdentifier: "hf.training.timelineVideo",
+                fallbackIdentifier: "hf.training.timelineFallback",
+                fallback: {
+                    HighFiveTimelineFallback(progress: progress)
+                },
+                overlay: {
+                    HighFiveDepthActivationOverlay(identifier: "hf.training.depthActive")
+                    HighFiveTiltPeekActivationOverlay()
+                }
+            )
+                .accessibilityIdentifier("hf.training.timelineVerticalVideo")
                 .onAppear {
                     player = AVPlayer(url: localVideoURL)
                     player?.isMuted = true
                 }
         } else {
-            HighFiveTimelineFallback(progress: progress)
-                .accessibilityIdentifier("hf.training.timelineFallback")
+            HighFiveVerticalDepthVideoStage(
+                player: nil,
+                cornerRadius: 26,
+                hasLocalVideo: false,
+                playerIdentifier: "hf.training.timelineVideo",
+                fallbackIdentifier: "hf.training.timelineFallback",
+                fallback: {
+                    HighFiveTimelineFallback(progress: progress)
+                },
+                overlay: {
+                    HighFiveDepthActivationOverlay(identifier: "hf.training.depthActive")
+                    HighFiveTiltPeekActivationOverlay()
+                }
+            )
+                .accessibilityIdentifier("hf.training.timelineVerticalVideo")
         }
     }
 
@@ -515,7 +546,7 @@ private struct HighFiveTimelineFallback: View {
                 ForEach(0..<10, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(index <= Int(progress * 10) ? HFColors.gold.opacity(0.82) : .white.opacity(0.14))
-                        .frame(width: 22, height: CGFloat(42 + (index % 4) * 18))
+                        .frame(width: 14, height: CGFloat(76 + (index % 4) * 26))
                 }
             }
             .padding(22)
@@ -531,8 +562,182 @@ private struct HighFiveTimelineFallback: View {
             .padding(22)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 314, height: 198)
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(HFColors.gold.opacity(0.36), lineWidth: 1))
+    }
+}
+
+private struct HighFiveVerticalStageContainer<Content: View>: View {
+    let maxStageHeight: CGFloat
+    let reservedHeight: CGFloat
+    @ViewBuilder let content: (CGSize) -> Content
+
+    var body: some View {
+        GeometryReader { proxy in
+            let availableWidth = max(240, proxy.size.width - 56)
+            let availableHeight = max(360, min(maxStageHeight, proxy.size.height - reservedHeight))
+            let stageWidth = min(availableWidth, availableHeight * 9 / 16)
+            let stageHeight = stageWidth * 16 / 9
+
+            content(CGSize(width: stageWidth, height: stageHeight))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: maxStageHeight + reservedHeight)
+    }
+}
+
+private struct HighFiveVerticalDepthVideoStage<Fallback: View, Overlay: View>: View {
+    let player: AVPlayer?
+    var cornerRadius: CGFloat = 34
+    let hasLocalVideo: Bool
+    let playerIdentifier: String
+    let fallbackIdentifier: String
+    @ViewBuilder let fallback: Fallback
+    @ViewBuilder let overlay: Overlay
+
+    var body: some View {
+        ZStack {
+            if hasLocalVideo, let player {
+                HighFiveVerticalVideoPlayer(player: player)
+                    .accessibilityIdentifier(playerIdentifier)
+            } else {
+                fallback
+                    .accessibilityIdentifier(fallbackIdentifier)
+            }
+
+            LinearGradient(
+                colors: [.black.opacity(0.10), .clear, .black.opacity(0.82)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            overlay
+        }
+        .aspectRatio(9 / 16, contentMode: .fit)
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(HFColors.gold.opacity(0.40), lineWidth: 1))
+        .shadow(color: HFColors.gold.opacity(0.16), radius: 28, x: 0, y: 20)
+    }
+}
+
+private struct HighFiveVerticalVideoPlayer: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        view.playerLayer.videoGravity = .resizeAspectFill
+        view.playerLayer.player = player
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerView, context: Context) {
+        uiView.playerLayer.videoGravity = .resizeAspectFill
+        uiView.playerLayer.player = player
+    }
+
+    final class PlayerView: UIView {
+        override static var layerClass: AnyClass {
+            AVPlayerLayer.self
+        }
+
+        var playerLayer: AVPlayerLayer {
+            layer as! AVPlayerLayer
+        }
+    }
+}
+
+private struct HighFiveDepthActivationOverlay: View {
+    let identifier: String
+    var topPadding: CGFloat = 14
+
+    var body: some View {
+        HStack {
+            HighFiveActivationBadge(title: "Depth Active", systemImage: "cube.transparent")
+                .accessibilityIdentifier(identifier)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, topPadding)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+private struct HighFiveTiltPeekActivationOverlay: View {
+    @StateObject private var motionModel = HighFiveTiltPeekMotionModel()
+    @State private var fallbackPulse = false
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.36), lineWidth: 1)
+                .frame(width: 118, height: 182)
+                .offset(x: motionModel.offset.width, y: motionModel.offset.height)
+                .scaleEffect(fallbackPulse ? 1.04 : 0.98)
+                .opacity(0.72)
+                .accessibilityIdentifier("hf.training.peekActivated")
+
+            VStack(spacing: 8) {
+                Spacer()
+
+                HStack(spacing: 8) {
+                    HighFiveActivationBadge(title: "Tilt + Peek Active", systemImage: "viewfinder")
+                        .accessibilityIdentifier("hf.training.tiltPeekActive")
+                }
+                .padding(.bottom, 14)
+            }
+        }
+        .onAppear {
+            motionModel.start()
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                fallbackPulse = true
+            }
+        }
+        .onDisappear {
+            motionModel.stop()
+        }
+    }
+}
+
+private struct HighFiveActivationBadge: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.system(size: 12, weight: .black, design: .default))
+            .foregroundStyle(.black)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .padding(.horizontal, 10)
+            .frame(height: 30)
+            .background(HFColors.goldGradient, in: Capsule())
+            .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 6)
+    }
+}
+
+private final class HighFiveTiltPeekMotionModel: ObservableObject {
+    @Published var offset: CGSize = .zero
+
+    private let motionManager = CMMotionManager()
+
+    func start() {
+        guard motionManager.isDeviceMotionAvailable else {
+            offset = CGSize(width: 10, height: -8)
+            return
+        }
+
+        motionManager.deviceMotionUpdateInterval = 1 / 30
+        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
+            guard let self, let motion else { return }
+            let roll = max(-1, min(1, motion.attitude.roll))
+            let pitch = max(-1, min(1, motion.attitude.pitch))
+            self.offset = CGSize(width: roll * 20, height: pitch * -14)
+        }
+    }
+
+    func stop() {
+        motionManager.stopDeviceMotionUpdates()
     }
 }
 
