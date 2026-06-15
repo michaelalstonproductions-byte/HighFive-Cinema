@@ -23,20 +23,18 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 focusTabs
+                dashboardSection
                 localDraftActions
 
                 switch selectedFocus {
                 case .dashboard:
-                    dashboardSection
                     socialMediaKitSection
                     vodPackageSection
                 case .socialMediaKit:
                     socialMediaKitSection
-                    dashboardSection
                     vodPackageSection
                 case .vodPackage:
                     vodPackageSection
-                    dashboardSection
                     socialMediaKitSection
                 }
 
@@ -169,7 +167,7 @@ struct CreatorStudioView: View {
 
     private var dashboardSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Studio Dashboard", actionTitle: nil)
+            HFSectionHeader(title: "Current Project", actionTitle: "Tonight on HighFive")
 
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -218,26 +216,41 @@ struct CreatorStudioView: View {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     sectionLead(
                         title: "Social Media Kit",
-                        detail: "Local social post plan, caption drafts, poster placeholders, and clip placeholders.",
+                        detail: "Build local captions, poster notes, and platform readiness before any account is connected.",
                         systemImage: "bubble.left.and.bubble.right.fill",
                         accent: Color.orange
                     )
 
+                    HStack(spacing: HFSpacing.xs) {
+                        HFCreatorStudioPill(title: "Local Draft", isActive: true)
+                        HFCreatorStudioPill(title: "Provider-ready")
+                        HFCreatorStudioPill(title: "Not Connected Yet")
+                    }
+
+                    Button {
+                        selectedFocus = .socialMediaKit
+                    } label: {
+                        HFCreatorStudioAction(title: "Prepare the Social Kit", systemImage: "bubble.left.and.bubble.right.fill", isPrimary: selectedFocus == .socialMediaKit)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.creatorStudio.prepareSocialKit")
+
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("Caption drafts")
+                        Text("Caption Drafts")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
                             .accessibilityIdentifier("hf.creatorStudio.socialCaptionDrafts")
 
-                        ForEach(captionDrafts, id: \.self) { draft in
-                            HFCreatorStudioReadinessRow(title: draft, detail: "Local Draft", status: "Local Draft", systemImage: "text.quote", accent: Color.orange)
+                        ForEach(captionDraftCards) { draft in
+                            HFCreatorStudioReadinessRow(title: draft.title, detail: draft.detail, status: "Local Draft", systemImage: "text.quote", accent: Color.orange)
                         }
                     }
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
                         HFCreatorStudioMetric(title: "Poster", detail: "Placeholder", systemImage: "photo.fill")
                         HFCreatorStudioMetric(title: "Clip", detail: "Placeholder", systemImage: "play.rectangle.fill")
-                        HFCreatorStudioMetric(title: "Post plan", detail: "Provider-ready", systemImage: "calendar")
+                        HFCreatorStudioMetric(title: "Trailer pull", detail: "Local Draft", systemImage: "film.fill")
+                        HFCreatorStudioMetric(title: "Caption set", detail: "Local Draft", systemImage: "text.bubble.fill")
                     }
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
@@ -246,8 +259,8 @@ struct CreatorStudioView: View {
                             .foregroundStyle(HFColors.textPrimary)
                             .accessibilityIdentifier("hf.creatorStudio.socialPlatformReadiness")
 
-                        ForEach(socialPlatforms, id: \.self) { platform in
-                            HFCreatorStudioReadinessRow(title: platform, detail: "Not Connected Yet", status: "Provider-ready", systemImage: "network.slash", accent: Color.orange)
+                        ForEach(socialPlatformRows) { platform in
+                            HFCreatorStudioReadinessRow(title: platform.title, detail: platform.detail, status: "Not Connected Yet", systemImage: "network.slash", accent: Color.orange)
                         }
                     }
 
@@ -278,10 +291,24 @@ struct CreatorStudioView: View {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     sectionLead(
                         title: "VOD Package",
-                        detail: "Checklist, trailer, poster, synopsis readiness, and provider boundaries for local review.",
+                        detail: "Prepare trailer, poster, synopsis, and provider-readiness before distribution is connected.",
                         systemImage: "shippingbox.fill",
                         accent: HFColors.gold
                     )
+
+                    HStack(spacing: HFSpacing.xs) {
+                        HFCreatorStudioPill(title: "Local Draft", isActive: true)
+                        HFCreatorStudioPill(title: "Provider-ready")
+                        HFCreatorStudioPill(title: "Not Connected Yet")
+                    }
+
+                    Button {
+                        selectedFocus = .vodPackage
+                    } label: {
+                        HFCreatorStudioAction(title: "Package the VOD", systemImage: "play.rectangle.on.rectangle.fill", isPrimary: selectedFocus == .vodPackage)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.creatorStudio.packageVOD")
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         Text("VOD release checklist")
@@ -289,10 +316,12 @@ struct CreatorStudioView: View {
                             .foregroundStyle(HFColors.textPrimary)
                             .accessibilityIdentifier("hf.creatorStudio.vodChecklist")
 
-                        ForEach(vodChecklist, id: \.self) { item in
-                            HFCreatorStudioReadinessRow(title: item, detail: item.contains("boundary") ? "No payments. No live entitlement provider." : "Local Draft", status: item.contains("boundary") ? "Boundary" : "Local Draft", systemImage: item.contains("boundary") ? "checkmark.shield.fill" : "checkmark.circle.fill", accent: HFColors.gold)
+                        ForEach(vodChecklistRows) { item in
+                            HFCreatorStudioReadinessRow(title: item.title, detail: item.detail, status: item.status, systemImage: item.systemImage, accent: HFColors.gold)
                         }
                     }
+
+                    packagePreviewCard
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         Text("Provider status")
@@ -302,6 +331,7 @@ struct CreatorStudioView: View {
 
                         HFCreatorStudioReadinessRow(title: "Distribution provider", detail: "Not Connected Yet", status: "Provider-ready", systemImage: "network.slash", accent: HFColors.gold)
                         HFCreatorStudioReadinessRow(title: "Storefront provider", detail: "Not Connected Yet", status: "Provider-ready", systemImage: "cart.badge.questionmark", accent: HFColors.gold)
+                        HFCreatorStudioReadinessRow(title: "Payment / entitlement provider", detail: "Not Connected Yet", status: "Boundary", systemImage: "checkmark.shield.fill", accent: HFColors.gold)
                     }
 
                     HFCreatorStudioReadinessRow(
@@ -364,31 +394,66 @@ struct CreatorStudioView: View {
         }
     }
 
-    private var captionDrafts: [String] {
+    private var packagePreviewCard: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text("Package preview")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: "play.rectangle.on.rectangle.fill")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 44, height: 44)
+                    .background(HFColors.goldGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(streamingStore.featuredMovie.title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Synopsis, poster placeholder, trailer placeholder, release mood, and Local Draft status are grouped for review.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private var captionDraftCards: [HFCreatorStudioDraftCard] {
         [
-            "\(streamingStore.featuredMovie.title) is queued for a HighFive local premiere plan.",
-            "Tonight's watch prompt: choose the scene you would replay first.",
-            "Creator note: story, mood, and poster direction are ready for review."
+            HFCreatorStudioDraftCard(title: "Premiere", detail: "Tonight on HighFive: choose the scene you would replay first."),
+            HFCreatorStudioDraftCard(title: "Behind the Shot", detail: "Move the frame and peek into the moment."),
+            HFCreatorStudioDraftCard(title: "Creator Note", detail: "Poster, mood, and trailer direction are ready for review.")
         ]
     }
 
-    private var socialPlatforms: [String] {
+    private var socialPlatformRows: [HFCreatorStudioDraftCard] {
         [
-            "Instagram - Not Connected Yet",
-            "TikTok - Not Connected Yet",
-            "YouTube Shorts - Not Connected Yet",
-            "X / Threads - Not Connected Yet"
+            HFCreatorStudioDraftCard(title: "Instagram", detail: "Poster drop - Provider-ready"),
+            HFCreatorStudioDraftCard(title: "TikTok", detail: "Trailer clip - Provider-ready"),
+            HFCreatorStudioDraftCard(title: "YouTube Shorts", detail: "Short caption - Provider-ready"),
+            HFCreatorStudioDraftCard(title: "X / Threads", detail: "Creator prompt - Provider-ready")
         ]
     }
 
-    private var vodChecklist: [String] {
+    private var vodChecklistRows: [HFCreatorStudioChecklistRow] {
         [
-            "Trailer readiness",
-            "Poster readiness",
-            "Synopsis readiness",
-            "Pricing / entitlement boundary",
-            "Distribution provider - Not Connected Yet",
-            "Storefront provider - Not Connected Yet"
+            HFCreatorStudioChecklistRow(title: "Trailer readiness", detail: "Trailer placeholder is staged for review.", status: "Local Draft", systemImage: "film.fill"),
+            HFCreatorStudioChecklistRow(title: "Poster readiness", detail: "Poster placeholder is ready for notes.", status: "Placeholder", systemImage: "photo.fill"),
+            HFCreatorStudioChecklistRow(title: "Synopsis readiness", detail: "Synopsis copy stays editable locally.", status: "Local Draft", systemImage: "text.alignleft"),
+            HFCreatorStudioChecklistRow(title: "Metadata readiness", detail: "Title, genre, and release mood are grouped.", status: "Local Draft", systemImage: "tag.fill"),
+            HFCreatorStudioChecklistRow(title: "Pricing / entitlement boundary", detail: "No payment flow is active.", status: "Boundary", systemImage: "checkmark.shield.fill"),
+            HFCreatorStudioChecklistRow(title: "Distribution provider", detail: "Not Connected Yet", status: "Provider-ready", systemImage: "network.slash"),
+            HFCreatorStudioChecklistRow(title: "Storefront provider", detail: "Not Connected Yet", status: "Provider-ready", systemImage: "cart.badge.questionmark")
         ]
     }
 
@@ -430,6 +495,20 @@ private struct HFCreatorStudioPill: View {
             .overlay(Capsule().stroke(isActive ? Color.clear : HFColors.gold.opacity(0.24), lineWidth: 1))
             .clipShape(Capsule())
     }
+}
+
+private struct HFCreatorStudioDraftCard: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+}
+
+private struct HFCreatorStudioChecklistRow: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
 }
 
 private struct HFCreatorStudioMetric: View {

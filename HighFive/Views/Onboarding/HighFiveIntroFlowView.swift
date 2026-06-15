@@ -13,6 +13,7 @@ enum HighFiveIntroStep: Int, CaseIterable {
 
     static var initialFromLaunchArguments: HighFiveIntroStep {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-onboarding-intro") || arguments.contains("--hf-start-intro-video") { return .intro }
         if arguments.contains("--hf-start-training-controls") { return .controls }
         if arguments.contains("--hf-start-timeline-practice") { return .timelinePractice }
         return .intro
@@ -54,16 +55,17 @@ struct HighFiveIntroFlowView: View {
                 )
                 .transition(.opacity)
             }
+
+            VStack {
+                Spacer()
+                HighFiveIntroPageDots(currentPage: step.page, totalPages: HighFiveIntroStep.allCases.count)
+                    .padding(.bottom, 146)
+                    .accessibilityIdentifier("hf.safeArea.bottomProtected")
+            }
+            .allowsHitTesting(false)
         }
-        .safeAreaInset(edge: .top) {
-            Color.clear
-                .frame(height: 6)
-                .accessibilityIdentifier("hf.safeArea.topProtected")
-        }
-        .safeAreaInset(edge: .bottom) {
-            HighFiveIntroPageDots(currentPage: step.page, totalPages: HighFiveIntroStep.allCases.count)
-                .padding(.bottom, 146)
-                .accessibilityIdentifier("hf.safeArea.bottomProtected")
+        .onAppear {
+            step = initialStep
         }
     }
 
@@ -151,10 +153,12 @@ private struct HighFiveCinematicIntroView: View {
             onPrimary: onNext,
             onSecondary: onSkip
         ) {
-            HighFiveVerticalStageContainer(maxStageHeight: 570, reservedHeight: localVideoURL == nil ? 46 : 0) { stageSize in
-                VStack(spacing: 12) {
+            GeometryReader { proxy in
+                ZStack {
                     HighFiveVerticalDepthVideoStage(
                         player: player,
+                        cornerRadius: 0,
+                        fillsContainer: true,
                         hasLocalVideo: localVideoURL != nil,
                         playerIdentifier: "hf.intro.videoPlayer",
                         fallbackIdentifier: "hf.intro.videoFallback",
@@ -183,11 +187,12 @@ private struct HighFiveCinematicIntroView: View {
                                     .foregroundStyle(.white.opacity(0.82))
                             }
                             .padding(.horizontal, 22)
-                            .padding(.bottom, 30)
+                            .padding(.bottom, 300)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
                     )
-                    .frame(width: stageSize.width, height: stageSize.height)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .ignoresSafeArea()
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("hf.intro.verticalVideo")
 
@@ -199,6 +204,8 @@ private struct HighFiveCinematicIntroView: View {
                             .lineLimit(2)
                             .minimumScaleFactor(0.82)
                             .padding(.horizontal, 34)
+                            .padding(.bottom, 160)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     }
                 }
                 .accessibilityIdentifier("hf.intro.cinematic")
@@ -360,7 +367,10 @@ struct HighFiveTimelinePracticeView: View {
             onPrimary: onEnterHome,
             onSecondary: nil
         ) {
-            VStack(spacing: 10) {
+            ZStack {
+                timelinePreview
+                    .ignoresSafeArea()
+
                 VStack(spacing: 5) {
                     Text("Practice the Timeline")
                         .font(.system(size: 26, weight: .black, design: .default))
@@ -377,18 +387,17 @@ struct HighFiveTimelinePracticeView: View {
                         .minimumScaleFactor(0.82)
                         .padding(.horizontal, 28)
                 }
+                .padding(.top, 126)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                HighFiveVerticalStageContainer(maxStageHeight: 318, reservedHeight: 0) { stageSize in
-                    timelinePreview
-                        .frame(width: stageSize.width, height: stageSize.height)
+                VStack(spacing: 12) {
+                    Spacer()
+                    timelineControls
+                        .accessibilityIdentifier("hf.training.timelineScrubber")
+                    protectedDepthPeekCTA
                 }
-
-                timelineControls
-                    .accessibilityIdentifier("hf.training.timelineScrubber")
-
-                protectedDepthPeekCTA
+                .padding(.bottom, 154)
             }
-            .padding(.top, 76)
             .accessibilityIdentifier("hf.training.timelinePractice")
         }
         .fullScreenCover(isPresented: $isShowingProtectedDepthPreview) {
@@ -406,7 +415,8 @@ struct HighFiveTimelinePracticeView: View {
         if let localVideoURL {
             HighFiveVerticalDepthVideoStage(
                 player: player,
-                cornerRadius: 26,
+                cornerRadius: 0,
+                fillsContainer: true,
                 hasLocalVideo: true,
                 playerIdentifier: "hf.training.timelineVideo",
                 fallbackIdentifier: "hf.training.timelineFallback",
@@ -414,11 +424,12 @@ struct HighFiveTimelinePracticeView: View {
                     HighFiveTimelineFallback(progress: progress)
                 },
                 overlay: {
-                    HighFiveDepthActivationOverlay(identifier: "hf.training.depthActive")
+                    HighFiveDepthActivationOverlay(identifier: "hf.training.depthActive", topPadding: 58)
                     HighFiveTiltPeekActivationOverlay()
                 }
             )
                 .accessibilityIdentifier("hf.training.timelineVerticalVideo")
+                .ignoresSafeArea()
                 .onAppear {
                     player = AVPlayer(url: localVideoURL)
                     player?.isMuted = true
@@ -426,7 +437,8 @@ struct HighFiveTimelinePracticeView: View {
         } else {
             HighFiveVerticalDepthVideoStage(
                 player: nil,
-                cornerRadius: 26,
+                cornerRadius: 0,
+                fillsContainer: true,
                 hasLocalVideo: false,
                 playerIdentifier: "hf.training.timelineVideo",
                 fallbackIdentifier: "hf.training.timelineFallback",
@@ -434,11 +446,12 @@ struct HighFiveTimelinePracticeView: View {
                     HighFiveTimelineFallback(progress: progress)
                 },
                 overlay: {
-                    HighFiveDepthActivationOverlay(identifier: "hf.training.depthActive")
+                    HighFiveDepthActivationOverlay(identifier: "hf.training.depthActive", topPadding: 58)
                     HighFiveTiltPeekActivationOverlay()
                 }
             )
                 .accessibilityIdentifier("hf.training.timelineVerticalVideo")
+                .ignoresSafeArea()
         }
     }
 
@@ -465,7 +478,7 @@ struct HighFiveTimelinePracticeView: View {
 
                 Slider(value: $progress, in: 0...1)
                     .tint(HFColors.gold)
-                    .onChange(of: progress) { newValue in
+                    .onChange(of: progress) { _, newValue in
                         guard let player,
                               let duration = player.currentItem?.duration.seconds,
                               duration.isFinite else { return }
@@ -493,6 +506,10 @@ struct HighFiveTimelinePracticeView: View {
             }
         }
         .padding(.horizontal, 30)
+        .padding(.vertical, 12)
+        .background(.black.opacity(0.52), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(.white.opacity(0.14), lineWidth: 1))
+        .padding(.horizontal, 20)
     }
 
     private var protectedDepthPeekCTA: some View {
@@ -629,6 +646,7 @@ private struct HighFiveVerticalStageContainer<Content: View>: View {
 private struct HighFiveVerticalDepthVideoStage<Fallback: View, Overlay: View>: View {
     let player: AVPlayer?
     var cornerRadius: CGFloat = 34
+    var fillsContainer = false
     let hasLocalVideo: Bool
     let playerIdentifier: String
     let fallbackIdentifier: String
@@ -636,6 +654,22 @@ private struct HighFiveVerticalDepthVideoStage<Fallback: View, Overlay: View>: V
     @ViewBuilder let overlay: Overlay
 
     var body: some View {
+        Group {
+            if fillsContainer {
+                stageContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                stageContent
+                    .aspectRatio(9 / 16, contentMode: .fit)
+            }
+        }
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(HFColors.gold.opacity(cornerRadius == 0 ? 0.0 : 0.40), lineWidth: 1))
+        .shadow(color: HFColors.gold.opacity(cornerRadius == 0 ? 0.0 : 0.16), radius: 28, x: 0, y: 20)
+    }
+
+    private var stageContent: some View {
         ZStack {
             if hasLocalVideo, let player {
                 HighFiveVerticalVideoPlayer(player: player)
@@ -653,11 +687,6 @@ private struct HighFiveVerticalDepthVideoStage<Fallback: View, Overlay: View>: V
 
             overlay
         }
-        .aspectRatio(9 / 16, contentMode: .fit)
-        .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(HFColors.gold.opacity(0.40), lineWidth: 1))
-        .shadow(color: HFColors.gold.opacity(0.16), radius: 28, x: 0, y: 20)
     }
 }
 
@@ -902,10 +931,10 @@ private struct HighFiveIntroFrame<Content: View>: View {
             .ignoresSafeArea()
 
             VStack {
-                Spacer(minLength: 20)
                 content
-                Spacer(minLength: 154)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea()
 
             VStack(spacing: 14) {
                 Spacer()
