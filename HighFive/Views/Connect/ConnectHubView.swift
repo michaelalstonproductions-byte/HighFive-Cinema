@@ -8,51 +8,103 @@ struct ConnectHubView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                connectSystemStrip
                 storiesSection
                 featuredReel
+                connectSystemPanel
                 feedEntry
                 featuredCreatorsSection
                 roomsSection
                 projectUpdatesSection
                 signalStrip
+                connectMomentumSection
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .accessibilityIdentifier("hf.connect.screen")
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Connect")
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("hf.connect.system")
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: HFSpacing.md) {
-            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text("Connect")
-                    .font(HFTypography.display)
-                    .foregroundStyle(HFColors.textPrimary)
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.2.wave.2.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 56, height: 56)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
-                Text("Follow creators, join rooms, and watch what the HighFive community is talking about.")
-                    .font(HFTypography.body)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Connect System")
+                            .font(HFTypography.title)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Text("Watch rooms, creator circles, activity feed, and social graph.")
+                            .font(HFTypography.body)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: HFSpacing.sm)
+
+                    NavigationLink {
+                        ConnectNotificationsPreviewView()
+                    } label: {
+                        Image(systemName: "bell.badge.fill")
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 46, height: 46)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open notifications")
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: HFSpacing.xs) {
+                    HFStatusBadge(title: "02 Connect System", isProminent: true)
+                    HFStatusBadge(title: "Active", isProminent: false)
+                    HFStatusBadge(title: "Local Preview", isProminent: false)
+                    HFStatusBadge(title: "Provider-ready", isProminent: false)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    HFConnectSystemMetric(title: "Rooms", value: "\(HFConnectPreviewData.socialRooms.count)", systemImage: "bubble.left.and.bubble.right.fill")
+                    HFConnectSystemMetric(title: "Creators", value: "\(HFConnectPreviewData.featuredCreators.count)", systemImage: "person.crop.circle.fill")
+                    HFConnectSystemMetric(title: "Signals", value: "\(HFConnectPreviewData.communitySignals.count)", systemImage: "chart.line.uptrend.xyaxis")
+                    HFConnectSystemMetric(title: "Provider", value: "Local", systemImage: "network.slash")
+                }
             }
-
-            Spacer()
-
-            NavigationLink {
-                ConnectNotificationsPreviewView()
-            } label: {
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundStyle(.black)
-                    .frame(width: 46, height: 46)
-                    .background(HFColors.goldGradient)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open notifications")
+            .padding(HFSpacing.lg)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.connect.hero")
+    }
+
+    private var connectSystemStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                HFConnectSystemCard(title: "Watch Rooms", detail: "The Friendly and Paranormall rooms", status: "Local", systemImage: "play.tv.fill")
+                    .accessibilityIdentifier("hf.connect.watchRooms")
+                HFConnectSystemCard(title: "Creator Circles", detail: "Follow creators and review packages", status: "Preview", systemImage: "person.3.fill")
+                    .accessibilityIdentifier("hf.connect.creatorCircles")
+                HFConnectSystemCard(title: "Activity Feed", detail: "Reactions, notes, and comments", status: "Local", systemImage: "rectangle.stack.fill")
+                    .accessibilityIdentifier("hf.connect.activityFeed")
+                HFConnectSystemCard(title: "Social Graph", detail: "Project relationships and signals", status: "Provider-ready", systemImage: "point.3.connected.trianglepath.dotted")
+                    .accessibilityIdentifier("hf.connect.socialGraph")
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityIdentifier("hf.connect.systemStrip")
     }
 
     private var storiesSection: some View {
@@ -106,7 +158,7 @@ struct ConnectHubView: View {
 
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     HStack {
-                        HFStatusBadge(title: "Live", isProminent: true)
+                        HFStatusBadge(title: "Local Preview", isProminent: true)
                         HFStatusBadge(title: "Creator Feed", isProminent: false)
                         Spacer()
                         VStack(spacing: HFSpacing.sm) {
@@ -195,9 +247,45 @@ struct ConnectHubView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var connectSystemPanel: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.connected.to.line.below")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Community System")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Connect stays local: rooms, follows, comments, saves, and notifications are preview state only. No live provider is connected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    HFConnectSystemMetric(title: "Social provider", value: "Not Connected Yet", systemImage: "network.slash")
+                        .accessibilityIdentifier("hf.connect.notConnectedYet")
+                    HFConnectSystemMetric(title: "Posting", value: "Off", systemImage: "lock.shield.fill")
+                    HFConnectSystemMetric(title: "Rooms", value: "Preview", systemImage: "bubble.left.and.bubble.right.fill")
+                    HFConnectSystemMetric(title: "Notifications", value: "Local", systemImage: "bell.badge.fill")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.connect.providerBoundary")
+    }
+
     private var featuredCreatorsSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Creators to Follow", actionTitle: nil)
+            HFSectionHeader(title: "Creator Circles", actionTitle: nil)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HFSpacing.md) {
@@ -265,7 +353,7 @@ struct ConnectHubView: View {
         }
         .frame(width: 210, alignment: .topLeading)
         .padding(HFSpacing.md)
-        .background(HFColors.surfaceElevated.opacity(0.86))
+        .background(HFColors.glassSurface)
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
@@ -275,7 +363,7 @@ struct ConnectHubView: View {
 
     private var roomsSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Rooms For You", actionTitle: nil)
+            HFSectionHeader(title: "Watch Rooms", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(HFConnectPreviewData.socialRooms.prefix(3)) { room in
@@ -345,7 +433,7 @@ struct ConnectHubView: View {
 
     private var projectUpdatesSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Trending Updates", actionTitle: nil)
+            HFSectionHeader(title: "Activity Feed", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(HFConnectPreviewData.projectUpdates) { update in
@@ -377,7 +465,11 @@ struct ConnectHubView: View {
                                 .foregroundStyle(HFColors.gold)
                         }
                         .padding(HFSpacing.md)
-                        .background(HFColors.surface.opacity(0.78))
+                        .background(HFColors.glassSurface)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                                .stroke(HFColors.gold.opacity(0.16), lineWidth: 1)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -389,12 +481,49 @@ struct ConnectHubView: View {
 
     private var signalStrip: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Community Pulse", actionTitle: nil)
+            HFSectionHeader(title: "Social Graph", actionTitle: nil)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
                 ForEach(HFConnectPreviewData.communitySignals) { signal in
                     HFMetricCard(title: signal.title.replacingOccurrences(of: "Mock ", with: ""), value: signal.value, systemImage: signal.systemImage)
                 }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var connectMomentumSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Connect Momentum", actionTitle: nil)
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.22)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 48, height: 48)
+                            .background(HFColors.goldGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("Active local social surface")
+                                .font(HFTypography.cardTitle)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Reactions, follows, rooms, and graph signals are product preview state. No live provider, account connection, OAuth, posting, or comments backend is active.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    HStack(spacing: HFSpacing.sm) {
+                        HFStatusBadge(title: "Active", isProminent: true)
+                        HFStatusBadge(title: "Provider-ready", isProminent: false)
+                        HFStatusBadge(title: "Not Connected Yet", isProminent: false)
+                    }
+                }
+                .padding(HFSpacing.lg)
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -448,6 +577,93 @@ private struct HFConnectStoryAvatar: View {
                 .lineLimit(1)
                 .frame(width: 86)
         }
+    }
+}
+
+private struct HFConnectSystemCard: View {
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(.black)
+                .frame(width: 38, height: 38)
+                .background(HFColors.goldGradient)
+                .clipShape(Circle())
+
+            Text(title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.gold)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 22)
+                .background(HFColors.gold.opacity(0.10))
+                .overlay(Capsule().stroke(HFColors.gold.opacity(0.24), lineWidth: 1))
+                .clipShape(Capsule())
+        }
+        .frame(width: 154, height: 148, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(HFColors.glassSurface)
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFConnectSystemMetric: View {
+    let title: String
+    let value: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 30, height: 30)
+                .background(HFColors.gold.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                Text(value)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 }
 

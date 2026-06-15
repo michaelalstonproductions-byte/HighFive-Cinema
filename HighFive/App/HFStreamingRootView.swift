@@ -44,6 +44,8 @@ struct HFStreamingRootView: View {
     private static var shouldForceLaunchIntro: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-onboarding")
+            || arguments.contains("--hf-start-intro-video")
+            || arguments.contains("--hf-onboarding-intro")
             || arguments.contains("--hf-start-training-controls")
             || arguments.contains("--hf-start-timeline-practice")
     }
