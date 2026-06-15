@@ -9,6 +9,7 @@ struct HomeView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
     @State private var showsNotifications = false
+    @State private var showsProtectedDepthPreview = false
     @StateObject private var notificationStore = HFNotificationCenterStore()
 
     private var heroMovie: Movie {
@@ -32,7 +33,6 @@ struct HomeView: View {
             VStack(spacing: HFSpacing.xl) {
                 header
                 heroSection
-                backendStatusSection
                 watchSectionHeader
                 ForEach(streamingStore.premiumHomeCatalogRails) { category in
                     movieRail(category)
@@ -40,6 +40,7 @@ struct HomeView: View {
                 .accessibilityIdentifier("hf.consumer.home.posterRails")
                 goldDiscoveryRail
                 smartRecommendationsSection
+                backendStatusSection
                 homeCategoryPills
                 homePremiereMetrics
                 activeProfileSection
@@ -57,7 +58,7 @@ struct HomeView: View {
                 homeStreamingMomentumSection
             }
             .padding(.top, HFSpacing.xxl + 44)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.consumer.home.root")
         .accessibilityIdentifier("hf.home.screen")
@@ -78,6 +79,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showsNotifications) {
             HFNotificationSheet(store: notificationStore)
+        }
+        .sheet(isPresented: $showsProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
         }
     }
 
@@ -180,11 +184,38 @@ struct HomeView: View {
     }
 
     private var backendStatusSection: some View {
-        HFInsightCard(
-            title: streamingStore.backendStatus.displayTitle,
-            message: "Local Mode is active. Backend services are visible, provider-ready, and not connected yet.",
-            systemImage: streamingStore.backendStatus.systemImage
-        )
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.22)) {
+            HStack(alignment: .center, spacing: HFSpacing.sm) {
+                Image(systemName: streamingStore.backendStatus.systemImage)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 34, height: 34)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(streamingStore.backendStatus.displayTitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Local Mode. Provider-ready services are secondary to watching.")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+
+                Text("Local")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(height: 24)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
+            }
+            .padding(HFSpacing.md)
+        }
         .padding(.horizontal, screenPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Backend status \(streamingStore.backendStatus.displayTitle), \(streamingStore.backendStatus.detail)")
@@ -539,37 +570,63 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
 
-                HStack(spacing: HFSpacing.sm) {
+                VStack(spacing: HFSpacing.sm) {
+                    HStack(spacing: HFSpacing.sm) {
+                        Button {
+                            streamingStore.markStartedWatching(heroMovie)
+                            previewMovie = heroMovie
+                        } label: {
+                            HStack(spacing: HFSpacing.xs) {
+                                Image(systemName: "play.fill")
+                                Text("Watch Now")
+                            }
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Watch Now")
+                        .accessibilityIdentifier("hf.functional.player.watchNow")
+                        .accessibilityIdentifier("hf.route.watchNow")
+
+                        HFButton(
+                            streamingStore.isSaved(heroMovie) ? "In My List" : "Save",
+                            systemImage: streamingStore.isSaved(heroMovie) ? "checkmark" : "plus",
+                            style: .secondary
+                        ) {
+                            streamingStore.toggleSaved(heroMovie)
+                        }
+                        .accessibilityLabel(streamingStore.isSaved(heroMovie) ? "Remove from My List" : "Add to My List")
+                    }
+
                     Button {
-                        streamingStore.markStartedWatching(heroMovie)
-                        previewMovie = heroMovie
+                        showsProtectedDepthPreview = true
                     } label: {
                         HStack(spacing: HFSpacing.xs) {
-                            Image(systemName: "play.fill")
-                            Text("Watch Now")
+                            Image(systemName: "cube.transparent")
+                            Text("Try Depth + Peek")
+                            Spacer(minLength: HFSpacing.xs)
+                            Text("Local preview")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.gold)
                         }
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                        .foregroundStyle(.black)
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .padding(.horizontal, HFSpacing.md)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                        .background(HFColors.goldGradient)
+                        .frame(height: 46)
+                        .background(Color.black.opacity(0.36))
+                        .overlay(Capsule().stroke(HFColors.gold.opacity(0.30), lineWidth: 1))
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Watch Now")
-                    .accessibilityIdentifier("hf.functional.player.watchNow")
-                    .accessibilityIdentifier("hf.route.watchNow")
-
-                    HFButton(
-                        streamingStore.isSaved(heroMovie) ? "In My List" : "Save",
-                        systemImage: streamingStore.isSaved(heroMovie) ? "checkmark" : "plus",
-                        style: .secondary
-                    ) {
-                        streamingStore.toggleSaved(heroMovie)
-                    }
-                    .accessibilityLabel(streamingStore.isSaved(heroMovie) ? "Remove from My List" : "Add to My List")
+                    .accessibilityLabel("Try Depth and Peek local preview")
+                    .accessibilityIdentifier("hf.protectedDepth.launch")
                 }
             }
             .padding(.horizontal, HFSpacing.lg)

@@ -39,7 +39,6 @@ struct SearchView: View {
                 )
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
-                modeContextPanel
                 genreMoodFilters
 
                 if mode == .search {
@@ -48,6 +47,7 @@ struct SearchView: View {
                     UnifiedDiscoveryView()
                 }
 
+                modeContextPanel
                 discoveryStudioPanel
                 catalogSearchSection
                 discoveryMomentumSection

@@ -24,7 +24,6 @@ struct CreatorStudioView: View {
                 header
                 focusTabs
                 localDraftActions
-                backendReadinessSection
 
                 switch selectedFocus {
                 case .dashboard:
@@ -41,9 +40,10 @@ struct CreatorStudioView: View {
                     socialMediaKitSection
                 }
 
+                backendReadinessSection
             }
             .padding(.top, HFSpacing.xxl)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .safeAreaInset(edge: .top) {
             Color.clear

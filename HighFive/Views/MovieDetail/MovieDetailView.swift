@@ -5,6 +5,7 @@ struct MovieDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
+    @State private var showsProtectedDepthPreview = false
 
     private var creator: Creator {
         HFMockData.creator(for: movie)
@@ -65,6 +66,9 @@ struct MovieDetailView: View {
                 .environmentObject(streamingStore)
                 .accessibilityIdentifier("hf.functional.player.sheet")
         }
+        .sheet(isPresented: $showsProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -86,7 +90,7 @@ struct MovieDetailView: View {
                 .offset(y: 32)
 
             detailArtwork
-                .frame(height: 610)
+                .frame(height: 570)
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
             LinearGradient(
@@ -148,44 +152,71 @@ struct MovieDetailView: View {
                         .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
                         .accessibilityLabel("Watch Now")
 
-                        HStack(spacing: HFSpacing.xs) {
-                            HFButton(
-                                streamingStore.isSaved(movie) ? "In My List" : "Add to My List",
-                                systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
-                                style: .secondary
-                            ) {
-                                streamingStore.toggleSaved(movie)
-                            }
-                            .accessibilityIdentifier("hf.functional.movie.saveToggle")
-                            .accessibilityLabel(streamingStore.isSaved(movie) ? "Remove from My List" : "Add to My List")
-
-                            HFButton(
-                                streamingStore.isDownloaded(movie) ? "Remove Offline" : "Mark Offline",
-                                systemImage: streamingStore.isDownloaded(movie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
-                                style: .secondary
-                            ) {
-                                if streamingStore.isDownloaded(movie) {
-                                    streamingStore.removeOfflineAsset(for: movie)
-                                } else {
-                                    streamingStore.queueOfflineAsset(for: movie)
+                        VStack(spacing: HFSpacing.xs) {
+                            HStack(spacing: HFSpacing.xs) {
+                                HFButton(
+                                    streamingStore.isSaved(movie) ? "In My List" : "My List",
+                                    systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
+                                    style: .secondary
+                                ) {
+                                    streamingStore.toggleSaved(movie)
                                 }
+                                .accessibilityIdentifier("hf.functional.movie.saveToggle")
+                                .accessibilityLabel(streamingStore.isSaved(movie) ? "Remove from My List" : "Add to My List")
+
+                                HFButton(
+                                    streamingStore.isDownloaded(movie) ? "Offline" : "Local",
+                                    systemImage: streamingStore.isDownloaded(movie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
+                                    style: .secondary
+                                ) {
+                                    if streamingStore.isDownloaded(movie) {
+                                        streamingStore.removeOfflineAsset(for: movie)
+                                    } else {
+                                        streamingStore.queueOfflineAsset(for: movie)
+                                    }
+                                }
+                                .accessibilityIdentifier("hf.functional.movie.downloadToggle")
+                                .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Remove local offline preview state" : "Queue local offline preview state")
                             }
-                            .accessibilityIdentifier("hf.functional.movie.downloadToggle")
-                            .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Remove local offline state" : "Queue local offline state")
+
+                            Button {
+                                showsProtectedDepthPreview = true
+                            } label: {
+                                HStack(spacing: HFSpacing.xs) {
+                                    Image(systemName: "cube.transparent")
+                                    Text("Depth Preview")
+                                    Spacer(minLength: HFSpacing.xs)
+                                    Text("Local")
+                                        .font(HFTypography.micro)
+                                        .foregroundStyle(HFColors.gold)
+                                }
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .padding(.horizontal, HFSpacing.md)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 46)
+                                .background(Color.black.opacity(0.36))
+                                .overlay(Capsule().stroke(HFColors.gold.opacity(0.30), lineWidth: 1))
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Open Depth Preview local engine preview")
+                            .accessibilityIdentifier("hf.movieDetail.depthPreview")
+                            .accessibilityIdentifier("hf.protectedDepth.launch")
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Saved to \(streamingStore.activeViewingProfile.displayName)")
+                            Text("My List for \(streamingStore.activeViewingProfile.displayName)")
                                 .font(HFTypography.micro)
                                 .foregroundStyle(HFColors.gold)
                                 .accessibilityIdentifier("hf.account.movieDetail.saveForProfile")
-                            Text("Offline state for \(streamingStore.activeViewingProfile.displayName)")
+                            Text("Local offline preview only")
                                 .font(HFTypography.micro)
                                 .foregroundStyle(HFColors.textSecondary)
                                 .accessibilityIdentifier("hf.account.movieDetail.downloadForProfile")
                         }
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Saved to \(streamingStore.activeViewingProfile.displayName), offline state for \(streamingStore.activeViewingProfile.displayName)")
+                        .accessibilityLabel("My List for \(streamingStore.activeViewingProfile.displayName), local offline preview only")
                         .accessibilityIdentifier("hf.account.movieDetail.profileState")
                     }
                 }

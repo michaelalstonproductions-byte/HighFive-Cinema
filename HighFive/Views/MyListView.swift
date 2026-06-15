@@ -26,7 +26,6 @@ struct MyListView: View {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 header
                 libraryShelfHero
-                backendStatusSection
                 filterChips
 
                 if savedMovies.isEmpty {
@@ -44,6 +43,7 @@ struct MyListView: View {
                 }
 
                 watchShelfSection
+                backendStatusSection
                 connectedStateSection
                 catalogLibrarySection
                 playerContextSection
@@ -56,7 +56,7 @@ struct MyListView: View {
                 shelfMomentumSection
             }
             .padding(.top, HFSpacing.xxl)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.consumer.library.root")
         .accessibilityIdentifier("hf.functional.library.savedState")

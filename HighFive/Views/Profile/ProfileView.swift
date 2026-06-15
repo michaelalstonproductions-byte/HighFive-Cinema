@@ -74,17 +74,18 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 selectedProfilePanel
+                roomsGatewayHero
+                highFiveRoomsSection
                 profileShortcutsSection
-                backendServicesSection
                 consumerSummarySection
                 accountProfileSection
+                backendServicesSection
                 accountReadinessSection
                 accountProfileProofSection
                 avatarRow
                 manageProfilesButton
 
                 menu
-                roomsGatewayHero
                 productSuiteProgressSection
                 ecosystemPresentationModeSection
                 highFiveProductStorySection
@@ -98,12 +99,11 @@ struct ProfileView: View {
                 paymentEntitlementServicesSection
                 publicMomentumSummarySection
                 watchExportSummarySection
-                highFiveRoomsSection
                 buildQAToolsSection
                 signOutButton
             }
             .padding(.top, HFSpacing.xxl)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
     }
 

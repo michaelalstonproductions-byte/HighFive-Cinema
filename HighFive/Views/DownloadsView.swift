@@ -23,7 +23,6 @@ struct DownloadsView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 downloadHero
-                backendStatusSection
 
                 if downloads.isEmpty {
                     emptyState
@@ -34,6 +33,7 @@ struct DownloadsView: View {
                 findMoreButton
                 storageStatus
                 offlineWatchHubSection
+                backendStatusSection
                 connectedStateSection
                 catalogDownloadsSection
                 playerContextSection
@@ -48,7 +48,7 @@ struct DownloadsView: View {
                 offlinePlan
             }
             .padding(.top, HFSpacing.xxl)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.consumer.downloads.root")
         .accessibilityIdentifier("hf.functional.downloads.downloadedState")
@@ -77,10 +77,10 @@ struct DownloadsView: View {
     private var header: some View {
         HStack(alignment: .center, spacing: HFSpacing.md) {
             VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text("Offline")
+                Text("Local Offline Shelf")
                     .font(HFTypography.display)
                     .foregroundStyle(HFColors.textPrimary)
-                Text("Offline-ready titles for your next watch.")
+                Text("Preview which titles you want available later. No media files are created here.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -120,14 +120,14 @@ struct DownloadsView: View {
 
             VStack(spacing: HFSpacing.xs) {
                 Spacer()
-                Text("OFFLINE SHELF")
+                Text("LOCAL OFFLINE SHELF")
                     .font(HFTypography.micro)
                     .foregroundStyle(HFColors.gold)
                     .kerning(1.3)
-                Text(downloads.isEmpty ? "No offline titles" : "\(downloads.count) offline titles")
+                Text(downloads.isEmpty ? "No offline preview titles" : "\(downloads.count) local preview titles")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                Text(downloads.isEmpty ? "Find more to fill your offline shelf." : "Ready when you are.")
+                Text(downloads.isEmpty ? "Find more to plan your shelf." : "Local planning state only.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -158,7 +158,7 @@ struct DownloadsView: View {
                         Text("Offline Capacity")
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB planned")
+                        Text("\(downloads.count) titles  |  \(usedStorage, specifier: "%.1f") GB represented")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.gold)
                     }
@@ -181,7 +181,7 @@ struct DownloadsView: View {
                 }
                 .frame(height: 7)
 
-                Text("Local offline state is ready for travel planning. Media source connection is still required for real playback.")
+                Text("This is a local preview shelf. Media source connection is still required for real offline playback.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -207,10 +207,10 @@ struct DownloadsView: View {
                             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
                         VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                            Text("Ready when you are.")
+                            Text("Plan what to keep nearby.")
                                 .font(HFTypography.section)
                                 .foregroundStyle(HFColors.textPrimary)
-                            Text("Keep available offline titles, shelf planning, and find-more paths together in one calm viewing space.")
+                            Text("Keep local preview titles, shelf planning, and find-more paths together in one calm viewing space.")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -220,9 +220,9 @@ struct DownloadsView: View {
                     }
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                        HFOfflineHubCard(title: "Available Offline", detail: "\(downloads.count) titles", systemImage: "checkmark.circle.fill", isActive: true)
-                        HFOfflineHubCard(title: "Ready When You Are", detail: "Travel and low-signal nights", systemImage: "airplane")
-                        HFOfflineHubCard(title: "Find More To Download", detail: "Browse more titles", systemImage: "plus.circle.fill")
+                        HFOfflineHubCard(title: "Preview Shelf", detail: "\(downloads.count) titles", systemImage: "checkmark.circle.fill", isActive: true)
+                        HFOfflineHubCard(title: "Plan Ahead", detail: "Travel and low-signal nights", systemImage: "airplane")
+                        HFOfflineHubCard(title: "Find More", detail: "Browse more titles", systemImage: "plus.circle.fill")
                         HFOfflineHubCard(title: "Offline Shelf", detail: "Watch later path", systemImage: "rectangle.stack.fill")
                         HFOfflineHubCard(title: "Storage Preview", detail: "\(usedStorageLabel) GB planned", systemImage: "internaldrive.fill")
                     }
