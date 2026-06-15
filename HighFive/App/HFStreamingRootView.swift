@@ -63,6 +63,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
             || Self.shouldStartInProfile
     }
@@ -78,6 +79,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-export-room")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
             || arguments.contains("--hf-start-developer-qa")
             || arguments.contains("--hf-start-demo-tour")
@@ -99,12 +101,14 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
     }
 
     private static var creatorStudioInitialFocus: HFCreatorStudioFocus {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("--hf-start-social-media-kit") { return .socialMediaKit }
+        if arguments.contains("--hf-start-instagram-connect") { return .instagramConnect }
         if arguments.contains("--hf-start-vod-package") { return .vodPackage }
         return .dashboard
     }

@@ -3,6 +3,7 @@ import SwiftUI
 enum HFCreatorStudioFocus: String, CaseIterable, Identifiable {
     case dashboard = "Dashboard"
     case socialMediaKit = "Social Kit"
+    case instagramConnect = "Instagram Connect"
     case vodPackage = "VOD Package"
 
     var id: String { rawValue }
@@ -23,18 +24,35 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 focusTabs
-                dashboardSection
-                localDraftActions
 
                 switch selectedFocus {
                 case .dashboard:
+                    dashboardSection
+                    toolControlStrip
+                    localDraftActions
                     socialMediaKitSection
+                    instagramConnectSection
                     vodPackageSection
                 case .socialMediaKit:
                     socialMediaKitSection
+                    instagramConnectSection
+                    dashboardSection
+                    toolControlStrip
+                    localDraftActions
+                    vodPackageSection
+                case .instagramConnect:
+                    instagramConnectSection
+                    socialMediaKitSection
+                    dashboardSection
+                    toolControlStrip
+                    localDraftActions
                     vodPackageSection
                 case .vodPackage:
                     vodPackageSection
+                    dashboardSection
+                    toolControlStrip
+                    localDraftActions
+                    instagramConnectSection
                     socialMediaKitSection
                 }
 
@@ -196,6 +214,33 @@ struct CreatorStudioView: View {
                         HFCreatorStudioMetric(title: "Creator profile", detail: streamingStore.activeViewingProfile.displayName, systemImage: streamingStore.activeViewingProfile.avatarSymbol)
                         HFCreatorStudioMetric(title: "Provider boundary", detail: "Not Connected Yet", systemImage: "network.slash")
                     }
+
+                    VStack(spacing: HFSpacing.sm) {
+                        Button {
+                            didSaveLocalDraft = true
+                        } label: {
+                            HFCreatorStudioAction(title: "Build the Release", systemImage: "checkmark.seal.fill", isPrimary: true)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.creatorStudio.primaryAction")
+                        .accessibilityIdentifier("hf.creatorStudio.buildTheRelease")
+
+                        Button {
+                            selectedFocus = .socialMediaKit
+                        } label: {
+                            HFCreatorStudioAction(title: "Prepare the Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.creatorStudio.prepareSocialKit")
+
+                        Button {
+                            selectedFocus = .vodPackage
+                        } label: {
+                            HFCreatorStudioAction(title: "Package the VOD", systemImage: "play.rectangle.on.rectangle.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.creatorStudio.packageVOD")
+                    }
                 }
                 .padding(HFSpacing.lg)
             }
@@ -206,6 +251,66 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.creatorStudio.dashboard")
         .accessibilityIdentifier("hf.creatorStudio.currentProject")
         .accessibilityIdentifier("hf.creatorStudio.workspaceModules")
+    }
+
+    private var toolControlStrip: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Tool Control Strip", actionTitle: "Provider-ready")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    toolControlCard(title: "Project Slate", detail: "Current Project", systemImage: "film.stack.fill", identifier: "hf.creatorStudio.projectSlate", focus: .dashboard)
+                    toolControlCard(title: "Asset Board", detail: "Poster + clip placeholders", systemImage: "photo.on.rectangle.angled", identifier: "hf.creatorStudio.assetBoard", focus: .dashboard)
+                    toolControlCard(title: "Caption Lab", detail: "Caption Drafts", systemImage: "text.quote", identifier: "hf.creatorStudio.captionLab", focus: .socialMediaKit)
+                    toolControlCard(title: "Social Media Kit", detail: "Review Social Kit", systemImage: "bubble.left.and.bubble.right.fill", identifier: "hf.creatorStudio.socialMediaKit", focus: .socialMediaKit)
+                    toolControlCard(title: "Instagram Connect", detail: "Not Connected Yet", systemImage: "camera.viewfinder", identifier: "hf.creatorStudio.instagramConnect", focus: .instagramConnect)
+                    toolControlCard(title: "VOD Package", detail: "Preview VOD Package", systemImage: "shippingbox.fill", identifier: "hf.creatorStudio.vodPackage", focus: .vodPackage)
+                    toolControlCard(title: "Release Checklist", detail: "Build the Release", systemImage: "checklist.checked", identifier: "hf.creatorStudio.releaseChecklist", focus: .vodPackage)
+                    toolControlCard(title: "Provider Readiness", detail: "Not Connected Yet", systemImage: "network.slash", identifier: "hf.creatorStudio.providerReadiness", focus: .instagramConnect)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.creatorStudio.toolControlStrip")
+    }
+
+    private func toolControlCard(title: String, detail: String, systemImage: String, identifier: String, focus: HFCreatorStudioFocus) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedFocus = focus
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(selectedFocus == focus ? .black : HFColors.gold)
+                    .frame(width: 36, height: 36)
+                    .background(selectedFocus == focus ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+                    .clipShape(Circle())
+
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(width: 136, height: 132, alignment: .topLeading)
+            .padding(HFSpacing.sm)
+            .background(selectedFocus == focus ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.065))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(selectedFocus == focus ? HFColors.gold.opacity(0.42) : HFColors.glassStroke, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 
     private var socialMediaKitSection: some View {
@@ -264,6 +369,8 @@ struct CreatorStudioView: View {
                         }
                     }
 
+                    instagramConnectMiniCard
+
                     HFCreatorStudioReadinessRow(
                         title: "No live publishing",
                         detail: "Local planning only. No account connection, posting, sharing, or provider SDK is active.",
@@ -281,6 +388,186 @@ struct CreatorStudioView: View {
         .accessibilityLabel("Social Media Kit, Local Draft, Provider-ready, Not Connected Yet, local-only release boundary")
         .accessibilityIdentifier("hf.creatorStudio.socialMediaKit")
         .accessibilityIdentifier("hf.creatorStudio.prepareSocialKit")
+    }
+
+    private var instagramConnectMiniCard: some View {
+        Button {
+            selectedFocus = .instagramConnect
+        } label: {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: "camera.viewfinder")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(
+                            colors: [HFColors.gold, Color.orange],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Instagram Connect")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Local Social Draft is ready to preview while Instagram stays Not Connected Yet.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: HFSpacing.xs) {
+                        HFCreatorStudioPill(title: "Provider-ready")
+                        HFCreatorStudioPill(title: "Not Connected Yet")
+                    }
+                }
+
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .padding(HFSpacing.md)
+            .background(Color.white.opacity(0.065))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(Color.orange.opacity(0.26), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("hf.creatorStudio.instagramConnect")
+    }
+
+    private var instagramConnectSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Instagram Connect", actionTitle: "Provider-ready")
+
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: Color.orange.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    sectionLead(
+                        title: "Instagram Connect",
+                        detail: "Preview a Local Social Draft and provider readiness before any account, backend, or permissions are connected.",
+                        systemImage: "camera.viewfinder",
+                        accent: Color.orange
+                    )
+
+                    HStack(spacing: HFSpacing.xs) {
+                        HFCreatorStudioPill(title: "Local Social Draft", isActive: true)
+                            .accessibilityIdentifier("hf.instagramConnect.localDraft")
+                        HFCreatorStudioPill(title: "Provider-ready")
+                            .accessibilityIdentifier("hf.instagramConnect.providerReady")
+                        HFCreatorStudioPill(title: "Not Connected Yet")
+                            .accessibilityIdentifier("hf.instagramConnect.notConnected")
+                    }
+                    .accessibilityIdentifier("hf.instagramConnect.status")
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Account Readiness")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .accessibilityIdentifier("hf.instagramConnect.accountReadiness")
+
+                        HFCreatorStudioReadinessRow(title: "Instagram account", detail: "Not Connected Yet", status: "Waiting", systemImage: "person.crop.circle.badge.questionmark", accent: Color.orange)
+                            .accessibilityIdentifier("hf.instagramConnect.notConnected")
+                        HFCreatorStudioReadinessRow(title: "Creator identity", detail: "Local profile only", status: "Local Draft", systemImage: streamingStore.activeViewingProfile.avatarSymbol, accent: Color.orange)
+                            .accessibilityIdentifier("hf.instagramConnect.creatorIdentity")
+                        HFCreatorStudioReadinessRow(title: "Permission review", detail: "Required later", status: "Waiting", systemImage: "checkmark.shield.fill", accent: Color.orange)
+                            .accessibilityIdentifier("hf.instagramConnect.permissionStatus")
+                        HFCreatorStudioReadinessRow(title: "Backend vault", detail: "Required later", status: "Boundary", systemImage: "lock.shield.fill", accent: Color.orange)
+                            .accessibilityIdentifier("hf.instagramConnect.backendRequired")
+                    }
+
+                    instagramDraftPreview
+
+                    VStack(spacing: HFSpacing.sm) {
+                        Button {
+                            didSaveLocalDraft = true
+                        } label: {
+                            HFCreatorStudioAction(title: "Save Local Draft", systemImage: "square.and.arrow.down", isPrimary: true)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.instagramConnect.saveLocalDraft")
+
+                        Button {
+                            didSaveLocalDraft = true
+                        } label: {
+                            HFCreatorStudioAction(title: "Copy Local Caption", systemImage: "doc.on.doc")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.instagramConnect.copyLocalCaption")
+
+                        Button {
+                            selectedFocus = .socialMediaKit
+                        } label: {
+                            HFCreatorStudioAction(title: "Preview Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.instagramConnect.previewSocialKit")
+                    }
+
+                    HFCreatorStudioReadinessRow(
+                        title: "No live Instagram provider",
+                        detail: "No live posting, no account session, and no OAuth credentials are active in this app.",
+                        status: "Provider-ready only",
+                        systemImage: "lock.shield.fill",
+                        accent: Color.orange
+                    )
+                    .accessibilityIdentifier("hf.instagramConnect.noLiveProvider")
+                    .accessibilityIdentifier("hf.instagramConnect.noLivePosting")
+                    .accessibilityIdentifier("hf.instagramConnect.noOAuthTokens")
+                    .accessibilityIdentifier("hf.instagramConnect.localOnlyBoundary")
+                }
+                .padding(HFSpacing.lg)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Instagram Connect, Provider-ready, Not Connected Yet, Local Social Draft")
+        .accessibilityIdentifier("hf.instagramConnect.screen")
+        .accessibilityIdentifier("hf.creatorStudio.instagramConnect")
+    }
+
+    private var instagramDraftPreview: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text("Post Draft Preview")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .accessibilityIdentifier("hf.instagramConnect.postDraftPreview")
+
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Caption draft")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                    Text("Tonight on HighFive: choose the scene you would replay first.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("hf.instagramConnect.captionDraft")
+                    Text("#HighFiveCinema #TheFriendly #LocalSocialDraft")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .accessibilityIdentifier("hf.instagramConnect.hashtagDraft")
+                }
+
+                Spacer(minLength: HFSpacing.sm)
+            }
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                HFCreatorStudioMetric(title: "Poster placeholder", detail: "Local", systemImage: "photo.fill")
+                    .accessibilityIdentifier("hf.instagramConnect.posterPlaceholder")
+                HFCreatorStudioMetric(title: "Clip placeholder", detail: "Local", systemImage: "play.rectangle.fill")
+                    .accessibilityIdentifier("hf.instagramConnect.clipPlaceholder")
+                HFCreatorStudioMetric(title: "Alt text draft", detail: "Local", systemImage: "text.alignleft")
+                    .accessibilityIdentifier("hf.instagramConnect.altTextDraft")
+                HFCreatorStudioMetric(title: "Call-to-watch", detail: "HighFive", systemImage: "play.tv.fill")
+            }
+        }
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(Color.orange.opacity(0.18), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
     private var vodPackageSection: some View {
@@ -362,26 +649,35 @@ struct CreatorStudioView: View {
                 Button {
                     selectedFocus = .socialMediaKit
                 } label: {
-                    HFCreatorStudioAction(title: "Prepare the Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
+                    HFCreatorStudioAction(title: "Review Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.creatorStudio.reviewSocialKit")
+
+                Button {
+                    selectedFocus = .instagramConnect
+                } label: {
+                    HFCreatorStudioAction(title: "Preview Instagram Draft", systemImage: "camera.viewfinder")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.creatorStudio.previewInstagramDraft")
 
                 Button {
                     selectedFocus = .vodPackage
                 } label: {
-                    HFCreatorStudioAction(title: "Package the VOD", systemImage: "play.rectangle.on.rectangle.fill")
+                    HFCreatorStudioAction(title: "Preview VOD Package", systemImage: "play.rectangle.on.rectangle.fill")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.creatorStudio.previewVODPackage")
 
                 Button {
                     didSaveLocalDraft = true
                 } label: {
-                    HFCreatorStudioAction(title: didSaveLocalDraft ? "Local Draft Saved" : "Build the Release", systemImage: "checkmark.circle.fill", isPrimary: true)
+                    HFCreatorStudioAction(title: didSaveLocalDraft ? "Local Draft Saved" : "Save Local Draft", systemImage: "square.and.arrow.down", isPrimary: true)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("hf.creatorStudio.localDraft")
-                .accessibilityIdentifier("hf.creatorStudio.primaryAction")
-                .accessibilityIdentifier("hf.creatorStudio.buildTheRelease")
+                .accessibilityIdentifier("hf.creatorStudio.saveLocalDraft")
 
                 Button {
                     dismiss()
@@ -389,6 +685,7 @@ struct CreatorStudioView: View {
                     HFCreatorStudioAction(title: "Back to Profile", systemImage: "person.crop.circle.fill")
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.creatorStudio.backToProfile")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
@@ -438,10 +735,10 @@ struct CreatorStudioView: View {
 
     private var socialPlatformRows: [HFCreatorStudioDraftCard] {
         [
-            HFCreatorStudioDraftCard(title: "Instagram", detail: "Poster drop - Provider-ready"),
-            HFCreatorStudioDraftCard(title: "TikTok", detail: "Trailer clip - Provider-ready"),
-            HFCreatorStudioDraftCard(title: "YouTube Shorts", detail: "Short caption - Provider-ready"),
-            HFCreatorStudioDraftCard(title: "X / Threads", detail: "Creator prompt - Provider-ready")
+            HFCreatorStudioDraftCard(title: "Instagram - Not Connected Yet", detail: "Poster drop - Provider-ready"),
+            HFCreatorStudioDraftCard(title: "TikTok - Not Connected Yet", detail: "Trailer clip - Provider-ready"),
+            HFCreatorStudioDraftCard(title: "YouTube Shorts - Not Connected Yet", detail: "Short caption - Provider-ready"),
+            HFCreatorStudioDraftCard(title: "X / Threads - Not Connected Yet", detail: "Creator prompt - Provider-ready")
         ]
     }
 

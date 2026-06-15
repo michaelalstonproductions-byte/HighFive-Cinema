@@ -449,6 +449,18 @@ final class HFStreamingStore: ObservableObject {
 
     func playbackSource(for movie: Movie) -> HFPlaybackSource {
         let catalogMovie = self.movie(id: movie.id) ?? movie
+        if Self.localPreviewStreamingIDs.contains(catalogMovie.id) {
+            return HFPlaybackSource(
+                movieID: catalogMovie.id,
+                title: catalogMovie.title,
+                status: .playableLocal,
+                localURL: nil,
+                providerName: "HighFive Local Preview",
+                readinessLabel: "Local preview streaming ready",
+                limitation: "Local preview only. No streaming provider connected."
+            )
+        }
+
         return HFPlaybackSource(
             movieID: catalogMovie.id,
             title: catalogMovie.title,
@@ -1321,6 +1333,11 @@ final class HFStreamingStore: ObservableObject {
     private static func scopedKey(_ base: String, _ profileID: String) -> String {
         "\(base).\(profileID)"
     }
+
+    private static let localPreviewStreamingIDs: Set<String> = [
+        "friendly",
+        "paranormall-s1"
+    ]
 
     private static func loadProfileIDs(defaults: UserDefaults, scopedKey: String, fallbackKey: String, fallbackIDs: Set<String>) -> Set<String> {
         if let scoped = defaults.stringArray(forKey: scopedKey) {
