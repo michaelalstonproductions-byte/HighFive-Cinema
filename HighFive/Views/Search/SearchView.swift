@@ -39,6 +39,7 @@ struct SearchView: View {
                 )
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
+                curatedDiscoveryHero
                 genreMoodFilters
 
                 if mode == .search {
@@ -125,6 +126,38 @@ struct SearchView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(mode == .search ? "Search context panel" : "Discover context panel")
+    }
+
+    private var curatedDiscoveryHero: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 46, height: 46)
+                        .background(HFColors.gold.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("HighFive Picks")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("For Tonight, start with a mood and move straight into a title.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("HighFive Picks for tonight")
+        .accessibilityIdentifier("hf.search.curatedDiscovery")
+        .accessibilityIdentifier("hf.search.highfivePicks")
+        .accessibilityIdentifier("hf.search.forTonight")
     }
 
     private var searchContent: some View {
@@ -242,6 +275,7 @@ struct SearchView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Genre and mood filters")
         .accessibilityIdentifier("hf.consumer.search.genreFilters")
+        .accessibilityIdentifier("hf.search.moodChips")
     }
 
     private var discoveryMomentumSection: some View {
@@ -402,6 +436,7 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .accessibilityIdentifier("hf.search.resultCards")
     }
 }
 

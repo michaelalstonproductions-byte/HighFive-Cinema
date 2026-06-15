@@ -38,6 +38,7 @@ struct MovieDetailView: View {
 
                 overview
                 titleDecisionPanel
+                localDepthPreviewSection
                 titleSignalPanel
                 viewingContextSection
                 publicMomentumSection
@@ -130,8 +131,8 @@ struct MovieDetailView: View {
                         .textCase(.uppercase)
                         .kerning(1.4)
 
-                    Text(movie.title)
-                        .font(HFTypography.heroTitle)
+                        Text(movie.title)
+                            .font(HFTypography.heroTitle)
                         .foregroundStyle(HFColors.textPrimary)
                         .lineLimit(2)
                         .minimumScaleFactor(0.68)
@@ -140,7 +141,13 @@ struct MovieDetailView: View {
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
                         .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Tonight's mood")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.gold)
+                        .kerning(1.1)
+                        .accessibilityIdentifier("hf.movieDetail.tonightMood")
 
                     detailMetadataChips
 
@@ -151,6 +158,7 @@ struct MovieDetailView: View {
                         }
                         .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
                         .accessibilityLabel("Watch Now")
+                        .accessibilityIdentifier("hf.route.watchNow")
 
                         VStack(spacing: HFSpacing.xs) {
                             HStack(spacing: HFSpacing.xs) {
@@ -203,6 +211,7 @@ struct MovieDetailView: View {
                             .accessibilityLabel("Open Depth Preview local engine preview")
                             .accessibilityIdentifier("hf.movieDetail.depthPreview")
                             .accessibilityIdentifier("hf.protectedDepth.launch")
+                            .accessibilityIdentifier("hf.movieDetail.localDepthPreview")
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
@@ -231,6 +240,39 @@ struct MovieDetailView: View {
         )
         .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 24, x: 0, y: 14)
         .accessibilityIdentifier("hf.consumer.movieDetail.hero")
+        .accessibilityIdentifier("hf.movieDetail.signatureHero")
+        .accessibilityIdentifier("hf.movieDetail.primaryActions")
+    }
+
+    private var localDepthPreviewSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "cube.transparent")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 46, height: 46)
+                    .background(HFColors.gold.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Local Depth Preview")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Move the frame. Peek into the shot. Keep the experience local and honest.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Local Depth Preview, move the frame, peek into the shot")
+        .accessibilityIdentifier("hf.movieDetail.localDepthPreview")
+        .accessibilityIdentifier("hf.depthExperience.localPreview")
+        .accessibilityIdentifier("hf.depthExperience.moveTheFrame")
+        .accessibilityIdentifier("hf.depthExperience.peekIntoShot")
     }
 
     private var detailMetadataChips: some View {

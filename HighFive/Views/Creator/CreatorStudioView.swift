@@ -78,7 +78,7 @@ struct CreatorStudioView: View {
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
 
-                    Text("Package the current title, review the social kit, and preview VOD readiness locally.")
+                    Text("Build the Release, Prepare the Social Kit, and Package the VOD for local review.")
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
                         .lineLimit(3)
@@ -206,6 +206,8 @@ struct CreatorStudioView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Studio Dashboard, local project status, creator profile context")
         .accessibilityIdentifier("hf.creatorStudio.dashboard")
+        .accessibilityIdentifier("hf.creatorStudio.currentProject")
+        .accessibilityIdentifier("hf.creatorStudio.workspaceModules")
     }
 
     private var socialMediaKitSection: some View {
@@ -265,6 +267,7 @@ struct CreatorStudioView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Social Media Kit, Local Draft, Provider-ready, Not Connected Yet, local-only release boundary")
         .accessibilityIdentifier("hf.creatorStudio.socialMediaKit")
+        .accessibilityIdentifier("hf.creatorStudio.prepareSocialKit")
     }
 
     private var vodPackageSection: some View {
@@ -317,6 +320,8 @@ struct CreatorStudioView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("VOD Package, VOD release checklist, provider status Not Connected Yet")
         .accessibilityIdentifier("hf.creatorStudio.vodPackage")
+        .accessibilityIdentifier("hf.creatorStudio.releasePrep")
+        .accessibilityIdentifier("hf.creatorStudio.packageVOD")
     }
 
     private var localDraftActions: some View {
@@ -327,24 +332,26 @@ struct CreatorStudioView: View {
                 Button {
                     selectedFocus = .socialMediaKit
                 } label: {
-                    HFCreatorStudioAction(title: "Review Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
+                    HFCreatorStudioAction(title: "Prepare the Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
                 }
                 .buttonStyle(.plain)
 
                 Button {
                     selectedFocus = .vodPackage
                 } label: {
-                    HFCreatorStudioAction(title: "Preview VOD Package", systemImage: "play.rectangle.on.rectangle.fill")
+                    HFCreatorStudioAction(title: "Package the VOD", systemImage: "play.rectangle.on.rectangle.fill")
                 }
                 .buttonStyle(.plain)
 
                 Button {
                     didSaveLocalDraft = true
                 } label: {
-                    HFCreatorStudioAction(title: didSaveLocalDraft ? "Local Draft Saved" : "Save Local Draft", systemImage: "checkmark.circle.fill", isPrimary: true)
+                    HFCreatorStudioAction(title: didSaveLocalDraft ? "Local Draft Saved" : "Build the Release", systemImage: "checkmark.circle.fill", isPrimary: true)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("hf.creatorStudio.localDraft")
+                .accessibilityIdentifier("hf.creatorStudio.primaryAction")
+                .accessibilityIdentifier("hf.creatorStudio.buildTheRelease")
 
                 Button {
                     dismiss()

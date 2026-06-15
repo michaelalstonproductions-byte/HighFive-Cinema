@@ -181,7 +181,7 @@ struct DownloadsView: View {
                 }
                 .frame(height: 7)
 
-                Text("This is a local preview shelf. Media source connection is still required for real offline playback.")
+                Text("This is a local preview shelf. Media source connection is still required before future offline playback.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -190,6 +190,7 @@ struct DownloadsView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.consumer.downloads.storageCard")
+        .accessibilityIdentifier("hf.downloads.localOnlyBoundary")
     }
 
     private var offlineWatchHubSection: some View {
@@ -234,6 +235,7 @@ struct DownloadsView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Offline Watch Hub, available offline, ready when you are, find more, offline shelf, and storage preview")
         .accessibilityIdentifier("hf.consumer.downloads.offlineWatchHub")
+        .accessibilityIdentifier("hf.downloads.offlinePreview")
     }
 
     private var connectedStateSection: some View {
@@ -483,6 +485,7 @@ struct DownloadsView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
         .accessibilityIdentifier("hf.consumer.downloads.offlineShelf")
+        .accessibilityIdentifier("hf.downloads.localOfflineShelf")
     }
 
     private var emptyState: some View {

@@ -74,6 +74,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 selectedProfilePanel
+                highfiveHubHero
                 roomsGatewayHero
                 highFiveRoomsSection
                 profileShortcutsSection
@@ -148,6 +149,44 @@ struct ProfileView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Your Profile, manage your viewing space, saved titles, and HighFive Rooms")
+    }
+
+    private var highfiveHubHero: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.crop.circle.fill.badge.checkmark")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 52, height: 52)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("HighFive Hub")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Open Creator Studio, review the Social Kit, preview the VOD Package, or return to the watch shelf.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFRouteChip(title: "Watch", systemImage: "play.fill")
+                    HFRouteChip(title: "Create", systemImage: "wand.and.stars")
+                    HFRouteChip(title: "Release", systemImage: "shippingbox.fill")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("HighFive Hub, Open Creator Studio, Review Social Kit, Preview VOD Package")
+        .accessibilityIdentifier("hf.profile.highfiveHub")
+        .accessibilityIdentifier("hf.profile.creatorStudioHero")
+        .accessibilityIdentifier("hf.profile.nextSteps")
     }
 
     private enum HFProfileQALaunchTarget {
@@ -844,6 +883,7 @@ struct ProfileView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("HighFive Rooms, product spaces for watching, creating, connecting, launching, and export readiness")
         .accessibilityIdentifier("hf.profile.roomsSection")
+        .accessibilityIdentifier("hf.profile.productMap")
     }
 
     private var productSuiteProgressSection: some View {

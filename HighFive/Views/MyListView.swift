@@ -139,8 +139,8 @@ struct MyListView: View {
             HFSectionHeader(title: "Your Watch Shelf", actionTitle: nil)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                HFLibraryShelfCard(title: "Saved Titles", detail: "\(streamingStore.savedMovies.count) in your shelf", systemImage: "bookmark.fill", isActive: true)
-                HFLibraryShelfCard(title: "Continue Watching", detail: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count) in progress", systemImage: "play.circle.fill")
+                    HFLibraryShelfCard(title: "Saved for Tonight", detail: "\(streamingStore.savedMovies.count) in your shelf", systemImage: "bookmark.fill", isActive: true)
+                    HFLibraryShelfCard(title: "Continue the Story", detail: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count) in progress", systemImage: "play.circle.fill")
                 HFLibraryShelfCard(title: "Downloads", detail: "\(streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }.count) offline-ready", systemImage: "arrow.down.circle.fill")
                 HFLibraryShelfCard(title: "Recently Added", detail: "Fresh titles for later", systemImage: "clock.fill")
                 HFLibraryShelfCard(title: "Recommended Next", detail: "A softer path back in", systemImage: "sparkles")
@@ -150,6 +150,10 @@ struct MyListView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Your Watch Shelf, saved titles, continue watching, downloads, recently added, and recommended next")
         .accessibilityIdentifier("hf.consumer.library.watchShelf")
+        .accessibilityIdentifier("hf.library.watchShelf")
+        .accessibilityIdentifier("hf.library.continueWatching")
+        .accessibilityIdentifier("hf.library.savedForTonight")
+        .accessibilityIdentifier("hf.library.continueStory")
     }
 
     private var connectedStateSection: some View {

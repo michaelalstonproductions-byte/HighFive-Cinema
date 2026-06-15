@@ -33,11 +33,13 @@ struct HomeView: View {
             VStack(spacing: HFSpacing.xl) {
                 header
                 heroSection
+                signatureJourneySection
                 watchSectionHeader
                 ForEach(streamingStore.premiumHomeCatalogRails) { category in
                     movieRail(category)
                 }
                 .accessibilityIdentifier("hf.consumer.home.posterRails")
+                .accessibilityIdentifier("hf.home.curatedRails")
                 goldDiscoveryRail
                 smartRecommendationsSection
                 backendStatusSection
@@ -376,6 +378,7 @@ struct HomeView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Tonight on HighFive, curated premieres, originals, and saved titles")
         .accessibilityIdentifier("hf.consumer.home.tonight")
+        .accessibilityIdentifier("hf.home.tonightOnHighFive")
     }
 
     private var homeStreamingMomentumSection: some View {
@@ -446,7 +449,7 @@ struct HomeView: View {
 
     private var watchSectionHeader: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Start Watching", actionTitle: nil)
+            HFSectionHeader(title: "Start the Watch", actionTitle: nil)
 
             HStack(spacing: HFSpacing.sm) {
                 Button(action: onDiscover) {
@@ -463,6 +466,37 @@ struct HomeView: View {
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityIdentifier("hf.home.startWatching")
+    }
+
+    private var signatureJourneySection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "sparkles.tv.fill")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 42, height: 42)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Watch -> Depth Peek -> Creator Studio")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Start with tonight's film, move the frame, then build the release from the same local title.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, screenPadding)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Watch to Depth Peek to Creator Studio")
+        .accessibilityIdentifier("hf.depthExperience.signatureEntry")
     }
 
     private var smartRecommendationsSection: some View {
@@ -526,6 +560,7 @@ struct HomeView: View {
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.gold)
                             .kerning(1.6)
+                            .accessibilityIdentifier("hf.home.tonightOnHighFive")
 
                         Text(heroMovie.title)
                             .font(.system(size: HFResponsiveFit.isCompactPhone(width: screenWidth) ? 34 : 38, weight: .black, design: .default))
@@ -538,6 +573,12 @@ struct HomeView: View {
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.78)
+
+                        Text("Start the Watch")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                            .kerning(1.1)
+                            .accessibilityIdentifier("hf.home.startWatching")
 
                         HStack(spacing: HFSpacing.xs) {
                             Image(systemName: "sparkles")
@@ -578,8 +619,8 @@ struct HomeView: View {
                         } label: {
                             HStack(spacing: HFSpacing.xs) {
                                 Image(systemName: "play.fill")
-                                Text("Watch Now")
-                            }
+                            Text("Watch Now")
+                        }
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
@@ -593,6 +634,7 @@ struct HomeView: View {
                         .accessibilityLabel("Watch Now")
                         .accessibilityIdentifier("hf.functional.player.watchNow")
                         .accessibilityIdentifier("hf.route.watchNow")
+                        .accessibilityIdentifier("hf.home.startWatching")
 
                         HFButton(
                             streamingStore.isSaved(heroMovie) ? "In My List" : "Save",
@@ -627,6 +669,7 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Try Depth and Peek local preview")
                     .accessibilityIdentifier("hf.protectedDepth.launch")
+                    .accessibilityIdentifier("hf.home.depthPeekCTA")
                 }
             }
             .padding(.horizontal, HFSpacing.lg)
@@ -640,6 +683,7 @@ struct HomeView: View {
         .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 28, x: 0, y: 18)
         .padding(.horizontal, HFResponsiveFit.heroHorizontalInset(width: screenWidth))
         .accessibilityIdentifier("hf.consumer.home.hero")
+        .accessibilityIdentifier("hf.home.signatureHero")
         .accessibilityIdentifier("hf.functional.home.featuredMovieRoute")
     }
 
@@ -710,6 +754,7 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Open tonight on HighFive featured premiere")
         .accessibilityIdentifier("hf.functional.home.featuredMovieRoute")
+        .accessibilityIdentifier("hf.home.savedForTonight")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
