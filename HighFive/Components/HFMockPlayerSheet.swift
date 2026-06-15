@@ -3,6 +3,7 @@ import SwiftUI
 struct HFMockPlayerSheet: View {
     let movie: Movie
     @Environment(\.dismiss) private var dismiss
+    @State private var showsProtectedDepthPreview = false
 
     var body: some View {
         ZStack {
@@ -11,9 +12,14 @@ struct HFMockPlayerSheet: View {
 
             VStack(spacing: HFSpacing.xl) {
                 HStack {
-                    Text("Player Path")
-                        .font(HFTypography.section)
-                        .foregroundStyle(HFColors.textPrimary)
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("HighFive Player")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local Preview")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                    }
                     Spacer()
                     Button {
                         dismiss()
@@ -58,6 +64,7 @@ struct HFMockPlayerSheet: View {
                     RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
                         .stroke(HFColors.goldStroke, lineWidth: 1)
                 )
+                .accessibilityIdentifier("hf.player.cinematicFrame")
 
                 HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
                     VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -68,7 +75,7 @@ struct HFMockPlayerSheet: View {
                                 .font(HFTypography.cardTitle)
                                 .foregroundStyle(HFColors.textPrimary)
                             Spacer()
-                        Text("Local")
+                        Text("Ready")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.gold)
                         }
@@ -83,13 +90,28 @@ struct HFMockPlayerSheet: View {
                             }
                         }
                         .frame(height: 7)
-                        Text("Media source not connected yet.")
+                        Text("No streaming provider connected. HighFive player controls are local preview only.")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(HFSpacing.lg)
                 }
+                .accessibilityIdentifier("hf.player.localPreview")
+
+                Button {
+                    showsProtectedDepthPreview = true
+                } label: {
+                    Label("Try Depth + Peek", systemImage: "cube.transparent")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.player.depthPeekCTA")
 
                 Spacer()
             }
@@ -97,7 +119,12 @@ struct HFMockPlayerSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showsProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
+        }
         .accessibilityIdentifier("hf.functional.player.watchNow")
+        .accessibilityIdentifier("hf.player.surface")
+        .accessibilityIdentifier("hf.player.primaryActions")
     }
 
     @ViewBuilder

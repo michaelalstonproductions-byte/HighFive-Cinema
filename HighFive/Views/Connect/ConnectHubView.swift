@@ -1,30 +1,23 @@
 import SwiftUI
 
 struct ConnectHubView: View {
-    private let comingNext = [
-        "Real profiles",
-        "Live follows",
-        "Creator comments",
-        "Messaging",
-        "Project communities"
-    ]
+    @State private var followedCreatorIDs: Set<UUID> = []
+    @State private var savedRoomIDs: Set<UUID> = []
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                HFBreadcrumbTrail(items: ["Profile", "Connect Preview"])
-                ecosystemCommandShortcut
-                discoveryRoutesSection
-                recommendedCommunitiesSection
+                storiesSection
+                featuredReel
+                feedEntry
                 featuredCreatorsSection
+                roomsSection
                 projectUpdatesSection
-                communitySignalsSection
-                trendingPackagesSection
-                comingNextSection
+                signalStrip
             }
-            .padding(.top, HFSpacing.lg)
-            .padding(.bottom, HFSpacing.floatingTabClearance)
+            .padding(.top, HFSpacing.xxl)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Connect")
@@ -32,372 +25,447 @@ struct ConnectHubView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            Text("Connect")
-                .font(HFTypography.display)
-                .foregroundStyle(HFColors.textPrimary)
+        HStack(alignment: .center, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Connect")
+                    .font(HFTypography.display)
+                    .foregroundStyle(HFColors.textPrimary)
 
-            Text("Discover creators, preview communities, follow project signals, and connect work before launch.")
-                .font(HFTypography.body)
-                .foregroundStyle(HFColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Follow creators, join rooms, and watch what the HighFive community is talking about.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-            Text("Preview only. Creator profiles, follows, comments, and messaging are local mock UI.")
-                .font(HFTypography.caption)
-                .foregroundStyle(HFColors.gold)
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+
+            NavigationLink {
+                ConnectNotificationsPreviewView()
+            } label: {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 46, height: 46)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open notifications")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
-    private var ecosystemCommandShortcut: some View {
+    private var storiesSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.md) {
+                ForEach(HFConnectPreviewData.featuredCreators) { creator in
+                    NavigationLink {
+                        CreatorProfilePreviewView(creator: creator)
+                    } label: {
+                        HFConnectStoryAvatar(
+                            name: creator.name,
+                            subtitle: creator.role,
+                            systemImage: "person.crop.circle.fill"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                ForEach(HFConnectPreviewData.socialRooms.prefix(3)) { room in
+                    NavigationLink {
+                        SocialRoomDetailPreviewView(room: room)
+                    } label: {
+                        HFConnectStoryAvatar(
+                            name: room.name,
+                            subtitle: "\(room.activeNow) active",
+                            systemImage: "bubble.left.and.bubble.right.fill"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var featuredReel: some View {
         NavigationLink {
-            EcosystemCommandCenterView()
+            ActivityFeedPreviewView()
+        } label: {
+            ZStack(alignment: .bottomLeading) {
+                featuredArtwork
+                    .frame(height: 520)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.18), Color.black.opacity(0.94)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack {
+                        HFStatusBadge(title: "Live", isProminent: true)
+                        HFStatusBadge(title: "Creator Feed", isProminent: false)
+                        Spacer()
+                        VStack(spacing: HFSpacing.sm) {
+                            HFConnectVerticalMetric(systemImage: "heart.fill", value: "4.8K")
+                            HFConnectVerticalMetric(systemImage: "text.bubble.fill", value: "318")
+                            HFConnectVerticalMetric(systemImage: "bookmark.fill", value: "1.2K")
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                        Text("The Friendly Watch Room")
+                            .font(.system(size: 34, weight: .black, design: .default))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Text("Poster reactions are up, trailer comments are moving, and creators are joining the room.")
+                            .font(HFTypography.body)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: HFSpacing.sm) {
+                            Label("Watch feed", systemImage: "play.fill")
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, HFSpacing.md)
+                                .frame(height: 42)
+                                .background(HFColors.goldGradient)
+                                .clipShape(Capsule())
+
+                            Label("37 active", systemImage: "person.2.fill")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .padding(.horizontal, HFSpacing.sm)
+                                .frame(height: 42)
+                                .background(Color.white.opacity(0.14))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+                    .stroke(HFColors.gold.opacity(0.44), lineWidth: 1)
+            )
+            .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 26, x: 0, y: 18)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open The Friendly Watch Room feed")
+    }
+
+    private var featuredArtwork: some View {
+        Group {
+            if let movie = HFMockData.movie("friendly"),
+               HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
+               let assetName = movie.backdropAssetName ?? movie.posterAssetName {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                LinearGradient(
+                    colors: [HFColors.charcoal, HFColors.warmGlow.opacity(0.42), HFColors.background],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        }
+    }
+
+    private var feedEntry: some View {
+        NavigationLink {
+            ActivityFeedPreviewView()
         } label: {
             HFActionTile(
-                title: "HighFive Command Center",
-                subtitle: "Return to Watch, Create, Connect, Launch, Access, and future Export routes.",
-                systemImage: "command"
+                title: "Open Feed",
+                subtitle: "Swipe through creator posts, community reactions, watch rooms, and project updates.",
+                systemImage: "play.rectangle.on.rectangle.fill"
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Open HighFive Command Center")
+        .accessibilityLabel("Open Connect feed")
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
     private var featuredCreatorsSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Featured Creators", actionTitle: nil)
+            HFSectionHeader(title: "Creators to Follow", actionTitle: nil)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.md) {
+                    ForEach(HFConnectPreviewData.featuredCreators) { creator in
+                        NavigationLink {
+                            CreatorProfilePreviewView(creator: creator)
+                        } label: {
+                            creatorCard(creator)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+    }
+
+    private func creatorCard(_ creator: HFConnectCreator) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HStack(spacing: HFSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(HFColors.goldGradient)
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 28, weight: .black))
+                        .foregroundStyle(.black)
+                }
+                .frame(width: 58, height: 58)
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(creator.name)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(creator.role)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                }
+            }
+
+            Text(creator.bio)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Text("\(creator.followers) followers")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.gold)
+                Spacer()
+            }
+
+            Button {
+                toggleFollow(creator.id)
+            } label: {
+                Text(followedCreatorIDs.contains(creator.id) ? "Following" : "Follow")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(followedCreatorIDs.contains(creator.id) ? HFColors.textPrimary : .black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 38)
+                    .background(followedCreatorIDs.contains(creator.id) ? AnyShapeStyle(Color.white.opacity(0.14)) : AnyShapeStyle(HFColors.goldGradient))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(width: 210, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(HFColors.surfaceElevated.opacity(0.86))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.24), lineWidth: 1)
+        )
+    }
+
+    private var roomsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Rooms For You", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
-                ForEach(HFConnectPreviewData.featuredCreators) { creator in
+                ForEach(HFConnectPreviewData.socialRooms.prefix(3)) { room in
                     NavigationLink {
-                        CreatorProfilePreviewView(creator: creator)
+                        SocialRoomDetailPreviewView(room: room)
                     } label: {
-                        creatorCard(creator)
+                        roomCard(room)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(creator.name) creator profile preview")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
-    private var discoveryRoutesSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Community Discovery", actionTitle: nil)
+    private func roomCard(_ room: HFConnectSocialRoom) -> some View {
+        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.glassStroke) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 52, height: 52)
+                    .background(HFColors.goldGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
-            VStack(spacing: HFSpacing.md) {
-                NavigationLink {
-                    ConnectNotificationsPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Connect Notifications",
-                        subtitle: "Preview social signals from creators, rooms, projects, and watch parties.",
-                        systemImage: "bell.badge.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Connect Notifications Preview")
-
-                NavigationLink {
-                    SocialGraphPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Social Graph",
-                        subtitle: "Map mock relationships between creators, projects, rooms, and audiences.",
-                        systemImage: "point.3.connected.trianglepath.dotted"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Social Graph Preview")
-
-                NavigationLink {
-                    FollowSuggestionsPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Follow Suggestions",
-                        subtitle: "Preview recommended creators, projects, and rooms with local-only follow state.",
-                        systemImage: "person.crop.circle.badge.plus"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Follow Suggestions Preview")
-
-                NavigationLink {
-                    SocialRoomsPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Social Rooms",
-                        subtitle: "Open mock creator-led rooms for watch circles, reviews, and discussions.",
-                        systemImage: "bubble.left.and.bubble.right.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Social Rooms Preview")
-
-                NavigationLink {
-                    CreatorCirclesPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Creator Circles",
-                        subtitle: "Preview collaborator networks, creative teams, and circle follows.",
-                        systemImage: "circle.hexagongrid.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Creator Circles Preview")
-
-                NavigationLink {
-                    CommunityDiscoveryPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Community Discovery",
-                        subtitle: "Find creator communities, project circles, and audience preview conversations.",
-                        systemImage: "person.3.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Community Discovery Preview")
-
-                NavigationLink {
-                    WatchPartyPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Watch Party Preview",
-                        subtitle: "Preview shared viewing rooms without playback sync or live chat.",
-                        systemImage: "play.tv.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Watch Party Preview")
-
-                NavigationLink {
-                    ProjectCommunityPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Project Community",
-                        subtitle: "Preview The Friendly updates, audience signals, and mock discussions.",
-                        systemImage: "film.stack.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Project Community Preview")
-
-                NavigationLink {
-                    SocialRoomDetailPreviewView()
-                } label: {
-                    HFActionTile(
-                        title: "Room Detail Preview",
-                        subtitle: "Open The Friendly Watch Room discussion preview.",
-                        systemImage: "star.bubble.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Open Social Room Detail Preview")
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var recommendedCommunitiesSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Recommended Communities", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-                VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    ForEach(Array(HFPersonalizationPreviewData.recommendedCommunities.enumerated()), id: \.element) { index, community in
-                        HStack(spacing: HFSpacing.md) {
-                            Text("\(index + 1)")
-                                .font(HFTypography.caption)
-                                .foregroundStyle(.black)
-                                .frame(width: 30, height: 30)
-                                .background(HFColors.gold)
-                                .clipShape(Circle())
-
-                            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                                Text(community)
-                                    .font(HFTypography.body)
-                                    .foregroundStyle(HFColors.textPrimary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Text("Local recommendation based on active previews.")
-                                    .font(HFTypography.micro)
-                                    .foregroundStyle(HFColors.textSecondary)
-                            }
-
-                            Spacer()
-                            HFStatusBadge(title: "Mock", isProminent: false)
-                        }
-                        .padding(.vertical, HFSpacing.xxs)
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack {
+                        Text(room.name)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(1)
+                        Spacer()
+                        Text(room.activeNow)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, HFSpacing.xs)
+                            .frame(height: 22)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
                     }
+
+                    Text(room.subtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+
+                    HStack(spacing: HFSpacing.sm) {
+                        Label(room.members, systemImage: "person.2.fill")
+                        Label("\(room.comments) comments", systemImage: "text.bubble.fill")
+                        Spacer()
+                        Button {
+                            toggleRoomSave(room.id)
+                        } label: {
+                            Image(systemName: savedRoomIDs.contains(room.id) ? "bookmark.fill" : "bookmark")
+                                .font(.system(size: 14, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
                 }
-                .padding(HFSpacing.md)
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(HFSpacing.md)
         }
     }
 
     private var projectUpdatesSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Project Updates", actionTitle: nil)
-
-            NavigationLink {
-                ActivityFeedPreviewView()
-            } label: {
-                HFActionTile(
-                    title: "Open Activity Feed",
-                    subtitle: "Review mock project updates, reactions, and comment previews without live social services.",
-                    systemImage: "text.bubble.fill"
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open Activity Feed Preview")
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+            HFSectionHeader(title: "Trending Updates", actionTitle: nil)
 
             VStack(spacing: HFSpacing.md) {
                 ForEach(HFConnectPreviewData.projectUpdates) { update in
                     NavigationLink {
                         ProjectCommunityPreviewView()
                     } label: {
-                        projectUpdateCard(update)
+                        HStack(spacing: HFSpacing.md) {
+                            Image(systemName: update.systemImage)
+                                .font(.system(size: 18, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                                .frame(width: 44, height: 44)
+                                .background(HFColors.gold.opacity(0.12))
+                                .clipShape(Circle())
+
+                            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                                Text(update.title)
+                                    .font(HFTypography.cardTitle)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                Text(update.detail)
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .lineLimit(2)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                        }
+                        .padding(HFSpacing.md)
+                        .background(HFColors.surface.opacity(0.78))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Open project community for \(update.title)")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
-    private var communitySignalsSection: some View {
+    private var signalStrip: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Community Signals", actionTitle: nil)
+            HFSectionHeader(title: "Community Pulse", actionTitle: nil)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.md) {
                 ForEach(HFConnectPreviewData.communitySignals) { signal in
-                    HFMetricCard(title: signal.title, value: signal.value, systemImage: signal.systemImage)
+                    HFMetricCard(title: signal.title.replacingOccurrences(of: "Mock ", with: ""), value: signal.value, systemImage: signal.systemImage)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 
-    private var trendingPackagesSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Trending Packages", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-                VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    ForEach(Array(HFConnectPreviewData.trendingPackages.enumerated()), id: \.element) { index, package in
-                        HStack(spacing: HFSpacing.md) {
-                            Text("\(index + 1)")
-                                .font(HFTypography.caption)
-                                .foregroundStyle(.black)
-                                .frame(width: 30, height: 30)
-                                .background(HFColors.gold)
-                                .clipShape(Circle())
-                            Text(package)
-                                .font(HFTypography.body)
-                                .foregroundStyle(HFColors.textPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer()
-                            HFStatusBadge(title: "Mock", isProminent: false)
-                        }
-                        .padding(.vertical, HFSpacing.xxs)
-                    }
-                }
-                .padding(HFSpacing.md)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+    private func toggleFollow(_ id: UUID) {
+        if followedCreatorIDs.contains(id) {
+            followedCreatorIDs.remove(id)
+        } else {
+            followedCreatorIDs.insert(id)
         }
     }
 
-    private var comingNextSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "Coming Next", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
-                VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    ForEach(comingNext, id: \.self) { item in
-                        HStack(spacing: HFSpacing.sm) {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(HFColors.gold)
-                                .frame(width: 22)
-                            Text(item)
-                                .font(HFTypography.body)
-                                .foregroundStyle(HFColors.textSecondary)
-                            Spacer()
-                        }
-                    }
-                }
-                .padding(HFSpacing.md)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+    private func toggleRoomSave(_ id: UUID) {
+        if savedRoomIDs.contains(id) {
+            savedRoomIDs.remove(id)
+        } else {
+            savedRoomIDs.insert(id)
         }
     }
+}
 
-    private func creatorCard(_ creator: HFConnectCreator) -> some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(HFColors.gold.opacity(0.16))
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(HFColors.gold)
-                }
-                .frame(width: 58, height: 58)
+private struct HFConnectStoryAvatar: View {
+    let name: String
+    let subtitle: String
+    let systemImage: String
 
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    HStack(spacing: HFSpacing.xs) {
-                        Text(creator.name)
-                            .font(HFTypography.menu)
-                            .foregroundStyle(HFColors.textPrimary)
-                        Spacer(minLength: HFSpacing.xs)
-                        HFStatusBadge(title: creator.role, isProminent: false)
-                    }
-
-                    Text(creator.bio)
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text("\(creator.followers) mock followers")
-                        .font(HFTypography.micro)
-                        .foregroundStyle(HFColors.gold)
-                }
-            }
-            .padding(HFSpacing.md)
-        }
-    }
-
-    private func projectUpdateCard(_ update: HFConnectProjectUpdate) -> some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.glassStroke) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
-                Image(systemName: update.systemImage)
-                    .font(.system(size: 18, weight: .bold))
+    var body: some View {
+        VStack(spacing: HFSpacing.xs) {
+            ZStack {
+                Circle()
+                    .stroke(HFColors.goldGradient, lineWidth: 3)
+                Circle()
+                    .fill(HFColors.surfaceElevated)
+                    .padding(4)
+                Image(systemName: systemImage)
+                    .font(.system(size: 26, weight: .black))
                     .foregroundStyle(HFColors.gold)
-                    .frame(width: 42, height: 42)
-                    .background(HFColors.gold.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    HStack(spacing: HFSpacing.xs) {
-                        Text(update.title)
-                            .font(HFTypography.body)
-                            .foregroundStyle(HFColors.textPrimary)
-                        Spacer(minLength: HFSpacing.xs)
-                        HFStatusBadge(title: update.status, isProminent: false)
-                    }
-                    Text(update.detail)
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
-            .padding(HFSpacing.md)
+            .frame(width: 78, height: 78)
+
+            Text(name)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .frame(width: 86)
+
+            Text(subtitle)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+                .frame(width: 86)
+        }
+    }
+}
+
+private struct HFConnectVerticalMetric: View {
+    let systemImage: String
+    let value: String
+
+    var body: some View {
+        VStack(spacing: HFSpacing.xxs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .frame(width: 42, height: 42)
+                .background(Color.black.opacity(0.36))
+                .clipShape(Circle())
+            Text(value)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textPrimary)
         }
     }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 struct ProfileSwitcherView: View {
     @Binding var selectedProfile: UserProfile
     var showsHeader = false
-    @State private var mockMessage: String?
+    @State private var profileMessage: String?
 
     private let columns = [
         GridItem(.flexible(), spacing: HFSpacing.md),
@@ -17,7 +17,7 @@ struct ProfileSwitcherView: View {
                     Text("Who is watching?")
                         .font(HFTypography.display)
                         .foregroundStyle(HFColors.textPrimary)
-                    Text("Choose a local profile for this session.")
+                    Text("Choose who is watching.")
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
                 }
@@ -32,7 +32,7 @@ struct ProfileSwitcherView: View {
             }
 
             Button {
-                mockMessage = "Profile management is a local placeholder for this streaming phase."
+                profileMessage = "Profile management is active for this device session."
             } label: {
                 Text("Manage Profiles")
                     .font(HFTypography.smallAction)
@@ -44,13 +44,13 @@ struct ProfileSwitcherView: View {
             }
             .buttonStyle(.plain)
         }
-        .alert("Mock Profile Action", isPresented: Binding(
-            get: { mockMessage != nil },
-            set: { if !$0 { mockMessage = nil } }
+        .alert("Profile Action", isPresented: Binding(
+            get: { profileMessage != nil },
+            set: { if !$0 { profileMessage = nil } }
         )) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(mockMessage ?? "")
+            Text(profileMessage ?? "")
         }
     }
 
@@ -91,7 +91,7 @@ struct ProfileSwitcherView: View {
 
     private var addProfileCard: some View {
         Button {
-            mockMessage = "Add Profile is a local placeholder. No account data is created."
+            profileMessage = "Add Profile is ready for account setup."
         } label: {
             VStack(spacing: HFSpacing.sm) {
                 ZStack {

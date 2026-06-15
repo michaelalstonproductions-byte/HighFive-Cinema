@@ -7,69 +7,43 @@ struct MovieDetailView: View {
     @State private var previewMovie: Movie?
     @State private var showsProtectedDepthPreview = false
 
+    private var catalogMovie: Movie {
+        streamingStore.movie(id: movie.id) ?? movie
+    }
+
     private var creator: Creator {
-        HFMockData.creator(for: movie)
+        HFMockData.creator(for: catalogMovie)
     }
 
     private var cast: [String] {
-        HFMockData.cast(for: movie)
-    }
-
-    private var galleryAssets: [String] {
-        HFMockData.galleryAssets(for: movie)
+        HFMockData.cast(for: catalogMovie)
     }
 
     private var relatedTitles: [Movie] {
         streamingStore.relatedMovies(for: catalogMovie)
     }
 
-    private var catalogMovie: Movie {
-        streamingStore.movie(id: movie.id) ?? movie
-    }
-
-    private var detailBottomClearance: CGFloat {
-        HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight + HFSpacing.xs
+    private var galleryAssets: [String] {
+        HFMockData.galleryAssets(for: catalogMovie)
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 hero
-
                 overview
-                titleDecisionPanel
+                actionPanel
                 localDepthPreviewSection
-                titleSignalPanel
-                viewingContextSection
-                publicMomentumSection
-                catalogIdentitySection
-                playerServiceSection
-                entitlementPathSection
-                offlineEligibilitySection
-                communicationPathSection
-                launchPathSection
-                deliveryPathSection
-                titlePathSection
-                watchToReleaseSection
-                relatedSection
                 creatorSection
+                relatedSection
                 castSection
                 gallerySection
-                bottomScrollClearance
             }
-            .padding(.bottom, detailBottomClearance)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.root")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
-        .sheet(item: $previewMovie) { movie in
-            HFPlayerServiceSheet(movie: movie)
-                .environmentObject(streamingStore)
-                .accessibilityIdentifier("hf.functional.player.sheet")
-        }
-        .sheet(isPresented: $showsProtectedDepthPreview) {
-            HighFiveProtectedSpatialPeekBridge()
-        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
@@ -78,554 +52,136 @@ struct MovieDetailView: View {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(HFColors.gold)
+                        .frame(width: 42, height: 42)
+                        .background(Color.black.opacity(0.46))
+                        .clipShape(Circle())
                 }
             }
+        }
+        .sheet(item: $previewMovie) { movie in
+            HFPlayerServiceSheet(movie: movie)
+                .environmentObject(streamingStore)
+        }
+        .sheet(isPresented: $showsProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
         }
     }
 
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
-                .fill(HFColors.warmGlow.opacity(0.34))
-                .blur(radius: 28)
-                .offset(y: 32)
-
             detailArtwork
-                .frame(height: 570)
+                .frame(height: 590)
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
             LinearGradient(
-                colors: [.clear, HFColors.warmGlow.opacity(0.30), HFColors.background.opacity(0.88), HFColors.background],
+                colors: [.clear, HFColors.warmGlow.opacity(0.26), HFColors.background.opacity(0.92), HFColors.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
 
-            VStack {
-                HStack {
-                    Text(movie.isOriginal ? "HIGHFIVE ORIGINAL" : "FEATURED TITLE")
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top) {
+                    Text(catalogMovie.isOriginal ? "HIGHFIVE ORIGINAL" : "FEATURED TITLE")
                         .font(HFTypography.micro)
-                        .foregroundStyle(HFColors.gold)
-                        .kerning(1.4)
+                        .foregroundStyle(.black)
                         .padding(.horizontal, HFSpacing.sm)
                         .frame(height: 28)
-                        .background(Color.black.opacity(0.42))
+                        .background(HFColors.goldGradient)
                         .clipShape(Capsule())
-                    Spacer()
-                    HFPosterCard(movie: movie, width: 84, showTitle: false, posterOnly: true)
-                        .rotationEffect(.degrees(7))
-                        .shadow(color: HFColors.amberGlow.opacity(0.26), radius: 18, x: 0, y: 12)
-                }
-                Spacer()
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-            .padding(.top, HFSpacing.xl)
 
-            HStack(alignment: .bottom, spacing: HFSpacing.md) {
-                HFPosterCard(movie: movie, width: 126, showTitle: false, showProgress: movie.progress != nil)
+                    Spacer()
+
+                    HFPosterCard(movie: catalogMovie, width: 94, showTitle: false, showProgress: catalogMovie.progress != nil)
+                        .rotationEffect(.degrees(7))
+                }
+
+                Spacer()
 
                 VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    Text("Now Streaming")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.gold)
-                        .textCase(.uppercase)
-                        .kerning(1.4)
-
-                        Text(movie.title)
-                            .font(HFTypography.heroTitle)
+                    Text(catalogMovie.title)
+                        .font(HFTypography.heroTitle)
                         .foregroundStyle(HFColors.textPrimary)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.68)
-
-                    Text(movie.subtitle)
+                        .minimumScaleFactor(0.62)
+                    Text(catalogMovie.subtitle)
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
                         .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Tonight's mood")
-                        .font(HFTypography.micro)
-                        .foregroundStyle(HFColors.gold)
-                        .kerning(1.1)
-                        .accessibilityIdentifier("hf.movieDetail.tonightMood")
+                    metadataChips
 
-                    detailMetadataChips
-
-                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        HFButton("Watch Now", systemImage: "play.fill") {
+                    HStack(spacing: HFSpacing.sm) {
+                        HFButton(catalogMovie.isComingSoon ? "Preview" : "Watch Now", systemImage: "play.fill") {
                             streamingStore.markStartedWatching(catalogMovie)
                             previewMovie = catalogMovie
                         }
                         .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
-                        .accessibilityLabel("Watch Now")
                         .accessibilityIdentifier("hf.route.watchNow")
 
-                        VStack(spacing: HFSpacing.xs) {
-                            HStack(spacing: HFSpacing.xs) {
-                                HFButton(
-                                    streamingStore.isSaved(movie) ? "In My List" : "My List",
-                                    systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
-                                    style: .secondary
-                                ) {
-                                    streamingStore.toggleSaved(movie)
-                                }
-                                .accessibilityIdentifier("hf.functional.movie.saveToggle")
-                                .accessibilityLabel(streamingStore.isSaved(movie) ? "Remove from My List" : "Add to My List")
-
-                                HFButton(
-                                    streamingStore.isDownloaded(movie) ? "Offline" : "Local",
-                                    systemImage: streamingStore.isDownloaded(movie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
-                                    style: .secondary
-                                ) {
-                                    if streamingStore.isDownloaded(movie) {
-                                        streamingStore.removeOfflineAsset(for: movie)
-                                    } else {
-                                        streamingStore.queueOfflineAsset(for: movie)
-                                    }
-                                }
-                                .accessibilityIdentifier("hf.functional.movie.downloadToggle")
-                                .accessibilityLabel(streamingStore.isDownloaded(movie) ? "Remove local offline preview state" : "Queue local offline preview state")
-                            }
-
-                            Button {
-                                showsProtectedDepthPreview = true
-                            } label: {
-                                HStack(spacing: HFSpacing.xs) {
-                                    Image(systemName: "cube.transparent")
-                                    Text("Depth Preview")
-                                    Spacer(minLength: HFSpacing.xs)
-                                    Text("Local")
-                                        .font(HFTypography.micro)
-                                        .foregroundStyle(HFColors.gold)
-                                }
-                                .font(HFTypography.smallAction)
+                        Button {
+                            streamingStore.toggleSaved(catalogMovie)
+                        } label: {
+                            Image(systemName: streamingStore.isSaved(catalogMovie) ? "checkmark" : "plus")
+                                .font(.system(size: 18, weight: .black))
                                 .foregroundStyle(HFColors.textPrimary)
-                                .padding(.horizontal, HFSpacing.md)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 46)
-                                .background(Color.black.opacity(0.36))
-                                .overlay(Capsule().stroke(HFColors.gold.opacity(0.30), lineWidth: 1))
+                                .frame(width: 54, height: 54)
+                                .background(Color.white.opacity(0.14))
                                 .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Open Depth Preview local engine preview")
-                            .accessibilityIdentifier("hf.movieDetail.depthPreview")
-                            .accessibilityIdentifier("hf.protectedDepth.launch")
-                            .accessibilityIdentifier("hf.movieDetail.localDepthPreview")
                         }
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("My List for \(streamingStore.activeViewingProfile.displayName)")
-                                .font(HFTypography.micro)
-                                .foregroundStyle(HFColors.gold)
-                                .accessibilityIdentifier("hf.account.movieDetail.saveForProfile")
-                            Text("Local offline preview only")
-                                .font(HFTypography.micro)
-                                .foregroundStyle(HFColors.textSecondary)
-                                .accessibilityIdentifier("hf.account.movieDetail.downloadForProfile")
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("My List for \(streamingStore.activeViewingProfile.displayName), local offline preview only")
-                        .accessibilityIdentifier("hf.account.movieDetail.profileState")
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(streamingStore.isSaved(catalogMovie) ? "Remove from My List" : "Add to My List")
                     }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-            .padding(.bottom, HFSpacing.xl)
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
-                .stroke(HFColors.stroke, lineWidth: 1)
-        )
-        .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 24, x: 0, y: 14)
-        .accessibilityIdentifier("hf.consumer.movieDetail.hero")
-        .accessibilityIdentifier("hf.movieDetail.signatureHero")
-        .accessibilityIdentifier("hf.movieDetail.primaryActions")
-    }
-
-    private var localDepthPreviewSection: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.34)) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
-                Image(systemName: "cube.transparent")
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundStyle(HFColors.gold)
-                    .frame(width: 46, height: 46)
-                    .background(HFColors.gold.opacity(0.13))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                    Text("Local Depth Preview")
-                        .font(HFTypography.cardTitle)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Move the frame. Peek into the shot. Keep the experience local and honest.")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(HFSpacing.md)
-        }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Local Depth Preview, move the frame, peek into the shot")
-        .accessibilityIdentifier("hf.movieDetail.localDepthPreview")
-        .accessibilityIdentifier("hf.depthExperience.localPreview")
-        .accessibilityIdentifier("hf.depthExperience.moveTheFrame")
-        .accessibilityIdentifier("hf.depthExperience.peekIntoShot")
-    }
-
-    private var detailMetadataChips: some View {
-        HStack(spacing: HFSpacing.xs) {
-            ForEach([movie.year, movie.rating, movie.duration], id: \.self) { value in
-                Text(value)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(value == movie.year ? .black : HFColors.textPrimary)
-                    .padding(.horizontal, HFSpacing.sm)
-                    .frame(height: 28)
-                    .background(value == movie.year ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.15)))
-                    .clipShape(Capsule())
-            }
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.78)
-    }
-
-    private var overview: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.lg) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Text("Overview")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                    .textCase(.uppercase)
-
-                Text(movie.synopsis)
-                    .font(HFTypography.body)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.top, HFSpacing.xs)
-
-            genreTags
-        }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var titleSignalPanel: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.32)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
-                    Image(systemName: movie.isComingSoon ? "calendar.badge.clock" : "play.rectangle.fill")
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundStyle(HFColors.gold)
-                        .frame(width: 48, height: 48)
-                        .background(HFColors.gold.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text(movie.isComingSoon ? "Premiere Watchlist" : "Ready to Stream")
-                            .font(HFTypography.cardTitle)
-                            .foregroundStyle(HFColors.textPrimary)
-                        Text(movie.isComingSoon ? "This title is staged as a coming-soon HighFive original." : "Watch, save, or continue from the local preview slate.")
-                            .font(HFTypography.caption)
-                            .foregroundStyle(HFColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                HStack(spacing: HFSpacing.xs) {
-                    HFDetailSignalChip(title: movie.creatorName, systemImage: "building.2.fill")
-                    HFDetailSignalChip(title: streamingStore.isDownloaded(movie) ? "Local offline" : "Local preview", systemImage: streamingStore.isDownloaded(movie) ? "arrow.down.circle.fill" : "play.rectangle.fill")
-                    if let progress = movie.progress {
-                        HFDetailSignalChip(title: "\(Int(progress * 100))% watched", systemImage: "play.circle.fill")
-                    }
-                }
-            }
-            .padding(HFSpacing.md)
-        }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Movie detail readiness panel")
-    }
-
-    private var titleDecisionPanel: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Why Watch Tonight", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
-                VStack(alignment: .leading, spacing: HFSpacing.md) {
-                    HStack(alignment: .top, spacing: HFSpacing.md) {
-                        Image(systemName: "sparkles.tv.fill")
-                            .font(.system(size: 22, weight: .black))
-                            .foregroundStyle(HFColors.gold)
-                            .frame(width: 48, height: 48)
-                            .background(HFColors.gold.opacity(0.13))
-                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                            Text(movie.title)
-                                .font(HFTypography.section)
-                                .foregroundStyle(HFColors.textPrimary)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.78)
-                            Text("A clear title decision surface for mood, story, audience fit, and what to watch next.")
-                                .font(HFTypography.caption)
-                                .foregroundStyle(HFColors.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        Spacer(minLength: 0)
-                    }
-
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                        HFTitleDecisionCard(title: "Watch mood", detail: movie.genres.prefix(2).joined(separator: " / "), systemImage: "moon.stars.fill", isActive: true)
-                        HFTitleDecisionCard(title: "Story promise", detail: movie.subtitle, systemImage: "text.book.closed.fill")
-                        HFTitleDecisionCard(title: "Audience fit", detail: movie.rating, systemImage: "person.2.fill")
-                        HFTitleDecisionCard(title: "Premiere context", detail: movie.isOriginal ? "HighFive Original" : "Featured title", systemImage: "sparkles")
-                        HFTitleDecisionCard(title: "Related titles", detail: "\(relatedTitles.count) more like this", systemImage: "rectangle.stack.fill")
-                    }
-                }
-                .padding(HFSpacing.lg)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Why Watch Tonight, title decision panel")
-        .accessibilityIdentifier("hf.consumer.movieDetail.decisionPanel")
-    }
-
-    private var viewingContextSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Viewing Context", actionTitle: nil)
-
-            VStack(spacing: HFSpacing.xs) {
-                HFConsumerMomentumRow(title: "Watch Now ready", detail: "Start from the cinematic title page.", status: "Ready", systemImage: "play.fill")
-                HFConsumerMomentumRow(title: "Saved shelf ready", detail: streamingStore.isSaved(movie) ? "Already in My List." : "Save when this fits your night.", status: streamingStore.isSaved(movie) ? "Saved" : "Ready", systemImage: "bookmark.fill")
-                HFConsumerMomentumRow(title: "Related titles ready", detail: "More Like This keeps the decision path moving.", status: "Ready", systemImage: "rectangle.stack.fill")
-                HFConsumerMomentumRow(title: "Offline shelf", detail: streamingStore.isDownloaded(movie) ? "Local offline state appears in Downloads." : "Mark this title offline-ready for local preview.", status: streamingStore.isDownloaded(movie) ? "Local" : "Ready", systemImage: "arrow.down.circle.fill")
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Viewing Context, watch now, saved shelf, related titles, and offline shelf")
-        .accessibilityIdentifier("hf.consumer.movieDetail.viewingContext")
-    }
-
-    private var publicMomentumSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Public Momentum", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
-                VStack(alignment: .leading, spacing: HFSpacing.md) {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                        HFTitleDecisionCard(title: "Premiere angle", detail: movie.isOriginal ? "Original premiere" : "Featured title", systemImage: "flag.checkered", isActive: true)
-                        HFTitleDecisionCard(title: "Audience conversation", detail: "Story-first watch prompt", systemImage: "person.2.fill")
-                        HFTitleDecisionCard(title: "Related titles path", detail: "\(relatedTitles.count) titles to continue", systemImage: "rectangle.stack.fill")
-                    }
-
-                    Text("Explore More Like This")
-                        .font(HFTypography.smallAction)
-                        .foregroundStyle(.black)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                        .padding(.horizontal, HFSpacing.md)
-                        .padding(.vertical, 11)
-                        .background(HFColors.goldGradient)
-                        .clipShape(Capsule())
-                        .accessibilityLabel("Explore More Like This")
-                }
-                .padding(HFSpacing.lg)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Public Momentum, premiere angle audience conversation and related titles path")
-        .accessibilityIdentifier("hf.consumer.movieDetail.publicMomentum")
-    }
-
-    private var titlePathSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Title Path", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
-                VStack(alignment: .leading, spacing: HFSpacing.md) {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                        HFTitleDecisionCard(title: "Watch path", detail: "Start with this title tonight", systemImage: "play.rectangle.fill", isActive: true)
-                        HFTitleDecisionCard(title: "Collection fit", detail: movie.genres.first ?? "Featured", systemImage: "square.grid.2x2.fill")
-                        HFTitleDecisionCard(title: "Public momentum", detail: movie.isOriginal ? "Original premiere path" : "Featured title path", systemImage: "flame.fill")
-                        HFTitleDecisionCard(title: "Delivery readiness", detail: "Professional package signal", systemImage: "shippingbox.fill")
-                    }
-
-                    Text("Explore More Like This")
-                        .font(HFTypography.smallAction)
-                        .foregroundStyle(.black)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                        .padding(.horizontal, HFSpacing.md)
-                        .padding(.vertical, 11)
-                        .background(HFColors.goldGradient)
-                        .clipShape(Capsule())
-                        .accessibilityLabel("Explore More Like This")
-                }
-                .padding(HFSpacing.lg)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Title Path, watch path collection fit public momentum and delivery readiness")
-        .accessibilityIdentifier("hf.consumer.movieDetail.titlePath")
-    }
-
-    private var catalogIdentitySection: some View {
-        HFInsightCard(
-            title: "Catalog Identity",
-            message: "\(catalogMovie.title) is resolved through the shared movie catalog.",
-            systemImage: "rectangle.stack.badge.play.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Catalog Identity, this title is resolved through the shared movie catalog")
-        .accessibilityIdentifier("hf.catalog.movieDetail.identity")
-    }
-
-    private var playerServiceSection: some View {
-        HFInsightCard(
-            title: "Player Service",
-            message: "Watch Now resolves \(catalogMovie.title) through the playback source resolver.",
-            systemImage: "play.rectangle.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Player Service, Watch Now resolves the selected catalog title through the playback source resolver")
-        .accessibilityIdentifier("hf.player.catalog.sourceConnection")
-        .accessibilityIdentifier("hf.player.catalog.movieID")
-        .accessibilityIdentifier("hf.player.catalog.title")
-    }
-
-    private var offlineEligibilitySection: some View {
-        let eligibility = streamingStore.offlineEligibility(for: catalogMovie)
-        return HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                HStack(alignment: .top, spacing: HFSpacing.sm) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 20, weight: .black))
-                        .foregroundStyle(HFColors.gold)
-                        .frame(width: 44, height: 44)
-                        .background(HFColors.gold.opacity(0.13))
-                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("Offline Eligibility")
-                            .font(HFTypography.cardTitle)
-                            .foregroundStyle(HFColors.textPrimary)
-                        Text(eligibility.reason)
-                            .font(HFTypography.caption)
-                            .foregroundStyle(HFColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-
-                VStack(spacing: HFSpacing.xs) {
-                    HFConsumerMomentumRow(title: "Download Eligibility", detail: eligibility.reason, status: eligibility.statusLabel, systemImage: "checkmark.circle.fill")
-                        .accessibilityIdentifier("hf.download.movieDetail.eligibility")
-                    HFConsumerMomentumRow(title: "Local offline state", detail: streamingStore.isDownloaded(catalogMovie) ? "Active for \(streamingStore.activeViewingProfile.displayName)" : "Ready to queue local state", status: streamingStore.isDownloaded(catalogMovie) ? "Active" : "Ready", systemImage: "arrow.down.circle.fill")
-                        .accessibilityIdentifier("hf.download.movieDetail.offlineStatus")
-                    HFConsumerMomentumRow(title: "Remote Download Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
-                        .accessibilityIdentifier("hf.download.movieDetail.providerStatus")
                 }
             }
             .padding(HFSpacing.lg)
         }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Offline Eligibility, Local Offline State, Media source required before real download, Remote Download Provider Not Connected Yet")
-        .accessibilityIdentifier("hf.download.movieDetail.queueAction")
-    }
-
-    private var communicationPathSection: some View {
-        HFInsightCard(
-            title: "Audience Update Path",
-            message: "This title can feed local creator notes and premiere updates.",
-            systemImage: "text.bubble.fill"
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.42), lineWidth: 1)
         )
+        .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 24, x: 0, y: 16)
         .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Audience Update Path, this title can feed local creator notes and premiere updates")
-        .accessibilityIdentifier("hf.movieDetail.communicationPath")
-        .accessibilityIdentifier("hf.movieDetail.audienceUpdateContext")
+        .padding(.top, HFSpacing.xxl)
+        .accessibilityIdentifier("hf.movieDetail.signatureHero")
     }
 
-    private var launchPathSection: some View {
-        HFInsightCard(
-            title: "Release Plan Path",
-            message: "This title can feed a local campaign plan and release checklist.",
-            systemImage: "flag.checkered"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Release Plan Path, this title can feed a local campaign plan and release checklist")
-        .accessibilityIdentifier("hf.movieDetail.launchPath")
-        .accessibilityIdentifier("hf.movieDetail.releasePlanContext")
-    }
-
-    private var deliveryPathSection: some View {
-        HFInsightCard(
-            title: "Delivery Package Path",
-            message: "This title can feed a local delivery summary and handoff package.",
-            systemImage: "shippingbox.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Delivery Package Path, this title can feed a local delivery summary and handoff package")
-        .accessibilityIdentifier("hf.movieDetail.deliveryPath")
-        .accessibilityIdentifier("hf.movieDetail.deliveryPackageContext")
-    }
-
-    private var entitlementPathSection: some View {
-        HFInsightCard(
-            title: "Access Ready",
-            message: streamingStore.entitlementCopy(for: catalogMovie),
-            systemImage: "checkmark.shield.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Access Ready, this title is connected to local access readiness, Store and entitlement providers are not connected yet")
-        .accessibilityIdentifier("hf.movieDetail.entitlementPath")
-        .accessibilityIdentifier("hf.movieDetail.accessReadiness")
-        .accessibilityIdentifier("hf.movieDetail.playerEntitlementBoundary")
-    }
-
-    private var watchToReleaseSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "From Watch To Release", actionTitle: nil)
-
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 122), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                    HFTitleDecisionCard(title: "Watch path", detail: "Start with this title", systemImage: "play.rectangle.fill", isActive: true)
-                    HFTitleDecisionCard(title: "Public momentum", detail: "Premiere story signal", systemImage: "flame.fill")
-                    HFTitleDecisionCard(title: "Professional delivery", detail: "Polished title journey", systemImage: "sparkles")
-                }
-                .padding(HFSpacing.md)
+    private var metadataChips: some View {
+        HStack(spacing: HFSpacing.xs) {
+            ForEach([catalogMovie.year, catalogMovie.rating, catalogMovie.duration], id: \.self) { value in
+                Text(value)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(value == catalogMovie.year ? .black : HFColors.textPrimary)
+                    .padding(.horizontal, HFSpacing.sm)
+                    .frame(height: 30)
+                    .background(value == catalogMovie.year ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.15)))
+                    .clipShape(Capsule())
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("From Watch To Release, watch path public momentum and professional delivery")
-        .accessibilityIdentifier("hf.consumer.movieDetail.watchToRelease")
+    }
+
+    private var overview: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            Text("Overview")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
+                .textCase(.uppercase)
+            Text(catalogMovie.synopsis)
+                .font(HFTypography.body)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            genreTags
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.movieDetail.primaryActions")
     }
 
     private var genreTags: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-            ForEach(movie.genres, id: \.self) { genre in
+            ForEach(catalogMovie.genres, id: \.self) { genre in
                 Text(genre)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.gold)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
                     .padding(.horizontal, HFSpacing.sm)
                     .frame(maxWidth: .infinity)
                     .frame(height: 34)
@@ -636,19 +192,118 @@ struct MovieDetailView: View {
         }
     }
 
+    private var actionPanel: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                Label("Ready for your shelf", systemImage: "bookmark.fill")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                HStack(spacing: HFSpacing.sm) {
+                    detailAction(
+                        title: streamingStore.isSaved(catalogMovie) ? "Saved" : "My List",
+                        systemImage: streamingStore.isSaved(catalogMovie) ? "checkmark" : "plus",
+                        action: { streamingStore.toggleSaved(catalogMovie) }
+                    )
+                    detailAction(
+                        title: streamingStore.isDownloaded(catalogMovie) ? "Offline" : "Download",
+                        systemImage: streamingStore.isDownloaded(catalogMovie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
+                        action: {
+                            if streamingStore.isDownloaded(catalogMovie) {
+                                streamingStore.removeOfflineAsset(for: catalogMovie)
+                            } else {
+                                streamingStore.queueOfflineAsset(for: catalogMovie)
+                            }
+                        }
+                    )
+                }
+
+                Text("My List, progress, and downloads update instantly across your profile.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func detailAction(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 19, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 82)
+            .background(Color.white.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(HFColors.glassStroke, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var localDepthPreviewSection: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "cube.transparent")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Local Depth Preview")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Preview the protected Depth + Peek experience locally. No streaming provider connected.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Button {
+                    showsProtectedDepthPreview = true
+                } label: {
+                    Label("Try Depth + Peek", systemImage: "cube.transparent")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.movieDetail.localDepthPreview")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.movieDetail.localDepthPreview")
+    }
+
     private var creatorSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Presented By", actionTitle: nil)
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
                 HStack(spacing: HFSpacing.md) {
-                    ZStack {
-                        Circle()
-                            .fill(HFColors.goldGradient)
-                        Image(systemName: "sparkles.tv.fill")
-                            .font(.system(size: 24, weight: .black))
-                            .foregroundStyle(.black)
-                    }
-                    .frame(width: 58, height: 58)
+                    Image(systemName: "sparkles.tv.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 58, height: 58)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Circle())
 
                     VStack(alignment: .leading, spacing: HFSpacing.xxs) {
                         Text(creator.name)
@@ -666,22 +321,38 @@ struct MovieDetailView: View {
         }
     }
 
+    private var relatedSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "More Like This", actionTitle: nil)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(relatedTitles) { related in
+                        NavigationLink(value: related) {
+                            HFPosterCard(movie: related, width: HFSpacing.posterRailWidth, showProgress: related.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
+    }
+
     private var castSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Cast", actionTitle: nil)
+            HFSectionHeader(title: "Cast & Creators", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HFSpacing.sm) {
                     ForEach(cast, id: \.self) { name in
                         HFGlassPanel(cornerRadius: 18) {
                             VStack(spacing: HFSpacing.sm) {
-                                ZStack {
-                                    Circle()
-                                        .fill(HFColors.charcoalLight)
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundStyle(HFColors.gold)
-                                }
-                                .frame(width: 62, height: 62)
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundStyle(HFColors.gold)
+                                    .frame(width: 62, height: 62)
+                                    .background(HFColors.charcoalLight)
+                                    .clipShape(Circle())
 
                                 Text(name)
                                     .font(HFTypography.caption)
@@ -699,110 +370,43 @@ struct MovieDetailView: View {
         }
     }
 
+    @ViewBuilder
     private var gallerySection: some View {
-        Group {
-            if !galleryAssets.isEmpty {
-                VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                    HFSectionHeader(title: "Scenes From This Title", actionTitle: nil)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: HFSpacing.md) {
-                            ForEach(galleryAssets, id: \.self) { assetName in
-                                if HFPosterAssetHealth.hasImage(named: assetName) {
-                                    Image(assetName)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 228, height: 128)
-                                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
-                                                .stroke(HFColors.stroke, lineWidth: 1)
-                                        )
-                                }
+        if !galleryAssets.isEmpty {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HFSectionHeader(title: "Scenes", actionTitle: nil)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.md) {
+                        ForEach(galleryAssets, id: \.self) { assetName in
+                            if HFPosterAssetHealth.hasImage(named: assetName) {
+                                Image(assetName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 230, height: 132)
+                                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                                            .stroke(HFColors.stroke, lineWidth: 1)
+                                    )
                             }
                         }
-                        .padding(.horizontal, HFSpacing.screenHorizontal)
                     }
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
                 }
             }
         }
-    }
-
-    private var relatedSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "More Like This", actionTitle: nil)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(relatedTitles) { related in
-                        NavigationLink(value: related) {
-                            HFPosterCard(movie: related, width: HFSpacing.posterRailWidth, showProgress: related.progress != nil)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Open \(related.title)")
-                    }
-                }
-                .padding(.horizontal, HFSpacing.screenHorizontal)
-            }
-            .accessibilityIdentifier("hf.consumer.movieDetail.related")
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("More Like This related titles")
-        .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
-    }
-
-    private var bottomScrollClearance: some View {
-        Color.clear
-            .frame(height: HFSpacing.xxl)
-            .accessibilityHidden(true)
     }
 
     @ViewBuilder
     private var detailArtwork: some View {
-        if HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
-           let assetName = movie.backdropAssetName ?? movie.posterAssetName {
+        if HFPosterAssetHealth.hasImage(named: catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName),
+           let assetName = catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName {
             Image(assetName)
                 .resizable()
                 .scaledToFill()
         } else {
-            HFPosterFallback(title: movie.title)
+            HFPosterFallback(title: catalogMovie.title)
         }
-    }
-
-    private var bottomCTA: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [
-                    HFColors.background.opacity(0),
-                    HFColors.background.opacity(0.82),
-                    HFColors.background
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: HFSpacing.xl)
-            .allowsHitTesting(false)
-
-            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.goldStroke) {
-                HStack(spacing: HFSpacing.sm) {
-                    HFButton(movie.isComingSoon ? "Preview" : "Watch Now", systemImage: movie.isComingSoon ? "play.rectangle.fill" : "play.fill") {
-                        streamingStore.markStartedWatching(catalogMovie)
-                        previewMovie = catalogMovie
-                    }
-                    .accessibilityIdentifier("hf.functional.player.watchNow")
-                    HFButton(
-                        streamingStore.isSaved(movie) ? "In My List" : "Add to My List",
-                        systemImage: streamingStore.isSaved(movie) ? "checkmark" : "plus",
-                        style: .secondary
-                    ) {
-                        streamingStore.toggleSaved(movie)
-                    }
-                    .accessibilityIdentifier("hf.functional.movie.saveToggle")
-                }
-                .padding(HFSpacing.sm)
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-            .padding(.bottom, HFSpacing.sm)
-        }
-        .background(HFColors.background.opacity(0.72))
     }
 }
 
@@ -810,13 +414,10 @@ struct HFPlayerServiceSheet: View {
     let movie: Movie
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streamingStore: HFStreamingStore
+    @State private var showsProtectedDepthPreview = false
 
     private var catalogMovie: Movie {
         streamingStore.movie(id: movie.id) ?? movie
-    }
-
-    private var source: HFPlaybackSource {
-        streamingStore.playbackSource(for: catalogMovie)
     }
 
     var body: some View {
@@ -824,19 +425,20 @@ struct HFPlayerServiceSheet: View {
             HFColors.screenBackground
                 .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                    header
-                    artwork
-                    readinessCard
-                    sourceRows
-                }
-                .padding(HFSpacing.lg)
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                header
+                playerPreview
+                localPreviewPanel
+                primaryActions
+                Spacer()
             }
+            .padding(HFSpacing.lg)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .accessibilityIdentifier("hf.functional.player.watchNow")
+        .sheet(isPresented: $showsProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
+        }
         .accessibilityIdentifier("hf.player.surface")
     }
 
@@ -846,15 +448,14 @@ struct HFPlayerServiceSheet: View {
                 Text("HighFive Player")
                     .font(HFTypography.section)
                     .foregroundStyle(HFColors.textPrimary)
+                Text("Local Preview")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
                 Text(catalogMovie.title)
                     .font(HFTypography.display)
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
-                Text("Catalog title active")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                    .accessibilityIdentifier("hf.player.catalog.identity")
             }
 
             Spacer()
@@ -871,12 +472,10 @@ struct HFPlayerServiceSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close Player")
-            .accessibilityIdentifier("hf.functional.player.close")
-            .accessibilityIdentifier("hf.player.closeButton")
         }
     }
 
-    private var artwork: some View {
+    private var playerPreview: some View {
         ZStack(alignment: .bottomLeading) {
             if HFPosterAssetHealth.hasImage(named: catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName),
                let assetName = catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName {
@@ -887,145 +486,79 @@ struct HFPlayerServiceSheet: View {
                 HFPosterFallback(title: catalogMovie.title)
             }
 
-            LinearGradient(
-                colors: [.clear, Color.black.opacity(0.82)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            LinearGradient(colors: [.clear, Color.black.opacity(0.86)], startPoint: .top, endPoint: .bottom)
 
-            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text("Player route ready.")
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 48, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                Text("Local Preview")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                Text("Streaming source not connected yet.")
+                Text("No streaming provider connected")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                Text(catalogMovie.metadataLine)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
-                    .accessibilityIdentifier("hf.player.source.notConnected")
             }
             .padding(HFSpacing.lg)
         }
-        .frame(height: 320)
+        .frame(height: 340)
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
                 .stroke(HFColors.goldStroke, lineWidth: 1)
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Player route ready. Streaming source not connected yet.")
+        .accessibilityIdentifier("hf.player.cinematicFrame")
     }
 
-    private var readinessCard: some View {
+    private var localPreviewPanel: some View {
         HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                HStack(spacing: HFSpacing.sm) {
-                    Image(systemName: "play.rectangle.fill")
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundStyle(HFColors.gold)
-                        .frame(width: 48, height: 48)
-                        .background(HFColors.gold.opacity(0.13))
-                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                        Text("Playback Source Resolver")
-                            .font(HFTypography.cardTitle)
-                            .foregroundStyle(HFColors.textPrimary)
-                        Text(source.readinessLabel)
-                            .font(HFTypography.caption)
-                            .foregroundStyle(HFColors.textSecondary)
-                    }
-                }
-
-                Text(source.limitation)
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label("Local Preview", systemImage: "play.rectangle.fill")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("HighFive Player is using local catalog state only. No streaming provider connected.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(HFSpacing.lg)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Playback Source Resolver, streaming source not connected yet")
-        .accessibilityIdentifier("hf.player.readiness")
+        .accessibilityIdentifier("hf.player.localPreview")
     }
 
-    private var sourceRows: some View {
-        VStack(spacing: HFSpacing.xs) {
-            HFConsumerMomentumRow(title: "Catalog title", detail: catalogMovie.title, status: "Active", systemImage: "rectangle.stack.fill")
-                .accessibilityIdentifier("hf.player.catalog.title")
-            HFConsumerMomentumRow(title: "Movie ID", detail: catalogMovie.id, status: "Catalog", systemImage: "number")
-                .accessibilityIdentifier("hf.player.catalog.movieID")
-            HFConsumerMomentumRow(title: "Local Playback Source", detail: source.status == .playableLocal ? "Active" : "Local source missing", status: source.status == .playableLocal ? "Active" : "Missing", systemImage: "play.slash.fill")
-                .accessibilityIdentifier("hf.player.source.status")
-            ForEach(streamingStore.playerEntitlementBoundaryRows) { row in
-                HFConsumerMomentumRow(title: row.title, detail: row.detail, status: row.status, systemImage: row.systemImage)
-                    .accessibilityIdentifier("hf.player.entitlementBoundary")
+    private var primaryActions: some View {
+        VStack(spacing: HFSpacing.sm) {
+            Button {
+                streamingStore.markStartedWatching(catalogMovie)
+            } label: {
+                Label("Local Preview", systemImage: "play.fill")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
             }
-            HFConsumerMomentumRow(title: "Remote Streaming Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
-                .accessibilityIdentifier("hf.player.provider.status")
-            HFConsumerMomentumRow(title: "Payment provider status", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash")
-                .accessibilityIdentifier("hf.player.paymentProviderStatus")
-            HFConsumerMomentumRow(title: "Access status", detail: "Local Preview Only", status: "Local", systemImage: "checkmark.shield.fill")
-                .accessibilityIdentifier("hf.player.accessStatus")
+            .buttonStyle(.plain)
+
+            Button {
+                showsProtectedDepthPreview = true
+            } label: {
+                Label("Try Depth + Peek", systemImage: "cube.transparent")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(Color.white.opacity(0.10))
+                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.32), lineWidth: 1))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("hf.player.depthPeekCTA")
         }
-    }
-}
-
-private struct HFTitleDecisionCard: View {
-    let title: String
-    let detail: String
-    let systemImage: String
-    var isActive = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(isActive ? .black : HFColors.gold)
-                .frame(width: 30, height: 30)
-                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
-                .clipShape(Circle())
-
-            Text(title)
-                .font(HFTypography.caption)
-                .foregroundStyle(HFColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-
-            Text(detail)
-                .font(HFTypography.micro)
-                .foregroundStyle(HFColors.textSecondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 104, alignment: .topLeading)
-        .padding(HFSpacing.sm)
-        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
-        .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
-                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-    }
-}
-
-private struct HFDetailSignalChip: View {
-    let title: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: HFSpacing.xxs) {
-            Image(systemName: systemImage)
-                .font(.system(size: 10, weight: .black))
-            Text(title)
-                .font(HFTypography.caption)
-        }
-        .foregroundStyle(HFColors.gold)
-        .lineLimit(1)
-        .minimumScaleFactor(0.72)
-        .padding(.horizontal, HFSpacing.xs)
-        .frame(height: 28)
-        .background(HFColors.gold.opacity(0.10))
-        .overlay(Capsule().stroke(HFColors.gold.opacity(0.22), lineWidth: 1))
-        .clipShape(Capsule())
+        .accessibilityIdentifier("hf.player.primaryActions")
     }
 }

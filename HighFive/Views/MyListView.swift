@@ -10,7 +10,7 @@ struct MyListView: View {
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
 
-    private var savedMovies: [Movie] {
+    private var visibleMovies: [Movie] {
         switch selectedFilter {
         case "Continue Watching":
             return streamingStore.savedMovies.filter { $0.progress != nil }
@@ -23,12 +23,12 @@ struct MyListView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                libraryShelfHero
+                shelfHero
                 filterChips
 
-                if savedMovies.isEmpty {
+                if visibleMovies.isEmpty {
                     HFEmptyState(
                         title: "Your shelf is waiting",
                         message: "Save titles from Home, Search, Discover, or Movie Detail and they will appear here.",
@@ -36,274 +36,81 @@ struct MyListView: View {
                         actionTitle: "Browse Discover",
                         action: onBrowseDiscover
                     )
-                        .padding(.horizontal, HFSpacing.screenHorizontal)
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
                 } else {
-                    savedSummary
                     savedGrid
                 }
 
-                watchShelfSection
-                backendStatusSection
-                connectedStateSection
-                catalogLibrarySection
-                playerContextSection
-                cloudLibraryServiceSection
-                librarySyncReadinessSection
-                exportDeliveryBoundarySection
-                entitlementBoundarySection
-                savedStateProofSection
-                profileStateSection
-                shelfMomentumSection
+                recommendedNext
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.consumer.library.root")
-        .accessibilityIdentifier("hf.functional.library.savedState")
         .accessibilityIdentifier("hf.library.screen")
-        .safeAreaInset(edge: .top) {
-            Color.clear
-                .frame(height: 4)
-                .accessibilityIdentifier("hf.safeArea.topProtected")
-        }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear
-                .frame(height: 4)
-                .accessibilityIdentifier("hf.safeArea.bottomProtected")
-        }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Text("Your Library")
+            Text("My List")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-            Text("Saved titles, offline-ready picks, and what you are watching next.")
+            Text("Saved titles, progress, and offline-ready picks.")
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.library.watchShelf")
     }
 
-    private var libraryShelfHero: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+    private var shelfHero: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
-                            .fill(HFColors.gold.opacity(0.14))
-                        Image(systemName: "bookmark.rectangle.stack.fill")
-                            .font(.system(size: 24, weight: .black))
-                            .foregroundStyle(HFColors.gold)
-                    }
-                    .frame(width: 52, height: 52)
+                HStack(spacing: HFSpacing.md) {
+                    Image(systemName: "bookmark.rectangle.stack.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 54, height: 54)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         Text("Your Watch Shelf")
-                            .font(HFTypography.cardTitle)
+                            .font(HFTypography.section)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("Saved titles, in-progress films, and offline-ready picks stay organized here.")
+                        Text("Your saved titles, downloads, and watch progress live here.")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    Spacer(minLength: 0)
+                    Spacer()
                 }
 
                 HStack(spacing: HFSpacing.sm) {
-                    HFLibraryCountTile(value: "\(streamingStore.savedMovies.count)", label: "Saved")
-                    HFLibraryCountTile(value: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count)", label: "Resume")
-                    HFLibraryCountTile(value: "\(streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }.count)", label: "Offline")
+                    countTile(value: "\(streamingStore.savedMovies.count)", label: "Saved")
+                    countTile(value: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count)", label: "Resume")
+                    countTile(value: "\(streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }.count)", label: "Offline")
                 }
             }
             .padding(HFSpacing.lg)
-            .background(
-                LinearGradient(
-                    colors: [HFColors.warmGlow.opacity(0.26), Color.clear],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Library shelf summary")
-        .accessibilityIdentifier("hf.consumer.library.watchShelf")
     }
 
-    private var watchShelfSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Your Watch Shelf", actionTitle: nil)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                    HFLibraryShelfCard(title: "Saved for Tonight", detail: "\(streamingStore.savedMovies.count) in your shelf", systemImage: "bookmark.fill", isActive: true)
-                    HFLibraryShelfCard(title: "Continue the Story", detail: "\(streamingStore.savedMovies.filter { $0.progress != nil }.count) in progress", systemImage: "play.circle.fill")
-                HFLibraryShelfCard(title: "Downloads", detail: "\(streamingStore.savedMovies.filter { streamingStore.isDownloaded($0) }.count) offline-ready", systemImage: "arrow.down.circle.fill")
-                HFLibraryShelfCard(title: "Recently Added", detail: "Fresh titles for later", systemImage: "clock.fill")
-                HFLibraryShelfCard(title: "Recommended Next", detail: "A softer path back in", systemImage: "sparkles")
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+    private func countTile(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Text(value)
+                .font(HFTypography.section)
+                .foregroundStyle(HFColors.gold)
+            Text(label)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Your Watch Shelf, saved titles, continue watching, downloads, recently added, and recommended next")
-        .accessibilityIdentifier("hf.consumer.library.watchShelf")
-        .accessibilityIdentifier("hf.library.watchShelf")
-        .accessibilityIdentifier("hf.library.continueWatching")
-        .accessibilityIdentifier("hf.library.savedForTonight")
-        .accessibilityIdentifier("hf.library.continueStory")
-    }
-
-    private var connectedStateSection: some View {
-        HFInsightCard(
-            title: "Connected State",
-            message: "Saved movies update from Movie Detail.",
-            systemImage: "point.3.connected.trianglepath.dotted"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityIdentifier("hf.functional.library.connectedState")
-    }
-
-    private var backendStatusSection: some View {
-        HFInsightCard(
-            title: "Cloud Library Backend",
-            message: "\(streamingStore.libraryBackendStatus.statusLabel). Local saved state stays available on this phone.",
-            systemImage: streamingStore.libraryBackendStatus.systemImage
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Cloud Library backend status \(streamingStore.libraryBackendStatus.statusLabel)")
-        .accessibilityIdentifier("hf.library.backendStatus")
-    }
-
-    private var catalogLibrarySection: some View {
-        HFInsightCard(
-            title: "Catalog Library",
-            message: "Saved titles resolve through the shared movie catalog.",
-            systemImage: "rectangle.stack.fill.badge.person.crop"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Catalog Library, saved titles resolve through the shared movie catalog")
-        .accessibilityIdentifier("hf.catalog.library.connected")
-    }
-
-    private var playerContextSection: some View {
-        HFInsightCard(
-            title: "Playable From Library",
-            message: "Saved titles use the shared player route.",
-            systemImage: "play.rectangle.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Playable From Library, saved titles use the shared player route")
-        .accessibilityIdentifier("hf.player.library.context")
-    }
-
-    private var profileStateSection: some View {
-        HFInsightCard(
-            title: "Saved for \(streamingStore.activeViewingProfile.displayName)",
-            message: "My List uses your active local profile. Local shared state active. Profile-aware sync ready.",
-            systemImage: streamingStore.activeViewingProfile.avatarSymbol
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Saved for \(streamingStore.activeViewingProfile.displayName), My List uses your active local profile")
-        .accessibilityIdentifier("hf.account.library.profileState")
-        .accessibilityIdentifier("hf.library.profileSyncBoundary")
-    }
-
-    private var cloudLibraryServiceSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Cloud Library Service", actionTitle: nil)
-
-            VStack(spacing: HFSpacing.xs) {
-                ForEach(streamingStore.libraryReadinessRows, id: \.self) { row in
-                    HFConsumerMomentumRow(
-                        title: row,
-                        detail: row.contains("Not Connected Yet") ? "Cloud sync readiness only" : "Library architecture readiness",
-                        status: row.contains("Not Connected Yet") || row.contains("Future") ? "Future" : "Active",
-                        systemImage: row.contains("Not Connected Yet") ? "icloud.slash.fill" : "checkmark.circle.fill"
-                    )
-                }
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Cloud Library Service, saved list local, active profile local, catalog identity active, cloud sync Not Connected Yet")
-        .accessibilityIdentifier("hf.library.cloudLibraryService")
-        .accessibilityIdentifier("hf.services.cloudLibrary")
-        .accessibilityIdentifier("hf.services.cloudLibraryReadiness")
-    }
-
-    private var librarySyncReadinessSection: some View {
-        HFInsightCard(
-            title: "Library Sync Readiness",
-            message: "Your Library is local today and ready for cloud sync once account and service infrastructure are connected.",
-            systemImage: "icloud.and.arrow.up"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Library Sync Readiness, local today and ready for cloud sync once services are connected")
-        .accessibilityIdentifier("hf.library.syncReadiness")
-        .accessibilityIdentifier("hf.services.librarySync")
-    }
-
-    private var exportDeliveryBoundarySection: some View {
-        HFInsightCard(
-            title: "Export Delivery Boundary",
-            message: "Saved titles can feed local delivery summaries once selected for release.",
-            systemImage: "shippingbox.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Export Delivery Boundary, saved titles can feed local delivery summaries once selected for release")
-        .accessibilityIdentifier("hf.library.exportDeliveryBoundary")
-    }
-
-    private var entitlementBoundarySection: some View {
-        HFInsightCard(
-            title: "Access Boundary",
-            message: "Saved titles use local entitlement readiness only.",
-            systemImage: "checkmark.shield.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Access Boundary, saved titles use local entitlement readiness only")
-        .accessibilityIdentifier("hf.library.entitlementBoundary")
-        .accessibilityIdentifier("hf.services.libraryEntitlementBoundary")
-    }
-
-    private var savedStateProofSection: some View {
-        HFInsightCard(
-            title: "Saved State Proof",
-            message: "\(streamingStore.savedMovies.count) saved titles resolve through catalog identity for \(streamingStore.activeViewingProfile.displayName).",
-            systemImage: "bookmark.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Saved State Proof, saved titles resolve through catalog identity")
-        .accessibilityIdentifier("hf.library.savedStateProof")
-    }
-
-    private var shelfMomentumSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Shelf Momentum", actionTitle: nil)
-
-            VStack(spacing: HFSpacing.xs) {
-                HFConsumerMomentumRow(title: "Saved shelf ready", detail: "Saved titles stay organized for later.", status: "Ready", systemImage: "bookmark.fill")
-                HFConsumerMomentumRow(title: "Continue watching local", detail: "In-progress titles stay visible in your shelf.", status: "Local", systemImage: "play.circle.fill")
-                HFConsumerMomentumRow(title: "Downloads preview", detail: "Offline-ready titles connect to Downloads.", status: "Preview", systemImage: "arrow.down.circle.fill")
-                HFConsumerMomentumRow(title: "Watch mood organized", detail: "Filters keep tonight's choice easy to scan.", status: "Ready", systemImage: "line.3.horizontal.decrease.circle.fill")
-                HFConsumerMomentumRow(title: "Local profile shelf", detail: "Your profile can browse this preview without setup.", status: "Local", systemImage: "person.crop.circle.fill")
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Library shelf momentum, saved shelf, continue watching, downloads, watch mood, and local profile shelf")
-        .accessibilityIdentifier("hf.consumer.library.shelfMomentum")
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
     private var filterChips: some View {
@@ -322,91 +129,33 @@ struct MyListView: View {
 
     private var savedGrid: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: selectedFilter == "Saved" ? "Saved For Later" : selectedFilter, actionTitle: nil)
-
+            HFSectionHeader(title: selectedFilter, actionTitle: "\(visibleMovies.count)")
             LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
-                ForEach(savedMovies) { movie in
+                ForEach(visibleMovies) { movie in
                     NavigationLink(value: movie) {
                         HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Open \(movie.title)")
-                    .accessibilityIdentifier("hf.route.libraryToMovieDetail")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
-        .accessibilityIdentifier("hf.consumer.library.savedShelf")
     }
 
-    private var savedSummary: some View {
-        HFInsightCard(
-            title: selectedFilter == "Saved" ? "\(savedMovies.count) saved titles" : "\(savedMovies.count) titles ready",
-            message: selectedFilter == "Saved" ? "Your saved slate is available across Home, Search, and Movie Detail." : "This filter reflects your saved and downloaded titles.",
-            systemImage: "bookmark.fill"
-        )
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-}
-
-private struct HFLibraryShelfCard: View {
-    let title: String
-    let detail: String
-    let systemImage: String
-    var isActive = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(isActive ? .black : HFColors.gold)
-                .frame(width: 30, height: 30)
-                .background(isActive ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
-                .clipShape(Circle())
-
-            Text(title)
-                .font(HFTypography.caption)
-                .foregroundStyle(HFColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-
-            Text(detail)
-                .font(HFTypography.micro)
-                .foregroundStyle(HFColors.textSecondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
+    private var recommendedNext: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Recommended Next", actionTitle: nil)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(HFMockData.recommended.movies) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 102, alignment: .topLeading)
-        .padding(HFSpacing.sm)
-        .background(isActive ? HFColors.gold.opacity(0.14) : Color.white.opacity(0.06))
-        .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
-                .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-    }
-}
-
-private struct HFLibraryCountTile: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        VStack(spacing: HFSpacing.xxs) {
-            Text(value)
-                .font(.system(size: 22, weight: .black, design: .default))
-                .foregroundStyle(HFColors.textPrimary)
-            Text(label)
-                .font(HFTypography.micro)
-                .foregroundStyle(HFColors.gold)
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 62)
-        .background(Color.white.opacity(0.07))
-        .overlay(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous).stroke(HFColors.gold.opacity(0.18), lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 }

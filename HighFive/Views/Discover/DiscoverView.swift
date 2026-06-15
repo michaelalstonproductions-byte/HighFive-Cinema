@@ -24,11 +24,11 @@ struct DiscoverView: View {
     }
 
     private var spotlightMovie: Movie {
-        browseMovies.first ?? HFMockData.movie("friendly") ?? HFMockData.movies[0]
+        browseMovies.first ?? HFMockData.movies[0]
     }
 
     private let columns = [
-        GridItem(.adaptive(minimum: 142), spacing: HFSpacing.md)
+        GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
 
     var body: some View {
@@ -39,28 +39,7 @@ struct DiscoverView: View {
 
             spotlight
             genreFilters
-            discoveryGrid
-            recommendationRows
-        }
-    }
-
-    private var discoveryGrid: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: selectedGenre == "All" ? "All Titles" : selectedGenre, actionTitle: nil)
-            LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
-                ForEach(browseMovies.prefix(8)) { movie in
-                    NavigationLink(value: movie) {
-                        HFPosterCard(movie: movie, width: 142, showMetadata: true, showProgress: movie.progress != nil)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
-        }
-    }
-
-    private var recommendationRows: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            titleGrid
             movieRail(HFMockData.recommended)
             movieRail(HFMockData.onlyOnHighFive)
         }
@@ -68,12 +47,12 @@ struct DiscoverView: View {
 
     private var spotlight: some View {
         NavigationLink(value: spotlightMovie) {
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
                 HStack(spacing: HFSpacing.md) {
-                    HFPosterCard(movie: spotlightMovie, width: 92, showTitle: false, showProgress: spotlightMovie.progress != nil)
+                    HFPosterCard(movie: spotlightMovie, width: 104, showTitle: false, showProgress: spotlightMovie.progress != nil)
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("RECOMMENDED FOR YOU")
+                        Text("RECOMMENDED FOR TONIGHT")
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.gold)
                             .kerning(1.2)
@@ -90,6 +69,7 @@ struct DiscoverView: View {
                             .foregroundStyle(HFColors.textMuted)
                             .lineLimit(1)
                     }
+
                     Spacer(minLength: 0)
                 }
                 .padding(HFSpacing.md)
@@ -109,7 +89,21 @@ struct DiscoverView: View {
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
-            .padding(.trailing, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var titleGrid: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: selectedGenre == "All" ? "All Titles" : selectedGenre, actionTitle: "\(browseMovies.count)")
+            LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
+                ForEach(browseMovies.prefix(10)) { movie in
+                    NavigationLink(value: movie) {
+                        HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
     }
 

@@ -348,7 +348,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var accountMode: String {
-        "Local Profile Active"
+        "Profile Active"
     }
 
     var cloudAccountStatus: String {
@@ -397,7 +397,7 @@ final class HFStreamingStore: ObservableObject {
         [
             Category(id: "new-this-week", title: "New This Week", subtitle: "Fresh HighFive picks", movies: newThisWeekCatalog),
             Category(id: "continue-watching", title: "Continue Watching", subtitle: "Pick up where you left off", movies: allCatalogMovies.filter { $0.progress != nil }),
-            Category(id: "recommended", title: "Recommended", subtitle: "Selected from your local viewing profile", movies: ["black-turnip", "sunshine", "arrival-time", "maple-street", "night-file"].compactMap(movie(id:))),
+            Category(id: "recommended", title: "Recommended", subtitle: "Selected for your viewing profile", movies: ["black-turnip", "sunshine", "arrival-time", "maple-street", "night-file"].compactMap(movie(id:))),
             Category(id: "only-on-highfive", title: "Only On HighFive", subtitle: "Originals and local showcase titles", movies: originalsCatalog)
         ]
     }

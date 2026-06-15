@@ -3,6 +3,7 @@ import SwiftUI
 enum HFStreamingTab: Hashable {
     case home
     case search
+    case connect
     case library
     case downloads
     case profile
@@ -19,6 +20,7 @@ struct HFStreamingRootView: View {
     private let tabItems: [HFTabItem<HFStreamingTab>] = [
         HFTabItem(value: .home, title: "Home", systemImage: "house.fill"),
         HFTabItem(value: .search, title: "Search", systemImage: "magnifyingglass"),
+        HFTabItem(value: .connect, title: "Connect", systemImage: "play.rectangle.on.rectangle.fill"),
         HFTabItem(value: .library, title: "Library", systemImage: "bookmark.fill"),
         HFTabItem(value: .downloads, title: "Downloads", systemImage: "arrow.down.circle.fill"),
         HFTabItem(value: .profile, title: "Profile", systemImage: "person.crop.circle.fill")
@@ -29,6 +31,7 @@ struct HFStreamingRootView: View {
         if arguments.contains("--hf-start-search") { return .search }
         if arguments.contains("--hf-start-library") { return .library }
         if arguments.contains("--hf-start-downloads") { return .downloads }
+        if arguments.contains("--hf-start-connect") { return .connect }
         if Self.shouldStartInProfile { return .profile }
         return .home
     }
@@ -56,6 +59,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-library")
             || arguments.contains("--hf-start-downloads")
             || arguments.contains("--hf-start-movie-detail")
+            || arguments.contains("--hf-start-player")
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
@@ -87,6 +91,24 @@ struct HFStreamingRootView: View {
         ProcessInfo.processInfo.arguments.contains("--hf-start-protected-depth-preview")
     }
 
+    private static var shouldStartInPlayer: Bool {
+        ProcessInfo.processInfo.arguments.contains("--hf-start-player")
+    }
+
+    private static var shouldStartInCreatorStudio: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-creator-studio")
+            || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-vod-package")
+    }
+
+    private static var creatorStudioInitialFocus: HFCreatorStudioFocus {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-social-media-kit") { return .socialMediaKit }
+        if arguments.contains("--hf-start-vod-package") { return .vodPackage }
+        return .dashboard
+    }
+
     private static var qaMovieDetailMovie: Movie {
         HFMockData.movie("friendly") ?? HFMockData.movies[0]
     }
@@ -96,6 +118,10 @@ struct HFStreamingRootView: View {
             if shouldShowStreamingShell {
                 if Self.shouldStartInProtectedDepthPreview {
                     HighFiveProtectedSpatialPeekBridge()
+                } else if Self.shouldStartInPlayer {
+                    qaPlayerView
+                } else if Self.shouldStartInCreatorStudio {
+                    qaCreatorStudioView
                 } else if Self.shouldStartInMovieDetail {
                     qaMovieDetailView
                 } else {
@@ -139,6 +165,18 @@ struct HFStreamingRootView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
+    private var qaPlayerView: some View {
+        HFPlayerServiceSheet(movie: Self.qaMovieDetailMovie)
+            .background(HFColors.screenBackground.ignoresSafeArea())
+    }
+
+    private var qaCreatorStudioView: some View {
+        NavigationStack {
+            CreatorStudioView(initialFocus: Self.creatorStudioInitialFocus)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+    }
+
     private var streamingShell: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -167,6 +205,8 @@ struct HFStreamingRootView: View {
                         )
                     case .search:
                         SearchView(mode: $searchMode)
+                    case .connect:
+                        ConnectHubView()
                     case .library:
                         MyListView(onBrowseDiscover: {
                             searchMode = .discover
@@ -437,7 +477,7 @@ private struct HFLaunchMotionInstructionScreen: View {
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("hf.onboarding.peekToExplore")
 
-                    Text("Reveal what's around you with a local training preview.")
+                    Text("Reveal more of the scene with guided motion training.")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.white.opacity(0.72))
                         .multilineTextAlignment(.center)
