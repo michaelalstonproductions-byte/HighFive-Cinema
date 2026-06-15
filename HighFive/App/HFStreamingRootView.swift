@@ -56,6 +56,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-library")
             || arguments.contains("--hf-start-downloads")
             || arguments.contains("--hf-start-movie-detail")
+            || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
             || arguments.contains("--hf-start-vod-package")
@@ -82,6 +83,10 @@ struct HFStreamingRootView: View {
         ProcessInfo.processInfo.arguments.contains("--hf-start-movie-detail")
     }
 
+    private static var shouldStartInProtectedDepthPreview: Bool {
+        ProcessInfo.processInfo.arguments.contains("--hf-start-protected-depth-preview")
+    }
+
     private static var qaMovieDetailMovie: Movie {
         HFMockData.movie("friendly") ?? HFMockData.movies[0]
     }
@@ -89,7 +94,9 @@ struct HFStreamingRootView: View {
     var body: some View {
         Group {
             if shouldShowStreamingShell {
-                if Self.shouldStartInMovieDetail {
+                if Self.shouldStartInProtectedDepthPreview {
+                    HighFiveProtectedSpatialPeekBridge()
+                } else if Self.shouldStartInMovieDetail {
                     qaMovieDetailView
                 } else {
                     streamingShell

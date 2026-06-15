@@ -345,6 +345,7 @@ struct HighFiveTimelinePracticeView: View {
     @State private var player: AVPlayer?
     @State private var isPlaying = false
     @State private var progress = 0.36
+    @State private var isShowingProtectedDepthPreview = false
 
     private var localVideoURL: URL? {
         HighFiveLocalVideoResolver.timelineURL
@@ -359,17 +360,17 @@ struct HighFiveTimelinePracticeView: View {
             onPrimary: onEnterHome,
             onSecondary: nil
         ) {
-            VStack(spacing: 16) {
-                VStack(spacing: 8) {
+            VStack(spacing: 10) {
+                VStack(spacing: 5) {
                     Text("Practice the Timeline")
-                        .font(.system(size: 30, weight: .black, design: .default))
+                        .font(.system(size: 26, weight: .black, design: .default))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
 
                     Text("Scrub, pause, and preview before entering HighFive.")
-                        .font(HFTypography.body)
+                        .font(HFTypography.caption)
                         .foregroundStyle(.white.opacity(0.74))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
@@ -377,16 +378,22 @@ struct HighFiveTimelinePracticeView: View {
                         .padding(.horizontal, 28)
                 }
 
-                HighFiveVerticalStageContainer(maxStageHeight: 390, reservedHeight: 0) { stageSize in
+                HighFiveVerticalStageContainer(maxStageHeight: 318, reservedHeight: 0) { stageSize in
                     timelinePreview
                         .frame(width: stageSize.width, height: stageSize.height)
                 }
 
                 timelineControls
                     .accessibilityIdentifier("hf.training.timelineScrubber")
+
+                protectedDepthPeekCTA
             }
-            .padding(.top, 54)
+            .padding(.top, 76)
             .accessibilityIdentifier("hf.training.timelinePractice")
+        }
+        .fullScreenCover(isPresented: $isShowingProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
+                .accessibilityIdentifier("hf.protectedDepth.launch")
         }
         .onDisappear {
             player?.pause()
@@ -436,7 +443,7 @@ struct HighFiveTimelinePracticeView: View {
     }
 
     private var timelineControls: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             HStack(spacing: 12) {
                 Button {
                     isPlaying.toggle()
@@ -484,6 +491,40 @@ struct HighFiveTimelinePracticeView: View {
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
             }
+        }
+        .padding(.horizontal, 30)
+    }
+
+    private var protectedDepthPeekCTA: some View {
+        VStack(spacing: 8) {
+            Button {
+                player?.pause()
+                isPlaying = false
+                isShowingProtectedDepthPreview = true
+            } label: {
+                Label("Try Depth + Peek", systemImage: "cube.transparent")
+                    .font(.system(size: 15, weight: .black, design: .default))
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("hf.training.tryDepthPeek")
+
+            HStack(spacing: 8) {
+                if HighFiveProtectedSpatialPeekControllerHost.isProtectedControllerAvailable {
+                    Text("Depth engine ready")
+                    Text("Tilt + Peek engine ready")
+                } else {
+                    Text("Protected engine bridge not available yet.")
+                }
+            }
+            .font(.system(size: 10, weight: .bold, design: .default))
+            .foregroundStyle(HFColors.gold)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .accessibilityIdentifier("hf.training.protectedEngineReady")
         }
         .padding(.horizontal, 30)
     }
@@ -738,6 +779,103 @@ private final class HighFiveTiltPeekMotionModel: ObservableObject {
 
     func stop() {
         motionManager.stopDeviceMotionUpdates()
+    }
+}
+
+struct HighFiveProtectedSpatialPeekBridge: View {
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            HighFiveProtectedSpatialPeekControllerHost()
+                .ignoresSafeArea()
+                .accessibilityIdentifier("hf.protectedDepth.preview")
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Protected Depth Preview")
+                    .font(.system(size: 13, weight: .black, design: .default))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 12)
+                    .frame(height: 30)
+                    .background(HFColors.goldGradient, in: Capsule())
+                    .accessibilityIdentifier("hf.protectedDepth.available")
+
+                Text("Local engine preview")
+                    .font(.system(size: 12, weight: .bold, design: .default))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .frame(height: 28)
+                    .background(.black.opacity(0.54), in: Capsule())
+                    .overlay(Capsule().stroke(.white.opacity(0.16), lineWidth: 1))
+                    .accessibilityIdentifier("hf.protectedDepth.localOnly")
+            }
+            .padding(.top, 64)
+            .padding(.leading, 16)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .accessibilityIdentifier("hf.protectedDepth.bridge")
+    }
+}
+
+private struct HighFiveProtectedSpatialPeekControllerHost: UIViewControllerRepresentable {
+    static var isProtectedControllerAvailable: Bool {
+        protectedControllerType != nil
+    }
+
+    private static var protectedControllerType: UIViewController.Type? {
+        NSClassFromString("HighFive.HKV1_SpatialPeekViewController") as? UIViewController.Type
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        if let controllerType = Self.protectedControllerType {
+            return controllerType.init()
+        }
+
+        return HighFiveProtectedSpatialPeekUnavailableViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+private final class HighFiveProtectedSpatialPeekUnavailableViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 14
+
+        let title = UILabel()
+        title.text = "Protected Depth Preview"
+        title.font = .systemFont(ofSize: 28, weight: .black)
+        title.textColor = .white
+        title.textAlignment = .center
+        title.numberOfLines = 0
+
+        let subtitle = UILabel()
+        subtitle.text = "Protected engine bridge not available yet."
+        subtitle.font = .systemFont(ofSize: 16, weight: .semibold)
+        subtitle.textColor = UIColor(white: 1.0, alpha: 0.72)
+        subtitle.textAlignment = .center
+        subtitle.numberOfLines = 0
+
+        let status = UILabel()
+        status.text = "Local engine preview"
+        status.font = .systemFont(ofSize: 13, weight: .bold)
+        status.textColor = UIColor(red: 1.0, green: 0.72, blue: 0.26, alpha: 1.0)
+        status.textAlignment = .center
+
+        stack.addArrangedSubview(title)
+        stack.addArrangedSubview(subtitle)
+        stack.addArrangedSubview(status)
+        view.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 28),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -28),
+            stack.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
     }
 }
 
