@@ -67,6 +67,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-social-media-kit")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-backend-status")
             || Self.shouldStartInProfile
     }
 
@@ -83,6 +84,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-social-media-kit")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-backend-status")
             || arguments.contains("--hf-start-developer-qa")
             || arguments.contains("--hf-start-demo-tour")
     }
@@ -107,6 +109,10 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package")
     }
 
+    private static var shouldStartInBackendStatus: Bool {
+        ProcessInfo.processInfo.arguments.contains("--hf-start-backend-status")
+    }
+
     private static var creatorStudioInitialFocus: HFCreatorStudioFocus {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("--hf-start-social-media-kit") { return .socialMediaKit }
@@ -126,6 +132,8 @@ struct HFStreamingRootView: View {
                     HighFiveProtectedSpatialPeekBridge()
                 } else if Self.shouldStartInPlayer {
                     qaPlayerView
+                } else if Self.shouldStartInBackendStatus {
+                    qaBackendStatusView
                 } else if Self.shouldStartInCreatorStudio {
                     qaCreatorStudioView
                 } else if Self.shouldStartInMovieDetail {
@@ -150,6 +158,9 @@ struct HFStreamingRootView: View {
                 hasCompletedOnboarding = false
                 hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro && !Self.shouldForceLaunchIntro
             }
+        }
+        .task {
+            await streamingStore.refreshBackendRuntimeStatus()
         }
     }
 
@@ -179,6 +190,13 @@ struct HFStreamingRootView: View {
     private var qaCreatorStudioView: some View {
         NavigationStack {
             CreatorStudioView(initialFocus: Self.creatorStudioInitialFocus)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+    }
+
+    private var qaBackendStatusView: some View {
+        NavigationStack {
+            HFBackendStatusView()
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }

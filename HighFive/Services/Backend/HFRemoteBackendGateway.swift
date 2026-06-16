@@ -8,6 +8,10 @@ struct HFRemoteBackendGateway: HFBackendGateway {
     }
 
     func health() async throws -> HFBackendHealth {
+        guard configuration.hasCompleteRuntimeConfig else {
+            throw HFBackendGatewayError.missingRuntimeValue("runtime config")
+        }
+
         guard let url = healthURL() else {
             throw HFBackendGatewayError.notConfigured
         }
@@ -30,8 +34,19 @@ struct HFRemoteBackendGateway: HFBackendGateway {
     }
 
     func serviceStatuses() async -> [HFBackendServiceStatus] {
-        let state = configuration.hasCompleteRuntimeConfig ? HFBackendConnectionState.backendConfigured : .missingCredentials
-        let label = state == .backendConfigured ? "Backend Configured" : "Missing Credentials"
+        let state: HFBackendConnectionState
+        if configuration.hasCompleteRuntimeConfig {
+            do {
+                _ = try await health()
+                state = .stagingReachable
+            } catch {
+                state = .stagingUnavailable
+            }
+        } else {
+            state = .missingCredentials
+        }
+
+        let label = label(for: state)
         return [
             status(id: "backend", title: "Backend Runtime", detail: "Runtime configuration is present for staging boundaries. No production service claim is made.", state: state, label: label, systemImage: "server.rack"),
             status(id: "account", title: "Account", detail: "Account boundary can be staged when auth runtime config is supplied.", state: state, label: label, systemImage: "person.crop.circle.fill"),
@@ -65,6 +80,23 @@ struct HFRemoteBackendGateway: HFBackendGateway {
         }
 
         return nil
+    }
+
+    private func label(for state: HFBackendConnectionState) -> String {
+        switch state {
+        case .stagingReachable:
+            return "Staging Reachable"
+        case .stagingUnavailable:
+            return "Staging Unavailable"
+        case .backendConfigured, .readyForStaging:
+            return "Backend Configured"
+        case .missingCredentials, .credentialsMissing:
+            return "Missing Credentials"
+        case .localMode, .localPreview:
+            return "Local Mode"
+        default:
+            return "Backend Not Connected Yet"
+        }
     }
 
     private func status(id: String, title: String, detail: String, state: HFBackendConnectionState, label: String, systemImage: String) -> HFBackendServiceStatus {

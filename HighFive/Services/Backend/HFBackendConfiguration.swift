@@ -35,14 +35,14 @@ struct HFBackendConfiguration: Equatable {
     var connectionState: HFBackendConnectionState {
         switch mode {
         case .local:
-            return hasAnyRuntimeConfig ? .backendNotConfigured : .localPreview
+            return hasAnyRuntimeConfig ? .missingCredentials : .localMode
         case .unavailable:
             return .backendUnavailable
         case .configured:
             if hasCompleteRuntimeConfig {
-                return requestedMode?.lowercased() == "staging" ? .readyForStaging : .backendConfigured
+                return .backendConfigured
             }
-            return .credentialsMissing
+            return .missingCredentials
         }
     }
 

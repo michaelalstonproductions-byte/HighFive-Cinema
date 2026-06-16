@@ -224,6 +224,12 @@ struct HFPaymentReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
+struct HFBackendRuntimeConfigRow: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var status: String
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -236,6 +242,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var activeProfileID: String
     @Published private(set) var lastPlayerMovieID: String?
     @Published var selectedAudienceChannelID: String
+    @Published private(set) var backendRuntimeStatus: HFBackendRuntimeStatus
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -245,7 +252,9 @@ final class HFStreamingStore: ObservableObject {
     private let activeProfileKey = "hf.localProfile.activeID"
     private let profileDisplayNamePrefix = "hf.localProfile.displayName."
     private let lastPlayerMovieKey = "hf.player.lastMovieID"
+    private let backendConfiguration: HFBackendConfiguration
     private let backendService: HFBackendService
+    private let backendGateway: HFBackendGateway
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -257,9 +266,15 @@ final class HFStreamingStore: ObservableObject {
 
     init(
         defaultSavedIDs: Set<String> = ["friendly", "paranormall-s1"],
-        backendService: HFBackendService = HFBackendServiceFactory.make()
+        backendConfiguration: HFBackendConfiguration = HFBackendConfiguration(),
+        backendService: HFBackendService? = nil,
+        backendGateway: HFBackendGateway? = nil
     ) {
-        self.backendService = backendService
+        let resolvedBackendService = backendService ?? HFBackendServiceFactory.make(configuration: backendConfiguration)
+        self.backendConfiguration = backendConfiguration
+        self.backendService = resolvedBackendService
+        self.backendGateway = backendGateway ?? HFBackendGatewayFactory.make(configuration: backendConfiguration)
+        backendRuntimeStatus = resolvedBackendService.currentStatus()
         let defaults = UserDefaults.standard
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
@@ -291,44 +306,177 @@ final class HFStreamingStore: ObservableObject {
         selectedAudienceChannelID = "premiere-updates"
     }
 
-    var backendRuntimeStatus: HFBackendRuntimeStatus {
-        backendService.currentStatus()
-    }
-
     var backendStatus: HFBackendServiceStatus {
-        backendService.currentStatus().status
+        backendRuntimeStatus.status
     }
 
     var accountBackendStatus: HFBackendServiceStatus {
-        backendService.accountStatus()
+        backendServiceStatus(id: "account", fallback: backendService.accountStatus())
     }
 
     var libraryBackendStatus: HFBackendServiceStatus {
-        backendService.libraryStatus()
+        backendServiceStatus(id: "library", fallback: backendService.libraryStatus())
     }
 
     var downloadsBackendStatus: HFBackendServiceStatus {
-        backendService.downloadsStatus()
+        backendServiceStatus(id: "downloads", fallback: backendService.downloadsStatus())
     }
 
     var paymentBackendStatus: HFBackendServiceStatus {
-        backendService.paymentStatus()
+        backendServiceStatus(id: "payments", fallback: backendService.paymentStatus())
     }
 
     var creatorStudioBackendStatus: HFBackendServiceStatus {
-        backendService.creatorStudioStatus()
+        backendServiceStatus(id: "creator-studio", fallback: backendService.creatorStudioStatus())
     }
 
     var socialKitBackendStatus: HFBackendServiceStatus {
-        backendService.socialKitStatus()
+        backendServiceStatus(id: "social-kit", fallback: backendService.socialKitStatus())
     }
 
     var vodBackendStatus: HFBackendServiceStatus {
-        backendService.vodPackageStatus()
+        backendServiceStatus(id: "vod-package", fallback: backendService.vodPackageStatus())
     }
 
     var backendServiceStatuses: [HFBackendServiceStatus] {
-        backendService.currentStatus().services
+        backendRuntimeStatus.services
+    }
+
+    var backendRuntimeConfigRows: [HFBackendRuntimeConfigRow] {
+        [
+            HFBackendRuntimeConfigRow(
+                id: HFBackendConfiguration.modeKey,
+                title: HFBackendConfiguration.modeKey,
+                status: backendConfiguration.requestedMode == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFBackendConfiguration.baseURLKey,
+                title: HFBackendConfiguration.baseURLKey,
+                status: backendConfiguration.backendBaseURL == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFBackendConfiguration.projectURLKey,
+                title: HFBackendConfiguration.projectURLKey,
+                status: backendConfiguration.projectURL == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFBackendConfiguration.anonKeyKey,
+                title: HFBackendConfiguration.anonKeyKey,
+                status: backendConfiguration.anonKey == nil ? "Not set" : "Present"
+            )
+        ]
+    }
+
+    var backendHealthSummary: HFBackendServiceStatus {
+        HFBackendServiceStatus(
+            id: "health",
+            title: "Health Check",
+            detail: healthDetail(for: backendRuntimeStatus.connectionState),
+            state: backendRuntimeStatus.connectionState,
+            statusLabel: healthLabel(for: backendRuntimeStatus.connectionState),
+            systemImage: healthSystemImage(for: backendRuntimeStatus.connectionState),
+            accessibilityIdentifier: healthAccessibilityIdentifier(for: backendRuntimeStatus.connectionState)
+        )
+    }
+
+    var backendLocalFallbackNote: String {
+        switch backendRuntimeStatus.connectionState {
+        case .localMode, .localPreview, .backendNotConfigured:
+            return "Local fallback active. Backend staging is not contacted without runtime config."
+        case .missingCredentials, .credentialsMissing:
+            return "Local fallback active until complete runtime config is provided."
+        case .stagingUnavailable:
+            return "Local fallback active because staging health is unavailable."
+        default:
+            return "Local fallback remains available for demos and rollback."
+        }
+    }
+
+    func refreshBackendRuntimeStatus() async {
+        guard backendConfiguration.hasAnyRuntimeConfig else {
+            backendRuntimeStatus = backendService.currentStatus(for: .localMode)
+            return
+        }
+
+        guard backendConfiguration.hasCompleteRuntimeConfig else {
+            backendRuntimeStatus = backendService.currentStatus(for: .missingCredentials)
+            return
+        }
+
+        backendRuntimeStatus = backendService.currentStatus(for: .backendConfigured)
+
+        do {
+            _ = try await backendGateway.health()
+            backendRuntimeStatus = backendService.currentStatus(for: .stagingReachable)
+        } catch {
+            backendRuntimeStatus = backendService.currentStatus(for: .stagingUnavailable)
+        }
+    }
+
+    private func backendServiceStatus(id: String, fallback: HFBackendServiceStatus) -> HFBackendServiceStatus {
+        backendRuntimeStatus.services.first { $0.id == id } ?? fallback
+    }
+
+    private func healthLabel(for state: HFBackendConnectionState) -> String {
+        switch state {
+        case .stagingReachable:
+            return "Staging Reachable"
+        case .stagingUnavailable:
+            return "Staging Unavailable"
+        case .backendConfigured, .readyForStaging:
+            return "Backend Configured"
+        case .missingCredentials, .credentialsMissing:
+            return "Missing Credentials"
+        case .localMode, .localPreview:
+            return "Local Mode"
+        default:
+            return "Backend Not Connected Yet"
+        }
+    }
+
+    private func healthDetail(for state: HFBackendConnectionState) -> String {
+        switch state {
+        case .stagingReachable:
+            return "Health Check reached staging from runtime config. No production backend claim is made."
+        case .stagingUnavailable:
+            return "Health Check ran from runtime config and staging did not return a successful response."
+        case .backendConfigured, .readyForStaging:
+            return "Runtime config is complete. Health Check is ready to run."
+        case .missingCredentials, .credentialsMissing:
+            return "Health Check skipped because runtime config is incomplete."
+        case .localMode, .localPreview:
+            return "Health Check skipped because runtime config is missing."
+        default:
+            return "Health Check is not connected yet."
+        }
+    }
+
+    private func healthSystemImage(for state: HFBackendConnectionState) -> String {
+        switch state {
+        case .stagingReachable:
+            return "checkmark.seal.fill"
+        case .stagingUnavailable:
+            return "exclamationmark.triangle.fill"
+        default:
+            return "server.rack"
+        }
+    }
+
+    private func healthAccessibilityIdentifier(for state: HFBackendConnectionState) -> String {
+        switch state {
+        case .stagingReachable:
+            return "hf.backend.stagingReachable"
+        case .stagingUnavailable:
+            return "hf.backend.stagingUnavailable"
+        case .missingCredentials, .credentialsMissing:
+            return "hf.backend.credentialsMissing"
+        case .backendConfigured, .readyForStaging:
+            return "hf.backend.configured"
+        case .localMode, .localPreview:
+            return "hf.backend.localMode"
+        default:
+            return "hf.backend.notConnected"
+        }
     }
 
     // hf.services.accountProfile

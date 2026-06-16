@@ -4,21 +4,25 @@ struct HFLocalBackendAdapter: HFBackendService {
     let configuration: HFBackendConfiguration
 
     func currentStatus() -> HFBackendRuntimeStatus {
-        let services = serviceStatuses(state: .backendNotConfigured, statusLabel: "Backend Not Connected Yet")
+        let services = serviceStatuses(state: .localMode, statusLabel: "Backend Not Connected Yet")
         return HFBackendRuntimeStatus(
             mode: .local,
-            connectionState: .localPreview,
+            connectionState: .localMode,
             status: HFBackendServiceStatus(
                 id: "backend-runtime",
                 title: "Backend Runtime",
                 detail: "Local Mode. Backend Not Connected Yet. Provider-ready service adapters are available without live provider calls.",
-                state: .localPreview,
+                state: .localMode,
                 statusLabel: "Local Mode",
                 systemImage: "server.rack",
                 accessibilityIdentifier: "hf.backend.status"
             ),
             services: services
         )
+    }
+
+    func currentStatus(for state: HFBackendConnectionState) -> HFBackendRuntimeStatus {
+        currentStatus()
     }
 
     func accountStatus() -> HFBackendServiceStatus {
@@ -99,16 +103,19 @@ struct HFConfiguredBackendAdapter: HFBackendService {
     let configuration: HFBackendConfiguration
 
     func currentStatus() -> HFBackendRuntimeStatus {
-        let state = configuration.connectionState
+        currentStatus(for: configuration.connectionState)
+    }
+
+    func currentStatus(for state: HFBackendConnectionState) -> HFBackendRuntimeStatus {
         let label = label(for: state)
         let services = [
-            accountStatus(),
-            libraryStatus(),
-            downloadsStatus(),
-            paymentStatus(),
-            creatorStudioStatus(),
-            socialKitStatus(),
-            vodPackageStatus()
+            configuredStatus(id: "account", title: "Account", detail: "Runtime configuration found. Account adapter is ready for staging validation.", systemImage: "person.crop.circle.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
+            configuredStatus(id: "library", title: "Library", detail: "Library adapter is backend-capable. No cloud sync request is made in this build.", systemImage: "bookmark.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
+            configuredStatus(id: "downloads", title: "Downloads", detail: "Download policy adapter is backend-capable. No media downloads are active.", systemImage: "arrow.down.circle.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
+            configuredStatus(id: "payments", title: "Payments", detail: "Payment boundary is configured only. No live payment provider is active.", systemImage: "creditcard.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
+            configuredStatus(id: "creator-studio", title: "Creator Studio", detail: "Creator Studio adapter is ready for staging records once backend validation is approved.", systemImage: "wand.and.stars", accessibilityIdentifier: "hf.creatorStudio.backendStatus", state: state),
+            configuredStatus(id: "social-kit", title: "Social Kit", detail: "Social kit adapter is configured only. No live posting is active.", systemImage: "bubble.left.and.bubble.right.fill", accessibilityIdentifier: "hf.creatorStudio.socialBackendStatus", state: state),
+            configuredStatus(id: "vod-package", title: "VOD", detail: "VOD package adapter is configured only. No live publishing is active.", systemImage: "shippingbox.fill", accessibilityIdentifier: "hf.creatorStudio.vodBackendStatus", state: state)
         ]
 
         return HFBackendRuntimeStatus(
@@ -156,11 +163,14 @@ struct HFConfiguredBackendAdapter: HFBackendService {
     }
 
     private func configuredStatus(id: String, title: String, detail: String, systemImage: String, accessibilityIdentifier: String) -> HFBackendServiceStatus {
-        let state = configuration.connectionState
+        configuredStatus(id: id, title: title, detail: detail, systemImage: systemImage, accessibilityIdentifier: accessibilityIdentifier, state: configuration.connectionState)
+    }
+
+    private func configuredStatus(id: String, title: String, detail: String, systemImage: String, accessibilityIdentifier: String, state: HFBackendConnectionState) -> HFBackendServiceStatus {
         return HFBackendServiceStatus(
             id: id,
             title: title,
-            detail: state == .credentialsMissing ? "Missing Credentials. \(detail)" : detail,
+            detail: state == .credentialsMissing || state == .missingCredentials ? "Missing Credentials. \(detail)" : detail,
             state: state,
             statusLabel: label(for: state),
             systemImage: systemImage,
@@ -196,17 +206,17 @@ struct HFConfiguredBackendAdapter: HFBackendService {
     private func detail(for state: HFBackendConnectionState) -> String {
         switch state {
         case .stagingReachable:
-            return "Backend staging is reachable. No production service claim is made."
+            return "Staging Reachable. Backend health returned successfully from runtime configuration. No production service claim is made."
         case .readyForStaging:
             return "Backend Configured. Runtime configuration is present for staging validation. No production verification is claimed."
         case .backendConfigured:
-            return "Backend Configured. Runtime configuration is present. No live provider request is made in this build."
+            return "Backend Configured. Runtime configuration is present and ready for a staging health check."
         case .missingCredentials:
             return "Missing Credentials. Add complete runtime configuration to leave Local Mode."
         case .credentialsMissing:
             return "Missing Credentials. Add complete runtime configuration to leave Local Mode."
         case .stagingUnavailable:
-            return "Backend Not Connected Yet. Staging health is unavailable."
+            return "Staging Unavailable. Runtime configuration exists, but the staging health check failed."
         case .backendUnavailable:
             return "Backend Not Connected Yet. Runtime mode marks backend unavailable."
         case .backendNotConfigured:
@@ -222,7 +232,9 @@ struct HFConfiguredBackendAdapter: HFBackendService {
         switch state {
         case .credentialsMissing, .missingCredentials:
             return "hf.backend.credentialsMissing"
-        case .backendConfigured, .readyForStaging, .stagingReachable:
+        case .stagingReachable:
+            return "hf.backend.stagingReachable"
+        case .backendConfigured, .readyForStaging:
             return "hf.backend.configured"
         case .localPreview, .localMode:
             return "hf.backend.localMode"

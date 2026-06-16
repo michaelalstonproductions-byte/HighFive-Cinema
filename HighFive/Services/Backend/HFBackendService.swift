@@ -2,6 +2,7 @@ import Foundation
 
 protocol HFBackendService {
     func currentStatus() -> HFBackendRuntimeStatus
+    func currentStatus(for state: HFBackendConnectionState) -> HFBackendRuntimeStatus
     func accountStatus() -> HFBackendServiceStatus
     func libraryStatus() -> HFBackendServiceStatus
     func downloadsStatus() -> HFBackendServiceStatus
