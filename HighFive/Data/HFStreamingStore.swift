@@ -243,6 +243,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var lastPlayerMovieID: String?
     @Published var selectedAudienceChannelID: String
     @Published private(set) var backendRuntimeStatus: HFBackendRuntimeStatus
+    @Published private(set) var authRuntimeStatus: HFAuthRuntimeStatus
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -255,6 +256,8 @@ final class HFStreamingStore: ObservableObject {
     private let backendConfiguration: HFBackendConfiguration
     private let backendService: HFBackendService
     private let backendGateway: HFBackendGateway
+    private let authConfiguration: HFAuthConfiguration
+    private let authService: HFAuthService
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -268,19 +271,26 @@ final class HFStreamingStore: ObservableObject {
         defaultSavedIDs: Set<String> = ["friendly", "paranormall-s1"],
         backendConfiguration: HFBackendConfiguration = HFBackendConfiguration(),
         backendService: HFBackendService? = nil,
-        backendGateway: HFBackendGateway? = nil
+        backendGateway: HFBackendGateway? = nil,
+        authConfiguration: HFAuthConfiguration = HFAuthConfiguration(),
+        authService: HFAuthService? = nil
     ) {
         let resolvedBackendService = backendService ?? HFBackendServiceFactory.make(configuration: backendConfiguration)
+        let resolvedAuthService = authService ?? HFAuthServiceFactory.make(configuration: authConfiguration)
         self.backendConfiguration = backendConfiguration
         self.backendService = resolvedBackendService
         self.backendGateway = backendGateway ?? HFBackendGatewayFactory.make(configuration: backendConfiguration)
+        self.authConfiguration = authConfiguration
+        self.authService = resolvedAuthService
         backendRuntimeStatus = resolvedBackendService.currentStatus()
         let defaults = UserDefaults.standard
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
+        let resolvedAuthProfile = profiles.first { $0.id == resolvedActiveProfileID } ?? profiles[0]
         localProfiles = profiles
         activeProfileID = resolvedActiveProfileID
+        authRuntimeStatus = resolvedAuthService.currentStatus(localProfile: resolvedAuthProfile)
         savedMovieIDs = Self.loadProfileIDs(
             defaults: defaults,
             scopedKey: Self.scopedKey(savedKey, resolvedActiveProfileID),
@@ -308,6 +318,10 @@ final class HFStreamingStore: ObservableObject {
 
     var backendStatus: HFBackendServiceStatus {
         backendRuntimeStatus.status
+    }
+
+    var accountRuntimeStatus: HFAuthRuntimeStatus {
+        authRuntimeStatus
     }
 
     var accountBackendStatus: HFBackendServiceStatus {
@@ -411,6 +425,10 @@ final class HFStreamingStore: ObservableObject {
         } catch {
             backendRuntimeStatus = backendService.currentStatus(for: .stagingUnavailable)
         }
+    }
+
+    func refreshAuthRuntimeStatus() {
+        authRuntimeStatus = authService.currentStatus(localProfile: activeViewingProfile)
     }
 
     private func backendServiceStatus(id: String, fallback: HFBackendServiceStatus) -> HFBackendServiceStatus {
@@ -765,6 +783,7 @@ final class HFStreamingStore: ObservableObject {
         guard !trimmed.isEmpty, let index = localProfiles.firstIndex(where: { $0.id == activeProfileID }) else { return }
         localProfiles[index].displayName = trimmed
         UserDefaults.standard.set(trimmed, forKey: profileDisplayNamePrefix + activeProfileID)
+        refreshAuthRuntimeStatus()
     }
 
     func selectProfile(_ profile: HFLocalViewingProfile) {
@@ -785,6 +804,7 @@ final class HFStreamingStore: ObservableObject {
             fallbackKey: downloadsKey,
             fallbackIDs: Set(HFMockData.movies.filter(\.isDownloaded).map(\.id))
         )
+        refreshAuthRuntimeStatus()
     }
 
     // hf.services.unifiedStore

@@ -26,7 +26,7 @@ struct HFLocalBackendAdapter: HFBackendService {
     }
 
     func accountStatus() -> HFBackendServiceStatus {
-        serviceStatus(id: "account", title: "Account", detail: "Local profile fallback active. Backend account provider not connected yet.", state: .backendNotConfigured, statusLabel: "Local Mode", systemImage: "person.crop.circle.fill", accessibilityIdentifier: "hf.backend.localMode")
+        serviceStatus(id: "account", title: "Account", detail: "Auth/account is local and provider-ready. Backend account provider not connected yet.", state: .backendNotConfigured, statusLabel: "Local Mode", systemImage: "person.crop.circle.fill", accessibilityIdentifier: "hf.backend.localMode")
     }
 
     func libraryStatus() -> HFBackendServiceStatus {
@@ -109,7 +109,7 @@ struct HFConfiguredBackendAdapter: HFBackendService {
     func currentStatus(for state: HFBackendConnectionState) -> HFBackendRuntimeStatus {
         let label = label(for: state)
         let services = [
-            configuredStatus(id: "account", title: "Account", detail: "Runtime configuration found. Account adapter is ready for staging validation.", systemImage: "person.crop.circle.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
+            configuredStatus(id: "account", title: "Account", detail: "Runtime configuration found. Auth/account adapter is ready for staging validation without a live provider claim.", systemImage: "person.crop.circle.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
             configuredStatus(id: "library", title: "Library", detail: "Library adapter is backend-capable. No cloud sync request is made in this build.", systemImage: "bookmark.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
             configuredStatus(id: "downloads", title: "Downloads", detail: "Download policy adapter is backend-capable. No media downloads are active.", systemImage: "arrow.down.circle.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
             configuredStatus(id: "payments", title: "Payments", detail: "Payment boundary is configured only. No live payment provider is active.", systemImage: "creditcard.fill", accessibilityIdentifier: accessibilityIdentifier(for: state), state: state),
@@ -135,7 +135,7 @@ struct HFConfiguredBackendAdapter: HFBackendService {
     }
 
     func accountStatus() -> HFBackendServiceStatus {
-        configuredStatus(id: "account", title: "Account", detail: "Runtime configuration found. Account adapter is ready for staging validation.", systemImage: "person.crop.circle.fill", accessibilityIdentifier: "hf.backend.configured")
+        configuredStatus(id: "account", title: "Account", detail: "Runtime configuration found. Auth/account adapter is ready for staging validation without a live provider claim.", systemImage: "person.crop.circle.fill", accessibilityIdentifier: "hf.backend.configured")
     }
 
     func libraryStatus() -> HFBackendServiceStatus {

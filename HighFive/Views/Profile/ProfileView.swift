@@ -25,6 +25,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 activeProfileCard
+                accountPanel
                 backendServicesPanel
                 profileSwitcherRail
                 viewingStats
@@ -146,6 +147,132 @@ struct ProfileView: View {
         HFBackendStatusPanel(runtimeStatus: streamingStore.backendRuntimeStatus)
             .padding(.horizontal, HFSpacing.screenHorizontal)
             .accessibilityIdentifier("hf.profile.backendServices")
+    }
+
+    private var accountPanel: some View {
+        let authStatus = streamingStore.accountRuntimeStatus
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.badge.key.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Account")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(authStatus.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.account.status")
+                        Text(authStatus.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier(authStatus.providerStatus.accessibilityIdentifier)
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFAccountReadinessRow(
+                        title: "Current local profile",
+                        detail: selectedProfile.name,
+                        status: authStatus.providerStatus == .localAccountMode ? "Local Account Mode" : authStatus.statusLabel,
+                        systemImage: selectedProfile.avatarSystemName,
+                        identifier: "hf.account.localMode"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Session",
+                        detail: authStatus.sessionState.detail,
+                        status: authStatus.sessionState.statusLabel,
+                        systemImage: "person.crop.circle.badge.checkmark",
+                        identifier: "hf.account.sessionState"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Sign-in readiness",
+                        detail: authStatus.signInRequirement.detail,
+                        status: authStatus.signInRequirement.statusLabel,
+                        systemImage: "person.crop.circle.badge.questionmark",
+                        identifier: "hf.account.signInReadiness"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Sign-out readiness",
+                        detail: "Local profile can return to the profile hub without ending a live provider session.",
+                        status: authStatus.sessionState.statusLabel,
+                        systemImage: "rectangle.portrait.and.arrow.right",
+                        identifier: "hf.account.signOutReadiness"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: authStatus.appleRequirementNote.title,
+                        detail: authStatus.appleRequirementNote.detail,
+                        status: authStatus.appleRequirementNote.statusLabel,
+                        systemImage: "apple.logo",
+                        identifier: "hf.account.appleRequirement"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Delete Account",
+                        detail: authStatus.deletionRequest.detail,
+                        status: authStatus.deletionRequest.statusLabel,
+                        systemImage: "trash.slash.fill",
+                        identifier: "hf.account.deleteRequest"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Export Account",
+                        detail: authStatus.exportRequest.detail,
+                        status: authStatus.exportRequest.statusLabel,
+                        systemImage: "square.and.arrow.up.on.square",
+                        identifier: "hf.account.exportRequest"
+                    )
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        mockMessage = ProfileMockMessage(
+                            title: "Account Readiness",
+                            body: "Account staging is local-first. Runtime auth config is required before provider validation."
+                        )
+                    } label: {
+                        Text("Review Account Readiness")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        mockMessage = ProfileMockMessage(
+                            title: "Local Profile",
+                            body: "\(selectedProfile.name) remains the active local viewing profile."
+                        )
+                    } label: {
+                        Text("Use Local Profile")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(HFColors.surfaceElevated.opacity(0.72))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.account.panel")
     }
 
     private var profileSwitcherRail: some View {
@@ -479,6 +606,46 @@ private struct HFPreferenceRow: View {
                 .background(HFColors.surface.opacity(0.72))
                 .clipShape(Capsule())
         }
+    }
+}
+
+private struct HFAccountReadinessRow: View {
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+    let identifier: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(status.contains("Configured") ? HFColors.gold : HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.66)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 24)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+        }
+        .accessibilityIdentifier(identifier)
     }
 }
 
