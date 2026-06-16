@@ -25,6 +25,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 activeProfileCard
+                backendServicesPanel
                 profileSwitcherRail
                 viewingStats
                 highfiveHub
@@ -139,6 +140,12 @@ struct ProfileView: View {
             .padding(HFSpacing.lg)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var backendServicesPanel: some View {
+        HFBackendStatusPanel(runtimeStatus: streamingStore.backendRuntimeStatus)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .accessibilityIdentifier("hf.profile.backendServices")
     }
 
     private var profileSwitcherRail: some View {

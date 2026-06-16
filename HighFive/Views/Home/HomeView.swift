@@ -69,6 +69,8 @@ struct HomeView: View {
 
             Spacer()
 
+            backendStatusChip
+
             Button(action: onSearch) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 19, weight: .bold))
@@ -90,6 +92,24 @@ struct HomeView: View {
             .accessibilityLabel("Profile")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var backendStatusChip: some View {
+        HStack(spacing: 5) {
+            Image(systemName: streamingStore.backendStatus.systemImage)
+                .font(.system(size: 10, weight: .black))
+            Text(streamingStore.backendStatus.statusLabel)
+                .font(HFTypography.micro)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+        }
+        .foregroundStyle(streamingStore.backendStatus.isConfigured ? .black : HFColors.gold)
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 28)
+        .background(streamingStore.backendStatus.isConfigured ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.10)))
+        .overlay(Capsule().stroke(HFColors.gold.opacity(0.26), lineWidth: 1))
+        .clipShape(Capsule())
+        .accessibilityIdentifier("hf.home.backendStatus")
     }
 
     private var heroSection: some View {

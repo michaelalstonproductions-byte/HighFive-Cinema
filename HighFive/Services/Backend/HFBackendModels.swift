@@ -7,12 +7,16 @@ enum HFBackendMode: String, Codable, Equatable {
 }
 
 enum HFBackendConnectionState: String, Codable, Equatable {
+    case localMode
+    case missingCredentials
     case localPreview
     case backendNotConfigured
     case backendConfigured
     case backendUnavailable
     case credentialsMissing
     case readyForStaging
+    case stagingReachable
+    case stagingUnavailable
 }
 
 struct HFBackendServiceStatus: Identifiable, Codable, Equatable {
@@ -29,7 +33,7 @@ struct HFBackendServiceStatus: Identifiable, Codable, Equatable {
     }
 
     var isConfigured: Bool {
-        state == .backendConfigured || state == .readyForStaging
+        state == .backendConfigured || state == .readyForStaging || state == .stagingReachable
     }
 }
 
