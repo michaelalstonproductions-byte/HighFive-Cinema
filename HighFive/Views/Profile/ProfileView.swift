@@ -28,6 +28,7 @@ struct ProfileView: View {
                 accountPanel
                 librarySyncReadinessPanel
                 paymentReadinessPanel
+                playbackDescriptorReadinessPanel
                 downloadReadinessPanel
                 backendServicesPanel
                 profileSwitcherRail
@@ -483,6 +484,50 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.profile.paymentReadiness")
+    }
+
+    private var playbackDescriptorReadinessPanel: some View {
+        let rows = streamingStore.playbackDescriptorReadinessRows
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "lock.rectangle.stack.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Playback Descriptor")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Backend descriptor required")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                        Text("Cloudflare descriptor not connected. Backend-mediated playback only.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(rows) { row in
+                        HFAccountReadinessRow(
+                            title: row.title,
+                            detail: row.detail,
+                            status: row.status,
+                            systemImage: row.systemImage,
+                            identifier: row.id == "cloudflare-descriptor" ? "hf.streaming.cloudflarePlaybackReference" : "hf.playback.descriptorBoundary"
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.profile.playbackDescriptorReadiness")
     }
 
     private var downloadReadinessPanel: some View {

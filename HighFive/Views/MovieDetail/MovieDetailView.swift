@@ -31,6 +31,10 @@ struct MovieDetailView: View {
         streamingStore.playbackEntitlementContext(for: catalogMovie)
     }
 
+    private var gatedPlaybackDescriptor: HFPlaybackDescriptorAccessResponse {
+        streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
+    }
+
     private var galleryAssets: [String] {
         HFMockData.galleryAssets(for: catalogMovie)
     }
@@ -283,6 +287,7 @@ struct MovieDetailView: View {
         let entitlementStatus = streamingStore.entitlementRuntimeStatus
         let accessRule = streamingStore.storeKitAccessRule(for: catalogMovie)
         let entitlementContext = streamingStore.playbackEntitlementContext(for: catalogMovie)
+        let gatedDescriptor = streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
         let episodeMappings = streamingStore.storeKitEpisodeMappings(for: catalogMovie)
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -352,10 +357,38 @@ struct MovieDetailView: View {
                 )
 
                 HFPlaybackBoundaryRow(
+                    title: "Entitlement gate required",
+                    detail: gatedDescriptor.gate.detail,
+                    status: gatedDescriptor.gateStatus.statusLabel,
+                    identifier: "hf.movieDetail.entitlementGate"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Backend descriptor required",
+                    detail: gatedDescriptor.request.backendRequirement.detail,
+                    status: gatedDescriptor.request.backendRequirement.status.statusLabel,
+                    identifier: "hf.movieDetail.backendDescriptorRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Cloudflare descriptor not connected",
+                    detail: "Cloudflare descriptor ready only after backend descriptor and entitlement validation are configured.",
+                    status: gatedDescriptor.cloudflareState.statusLabel,
+                    identifier: "hf.movieDetail.cloudflareDescriptorState"
+                )
+
+                HFPlaybackBoundaryRow(
                     title: "Cloudflare playback requires backend descriptor",
                     detail: entitlementContext.cloudflareReference.detail,
                     status: entitlementContext.cloudflareReference.statusLabel,
                     identifier: "hf.streaming.cloudflarePlaybackReference"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "No Cloudflare token in app",
+                    detail: "Backend-mediated playback only",
+                    status: gatedDescriptor.auditContext.localFallback,
+                    identifier: "hf.playback.descriptorBoundary"
                 )
 
                 if !episodeMappings.isEmpty {
@@ -699,6 +732,10 @@ struct HFPlayerServiceSheet: View {
         streamingStore.playbackEntitlementContext(for: catalogMovie)
     }
 
+    private var gatedPlaybackDescriptor: HFPlaybackDescriptorAccessResponse {
+        streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
+    }
+
     var body: some View {
         ZStack {
             HFColors.screenBackground
@@ -834,16 +871,21 @@ struct HFPlayerServiceSheet: View {
                 Label("Playback descriptor requires entitlement", systemImage: "lock.shield.fill")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                Text("\(entitlementContext.playbackAccessDecision.statusLabel). Entitlement validation required before a backend descriptor can enable provider playback.")
+                Text("\(gatedPlaybackDescriptor.gateStatus.statusLabel). Entitlement validation required before a backend descriptor can enable provider playback.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("hf.player.entitlementGate")
-                Text("Cloudflare playback requires backend descriptor. Local Preview Access remains available.")
+                Text("Cloudflare playback requires backend descriptor. \(gatedPlaybackDescriptor.cloudflareState.statusLabel).")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.gold)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("hf.player.cloudflareDescriptorRequired")
+                Text("No Cloudflare token in app")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.noCloudflareToken")
             }
             .padding(HFSpacing.lg)
         }
@@ -854,7 +896,7 @@ struct HFPlayerServiceSheet: View {
             Button {
                 streamingStore.markStartedWatching(catalogMovie)
             } label: {
-                Label("Local Preview", systemImage: "play.fill")
+                Label("Continue Local Preview", systemImage: "play.fill")
                     .font(HFTypography.smallAction)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
@@ -863,6 +905,7 @@ struct HFPlayerServiceSheet: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("hf.player.continueLocalPreview")
 
             Button {
                 showsProtectedDepthPreview = true

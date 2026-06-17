@@ -111,6 +111,177 @@ struct HFPlaybackDescriptorResponse: Codable, Equatable {
     let status: HFPlaybackDescriptorStatus
 }
 
+enum HFPlaybackDescriptorGateStatus: String, Codable, Equatable {
+    case localPreviewAccess
+    case entitlementGateRequired
+    case backendDescriptorRequired
+    case cloudflareDescriptorNotConnected
+    case cloudflareDescriptorReady
+    case storeKitProductMappingRequired
+    case serverEntitlementValidationRequired
+
+    var statusLabel: String {
+        switch self {
+        case .localPreviewAccess:
+            return "Local Preview Access"
+        case .entitlementGateRequired:
+            return "Entitlement gate required"
+        case .backendDescriptorRequired:
+            return "Backend descriptor required"
+        case .cloudflareDescriptorNotConnected:
+            return "Cloudflare descriptor not connected"
+        case .cloudflareDescriptorReady:
+            return "Cloudflare descriptor ready"
+        case .storeKitProductMappingRequired:
+            return "StoreKit product mapping required"
+        case .serverEntitlementValidationRequired:
+            return "Server entitlement validation required"
+        }
+    }
+}
+
+struct HFBackendPlaybackDescriptorRequirement: Codable, Equatable {
+    let title: String
+    let detail: String
+    let status: HFPlaybackDescriptorGateStatus
+
+    static let required = HFBackendPlaybackDescriptorRequirement(
+        title: "Backend descriptor required",
+        detail: "Backend-mediated playback only. The app never builds Cloudflare URLs or signed playback credentials.",
+        status: .backendDescriptorRequired
+    )
+}
+
+enum HFCloudflarePlaybackDescriptorState: String, Codable, Equatable {
+    case notConnected
+    case ready
+
+    var statusLabel: String {
+        switch self {
+        case .notConnected:
+            return "Cloudflare descriptor not connected"
+        case .ready:
+            return "Cloudflare descriptor ready"
+        }
+    }
+}
+
+struct HFPlaybackDescriptorEntitlementGate: Codable, Equatable {
+    let movieID: String
+    let productIdentifier: HFProductIdentifier
+    let requirement: HFMovieEntitlementRequirement
+    let accessDecision: HFPlaybackAccessDecision
+    let status: HFPlaybackDescriptorGateStatus
+    let detail: String
+}
+
+struct HFPlaybackDescriptorAccessRequest: Codable, Equatable {
+    let movieID: String
+    let profileID: String?
+    let productIdentifier: HFProductIdentifier
+    let provider: HFStreamingProvider
+    let entitlementRequirement: HFMovieEntitlementRequirement
+    let backendRequirement: HFBackendPlaybackDescriptorRequirement
+}
+
+struct HFPlaybackDescriptorAccessResponse: Codable, Equatable {
+    let request: HFPlaybackDescriptorAccessRequest
+    let descriptor: HFPlaybackDescriptor
+    let gate: HFPlaybackDescriptorEntitlementGate
+    let gateStatus: HFPlaybackDescriptorGateStatus
+    let cloudflareState: HFCloudflarePlaybackDescriptorState
+    let auditContext: HFEntitlementPlaybackAuditContext
+    let detail: String
+}
+
+struct HFEntitlementPlaybackAuditContext: Codable, Equatable {
+    let movieID: String
+    let flow: String
+    let entitlementStatus: String
+    let descriptorStatus: String
+    let noCloudflareTokenInApp: String
+    let localFallback: String
+}
+
+struct HFEntitlementGatedPlaybackDescriptorService {
+    let streamingConfiguration: HFStreamingProviderConfiguration
+    let entitlementConfiguration: HFEntitlementConfiguration
+
+    func accessResponse(
+        request: HFPlaybackDescriptorAccessRequest,
+        descriptor: HFPlaybackDescriptor,
+        context: HFPlaybackDescriptorEntitlementContext,
+        entitlementRuntimeStatus: HFEntitlementRuntimeStatus
+    ) -> HFPlaybackDescriptorAccessResponse {
+        let cloudflareState = cloudflareState(for: descriptor)
+        let gateStatus = gateStatus(
+            descriptor: descriptor,
+            context: context,
+            entitlementRuntimeStatus: entitlementRuntimeStatus,
+            cloudflareState: cloudflareState
+        )
+        let gate = HFPlaybackDescriptorEntitlementGate(
+            movieID: request.movieID,
+            productIdentifier: request.productIdentifier,
+            requirement: context.entitlementRequirement,
+            accessDecision: context.playbackAccessDecision,
+            status: gateStatus,
+            detail: "Playback descriptor requires entitlement. Backend descriptor required before Cloudflare descriptor readiness can be used."
+        )
+        let audit = HFEntitlementPlaybackAuditContext(
+            movieID: request.movieID,
+            flow: "Movie ID -> StoreKit product -> entitlement decision -> backend descriptor -> Cloudflare playback descriptor",
+            entitlementStatus: entitlementRuntimeStatus.accessState.statusLabel,
+            descriptorStatus: descriptor.status.statusLabel,
+            noCloudflareTokenInApp: "No Cloudflare token in app",
+            localFallback: "Local Preview Access"
+        )
+        return HFPlaybackDescriptorAccessResponse(
+            request: request,
+            descriptor: descriptor,
+            gate: gate,
+            gateStatus: gateStatus,
+            cloudflareState: cloudflareState,
+            auditContext: audit,
+            detail: "Entitlement gate required. Backend-mediated playback only. Local Preview Access remains available."
+        )
+    }
+
+    private func cloudflareState(for descriptor: HFPlaybackDescriptor) -> HFCloudflarePlaybackDescriptorState {
+        descriptor.status == .stagingDescriptorReady ? .ready : .notConnected
+    }
+
+    private func gateStatus(
+        descriptor: HFPlaybackDescriptor,
+        context: HFPlaybackDescriptorEntitlementContext,
+        entitlementRuntimeStatus: HFEntitlementRuntimeStatus,
+        cloudflareState: HFCloudflarePlaybackDescriptorState
+    ) -> HFPlaybackDescriptorGateStatus {
+        guard streamingConfiguration.hasAnyRuntimeConfig else {
+            return .localPreviewAccess
+        }
+
+        guard context.productReference.readiness != .productIDRequired else {
+            return .storeKitProductMappingRequired
+        }
+
+        guard entitlementConfiguration.hasCompleteRuntimeConfig,
+              entitlementRuntimeStatus.accessState == .entitlementConfigured else {
+            return .serverEntitlementValidationRequired
+        }
+
+        guard streamingConfiguration.hasCompleteRuntimeConfig else {
+            return .backendDescriptorRequired
+        }
+
+        guard descriptor.status == .stagingDescriptorReady, cloudflareState == .ready else {
+            return .cloudflareDescriptorNotConnected
+        }
+
+        return .cloudflareDescriptorReady
+    }
+}
+
 struct HFPlaybackSourceBoundary: Codable, Equatable {
     let title: String
     let detail: String

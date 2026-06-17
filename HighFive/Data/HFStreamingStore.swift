@@ -384,7 +384,13 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var backendServiceStatuses: [HFBackendServiceStatus] {
-        backendRuntimeStatus.services.filter { $0.id != "payments" && $0.id != "downloads" } + [librarySyncBackendServiceStatus, downloadPolicyBackendServiceStatus, entitlementBackendServiceStatus, streamingBackendServiceStatus]
+        backendRuntimeStatus.services.filter { $0.id != "payments" && $0.id != "downloads" } + [
+            librarySyncBackendServiceStatus,
+            downloadPolicyBackendServiceStatus,
+            entitlementBackendServiceStatus,
+            playbackDescriptorBackendServiceStatus,
+            streamingBackendServiceStatus
+        ]
     }
 
     var librarySyncRuntimeStatus: HFLibrarySyncRuntimeStatus {
@@ -461,6 +467,20 @@ final class HFStreamingStore: ObservableObject {
             statusLabel: providerStatus.status.statusLabel,
             systemImage: providerStatus.systemImage,
             accessibilityIdentifier: providerStatus.accessibilityIdentifier
+        )
+    }
+
+    var playbackDescriptorBackendServiceStatus: HFBackendServiceStatus {
+        let response = entitlementGatedPlaybackDescriptor(for: continueWatchingMovie)
+        let backendState: HFBackendConnectionState = response.gateStatus == .cloudflareDescriptorReady ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "playback-descriptor",
+            title: "Playback Descriptor",
+            detail: "\(response.gateStatus.statusLabel). Backend-mediated playback only. No Cloudflare token in app.",
+            state: backendState,
+            statusLabel: response.cloudflareState.statusLabel,
+            systemImage: "lock.rectangle.stack.fill",
+            accessibilityIdentifier: "hf.backendStatus.playbackDescriptor"
         )
     }
 
@@ -821,6 +841,43 @@ final class HFStreamingStore: ObservableObject {
             for: HFPlaybackDescriptorRequest(movieID: catalogMovie.id, profileID: activeProfileID),
             title: catalogMovie.title
         )
+    }
+
+    func playbackDescriptorAccessRequest(for movie: Movie) -> HFPlaybackDescriptorAccessRequest {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        let context = playbackEntitlementContext(for: catalogMovie)
+        return HFPlaybackDescriptorAccessRequest(
+            movieID: catalogMovie.id,
+            profileID: activeProfileID,
+            productIdentifier: context.productReference.productIdentifier,
+            provider: streamingConfiguration.preferredProvider,
+            entitlementRequirement: context.entitlementRequirement,
+            backendRequirement: .required
+        )
+    }
+
+    func entitlementGatedPlaybackDescriptor(for movie: Movie) -> HFPlaybackDescriptorAccessResponse {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        let descriptor = playbackDescriptor(for: catalogMovie)
+        let context = playbackEntitlementContext(for: catalogMovie)
+        let service = HFEntitlementGatedPlaybackDescriptorService(
+            streamingConfiguration: streamingConfiguration,
+            entitlementConfiguration: entitlementConfiguration
+        )
+        return service.accessResponse(
+            request: playbackDescriptorAccessRequest(for: catalogMovie),
+            descriptor: descriptor,
+            context: context,
+            entitlementRuntimeStatus: entitlementRuntimeStatus
+        )
+    }
+
+    func cloudflarePlaybackDescriptorState(for movie: Movie) -> HFCloudflarePlaybackDescriptorState {
+        entitlementGatedPlaybackDescriptor(for: movie).cloudflareState
+    }
+
+    func playbackDescriptorGateStatus(for movie: Movie) -> HFPlaybackDescriptorGateStatus {
+        entitlementGatedPlaybackDescriptor(for: movie).gateStatus
     }
 
     func streamingProviderStatus(for movie: Movie) -> HFStreamingProviderStatus {
@@ -1614,6 +1671,40 @@ final class HFStreamingStore: ObservableObject {
             HFPaymentReadinessRow(id: "remote-payment", title: "Payment Provider", detail: entitlementRuntimeStatus.paymentProviderLabel, status: "Provider-ready", systemImage: "network.slash"),
             HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: entitlementRuntimeStatus.restoreState.statusLabel, status: "Provider-ready", systemImage: "cart.badge.questionmark"),
             HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: entitlementRuntimeStatus.boundary.detail, status: "Required", systemImage: "lock.slash.fill")
+        ]
+    }
+
+    var playbackDescriptorReadinessRows: [HFPaymentReadinessRow] {
+        let response = entitlementGatedPlaybackDescriptor(for: continueWatchingMovie)
+        return [
+            HFPaymentReadinessRow(
+                id: "entitlement-gate",
+                title: "Entitlement gate required",
+                detail: "Playback descriptor requires entitlement before provider playback can be approved.",
+                status: response.gateStatus.statusLabel,
+                systemImage: "lock.shield.fill"
+            ),
+            HFPaymentReadinessRow(
+                id: "backend-descriptor",
+                title: "Backend descriptor required",
+                detail: response.request.backendRequirement.detail,
+                status: response.request.backendRequirement.status.statusLabel,
+                systemImage: "server.rack"
+            ),
+            HFPaymentReadinessRow(
+                id: "cloudflare-descriptor",
+                title: "Cloudflare descriptor not connected",
+                detail: "Cloudflare playback requires backend descriptor. No Cloudflare token in app.",
+                status: response.cloudflareState.statusLabel,
+                systemImage: "network.slash"
+            ),
+            HFPaymentReadinessRow(
+                id: "backend-mediated",
+                title: "Playback Descriptor",
+                detail: "Backend-mediated playback only",
+                status: "No Cloudflare token in app",
+                systemImage: "play.rectangle.on.rectangle.fill"
+            )
         ]
     }
 
