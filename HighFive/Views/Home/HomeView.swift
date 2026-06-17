@@ -25,6 +25,7 @@ struct HomeView: View {
                 header
                 heroSection
                 quickActions
+                streamingStatusPanel
                 continueWatchingSection
                 ForEach(streamingStore.premiumHomeCatalogRails) { category in
                     movieRail(category)
@@ -239,6 +240,41 @@ struct HomeView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var streamingStatusPanel: some View {
+        let providerStatus = streamingStore.streamingProviderStatus(for: heroMovie)
+        return HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: providerStatus.systemImage)
+                    .font(.system(size: 16, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 38, height: 38)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(providerStatus.status.statusLabel)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Backend-mediated playback only. Cloudflare Stream preferred.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: HFSpacing.xs) {
+                        HFStreamingStatusPill(title: "No streaming provider connected", identifier: "hf.streaming.notConnected")
+                        HFStreamingStatusPill(title: "Cloudflare Stream preferred", identifier: "hf.streaming.cloudflarePreferred")
+                        HFStreamingStatusPill(title: "Fallback planned", identifier: "hf.streaming." + "muxFallback")
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.streaming.status")
+    }
+
     private func actionTile(title: String, value: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: HFSpacing.xs) {
@@ -367,5 +403,23 @@ struct HomeView: View {
         } else {
             HFPosterFallback(title: movie.title)
         }
+    }
+}
+
+private struct HFStreamingStatusPill: View {
+    let title: String
+    let identifier: String
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(HFColors.gold)
+            .lineLimit(1)
+            .minimumScaleFactor(0.68)
+            .padding(.horizontal, HFSpacing.xs)
+            .frame(height: 24)
+            .background(HFColors.gold.opacity(0.10))
+            .clipShape(Capsule())
+            .accessibilityIdentifier(identifier)
     }
 }

@@ -258,6 +258,9 @@ final class HFStreamingStore: ObservableObject {
     private let backendGateway: HFBackendGateway
     private let authConfiguration: HFAuthConfiguration
     private let authService: HFAuthService
+    private let streamingConfiguration: HFStreamingProviderConfiguration
+    private let localPreviewPlaybackResolver: HFLocalPreviewPlaybackResolver
+    private let remotePlaybackDescriptorGateway: HFRemotePlaybackDescriptorGateway
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -273,7 +276,8 @@ final class HFStreamingStore: ObservableObject {
         backendService: HFBackendService? = nil,
         backendGateway: HFBackendGateway? = nil,
         authConfiguration: HFAuthConfiguration = HFAuthConfiguration(),
-        authService: HFAuthService? = nil
+        authService: HFAuthService? = nil,
+        streamingConfiguration: HFStreamingProviderConfiguration = HFStreamingProviderConfiguration()
     ) {
         let resolvedBackendService = backendService ?? HFBackendServiceFactory.make(configuration: backendConfiguration)
         let resolvedAuthService = authService ?? HFAuthServiceFactory.make(configuration: authConfiguration)
@@ -282,6 +286,9 @@ final class HFStreamingStore: ObservableObject {
         self.backendGateway = backendGateway ?? HFBackendGatewayFactory.make(configuration: backendConfiguration)
         self.authConfiguration = authConfiguration
         self.authService = resolvedAuthService
+        self.streamingConfiguration = streamingConfiguration
+        self.localPreviewPlaybackResolver = HFLocalPreviewPlaybackResolver(localPreviewIDs: Self.localPreviewStreamingIDs)
+        self.remotePlaybackDescriptorGateway = HFRemotePlaybackDescriptorGateway(configuration: streamingConfiguration)
         backendRuntimeStatus = resolvedBackendService.currentStatus()
         let defaults = UserDefaults.standard
         let profiles = Self.makeLocalProfiles(defaults: defaults)
@@ -353,7 +360,26 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var backendServiceStatuses: [HFBackendServiceStatus] {
-        backendRuntimeStatus.services
+        backendRuntimeStatus.services + [streamingBackendServiceStatus]
+    }
+
+    var streamingProviderStatus: HFStreamingProviderStatus {
+        let descriptor = playbackDescriptor(for: continueWatchingMovie)
+        return streamingProviderStatus(for: descriptor)
+    }
+
+    var streamingBackendServiceStatus: HFBackendServiceStatus {
+        let providerStatus = streamingProviderStatus
+        let backendState: HFBackendConnectionState = providerStatus.status == .stagingDescriptorReady ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "streaming-provider",
+            title: "Streaming Provider",
+            detail: providerStatus.detail,
+            state: backendState,
+            statusLabel: providerStatus.status.statusLabel,
+            systemImage: providerStatus.systemImage,
+            accessibilityIdentifier: providerStatus.accessibilityIdentifier
+        )
     }
 
     var backendRuntimeConfigRows: [HFBackendRuntimeConfigRow] {
@@ -377,6 +403,36 @@ final class HFStreamingStore: ObservableObject {
                 id: HFBackendConfiguration.anonKeyKey,
                 title: HFBackendConfiguration.anonKeyKey,
                 status: backendConfiguration.anonKey == nil ? "Not set" : "Present"
+            )
+        ]
+    }
+
+    var streamingRuntimeConfigRows: [HFBackendRuntimeConfigRow] {
+        [
+            HFBackendRuntimeConfigRow(
+                id: HFStreamingProviderConfiguration.providerKey,
+                title: HFStreamingProviderConfiguration.providerKey,
+                status: streamingConfiguration.requestedProvider == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFStreamingProviderConfiguration.modeKey,
+                title: HFStreamingProviderConfiguration.modeKey,
+                status: streamingConfiguration.requestedMode == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFStreamingProviderConfiguration.descriptorBaseURLKey,
+                title: HFStreamingProviderConfiguration.descriptorBaseURLKey,
+                status: streamingConfiguration.descriptorBaseURL == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFStreamingProviderConfiguration.cloudflareAccountIDKey,
+                title: HFStreamingProviderConfiguration.cloudflareAccountIDKey,
+                status: streamingConfiguration.cloudflareAccountID == nil ? "Not set" : "Present"
+            ),
+            HFBackendRuntimeConfigRow(
+                id: HFStreamingProviderConfiguration.muxEnvironmentKey,
+                title: HFStreamingProviderConfiguration.muxEnvironmentKey,
+                status: streamingConfiguration.muxEnvironmentKey == nil ? "Not set" : "Present"
             )
         ]
     }
@@ -636,6 +692,56 @@ final class HFStreamingStore: ObservableObject {
             readinessLabel: "Streaming source not connected yet",
             limitation: "Player route ready. Streaming source not connected yet."
         )
+    }
+
+    func playbackDescriptor(for movie: Movie) -> HFPlaybackDescriptor {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        guard streamingConfiguration.hasAnyRuntimeConfig else {
+            return localPreviewPlaybackResolver.descriptor(for: catalogMovie.id, title: catalogMovie.title)
+        }
+
+        return remotePlaybackDescriptorGateway.descriptor(
+            for: HFPlaybackDescriptorRequest(movieID: catalogMovie.id, profileID: activeProfileID),
+            title: catalogMovie.title
+        )
+    }
+
+    func streamingProviderStatus(for movie: Movie) -> HFStreamingProviderStatus {
+        streamingProviderStatus(for: playbackDescriptor(for: movie))
+    }
+
+    private func streamingProviderStatus(for descriptor: HFPlaybackDescriptor) -> HFStreamingProviderStatus {
+        switch descriptor.status {
+        case .localPreviewReady:
+            return .localPreviewReady
+        case .providerDescriptorMissing:
+            return HFStreamingProviderStatus(
+                status: .providerDescriptorMissing,
+                provider: descriptor.provider,
+                title: "Streaming Provider",
+                detail: "Provider Descriptor Missing. Local preview remains available while backend-mediated playback is configured.",
+                systemImage: "network.slash",
+                accessibilityIdentifier: "hf.streaming.providerDescriptorMissing"
+            )
+        case .stagingDescriptorReady:
+            return HFStreamingProviderStatus(
+                status: .stagingDescriptorReady,
+                provider: descriptor.provider,
+                title: "Streaming Provider",
+                detail: "Staging Descriptor Ready. Backend-mediated playback only; no production streaming claim is made.",
+                systemImage: "checkmark.seal.fill",
+                accessibilityIdentifier: "hf.streaming.stagingDescriptorReady"
+            )
+        case .streamingProviderNotConnected:
+            return HFStreamingProviderStatus(
+                status: .streamingProviderNotConnected,
+                provider: descriptor.provider,
+                title: "Streaming Provider",
+                detail: "Streaming Provider Not Connected Yet. No streaming provider connected.",
+                systemImage: "play.slash.fill",
+                accessibilityIdentifier: "hf.streaming.notConnected"
+            )
+        }
     }
 
     func markStartedWatching(_ movie: Movie) {

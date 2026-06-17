@@ -23,6 +23,10 @@ struct MovieDetailView: View {
         streamingStore.relatedMovies(for: catalogMovie)
     }
 
+    private var playbackDescriptor: HFPlaybackDescriptor {
+        streamingStore.playbackDescriptor(for: catalogMovie)
+    }
+
     private var galleryAssets: [String] {
         HFMockData.galleryAssets(for: catalogMovie)
     }
@@ -33,6 +37,7 @@ struct MovieDetailView: View {
                 hero
                 overview
                 actionPanel
+                playbackStatusPanel
                 localDepthPreviewSection
                 creatorSection
                 relatedSection
@@ -228,6 +233,46 @@ struct MovieDetailView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var playbackStatusPanel: some View {
+        let providerStatus = streamingStore.streamingProviderStatus(for: catalogMovie)
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: providerStatus.systemImage)
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Streaming Provider")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(providerStatus.status.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                        Text(providerStatus.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HFPlaybackBoundaryRow(
+                    title: playbackDescriptor.boundary.title,
+                    detail: playbackDescriptor.boundary.detail,
+                    status: playbackDescriptor.status.statusLabel,
+                    identifier: "hf.playback.descriptorBoundary"
+                )
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.movieDetail.playbackStatus")
+        .accessibilityIdentifier(providerStatus.accessibilityIdentifier)
+    }
+
     private func detailAction(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: HFSpacing.xs) {
@@ -410,6 +455,45 @@ struct MovieDetailView: View {
     }
 }
 
+private struct HFPlaybackBoundaryRow: View {
+    let title: String
+    let detail: String
+    let status: String
+    let identifier: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.66)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 24)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+        }
+        .accessibilityIdentifier(identifier)
+    }
+}
+
 struct HFPlayerServiceSheet: View {
     let movie: Movie
     @Environment(\.dismiss) private var dismiss
@@ -418,6 +502,10 @@ struct HFPlayerServiceSheet: View {
 
     private var catalogMovie: Movie {
         streamingStore.movie(id: movie.id) ?? movie
+    }
+
+    private var playbackDescriptor: HFPlaybackDescriptor {
+        streamingStore.playbackDescriptor(for: catalogMovie)
     }
 
     var body: some View {
@@ -429,6 +517,7 @@ struct HFPlayerServiceSheet: View {
                 header
                 playerPreview
                 localPreviewPanel
+                providerStatusPanel
                 primaryActions
                 Spacer()
             }
@@ -527,6 +616,24 @@ struct HFPlayerServiceSheet: View {
             .padding(HFSpacing.lg)
         }
         .accessibilityIdentifier("hf.player.localPreview")
+    }
+
+    private var providerStatusPanel: some View {
+        let providerStatus = streamingStore.streamingProviderStatus(for: catalogMovie)
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label(providerStatus.status.statusLabel, systemImage: providerStatus.systemImage)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Backend-mediated playback only. \(playbackDescriptor.boundary.detail)")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.player.providerStatus")
+        .accessibilityIdentifier(providerStatus.accessibilityIdentifier)
     }
 
     private var primaryActions: some View {
