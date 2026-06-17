@@ -26,6 +26,7 @@ struct MyListView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 shelfHero
+                librarySyncStatusPanel
                 filterChips
 
                 if visibleMovies.isEmpty {
@@ -98,6 +99,93 @@ struct MyListView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
+    private var librarySyncStatusPanel: some View {
+        let syncStatus = streamingStore.librarySyncRuntimeStatus
+        let snapshot = streamingStore.librarySyncSnapshot
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Library Sync")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(syncStatus.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.library.syncStatus")
+                        Text(syncStatus.boundary.title)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
+                    librarySyncMetric(
+                        title: "Saved Locally",
+                        value: "\(snapshot.savedTitles.count)",
+                        identifier: "hf.library.savedLocally"
+                    )
+                    librarySyncMetric(
+                        title: "Progress Saved Locally",
+                        value: "\(snapshot.progressRecords.count)",
+                        identifier: "hf.library.progressSavedLocally"
+                    )
+                    librarySyncMetric(
+                        title: "Offline Preview State",
+                        value: "\(snapshot.offlineStates.count)",
+                        identifier: "hf.library.offlinePreviewState"
+                    )
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    Text("Cloud sync requires account")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.gold)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .frame(height: 24)
+                        .background(HFColors.gold.opacity(0.12))
+                        .clipShape(Capsule())
+                        .accessibilityIdentifier("hf.library.cloudNotConnected")
+
+                    Text(syncStatus.conflictPolicy.detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier(syncStatus.state.accessibilityIdentifier)
+        .accessibilityIdentifier("hf.library.backendStatus")
+    }
+
+    private func librarySyncMetric(title: String, value: String, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Text(value)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.gold)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityIdentifier(identifier)
+    }
+
     private func countTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.xxs) {
             Text(value)
@@ -136,10 +224,12 @@ struct MyListView: View {
                         HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.route.libraryToMovieDetail")
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
+        .accessibilityIdentifier(selectedFilter == "Continue Watching" ? "hf.library.continueWatching" : "hf.library.savedForTonight")
     }
 
     private var recommendedNext: some View {
@@ -157,5 +247,6 @@ struct MyListView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .accessibilityIdentifier("hf.library.continueStory")
     }
 }

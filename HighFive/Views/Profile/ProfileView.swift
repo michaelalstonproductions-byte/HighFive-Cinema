@@ -26,6 +26,7 @@ struct ProfileView: View {
                 header
                 activeProfileCard
                 accountPanel
+                librarySyncReadinessPanel
                 paymentReadinessPanel
                 backendServicesPanel
                 profileSwitcherRail
@@ -274,6 +275,82 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.account.panel")
+    }
+
+    private var librarySyncReadinessPanel: some View {
+        let syncStatus = streamingStore.librarySyncRuntimeStatus
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "bookmark.rectangle.stack.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Library Sync")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(syncStatus.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.profile.librarySyncStatus")
+                            .accessibilityIdentifier("hf.library.syncStatus")
+                        Text(syncStatus.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFAccountReadinessRow(
+                        title: "Local Library Mode",
+                        detail: "Saved titles, progress, and offline preview state stay local.",
+                        status: syncStatus.state.statusLabel,
+                        systemImage: "bookmark.fill",
+                        identifier: "hf.library.localLibraryMode"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Cloud Library Not Connected Yet",
+                        detail: "Cloud sync requires account",
+                        status: syncStatus.providerStatus.statusLabel,
+                        systemImage: "person.crop.circle.badge.questionmark",
+                        identifier: "hf.library.cloudNotConnected"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: syncStatus.boundary.title,
+                        detail: syncStatus.boundary.detail,
+                        status: "Boundary",
+                        systemImage: "lock.shield.fill",
+                        identifier: "hf.profile.librarySyncStatus"
+                    )
+                }
+
+                Button {
+                    mockMessage = ProfileMockMessage(
+                        title: "Library Sync Readiness",
+                        body: "Library sync is staged behind account, backend, and library runtime config. Local library state remains available."
+                    )
+                } label: {
+                    Text("Review Library Sync Readiness")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.profile.librarySyncReadiness")
     }
 
     private var paymentReadinessPanel: some View {

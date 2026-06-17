@@ -268,6 +268,7 @@ final class HFStreamingStore: ObservableObject {
     private let backendGateway: HFBackendGateway
     private let authConfiguration: HFAuthConfiguration
     private let authService: HFAuthService
+    private let librarySyncConfiguration: HFLibrarySyncConfiguration
     private let entitlementConfiguration: HFEntitlementConfiguration
     private let entitlementService: HFEntitlementService
     private let streamingConfiguration: HFStreamingProviderConfiguration
@@ -289,6 +290,7 @@ final class HFStreamingStore: ObservableObject {
         backendGateway: HFBackendGateway? = nil,
         authConfiguration: HFAuthConfiguration = HFAuthConfiguration(),
         authService: HFAuthService? = nil,
+        librarySyncConfiguration: HFLibrarySyncConfiguration = HFLibrarySyncConfiguration(),
         entitlementConfiguration: HFEntitlementConfiguration = HFEntitlementConfiguration(),
         entitlementService: HFEntitlementService? = nil,
         streamingConfiguration: HFStreamingProviderConfiguration = HFStreamingProviderConfiguration()
@@ -301,6 +303,7 @@ final class HFStreamingStore: ObservableObject {
         self.backendGateway = backendGateway ?? HFBackendGatewayFactory.make(configuration: backendConfiguration)
         self.authConfiguration = authConfiguration
         self.authService = resolvedAuthService
+        self.librarySyncConfiguration = librarySyncConfiguration
         self.entitlementConfiguration = entitlementConfiguration
         self.entitlementService = resolvedEntitlementService
         self.streamingConfiguration = streamingConfiguration
@@ -378,7 +381,29 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var backendServiceStatuses: [HFBackendServiceStatus] {
-        backendRuntimeStatus.services.filter { $0.id != "payments" } + [entitlementBackendServiceStatus, streamingBackendServiceStatus]
+        backendRuntimeStatus.services.filter { $0.id != "payments" } + [librarySyncBackendServiceStatus, entitlementBackendServiceStatus, streamingBackendServiceStatus]
+    }
+
+    var librarySyncRuntimeStatus: HFLibrarySyncRuntimeStatus {
+        makeLibrarySyncService().runtimeStatus(userID: activeProfileID)
+    }
+
+    var librarySyncSnapshot: HFLibrarySyncSnapshot {
+        makeLocalLibrarySyncAdapter().snapshot(userID: activeProfileID)
+    }
+
+    var librarySyncBackendServiceStatus: HFBackendServiceStatus {
+        let status = librarySyncRuntimeStatus
+        let backendState: HFBackendConnectionState = status.state == .configured ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "library-sync",
+            title: "Library Sync",
+            detail: status.detail,
+            state: backendState,
+            statusLabel: status.statusLabel,
+            systemImage: "bookmark.rectangle.stack.fill",
+            accessibilityIdentifier: "hf.library.syncStatus"
+        )
     }
 
     var entitlementBackendServiceStatus: HFBackendServiceStatus {
@@ -525,6 +550,26 @@ final class HFStreamingStore: ObservableObject {
 
     private func backendServiceStatus(id: String, fallback: HFBackendServiceStatus) -> HFBackendServiceStatus {
         backendRuntimeStatus.services.first { $0.id == id } ?? fallback
+    }
+
+    private func makeLocalLibrarySyncAdapter() -> HFLocalLibrarySyncAdapter {
+        HFLocalLibrarySyncAdapter(
+            savedTitleIDs: savedMovieIDs,
+            progressByTitleID: Dictionary(uniqueKeysWithValues: allCatalogMovies.compactMap { movie in
+                guard let progress = movie.progress else { return nil }
+                return (movie.id, progress)
+            }),
+            offlineTitleIDs: downloadedMovieIDs
+        )
+    }
+
+    private func makeLibrarySyncService() -> HFLibrarySyncService {
+        HFLibrarySyncServiceFactory.make(
+            configuration: librarySyncConfiguration,
+            backendConfiguration: backendConfiguration,
+            authConfiguration: authConfiguration,
+            localFallback: makeLocalLibrarySyncAdapter()
+        )
     }
 
     private func healthLabel(for state: HFBackendConnectionState) -> String {
