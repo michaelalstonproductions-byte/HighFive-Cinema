@@ -415,7 +415,7 @@ final class HFStreamingStore: ObservableObject {
         return HFBackendServiceStatus(
             id: "payments",
             title: "Entitlements / Payments",
-            detail: entitlementRuntimeStatus.detail,
+            detail: "\(entitlementRuntimeStatus.detail) StoreKit product mapping staged; Cloudflare playback requires backend descriptor and entitlement validation.",
             state: backendState,
             statusLabel: accessState.statusLabel,
             systemImage: "creditcard.and.123",
@@ -1607,6 +1607,7 @@ final class HFStreamingStore: ObservableObject {
             HFPaymentReadinessRow(id: "local-adapter", title: "Local Entitlement Adapter", detail: "Active", status: "Local Preview Access", systemImage: "checkmark.shield.fill"),
             HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "\(accessTierRows.count) local preview rows", status: "Local Preview Access", systemImage: "rectangle.3.group.fill"),
             HFPaymentReadinessRow(id: "profile-access", title: "Profile Access", detail: activeProfileAccessTier, status: entitlementRuntimeStatus.statusLabel, systemImage: activeViewingProfile.avatarSymbol),
+            HFPaymentReadinessRow(id: "storekit-paywall-source", title: "StoreKit / Paywall Source", detail: storeKitPaywallSourceSummary, status: "Mapped", systemImage: "cart.badge.questionmark"),
             HFPaymentReadinessRow(id: "player-boundary", title: "Player Entitlement Boundary", detail: "Local", status: "Local", systemImage: "play.rectangle.fill"),
             HFPaymentReadinessRow(id: "library-downloads", title: "Library / Downloads Access Boundary", detail: "Local", status: "Local", systemImage: "bookmark.fill"),
             HFPaymentReadinessRow(id: "export-launch", title: "Export / Launch Package Access", detail: "Local", status: "Local", systemImage: "shippingbox.fill"),
@@ -1614,6 +1615,34 @@ final class HFStreamingStore: ObservableObject {
             HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: entitlementRuntimeStatus.restoreState.statusLabel, status: "Provider-ready", systemImage: "cart.badge.questionmark"),
             HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: entitlementRuntimeStatus.boundary.detail, status: "Required", systemImage: "lock.slash.fill")
         ]
+    }
+
+    var storeKitPaywallSourceSummary: String {
+        "\(HFStoreKitPaywallCatalog.mappings.count) product IDs imported as staging metadata"
+    }
+
+    var storeKitPaywallMappings: [HFStoreKitProductMapping] {
+        HFStoreKitPaywallCatalog.mappings
+    }
+
+    var storeKitAccessRules: [HFMovieAccessRule] {
+        HFStoreKitAccessMapping.rules
+    }
+
+    func storeKitPaywallMapping(for movie: Movie) -> HFStoreKitProductMapping? {
+        HFStoreKitPaywallCatalog.mapping(forCurrentMovieID: movie.id)
+    }
+
+    func storeKitEpisodeMappings(for movie: Movie) -> [HFStoreKitProductMapping] {
+        HFStoreKitPaywallCatalog.episodeMappings(forCurrentMovieID: movie.id)
+    }
+
+    func storeKitAccessRule(for movie: Movie) -> HFMovieAccessRule {
+        HFStoreKitAccessMapping.rule(forCurrentMovieID: movie.id)
+    }
+
+    func playbackEntitlementContext(for movie: Movie) -> HFPlaybackDescriptorEntitlementContext {
+        HFStoreKitAccessMapping.context(forCurrentMovieID: movie.id)
     }
 
     var localToRemotePaymentAdapterRows: [HFPaymentReadinessRow] {

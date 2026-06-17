@@ -356,6 +356,8 @@ struct ProfileView: View {
 
     private var paymentReadinessPanel: some View {
         let entitlementStatus = streamingStore.entitlementRuntimeStatus
+        let paywallMappings = streamingStore.storeKitPaywallMappings
+        let mappedRules = streamingStore.storeKitAccessRules
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
@@ -397,6 +399,23 @@ struct ProfileView: View {
                         status: entitlementStatus.paymentProviderLabel,
                         systemImage: "network.slash",
                         identifier: "hf.entitlement.paymentProviderNotConnected"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "StoreKit product mapping",
+                        detail: "\(paywallMappings.count) product IDs mapped from the older paywall project. \(mappedRules.count) current movie access rules are staged.",
+                        status: "Mapped",
+                        systemImage: "cart.badge.questionmark",
+                        identifier: "hf.profile.storeKitReadiness"
+                    )
+                    .accessibilityIdentifier("hf.entitlement.storeKitMapping")
+
+                    HFAccountReadinessRow(
+                        title: "Paywall readiness",
+                        detail: "Product mapping is ready for staging review. Entitlement validation required before live purchase.",
+                        status: "Paywall readiness",
+                        systemImage: "lock.rectangle.stack.fill",
+                        identifier: "hf.movieDetail.paywallReadiness"
                     )
 
                     HFAccountReadinessRow(

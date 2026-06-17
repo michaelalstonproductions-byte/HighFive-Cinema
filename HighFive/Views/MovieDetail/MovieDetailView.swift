@@ -27,6 +27,10 @@ struct MovieDetailView: View {
         streamingStore.playbackDescriptor(for: catalogMovie)
     }
 
+    private var entitlementContext: HFPlaybackDescriptorEntitlementContext {
+        streamingStore.playbackEntitlementContext(for: catalogMovie)
+    }
+
     private var galleryAssets: [String] {
         HFMockData.galleryAssets(for: catalogMovie)
     }
@@ -277,6 +281,9 @@ struct MovieDetailView: View {
 
     private var entitlementStatusPanel: some View {
         let entitlementStatus = streamingStore.entitlementRuntimeStatus
+        let accessRule = streamingStore.storeKitAccessRule(for: catalogMovie)
+        let entitlementContext = streamingStore.playbackEntitlementContext(for: catalogMovie)
+        let episodeMappings = streamingStore.storeKitEpisodeMappings(for: catalogMovie)
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
@@ -315,6 +322,50 @@ struct MovieDetailView: View {
                     status: entitlementStatus.restoreState.statusLabel,
                     identifier: "hf.entitlement.restoreNotActive"
                 )
+
+                HFPlaybackBoundaryRow(
+                    title: "StoreKit product mapping",
+                    detail: "\(accessRule.currentMovieID) -> \(accessRule.productReference.productIdentifier.rawValue)",
+                    status: accessRule.productReference.readiness.statusLabel,
+                    identifier: "hf.movieDetail.storeKitMapping"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Paywall readiness",
+                    detail: "Readiness only. No live Buy, Subscribe, Pay, Purchase, Rent, or restore action is enabled.",
+                    status: accessRule.paywallReadiness.statusLabel,
+                    identifier: "hf.movieDetail.paywallReadiness"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Product ID required",
+                    detail: accessRule.detail,
+                    status: accessRule.productReference.readiness.statusLabel,
+                    identifier: "hf.entitlement.productIDRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Playback descriptor requires entitlement",
+                    detail: entitlementContext.detail,
+                    status: entitlementContext.playbackAccessDecision.statusLabel,
+                    identifier: "hf.entitlement.playbackAccessDecision"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Cloudflare playback requires backend descriptor",
+                    detail: entitlementContext.cloudflareReference.detail,
+                    status: entitlementContext.cloudflareReference.statusLabel,
+                    identifier: "hf.streaming.cloudflarePlaybackReference"
+                )
+
+                if !episodeMappings.isEmpty {
+                    HFPlaybackBoundaryRow(
+                        title: "Episode Product IDs",
+                        detail: "\(episodeMappings.count) Paranormall episode product IDs mapped from source paywall.",
+                        status: "Mapped",
+                        identifier: "hf.entitlement.episodeProductIDs"
+                    )
+                }
 
                 HFPlaybackBoundaryRow(
                     title: "Server Entitlement Validation Required",
@@ -644,6 +695,10 @@ struct HFPlayerServiceSheet: View {
         streamingStore.playbackDescriptor(for: catalogMovie)
     }
 
+    private var entitlementContext: HFPlaybackDescriptorEntitlementContext {
+        streamingStore.playbackEntitlementContext(for: catalogMovie)
+    }
+
     var body: some View {
         ZStack {
             HFColors.screenBackground
@@ -654,6 +709,7 @@ struct HFPlayerServiceSheet: View {
                 playerPreview
                 localPreviewPanel
                 providerStatusPanel
+                entitlementGatePanel
                 primaryActions
                 Spacer()
             }
@@ -770,6 +826,27 @@ struct HFPlayerServiceSheet: View {
         }
         .accessibilityIdentifier("hf.player.providerStatus")
         .accessibilityIdentifier(providerStatus.accessibilityIdentifier)
+    }
+
+    private var entitlementGatePanel: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label("Playback descriptor requires entitlement", systemImage: "lock.shield.fill")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("\(entitlementContext.playbackAccessDecision.statusLabel). Entitlement validation required before a backend descriptor can enable provider playback.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.entitlementGate")
+                Text("Cloudflare playback requires backend descriptor. Local Preview Access remains available.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.cloudflareDescriptorRequired")
+            }
+            .padding(HFSpacing.lg)
+        }
     }
 
     private var primaryActions: some View {
