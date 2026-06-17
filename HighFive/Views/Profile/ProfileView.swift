@@ -28,6 +28,7 @@ struct ProfileView: View {
                 accountPanel
                 librarySyncReadinessPanel
                 paymentReadinessPanel
+                downloadReadinessPanel
                 backendServicesPanel
                 profileSwitcherRail
                 viewingStats
@@ -463,6 +464,90 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.profile.paymentReadiness")
+    }
+
+    private var downloadReadinessPanel: some View {
+        let downloadStatus = streamingStore.downloadPolicyRuntimeStatus
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Downloads")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(downloadStatus.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.profile.downloadPolicyStatus")
+                            .accessibilityIdentifier("hf.downloads.policyStatus")
+                        Text(downloadStatus.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFAccountReadinessRow(
+                        title: "Offline Preview",
+                        detail: "Local offline preview only",
+                        status: downloadStatus.queueState.statusLabel,
+                        systemImage: "tray.full.fill",
+                        identifier: "hf.downloads.localOfflinePreviewOnly"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Download Provider Not Connected Yet",
+                        detail: downloadStatus.policy.boundary.title,
+                        status: downloadStatus.providerStatus.statusLabel,
+                        systemImage: "network.slash",
+                        identifier: "hf.downloads.downloadProviderNotConnected"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Backend-mediated downloads only",
+                        detail: downloadStatus.policy.boundary.detail,
+                        status: "Boundary",
+                        systemImage: "lock.shield.fill",
+                        identifier: "hf.downloads.policyStatus"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Real downloads disabled",
+                        detail: downloadStatus.policy.expirationPolicy.statusLabel,
+                        status: downloadStatus.policy.actionReadiness.statusLabel,
+                        systemImage: "nosign",
+                        identifier: "hf.downloads.realDownloadsDisabled"
+                    )
+                }
+
+                Button {
+                    mockMessage = ProfileMockMessage(
+                        title: "Offline Policy",
+                        body: "Downloads are staged as policy readiness only. Local offline preview remains available while real downloads stay disabled."
+                    )
+                } label: {
+                    Text("Review Offline Policy")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.profile.downloadReadiness")
     }
 
     private var profileSwitcherRail: some View {

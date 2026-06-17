@@ -269,6 +269,7 @@ final class HFStreamingStore: ObservableObject {
     private let authConfiguration: HFAuthConfiguration
     private let authService: HFAuthService
     private let librarySyncConfiguration: HFLibrarySyncConfiguration
+    private let downloadConfiguration: HFDownloadConfiguration
     private let entitlementConfiguration: HFEntitlementConfiguration
     private let entitlementService: HFEntitlementService
     private let streamingConfiguration: HFStreamingProviderConfiguration
@@ -291,6 +292,7 @@ final class HFStreamingStore: ObservableObject {
         authConfiguration: HFAuthConfiguration = HFAuthConfiguration(),
         authService: HFAuthService? = nil,
         librarySyncConfiguration: HFLibrarySyncConfiguration = HFLibrarySyncConfiguration(),
+        downloadConfiguration: HFDownloadConfiguration = HFDownloadConfiguration(),
         entitlementConfiguration: HFEntitlementConfiguration = HFEntitlementConfiguration(),
         entitlementService: HFEntitlementService? = nil,
         streamingConfiguration: HFStreamingProviderConfiguration = HFStreamingProviderConfiguration()
@@ -304,6 +306,7 @@ final class HFStreamingStore: ObservableObject {
         self.authConfiguration = authConfiguration
         self.authService = resolvedAuthService
         self.librarySyncConfiguration = librarySyncConfiguration
+        self.downloadConfiguration = downloadConfiguration
         self.entitlementConfiguration = entitlementConfiguration
         self.entitlementService = resolvedEntitlementService
         self.streamingConfiguration = streamingConfiguration
@@ -381,7 +384,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var backendServiceStatuses: [HFBackendServiceStatus] {
-        backendRuntimeStatus.services.filter { $0.id != "payments" } + [librarySyncBackendServiceStatus, entitlementBackendServiceStatus, streamingBackendServiceStatus]
+        backendRuntimeStatus.services.filter { $0.id != "payments" && $0.id != "downloads" } + [librarySyncBackendServiceStatus, downloadPolicyBackendServiceStatus, entitlementBackendServiceStatus, streamingBackendServiceStatus]
     }
 
     var librarySyncRuntimeStatus: HFLibrarySyncRuntimeStatus {
@@ -417,6 +420,28 @@ final class HFStreamingStore: ObservableObject {
             statusLabel: accessState.statusLabel,
             systemImage: "creditcard.and.123",
             accessibilityIdentifier: "hf.entitlement.status"
+        )
+    }
+
+    var downloadPolicyRuntimeStatus: HFDownloadRuntimeStatus {
+        makeDownloadEligibilityService(
+            streamingStatus: streamingProviderStatus.status,
+            entitlementStatus: entitlementRuntimeStatus.accessState
+        )
+        .runtimeStatus(localOfflineCount: downloadedMovies.count)
+    }
+
+    var downloadPolicyBackendServiceStatus: HFBackendServiceStatus {
+        let status = downloadPolicyRuntimeStatus
+        let backendState: HFBackendConnectionState = status.providerStatus == .policyConfigured ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "downloads",
+            title: "Downloads",
+            detail: status.detail,
+            state: backendState,
+            statusLabel: status.statusLabel,
+            systemImage: "arrow.down.circle.fill",
+            accessibilityIdentifier: "hf.backendStatus.downloads"
         )
     }
 
@@ -569,6 +594,17 @@ final class HFStreamingStore: ObservableObject {
             backendConfiguration: backendConfiguration,
             authConfiguration: authConfiguration,
             localFallback: makeLocalLibrarySyncAdapter()
+        )
+    }
+
+    private func makeDownloadEligibilityService(
+        streamingStatus: HFPlaybackDescriptorStatus,
+        entitlementStatus: HFProductAccessState
+    ) -> HFDownloadEligibilityService {
+        HFDownloadEligibilityServiceFactory.make(
+            configuration: downloadConfiguration,
+            streamingStatus: streamingStatus,
+            entitlementStatus: entitlementStatus
         )
     }
 
@@ -938,6 +974,19 @@ final class HFStreamingStore: ObservableObject {
             return (.localStateOnly, "Local Offline State", "Media source required before real download.")
         }
         return (.sourceRequired, "Source Required", "Media source required before real download.")
+    }
+
+    func downloadEligibility(for movie: Movie) -> HFDownloadEligibilityResult {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        return makeDownloadEligibilityService(
+            streamingStatus: playbackDescriptor(for: catalogMovie).status,
+            entitlementStatus: entitlementRuntimeStatus.accessState
+        )
+        .eligibility(
+            titleID: catalogMovie.id,
+            title: catalogMovie.title,
+            isInLocalOfflineShelf: isDownloaded(catalogMovie)
+        )
     }
 
     func queueOfflineAsset(for movie: Movie) {

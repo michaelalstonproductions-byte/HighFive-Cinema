@@ -39,6 +39,7 @@ struct MovieDetailView: View {
                 actionPanel
                 playbackStatusPanel
                 entitlementStatusPanel
+                downloadBoundaryPanel
                 localDepthPreviewSection
                 creatorSection
                 relatedSection
@@ -333,6 +334,79 @@ struct MovieDetailView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.movieDetail.entitlementStatus")
+    }
+
+    private var downloadBoundaryPanel: some View {
+        let eligibility = streamingStore.downloadEligibility(for: catalogMovie)
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Offline Preview")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(eligibility.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.movieDetail.downloadEligibility")
+                        Text("Real downloads disabled")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("hf.downloads.realDownloadsDisabled")
+                    }
+                }
+
+                HFPlaybackBoundaryRow(
+                    title: "Media Source Required",
+                    detail: "Playback descriptor approval is required first.",
+                    status: "Required",
+                    identifier: "hf.downloads.mediaSourceRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "License Required",
+                    detail: eligibility.policy.licensePolicy.statusLabel,
+                    status: "Required",
+                    identifier: "hf.downloads.licenseRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Entitlement Required",
+                    detail: "Server entitlement validation is required first.",
+                    status: "Required",
+                    identifier: "hf.downloads.entitlementRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Download Provider Not Connected Yet",
+                    detail: eligibility.policy.boundary.title,
+                    status: eligibility.policy.providerStatus.statusLabel,
+                    identifier: "hf.downloads.downloadProviderNotConnected"
+                )
+
+                Button {} label: {
+                    Text("Review Download Eligibility")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.movieDetail.downloadBoundary")
     }
 
     private func detailAction(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
