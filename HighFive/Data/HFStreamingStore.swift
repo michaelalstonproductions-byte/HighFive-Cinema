@@ -187,13 +187,22 @@ struct HFExportDeliveryReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
-enum HFPaymentProviderStatus {
+enum HFPaymentProviderStatus: String, Codable, Equatable {
     case localAdapterActive
     case remoteProviderNotConnected
+
+    var statusLabel: String {
+        switch self {
+        case .localAdapterActive:
+            return "Local Preview Access"
+        case .remoteProviderNotConnected:
+            return "Payment Provider Not Connected Yet"
+        }
+    }
 }
 
 enum HFEntitlementStatus: String, Codable, Equatable {
-    case localPreview = "Local Preview Only"
+    case localPreview = "Local Preview Access"
     case included = "Included"
     case providerRequired = "Provider Required"
     case notValidated = "Not Validated"
@@ -244,6 +253,7 @@ final class HFStreamingStore: ObservableObject {
     @Published var selectedAudienceChannelID: String
     @Published private(set) var backendRuntimeStatus: HFBackendRuntimeStatus
     @Published private(set) var authRuntimeStatus: HFAuthRuntimeStatus
+    @Published private(set) var entitlementRuntimeStatus: HFEntitlementRuntimeStatus
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -258,6 +268,8 @@ final class HFStreamingStore: ObservableObject {
     private let backendGateway: HFBackendGateway
     private let authConfiguration: HFAuthConfiguration
     private let authService: HFAuthService
+    private let entitlementConfiguration: HFEntitlementConfiguration
+    private let entitlementService: HFEntitlementService
     private let streamingConfiguration: HFStreamingProviderConfiguration
     private let localPreviewPlaybackResolver: HFLocalPreviewPlaybackResolver
     private let remotePlaybackDescriptorGateway: HFRemotePlaybackDescriptorGateway
@@ -277,15 +289,20 @@ final class HFStreamingStore: ObservableObject {
         backendGateway: HFBackendGateway? = nil,
         authConfiguration: HFAuthConfiguration = HFAuthConfiguration(),
         authService: HFAuthService? = nil,
+        entitlementConfiguration: HFEntitlementConfiguration = HFEntitlementConfiguration(),
+        entitlementService: HFEntitlementService? = nil,
         streamingConfiguration: HFStreamingProviderConfiguration = HFStreamingProviderConfiguration()
     ) {
         let resolvedBackendService = backendService ?? HFBackendServiceFactory.make(configuration: backendConfiguration)
         let resolvedAuthService = authService ?? HFAuthServiceFactory.make(configuration: authConfiguration)
+        let resolvedEntitlementService = entitlementService ?? HFEntitlementServiceFactory.make(configuration: entitlementConfiguration)
         self.backendConfiguration = backendConfiguration
         self.backendService = resolvedBackendService
         self.backendGateway = backendGateway ?? HFBackendGatewayFactory.make(configuration: backendConfiguration)
         self.authConfiguration = authConfiguration
         self.authService = resolvedAuthService
+        self.entitlementConfiguration = entitlementConfiguration
+        self.entitlementService = resolvedEntitlementService
         self.streamingConfiguration = streamingConfiguration
         self.localPreviewPlaybackResolver = HFLocalPreviewPlaybackResolver(localPreviewIDs: Self.localPreviewStreamingIDs)
         self.remotePlaybackDescriptorGateway = HFRemotePlaybackDescriptorGateway(configuration: streamingConfiguration)
@@ -298,6 +315,7 @@ final class HFStreamingStore: ObservableObject {
         localProfiles = profiles
         activeProfileID = resolvedActiveProfileID
         authRuntimeStatus = resolvedAuthService.currentStatus(localProfile: resolvedAuthProfile)
+        entitlementRuntimeStatus = resolvedEntitlementService.runtimeStatus(userID: resolvedActiveProfileID, titleID: nil)
         savedMovieIDs = Self.loadProfileIDs(
             defaults: defaults,
             scopedKey: Self.scopedKey(savedKey, resolvedActiveProfileID),
@@ -360,7 +378,21 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var backendServiceStatuses: [HFBackendServiceStatus] {
-        backendRuntimeStatus.services + [streamingBackendServiceStatus]
+        backendRuntimeStatus.services.filter { $0.id != "payments" } + [entitlementBackendServiceStatus, streamingBackendServiceStatus]
+    }
+
+    var entitlementBackendServiceStatus: HFBackendServiceStatus {
+        let accessState = entitlementRuntimeStatus.accessState
+        let backendState: HFBackendConnectionState = accessState == .entitlementConfigured ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "payments",
+            title: "Entitlements / Payments",
+            detail: entitlementRuntimeStatus.detail,
+            state: backendState,
+            statusLabel: accessState.statusLabel,
+            systemImage: "creditcard.and.123",
+            accessibilityIdentifier: "hf.entitlement.status"
+        )
     }
 
     var streamingProviderStatus: HFStreamingProviderStatus {
@@ -485,6 +517,10 @@ final class HFStreamingStore: ObservableObject {
 
     func refreshAuthRuntimeStatus() {
         authRuntimeStatus = authService.currentStatus(localProfile: activeViewingProfile)
+    }
+
+    func refreshEntitlementRuntimeStatus(titleID: String? = nil) {
+        entitlementRuntimeStatus = entitlementService.runtimeStatus(userID: activeProfileID, titleID: titleID)
     }
 
     private func backendServiceStatus(id: String, fallback: HFBackendServiceStatus) -> HFBackendServiceStatus {
@@ -1437,30 +1473,30 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.exportEntitlementBoundary
     // hf.services.launchEntitlementBoundary
     var paymentEntitlementServiceMode: String {
-        "Local Entitlement Adapter Active"
+        entitlementRuntimeStatus.statusLabel
     }
 
     var localEntitlementAdapterStatus: String {
-        "Local Entitlement Adapter Active"
+        "Local Preview Access"
     }
 
     var paymentProviderStatus: HFPaymentProviderStatus {
-        .remoteProviderNotConnected
+        entitlementRuntimeStatus.accessState == .localPreviewAccess ? .localAdapterActive : .remoteProviderNotConnected
     }
 
     var storeProviderStatus: String {
-        "Store Provider Not Connected Yet"
+        entitlementRuntimeStatus.restoreState.statusLabel
     }
 
     var activeProfileAccessTier: String {
-        "\(activeViewingProfile.displayName) - Local Preview Only"
+        "\(activeViewingProfile.displayName) - Local Preview Access"
     }
 
     var accessTierRows: [HFAccessTierRecord] {
         [
-            HFAccessTierRecord(id: "viewer-preview", title: "Viewer Preview", detail: "Streaming shell access is represented locally.", status: "Local Preview Only", systemImage: "person.crop.circle.fill"),
-            HFAccessTierRecord(id: "highfive-originals", title: "HighFive Originals", detail: "Original title scope is organized locally.", status: "Local Preview Only", systemImage: "sparkles.tv.fill"),
-            HFAccessTierRecord(id: "creator-package", title: "Creator Package", detail: "Export and launch package scope remains local.", status: "Local Preview Only", systemImage: "shippingbox.fill")
+            HFAccessTierRecord(id: "viewer-preview", title: "Viewer Preview", detail: "Streaming shell access is represented locally.", status: "Local Preview Access", systemImage: "person.crop.circle.fill"),
+            HFAccessTierRecord(id: "highfive-originals", title: "HighFive Originals", detail: "Original title scope is organized locally.", status: "Local Preview Access", systemImage: "sparkles.tv.fill"),
+            HFAccessTierRecord(id: "creator-package", title: "Creator Package", detail: "Export and launch package scope remains local.", status: "Local Preview Access", systemImage: "shippingbox.fill")
         ]
     }
 
@@ -1474,22 +1510,22 @@ final class HFStreamingStore: ObservableObject {
 
     var paymentReadinessRows: [HFPaymentReadinessRow] {
         [
-            HFPaymentReadinessRow(id: "local-adapter", title: "Local Entitlement Adapter", detail: "Active", status: "Active", systemImage: "checkmark.shield.fill"),
-            HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "\(accessTierRows.count) local preview rows", status: "Local Preview Only", systemImage: "rectangle.3.group.fill"),
-            HFPaymentReadinessRow(id: "profile-access", title: "Profile Access", detail: activeProfileAccessTier, status: "Local Preview Only", systemImage: activeViewingProfile.avatarSymbol),
+            HFPaymentReadinessRow(id: "local-adapter", title: "Local Entitlement Adapter", detail: "Active", status: "Local Preview Access", systemImage: "checkmark.shield.fill"),
+            HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "\(accessTierRows.count) local preview rows", status: "Local Preview Access", systemImage: "rectangle.3.group.fill"),
+            HFPaymentReadinessRow(id: "profile-access", title: "Profile Access", detail: activeProfileAccessTier, status: entitlementRuntimeStatus.statusLabel, systemImage: activeViewingProfile.avatarSymbol),
             HFPaymentReadinessRow(id: "player-boundary", title: "Player Entitlement Boundary", detail: "Local", status: "Local", systemImage: "play.rectangle.fill"),
             HFPaymentReadinessRow(id: "library-downloads", title: "Library / Downloads Access Boundary", detail: "Local", status: "Local", systemImage: "bookmark.fill"),
             HFPaymentReadinessRow(id: "export-launch", title: "Export / Launch Package Access", detail: "Local", status: "Local", systemImage: "shippingbox.fill"),
-            HFPaymentReadinessRow(id: "remote-payment", title: "Remote Payment Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
-            HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
-            HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: "Not Connected Yet", status: "Future", systemImage: "lock.slash.fill")
+            HFPaymentReadinessRow(id: "remote-payment", title: "Payment Provider", detail: entitlementRuntimeStatus.paymentProviderLabel, status: "Provider-ready", systemImage: "network.slash"),
+            HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: entitlementRuntimeStatus.restoreState.statusLabel, status: "Provider-ready", systemImage: "cart.badge.questionmark"),
+            HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: entitlementRuntimeStatus.boundary.detail, status: "Required", systemImage: "lock.slash.fill")
         ]
     }
 
     var localToRemotePaymentAdapterRows: [HFPaymentReadinessRow] {
         [
             HFPaymentReadinessRow(id: "local-profile", title: "Local profile", detail: activeViewingProfile.displayName, status: "Active", systemImage: activeViewingProfile.avatarSymbol),
-            HFPaymentReadinessRow(id: "access-tier-record", title: "Access tier record", detail: activeProfileAccessTier, status: "Local Preview Only", systemImage: "rectangle.3.group.fill"),
+            HFPaymentReadinessRow(id: "access-tier-record", title: "Access tier record", detail: activeProfileAccessTier, status: "Local Preview Access", systemImage: "rectangle.3.group.fill"),
             HFPaymentReadinessRow(id: "movie-access-scope", title: "Movie access scope", detail: featuredMovie.title, status: "Local", systemImage: "film.stack.fill"),
             HFPaymentReadinessRow(id: "player-boundary", title: "Player boundary", detail: "Local entitlement readiness only", status: "Local", systemImage: "play.rectangle.fill"),
             HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
@@ -1512,35 +1548,35 @@ final class HFStreamingStore: ObservableObject {
     var libraryEntitlementRows: [HFPaymentReadinessRow] {
         [
             HFPaymentReadinessRow(id: "saved-titles", title: "Saved titles", detail: "\(savedMovies.count) local records", status: "Local", systemImage: "bookmark.fill"),
-            HFPaymentReadinessRow(id: "access-boundary", title: "Access Boundary", detail: "Saved titles use local entitlement readiness only.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+            HFPaymentReadinessRow(id: "access-boundary", title: "Access Boundary", detail: "Saved titles use local entitlement readiness only.", status: "Local Preview Access", systemImage: "checkmark.shield.fill")
         ]
     }
 
     var downloadEntitlementRows: [HFPaymentReadinessRow] {
         [
             HFPaymentReadinessRow(id: "offline-state", title: "Offline state", detail: "\(downloadedMovies.count) local records", status: "Local", systemImage: "arrow.down.circle.fill"),
-            HFPaymentReadinessRow(id: "offline-access", title: "Offline Access Boundary", detail: "Real entitlement validation is not connected yet.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+            HFPaymentReadinessRow(id: "offline-access", title: "Offline Access Boundary", detail: "Real entitlement validation is not connected yet.", status: "Local Preview Access", systemImage: "checkmark.shield.fill")
         ]
     }
 
     var exportEntitlementRows: [HFPaymentReadinessRow] {
         [
             HFPaymentReadinessRow(id: "delivery-package", title: "Delivery package", detail: deliveryPackageRecord.title, status: "Local", systemImage: "shippingbox.fill"),
-            HFPaymentReadinessRow(id: "access-boundary", title: "Delivery Access Boundary", detail: "Payment and entitlement providers are not connected yet.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+            HFPaymentReadinessRow(id: "access-boundary", title: "Delivery Access Boundary", detail: "Payment and entitlement providers are not connected yet.", status: "Local Preview Access", systemImage: "checkmark.shield.fill")
         ]
     }
 
     var launchEntitlementRows: [HFPaymentReadinessRow] {
         [
             HFPaymentReadinessRow(id: "campaign-package", title: "Campaign package", detail: launchCampaignRecord.title, status: "Local", systemImage: "flag.checkered"),
-            HFPaymentReadinessRow(id: "access-boundary", title: "Campaign Access Boundary", detail: "Payment and entitlement providers are not connected yet.", status: "Local Preview Only", systemImage: "checkmark.shield.fill")
+            HFPaymentReadinessRow(id: "access-boundary", title: "Campaign Access Boundary", detail: "Payment and entitlement providers are not connected yet.", status: "Local Preview Access", systemImage: "checkmark.shield.fill")
         ]
     }
 
     var paymentProofRows: [HFPaymentReadinessRow] {
         [
             HFPaymentReadinessRow(id: "local-adapter", title: "Local Entitlement Adapter", detail: "Active", status: "Active", systemImage: "checkmark.shield.fill"),
-            HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "Local Preview Only", status: "Local Preview Only", systemImage: "rectangle.3.group.fill"),
+            HFPaymentReadinessRow(id: "access-tiers", title: "Access Tiers", detail: "Local Preview Access", status: "Local Preview Access", systemImage: "rectangle.3.group.fill"),
             HFPaymentReadinessRow(id: "remote-payment-provider", title: "Remote Payment Provider", detail: "Not Connected Yet", status: "Future", systemImage: "network.slash"),
             HFPaymentReadinessRow(id: "store-provider", title: "Store Provider", detail: "Not Connected Yet", status: "Future", systemImage: "cart.badge.questionmark"),
             HFPaymentReadinessRow(id: "server-validation", title: "Server Entitlement Validation", detail: "Not Connected Yet", status: "Future", systemImage: "lock.slash.fill")
@@ -1548,12 +1584,12 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func entitlementStatus(for movie: Movie) -> HFEntitlementStatus {
-        movie.isComingSoon ? .providerRequired : .localPreview
+        entitlementRuntimeStatus.accessState == .entitlementConfigured ? .notValidated : (movie.isComingSoon ? .providerRequired : .localPreview)
     }
 
     func entitlementCopy(for movie: Movie) -> String {
         let catalogMovie = self.movie(id: movie.id) ?? movie
-        return "\(catalogMovie.title) uses local access readiness only. Store and entitlement providers are not connected yet."
+        return "\(catalogMovie.title) uses \(entitlementRuntimeStatus.statusLabel). \(entitlementRuntimeStatus.boundary.detail)"
     }
 
     // hf.services.launchChecklist

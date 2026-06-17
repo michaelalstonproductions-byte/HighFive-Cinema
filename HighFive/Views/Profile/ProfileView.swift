@@ -26,6 +26,7 @@ struct ProfileView: View {
                 header
                 activeProfileCard
                 accountPanel
+                paymentReadinessPanel
                 backendServicesPanel
                 profileSwitcherRail
                 viewingStats
@@ -273,6 +274,118 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.account.panel")
+    }
+
+    private var paymentReadinessPanel: some View {
+        let entitlementStatus = streamingStore.entitlementRuntimeStatus
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "creditcard.and.123")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Membership")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(entitlementStatus.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.profile.membershipStatus")
+                            .accessibilityIdentifier("hf.entitlement.status")
+                        Text(entitlementStatus.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFAccountReadinessRow(
+                        title: "Local Preview Access",
+                        detail: "Profile playback can continue locally without a payment provider.",
+                        status: entitlementStatus.accessState.statusLabel,
+                        systemImage: "play.rectangle.fill",
+                        identifier: "hf.entitlement.localPreviewAccess"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Payment Provider Not Connected Yet",
+                        detail: "Payment readiness is staged only. No live payment flow is active.",
+                        status: entitlementStatus.paymentProviderLabel,
+                        systemImage: "network.slash",
+                        identifier: "hf.entitlement.paymentProviderNotConnected"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Restore Purchases Not Active Yet",
+                        detail: "Restore purchase behavior waits for provider and server validation.",
+                        status: entitlementStatus.restoreState.statusLabel,
+                        systemImage: "arrow.counterclockwise.circle.fill",
+                        identifier: "hf.profile.restoreReadiness"
+                    )
+                    .accessibilityIdentifier("hf.entitlement.restoreNotActive")
+
+                    HFAccountReadinessRow(
+                        title: "Entitlement Configured",
+                        detail: "Complete runtime config may prepare entitlement validation without activating live purchase.",
+                        status: "Staging only",
+                        systemImage: "checkmark.seal.fill",
+                        identifier: "hf.entitlement.status"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Server Entitlement Validation Required",
+                        detail: entitlementStatus.boundary.detail,
+                        status: "Required",
+                        systemImage: "lock.shield.fill",
+                        identifier: "hf.profile.entitlementBoundary"
+                    )
+                    .accessibilityIdentifier("hf.entitlement.serverValidationRequired")
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        mockMessage = ProfileMockMessage(
+                            title: "Payment Readiness",
+                            body: "Payment and entitlement staging is local-first. Runtime config and server validation are required before production access."
+                        )
+                    } label: {
+                        Text("Review Payment Readiness")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        mockMessage = ProfileMockMessage(
+                            title: "Access Rules",
+                            body: "Local preview access stays available. Paid access requires provider configuration and server entitlement validation."
+                        )
+                    } label: {
+                        Text("Review Access Rules")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(HFColors.surfaceElevated.opacity(0.72))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.profile.paymentReadiness")
     }
 
     private var profileSwitcherRail: some View {

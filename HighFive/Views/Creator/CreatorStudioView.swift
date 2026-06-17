@@ -609,6 +609,7 @@ struct CreatorStudioView: View {
                     }
 
                     packagePreviewCard
+                    vodEntitlementBoundary
 
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         Text("Provider status")
@@ -616,10 +617,12 @@ struct CreatorStudioView: View {
                             .foregroundStyle(HFColors.textPrimary)
                             .accessibilityIdentifier("hf.creatorStudio.vodProviderStatus")
 
-                        HFCreatorStudioReadinessRow(title: "Distribution provider", detail: "Not Connected Yet", status: "Provider-ready", systemImage: "network.slash", accent: HFColors.gold)
-                        HFCreatorStudioReadinessRow(title: "Storefront provider", detail: "Not Connected Yet", status: "Provider-ready", systemImage: "cart.badge.questionmark", accent: HFColors.gold)
-                        HFCreatorStudioReadinessRow(title: "Payment / entitlement provider", detail: "Not Connected Yet", status: "Boundary", systemImage: "checkmark.shield.fill", accent: HFColors.gold)
+                        HFCreatorStudioReadinessRow(title: "Distribution provider", detail: "Distribution provider — Not Connected Yet", status: "Provider-ready", systemImage: "network.slash", accent: HFColors.gold)
+                        HFCreatorStudioReadinessRow(title: "Storefront provider", detail: "Storefront provider — Not Connected Yet", status: "Provider-ready", systemImage: "cart.badge.questionmark", accent: HFColors.gold)
+                        HFCreatorStudioReadinessRow(title: "Payment / entitlement provider", detail: "Payment Provider Not Connected Yet", status: "Provider-ready", systemImage: "checkmark.shield.fill", accent: HFColors.gold)
+                            .accessibilityIdentifier("hf.entitlement.status")
                     }
+                    .accessibilityIdentifier("hf.creatorStudio.vodProviderStatus")
 
                     HFCreatorStudioReadinessRow(
                         title: "No live VOD provider",
@@ -639,6 +642,58 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.creatorStudio.vodPackage")
         .accessibilityIdentifier("hf.creatorStudio.releasePrep")
         .accessibilityIdentifier("hf.creatorStudio.packageVOD")
+    }
+
+    private var vodEntitlementBoundary: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text("Pricing / entitlement boundary")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .accessibilityIdentifier("hf.creatorStudio.vodPricingBoundary")
+
+            HFCreatorStudioReadinessRow(
+                title: "Local Draft",
+                detail: "VOD pricing remains a local planning boundary.",
+                status: "Local Draft",
+                systemImage: "pencil",
+                accent: HFColors.gold
+            )
+
+            HFCreatorStudioReadinessRow(
+                title: "Provider-ready",
+                detail: "Pricing and entitlement records are staged without a live payment provider.",
+                status: "Provider-ready",
+                systemImage: "checkmark.shield.fill",
+                accent: HFColors.gold
+            )
+            .accessibilityIdentifier("hf.creatorStudio.vodEntitlementBoundary")
+
+            HFCreatorStudioReadinessRow(
+                title: "Payment Provider Not Connected Yet",
+                detail: "Server Entitlement Validation Required before paid VOD access.",
+                status: "Boundary",
+                systemImage: "creditcard.and.123",
+                accent: HFColors.gold
+            )
+            .accessibilityIdentifier("hf.entitlement.status")
+
+            HFCreatorStudioReadinessRow(
+                title: "No live VOD provider",
+                detail: "No live VOD provider. No payment activation, media delivery, or distributor handoff is active.",
+                status: "Safe Boundary",
+                systemImage: "lock.shield.fill",
+                accent: HFColors.gold
+            )
+            .accessibilityIdentifier("hf.creatorStudio.noLiveVODProvider")
+        }
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityIdentifier("hf.creatorStudio.vodEntitlementBoundary")
     }
 
     private var localDraftActions: some View {

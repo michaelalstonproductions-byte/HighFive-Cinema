@@ -38,6 +38,7 @@ struct MovieDetailView: View {
                 overview
                 actionPanel
                 playbackStatusPanel
+                entitlementStatusPanel
                 localDepthPreviewSection
                 creatorSection
                 relatedSection
@@ -271,6 +272,67 @@ struct MovieDetailView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.movieDetail.playbackStatus")
         .accessibilityIdentifier(providerStatus.accessibilityIdentifier)
+    }
+
+    private var entitlementStatusPanel: some View {
+        let entitlementStatus = streamingStore.entitlementRuntimeStatus
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Access")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(entitlementStatus.statusLabel)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.entitlement.status")
+                        Text("Watch Now remains available for local preview. No live purchase or paywall is active.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HFPlaybackBoundaryRow(
+                    title: "Local Preview Access",
+                    detail: "Payment Provider Not Connected Yet",
+                    status: entitlementStatus.accessState.statusLabel,
+                    identifier: "hf.entitlement.localPreviewAccess"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Restore Purchases Not Active Yet",
+                    detail: "No restore purchase implementation is active in this staging foundation.",
+                    status: entitlementStatus.restoreState.statusLabel,
+                    identifier: "hf.entitlement.restoreNotActive"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Server Entitlement Validation Required",
+                    detail: entitlementStatus.boundary.detail,
+                    status: "Required",
+                    identifier: "hf.entitlement.serverValidationRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: entitlementStatus.boundary.title,
+                    detail: "Review Access Readiness",
+                    status: entitlementStatus.paymentProviderLabel,
+                    identifier: "hf.movieDetail.paymentBoundary"
+                )
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.movieDetail.entitlementStatus")
     }
 
     private func detailAction(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
