@@ -35,6 +35,10 @@ struct MovieDetailView: View {
         streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
     }
 
+    private var backendContract: HFBackendPlaybackDescriptorContract {
+        streamingStore.backendPlaybackDescriptorContract(for: catalogMovie)
+    }
+
     private var galleryAssets: [String] {
         HFMockData.galleryAssets(for: catalogMovie)
     }
@@ -288,6 +292,7 @@ struct MovieDetailView: View {
         let accessRule = streamingStore.storeKitAccessRule(for: catalogMovie)
         let entitlementContext = streamingStore.playbackEntitlementContext(for: catalogMovie)
         let gatedDescriptor = streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
+        let backendContract = streamingStore.backendPlaybackDescriptorContract(for: catalogMovie)
         let episodeMappings = streamingStore.storeKitEpisodeMappings(for: catalogMovie)
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -368,6 +373,27 @@ struct MovieDetailView: View {
                     detail: gatedDescriptor.request.backendRequirement.detail,
                     status: gatedDescriptor.request.backendRequirement.status.statusLabel,
                     identifier: "hf.movieDetail.backendDescriptorRequired"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Backend entitlement validation required",
+                    detail: "Server entitlement validation pending for \(backendContract.entitlementValidationRequest.movieID).",
+                    status: backendContract.entitlementValidationResponse.entitlementStatus.statusLabel,
+                    identifier: "hf.movieDetail.backendEntitlementValidation"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Backend playback descriptor endpoint required",
+                    detail: backendContract.playbackDescriptorRequest.endpoint.detail,
+                    status: backendContract.playbackDescriptorResponse.detail,
+                    identifier: "hf.movieDetail.backendPlaybackDescriptor"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Playback descriptor unavailable",
+                    detail: "Local Preview fallback active",
+                    status: backendContract.policy.localFallbackPolicy,
+                    identifier: "hf.playback.descriptorBoundary"
                 )
 
                 HFPlaybackBoundaryRow(
@@ -736,6 +762,10 @@ struct HFPlayerServiceSheet: View {
         streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
     }
 
+    private var backendContract: HFBackendPlaybackDescriptorContract {
+        streamingStore.backendPlaybackDescriptorContract(for: catalogMovie)
+    }
+
     var body: some View {
         ZStack {
             HFColors.screenBackground
@@ -886,6 +916,21 @@ struct HFPlayerServiceSheet: View {
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("hf.player.noCloudflareToken")
+                Text("Backend playback descriptor endpoint required")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.backendDescriptorContract")
+                Text(backendContract.entitlementValidationResponse.entitlementStatus.statusLabel)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.serverEntitlementValidation")
+                Text("Local Preview fallback active")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.localPreviewFallback")
             }
             .padding(HFSpacing.lg)
         }

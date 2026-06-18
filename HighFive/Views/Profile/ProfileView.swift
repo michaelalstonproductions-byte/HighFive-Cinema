@@ -519,7 +519,7 @@ struct ProfileView: View {
                             detail: row.detail,
                             status: row.status,
                             systemImage: row.systemImage,
-                            identifier: row.id == "cloudflare-descriptor" ? "hf.streaming.cloudflarePlaybackReference" : "hf.playback.descriptorBoundary"
+                            identifier: playbackDescriptorIdentifier(for: row.id)
                         )
                     }
                 }
@@ -528,6 +528,19 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.profile.playbackDescriptorReadiness")
+    }
+
+    private func playbackDescriptorIdentifier(for rowID: String) -> String {
+        switch rowID {
+        case "cloudflare-descriptor":
+            return "hf.streaming.cloudflarePlaybackReference"
+        case "backend-entitlement-validation":
+            return "hf.backendStatus.entitlementValidation"
+        case "backend-playback-contract":
+            return "hf.profile.backendPlaybackContract"
+        default:
+            return "hf.playback.descriptorBoundary"
+        }
     }
 
     private var downloadReadinessPanel: some View {

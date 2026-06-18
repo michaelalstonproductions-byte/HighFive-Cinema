@@ -388,6 +388,7 @@ final class HFStreamingStore: ObservableObject {
             librarySyncBackendServiceStatus,
             downloadPolicyBackendServiceStatus,
             entitlementBackendServiceStatus,
+            backendEntitlementValidationServiceStatus,
             playbackDescriptorBackendServiceStatus,
             streamingBackendServiceStatus
         ]
@@ -471,16 +472,30 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var playbackDescriptorBackendServiceStatus: HFBackendServiceStatus {
-        let response = entitlementGatedPlaybackDescriptor(for: continueWatchingMovie)
-        let backendState: HFBackendConnectionState = response.gateStatus == .cloudflareDescriptorReady ? .backendConfigured : .localMode
+        let contract = backendPlaybackDescriptorContract(for: continueWatchingMovie)
+        let backendState: HFBackendConnectionState = contract.statusLabel == "Playback descriptor contract ready" ? .backendConfigured : .localMode
         return HFBackendServiceStatus(
             id: "playback-descriptor",
             title: "Playback Descriptor",
-            detail: "\(response.gateStatus.statusLabel). Backend-mediated playback only. No Cloudflare token in app.",
+            detail: "\(contract.playbackDescriptorResponse.detail). Backend playback descriptor endpoint required. No Cloudflare token in app.",
             state: backendState,
-            statusLabel: response.cloudflareState.statusLabel,
+            statusLabel: contract.statusLabel,
             systemImage: "lock.rectangle.stack.fill",
             accessibilityIdentifier: "hf.backendStatus.playbackDescriptor"
+        )
+    }
+
+    var backendEntitlementValidationServiceStatus: HFBackendServiceStatus {
+        let contract = backendPlaybackDescriptorContract(for: continueWatchingMovie)
+        let backendState: HFBackendConnectionState = contract.entitlementValidationResponse.entitlementStatus == .approved ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "entitlement-validation",
+            title: "Entitlement Validation",
+            detail: "Backend entitlement validation required. \(contract.entitlementValidationResponse.detail).",
+            state: backendState,
+            statusLabel: contract.entitlementValidationResponse.entitlementStatus.statusLabel,
+            systemImage: "checkmark.shield.fill",
+            accessibilityIdentifier: "hf.backendStatus.entitlementValidation"
         )
     }
 
@@ -878,6 +893,46 @@ final class HFStreamingStore: ObservableObject {
 
     func playbackDescriptorGateStatus(for movie: Movie) -> HFPlaybackDescriptorGateStatus {
         entitlementGatedPlaybackDescriptor(for: movie).gateStatus
+    }
+
+    func backendEntitlementValidationRequest(for movie: Movie) -> HFBackendEntitlementValidationRequest {
+        backendPlaybackDescriptorContract(for: movie).entitlementValidationRequest
+    }
+
+    func backendPlaybackDescriptorRequest(for movie: Movie) -> HFBackendPlaybackDescriptorRequest {
+        backendPlaybackDescriptorContract(for: movie).playbackDescriptorRequest
+    }
+
+    func backendPlaybackDescriptorContract(for movie: Movie) -> HFBackendPlaybackDescriptorContract {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        let context = playbackEntitlementContext(for: catalogMovie)
+        let descriptor = playbackDescriptor(for: catalogMovie)
+        let hasCompleteContractConfig = backendConfiguration.hasCompleteRuntimeConfig &&
+            entitlementConfiguration.hasCompleteRuntimeConfig &&
+            streamingConfiguration.hasCompleteRuntimeConfig
+        return HFBackendPlaybackDescriptorContract.staged(
+            movieID: catalogMovie.id,
+            userID: activeProfileID,
+            anonymousSessionID: "local-session-\(activeProfileID)",
+            context: context,
+            descriptorAccessRequest: playbackDescriptorAccessRequest(for: catalogMovie),
+            descriptorStatus: descriptor.status,
+            entitlementState: serverEntitlementValidationState(for: catalogMovie),
+            hasCompleteRuntimeConfig: hasCompleteContractConfig
+        )
+    }
+
+    func serverEntitlementValidationState(for movie: Movie) -> HFServerEntitlementValidationState {
+        guard backendConfiguration.hasCompleteRuntimeConfig,
+              entitlementConfiguration.hasCompleteRuntimeConfig else {
+            return .pending
+        }
+
+        return entitlementRuntimeStatus.accessState == .accessReady || entitlementRuntimeStatus.accessState == .entitlementConfigured ? .approved : .pending
+    }
+
+    func playbackDescriptorContractStatus(for movie: Movie) -> String {
+        backendPlaybackDescriptorContract(for: movie).statusLabel
     }
 
     func streamingProviderStatus(for movie: Movie) -> HFStreamingProviderStatus {
@@ -1676,7 +1731,29 @@ final class HFStreamingStore: ObservableObject {
 
     var playbackDescriptorReadinessRows: [HFPaymentReadinessRow] {
         let response = entitlementGatedPlaybackDescriptor(for: continueWatchingMovie)
+        let contract = backendPlaybackDescriptorContract(for: continueWatchingMovie)
         return [
+            HFPaymentReadinessRow(
+                id: "backend-entitlement-validation",
+                title: "Backend entitlement validation required",
+                detail: "POST \(HFBackendPlaybackDescriptorEndpoint.entitlementValidationPath) for \(contract.entitlementValidationRequest.movieID)",
+                status: contract.entitlementValidationResponse.entitlementStatus.statusLabel,
+                systemImage: "checkmark.shield.fill"
+            ),
+            HFPaymentReadinessRow(
+                id: "backend-playback-contract",
+                title: "Backend playback descriptor endpoint required",
+                detail: contract.playbackDescriptorRequest.endpoint.detail,
+                status: contract.statusLabel,
+                systemImage: "server.rack"
+            ),
+            HFPaymentReadinessRow(
+                id: "server-validation-pending",
+                title: "Server entitlement validation pending",
+                detail: "Contract is staged without a live backend URL.",
+                status: contract.policy.backendURLPolicy,
+                systemImage: "clock.badge.checkmark.fill"
+            ),
             HFPaymentReadinessRow(
                 id: "entitlement-gate",
                 title: "Entitlement gate required",
@@ -1701,7 +1778,7 @@ final class HFStreamingStore: ObservableObject {
             HFPaymentReadinessRow(
                 id: "backend-mediated",
                 title: "Playback Descriptor",
-                detail: "Backend-mediated playback only",
+                detail: "Cloudflare signed token generated server-side",
                 status: "No Cloudflare token in app",
                 systemImage: "play.rectangle.on.rectangle.fill"
             )
