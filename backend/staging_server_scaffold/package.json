@@ -1,0 +1,13 @@
+{
+  "name": "highfive-staging-backend-scaffold",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "HighFive staging backend scaffold for entitlement validation and playback descriptors.",
+  "scripts": {
+    "check:contracts": "node -e \"JSON.parse(require('fs').readFileSync('package.json', 'utf8')); JSON.parse(require('fs').readFileSync('tsconfig.json', 'utf8'))\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
