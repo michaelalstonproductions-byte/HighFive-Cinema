@@ -1,0 +1,34 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "rootDir": "./src",
+    "outDir": "/private/tmp/highfive-phase-67-0a-staging-backend-http-smoke/compiled"
+  },
+  "files": [
+    "src/runtime/node-runtime-shims.d.ts",
+    "src/contracts.ts",
+    "src/productMapping.ts",
+    "src/audit.ts",
+    "src/errors.ts",
+    "src/entitlements/validateEntitlement.ts",
+    "src/playback/requestPlaybackDescriptor.ts",
+    "src/providers/providerInterfaces.ts",
+    "src/providers/storekitValidator.ts",
+    "src/providers/revenueCatValidator.ts",
+    "src/providers/cloudflareSigner.ts",
+    "src/mocks/mockEntitlementProvider.ts",
+    "src/mocks/mockCloudflareSigner.ts",
+    "src/routes/entitlements.ts",
+    "src/routes/playback.ts",
+    "src/runtime/runtimeConfig.ts",
+    "src/runtime/providerFactory.ts",
+    "src/runtime/httpResponse.ts",
+    "src/runtime/httpTarget.ts",
+    "src/runtime/start.ts",
+    "src/server.ts"
+  ],
+  "include": []
+}

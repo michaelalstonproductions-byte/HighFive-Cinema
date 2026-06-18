@@ -1,0 +1,15 @@
+{
+  "target_name": "highfive-staging-node-http",
+  "runtime": "node",
+  "transport": "http",
+  "deployment_status": "not_deployed",
+  "provider_mode": "mock",
+  "health_path": "/health",
+  "entitlement_path": "/entitlements/validate",
+  "descriptor_path": "/playback/descriptor",
+  "local_bind_host": "127.0.0.1",
+  "compiled_output_policy": "private_tmp_only_for_qa",
+  "credentials_required_for_local_smoke": false,
+  "external_network_allowed_for_local_smoke": false,
+  "local_preview_fallback_preserved": true
+}
