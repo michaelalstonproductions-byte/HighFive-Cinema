@@ -84,7 +84,7 @@ export function isEntitlementValidationRequest(value: unknown): value is Entitle
 
 export function isPlaybackDescriptorRequest(value: unknown): value is PlaybackDescriptorRequest {
   if (!isRecord(value)) return false;
-  return isEntitlementValidationRequest(value) && typeof value.audit_id === "string";
+  return isEntitlementValidationRequest(value) && typeof (value as JsonObject).audit_id === "string";
 }
 
 function hasNullableString(value: unknown): value is string | null {

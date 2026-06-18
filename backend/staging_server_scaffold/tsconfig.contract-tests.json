@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "rootDir": "./src",
+    "outDir": "/private/tmp/highfive-phase-66-0a-staging-backend-contract-tests/compiled"
+  },
+  "files": [
+    "src/contracts.ts",
+    "src/productMapping.ts",
+    "src/audit.ts",
+    "src/errors.ts",
+    "src/entitlements/validateEntitlement.ts",
+    "src/playback/requestPlaybackDescriptor.ts",
+    "src/providers/providerInterfaces.ts",
+    "src/providers/storekitValidator.ts",
+    "src/providers/revenueCatValidator.ts",
+    "src/providers/cloudflareSigner.ts",
+    "src/mocks/mockEntitlementProvider.ts",
+    "src/mocks/mockCloudflareSigner.ts"
+  ],
+  "include": []
+}

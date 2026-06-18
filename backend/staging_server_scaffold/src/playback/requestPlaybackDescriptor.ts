@@ -3,7 +3,7 @@ import {
   type PlaybackDescriptorResponse,
   isPlaybackDescriptorRequest
 } from "../contracts.js";
-import { createAuditRecord } from "../audit.js";
+import { createAuditRecord, findAuditRecord } from "../audit.js";
 import { ContractError } from "../errors.js";
 import { productMatchesMovie } from "../productMapping.js";
 import type { PlaybackDescriptorSigner } from "../providers/providerInterfaces.js";
@@ -25,7 +25,13 @@ export async function requestPlaybackDescriptor(
     return unavailableResponse(request.audit_id, "product_mapping_mismatch");
   }
 
-  if (!request.audit_id.includes(request.movie_id)) {
+  const entitlementAudit = findAuditRecord(request.audit_id);
+  if (
+    !entitlementAudit ||
+    entitlementAudit.event_name !== "entitlement_validation_approved" ||
+    entitlementAudit.movie_id !== request.movie_id ||
+    entitlementAudit.storekit_product_id !== request.storekit_product_id
+  ) {
     return unavailableResponse(request.audit_id, "entitlement_audit_not_approved");
   }
 
