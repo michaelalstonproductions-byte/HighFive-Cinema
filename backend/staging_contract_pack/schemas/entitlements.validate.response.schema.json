@@ -1,0 +1,57 @@
+{
+  "$id": "highfive.entitlements.validate.response.schema.json",
+  "title": "HighFive Entitlement Validation Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entitlement_status",
+    "access_decision",
+    "denial_reason",
+    "audit_id",
+    "expires_at",
+    "refresh_after"
+  ],
+  "properties": {
+    "entitlement_status": {
+      "type": "string",
+      "enum": [
+        "entitlement_approved",
+        "entitlement_denied",
+        "entitlement_pending"
+      ]
+    },
+    "access_decision": {
+      "type": "string",
+      "enum": [
+        "entitlement_approved",
+        "entitlement_denied",
+        "entitlement_pending",
+        "local_preview_fallback"
+      ]
+    },
+    "denial_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "audit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "refresh_after": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

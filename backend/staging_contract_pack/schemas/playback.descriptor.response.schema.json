@@ -1,0 +1,56 @@
+{
+  "$id": "highfive.playback.descriptor.response.schema.json",
+  "title": "HighFive Playback Descriptor Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "playback_descriptor_status",
+    "playback_url_or_token_reference",
+    "expires_at",
+    "refresh_after",
+    "denial_reason",
+    "audit_id"
+  ],
+  "properties": {
+    "playback_descriptor_status": {
+      "type": "string",
+      "enum": [
+        "descriptor_ready",
+        "descriptor_unavailable",
+        "descriptor_expired",
+        "descriptor_refresh_required",
+        "local_preview_fallback"
+      ]
+    },
+    "playback_url_or_token_reference": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "refresh_after": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "denial_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "audit_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

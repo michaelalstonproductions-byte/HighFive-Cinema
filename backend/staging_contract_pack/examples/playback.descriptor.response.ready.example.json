@@ -1,0 +1,8 @@
+{
+  "playback_descriptor_status": "descriptor_ready",
+  "playback_url_or_token_reference": "<SHORT_LIVED_DESCRIPTOR_REFERENCE_FROM_BACKEND>",
+  "expires_at": "2030-01-01T00:10:00Z",
+  "refresh_after": "2030-01-01T00:08:00Z",
+  "denial_reason": null,
+  "audit_id": "audit-placeholder-descriptor-ready"
+}

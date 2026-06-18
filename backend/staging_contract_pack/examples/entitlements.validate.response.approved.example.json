@@ -1,0 +1,8 @@
+{
+  "entitlement_status": "entitlement_approved",
+  "access_decision": "entitlement_approved",
+  "denial_reason": null,
+  "audit_id": "audit-placeholder-approved",
+  "expires_at": "2030-01-01T00:30:00Z",
+  "refresh_after": "2030-01-01T00:20:00Z"
+}

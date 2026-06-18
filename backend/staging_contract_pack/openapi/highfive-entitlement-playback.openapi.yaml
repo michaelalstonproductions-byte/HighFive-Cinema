@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: HighFive Entitlement and Playback Descriptor Staging Contract
+  version: 0.1.0
+  description: Contract-only staging API for entitlement validation and backend-mediated playback descriptors.
+servers:
+  - url: "{HIGHFIVE_BACKEND_PUBLIC_BASE_URL}"
+    description: Placeholder staging backend base URL supplied outside the repo.
+    variables:
+      HIGHFIVE_BACKEND_PUBLIC_BASE_URL:
+        default: "<YOUR_STAGING_BACKEND_BASE_URL>"
+paths:
+  /entitlements/validate:
+    post:
+      summary: Validate StoreKit or RevenueCat entitlement server-side.
+      operationId: validateEntitlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntitlementValidateRequest"
+      responses:
+        "200":
+          description: Entitlement validation response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntitlementValidateResponse"
+  /playback/descriptor:
+    post:
+      summary: Request a short-lived backend-mediated playback descriptor.
+      operationId: requestPlaybackDescriptor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaybackDescriptorRequest"
+      responses:
+        "200":
+          description: Playback descriptor response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaybackDescriptorResponse"
+components:
+  schemas:
+    EntitlementValidateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - user_id
+        - anonymous_session_id
+        - movie_id
+        - storekit_product_id
+        - entitlement_context
+        - playback_provider
+        - device_context
+      properties:
+        user_id:
+          type:
+            - string
+            - "null"
+        anonymous_session_id:
+          type:
+            - string
+            - "null"
+        movie_id:
+          type: string
+        storekit_product_id:
+          type: string
+        entitlement_context:
+          type: object
+          additionalProperties: true
+        playback_provider:
+          type: string
+        device_context:
+          type: object
+          additionalProperties: true
+    EntitlementValidateResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - entitlement_status
+        - access_decision
+        - denial_reason
+        - audit_id
+        - expires_at
+        - refresh_after
+      properties:
+        entitlement_status:
+          type: string
+          enum:
+            - entitlement_approved
+            - entitlement_denied
+            - entitlement_pending
+        access_decision:
+          type: string
+          enum:
+            - entitlement_approved
+            - entitlement_denied
+            - entitlement_pending
+            - local_preview_fallback
+        denial_reason:
+          type:
+            - string
+            - "null"
+        audit_id:
+          type: string
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        refresh_after:
+          type:
+            - string
+            - "null"
+          format: date-time
+    PlaybackDescriptorRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - user_id
+        - anonymous_session_id
+        - movie_id
+        - storekit_product_id
+        - entitlement_context
+        - playback_provider
+        - device_context
+        - audit_id
+      properties:
+        user_id:
+          type:
+            - string
+            - "null"
+        anonymous_session_id:
+          type:
+            - string
+            - "null"
+        movie_id:
+          type: string
+        storekit_product_id:
+          type: string
+        entitlement_context:
+          type: object
+          additionalProperties: true
+        playback_provider:
+          type: string
+        device_context:
+          type: object
+          additionalProperties: true
+        audit_id:
+          type: string
+    PlaybackDescriptorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - playback_descriptor_status
+        - playback_url_or_token_reference
+        - expires_at
+        - refresh_after
+        - denial_reason
+        - audit_id
+      properties:
+        playback_descriptor_status:
+          type: string
+          enum:
+            - descriptor_ready
+            - descriptor_unavailable
+            - descriptor_expired
+            - descriptor_refresh_required
+            - local_preview_fallback
+        playback_url_or_token_reference:
+          type:
+            - string
+            - "null"
+          description: Short-lived backend-issued descriptor reference. It must not be logged or persisted by the app.
+        expires_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        refresh_after:
+          type:
+            - string
+            - "null"
+          format: date-time
+        denial_reason:
+          type:
+            - string
+            - "null"
+        audit_id:
+          type: string

@@ -1,0 +1,8 @@
+{
+  "playback_descriptor_status": "descriptor_unavailable",
+  "playback_url_or_token_reference": null,
+  "expires_at": null,
+  "refresh_after": null,
+  "denial_reason": "descriptor_provider_not_configured",
+  "audit_id": "audit-placeholder-descriptor-unavailable"
+}

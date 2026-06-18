@@ -1,0 +1,8 @@
+{
+  "entitlement_status": "entitlement_denied",
+  "access_decision": "entitlement_denied",
+  "denial_reason": "entitlement_not_found",
+  "audit_id": "audit-placeholder-denied",
+  "expires_at": null,
+  "refresh_after": null
+}

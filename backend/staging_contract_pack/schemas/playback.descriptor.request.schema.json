@@ -1,0 +1,52 @@
+{
+  "$id": "highfive.playback.descriptor.request.schema.json",
+  "title": "HighFive Playback Descriptor Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "user_id",
+    "anonymous_session_id",
+    "movie_id",
+    "storekit_product_id",
+    "entitlement_context",
+    "playback_provider",
+    "device_context",
+    "audit_id"
+  ],
+  "properties": {
+    "user_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "anonymous_session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "movie_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "storekit_product_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entitlement_context": {
+      "type": "object"
+    },
+    "playback_provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "device_context": {
+      "type": "object"
+    },
+    "audit_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

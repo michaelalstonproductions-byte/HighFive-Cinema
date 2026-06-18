@@ -1,0 +1,15 @@
+{
+  "user_id": null,
+  "anonymous_session_id": "anonymous-session-placeholder",
+  "movie_id": "the_friendly",
+  "storekit_product_id": "<YOUR_STOREKIT_PRODUCT_NAMESPACE>.movie.thefriendly",
+  "entitlement_context": {
+    "source": "ios_staging",
+    "restore_purchase_state": "not_active_yet"
+  },
+  "playback_provider": "cloudflare_stream_staging",
+  "device_context": {
+    "platform": "ios",
+    "app_mode": "staging"
+  }
+}
