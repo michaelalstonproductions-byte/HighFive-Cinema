@@ -113,6 +113,16 @@ struct HFBackendEntitlementValidationRequest: Codable, Equatable {
     let entitlementContext: HFPlaybackDescriptorEntitlementContext
     let playbackProvider: HFStreamingProvider
     let deviceContext: String
+
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case anonymousSessionID = "anonymous_session_id"
+        case movieID = "movie_id"
+        case storeKitProductID = "storekit_product_id"
+        case entitlementContext = "entitlement_context"
+        case playbackProvider = "playback_provider"
+        case deviceContext = "device_context"
+    }
 }
 
 struct HFBackendEntitlementValidationResponse: Codable, Equatable {
@@ -121,6 +131,14 @@ struct HFBackendEntitlementValidationResponse: Codable, Equatable {
     let denialReason: String?
     let auditID: String
     let detail: String
+
+    enum CodingKeys: String, CodingKey {
+        case entitlementStatus = "entitlement_status"
+        case accessDecision = "access_decision"
+        case denialReason = "denial_reason"
+        case auditID = "audit_id"
+        case detail
+    }
 }
 
 struct HFBackendPlaybackDescriptorRequest: Codable, Equatable {
@@ -128,6 +146,13 @@ struct HFBackendPlaybackDescriptorRequest: Codable, Equatable {
     let descriptorAccessRequest: HFPlaybackDescriptorAccessRequest
     let endpoint: HFBackendPlaybackDescriptorEndpoint
     let policy: HFBackendPlaybackDescriptorPolicy
+
+    enum CodingKeys: String, CodingKey {
+        case entitlementRequest = "entitlement_request"
+        case descriptorAccessRequest = "descriptor_access_request"
+        case endpoint
+        case policy
+    }
 }
 
 struct HFBackendPlaybackDescriptorResponse: Codable, Equatable {
@@ -142,6 +167,18 @@ struct HFBackendPlaybackDescriptorResponse: Codable, Equatable {
     let auditID: String
     let error: HFBackendPlaybackDescriptorError?
     let detail: String
+
+    enum CodingKeys: String, CodingKey {
+        case entitlementResponse = "entitlement_response"
+        case playbackDescriptorStatus = "playback_descriptor_status"
+        case playbackURLOrTokenReference = "playback_url_or_token_reference"
+        case expiresAt = "expires_at"
+        case refreshAfter = "refresh_after"
+        case denialReason = "denial_reason"
+        case auditID = "audit_id"
+        case error
+        case detail
+    }
 }
 
 struct HFPlaybackDescriptorAuditRecord: Identifiable, Codable, Equatable {

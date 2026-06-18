@@ -538,6 +538,8 @@ struct ProfileView: View {
             return "hf.backendStatus.entitlementValidation"
         case "backend-playback-contract":
             return "hf.profile.backendPlaybackContract"
+        case "staging-playback-adapter":
+            return "hf.profile.stagingPlaybackAdapter"
         default:
             return "hf.playback.descriptorBoundary"
         }

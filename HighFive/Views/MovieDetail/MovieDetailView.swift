@@ -390,6 +390,40 @@ struct MovieDetailView: View {
                 )
 
                 HFPlaybackBoundaryRow(
+                    title: "Staging backend not configured",
+                    detail: "Check Staging Access uses runtime endpoint config only and keeps Local Preview fallback active when config is missing.",
+                    status: streamingStore.backendEntitlementRequestState.statusLabel,
+                    identifier: "hf.movieDetail.stagingEntitlementState"
+                )
+
+                HFPlaybackBoundaryRow(
+                    title: "Server-side Cloudflare signing required",
+                    detail: "No Cloudflare token in app. Descriptor references are not shown or persisted.",
+                    status: streamingStore.backendPlaybackDescriptorRequestState.statusLabel,
+                    identifier: "hf.movieDetail.stagingDescriptorState"
+                )
+
+                Button {
+                    Task {
+                        await streamingStore.refreshEntitlementAndPlaybackDescriptor(for: catalogMovie)
+                    }
+                } label: {
+                    Label(
+                        streamingStore.canRunStagingEntitlementPlaybackCheck ? "Check Staging Access" : "Review Backend Readiness",
+                        systemImage: "checkmark.shield.fill"
+                    )
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(streamingStore.canRunStagingEntitlementPlaybackCheck ? .black : HFColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(streamingStore.canRunStagingEntitlementPlaybackCheck ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.08)))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(!streamingStore.canRunStagingEntitlementPlaybackCheck)
+                .accessibilityIdentifier("hf.movieDetail.stagingEntitlementAction")
+
+                HFPlaybackBoundaryRow(
                     title: "Playback descriptor unavailable",
                     detail: "Local Preview fallback active",
                     status: backendContract.policy.localFallbackPolicy,
@@ -921,6 +955,16 @@ struct HFPlayerServiceSheet: View {
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("hf.player.backendDescriptorContract")
+                Text(streamingStore.backendEntitlementRequestState.statusLabel)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.stagingEntitlementState")
+                Text(streamingStore.backendPlaybackDescriptorRequestState.statusLabel)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.player.stagingDescriptorState")
                 Text(backendContract.entitlementValidationResponse.entitlementStatus.statusLabel)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)

@@ -254,6 +254,11 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var backendRuntimeStatus: HFBackendRuntimeStatus
     @Published private(set) var authRuntimeStatus: HFAuthRuntimeStatus
     @Published private(set) var entitlementRuntimeStatus: HFEntitlementRuntimeStatus
+    @Published private(set) var backendEntitlementRequestState: HFBackendRequestState = .notConfigured
+    @Published private(set) var backendPlaybackDescriptorRequestState: HFBackendRequestState = .localPreviewFallbackActive
+    @Published private(set) var entitlementPlaybackResult: HFEntitlementPlaybackResult?
+    @Published private(set) var activeStagingPlaybackDescriptor: HFPlaybackDescriptor?
+    @Published private(set) var lastPlaybackDescriptorAuditContext: HFBackendRequestAuditContext?
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -275,6 +280,7 @@ final class HFStreamingStore: ObservableObject {
     private let streamingConfiguration: HFStreamingProviderConfiguration
     private let localPreviewPlaybackResolver: HFLocalPreviewPlaybackResolver
     private let remotePlaybackDescriptorGateway: HFRemotePlaybackDescriptorGateway
+    private let entitlementPlaybackAdapter: HFBackendEntitlementPlaybackAdapter
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -312,6 +318,13 @@ final class HFStreamingStore: ObservableObject {
         self.streamingConfiguration = streamingConfiguration
         self.localPreviewPlaybackResolver = HFLocalPreviewPlaybackResolver(localPreviewIDs: Self.localPreviewStreamingIDs)
         self.remotePlaybackDescriptorGateway = HFRemotePlaybackDescriptorGateway(configuration: streamingConfiguration)
+        self.entitlementPlaybackAdapter = HFBackendEntitlementPlaybackAdapter(
+            endpointResolver: HFBackendEndpointResolver(
+                backendConfiguration: backendConfiguration,
+                entitlementConfiguration: entitlementConfiguration,
+                streamingConfiguration: streamingConfiguration
+            )
+        )
         backendRuntimeStatus = resolvedBackendService.currentStatus()
         let defaults = UserDefaults.standard
         let profiles = Self.makeLocalProfiles(defaults: defaults)
@@ -345,6 +358,12 @@ final class HFStreamingStore: ObservableObject {
         generatedDeliverySummary = ""
         lastPlayerMovieID = defaults.string(forKey: lastPlayerMovieKey)
         selectedAudienceChannelID = "premiere-updates"
+        backendEntitlementRequestState = entitlementPlaybackAdapter.runtimeState
+        backendPlaybackDescriptorRequestState = entitlementPlaybackAdapter.runtimeState == .notConfigured ? .localPreviewFallbackActive : entitlementPlaybackAdapter.runtimeState
+        lastPlaybackDescriptorAuditContext = .localFallback(
+            movieID: continueWatchingMovie.id,
+            detail: "Staging backend not configured. Local Preview fallback active."
+        )
     }
 
     var backendStatus: HFBackendServiceStatus {
@@ -390,6 +409,9 @@ final class HFStreamingStore: ObservableObject {
             entitlementBackendServiceStatus,
             backendEntitlementValidationServiceStatus,
             playbackDescriptorBackendServiceStatus,
+            backendEntitlementAdapterServiceStatus,
+            backendPlaybackDescriptorAdapterServiceStatus,
+            serverSideCloudflareSigningBackendServiceStatus,
             streamingBackendServiceStatus
         ]
     }
@@ -496,6 +518,44 @@ final class HFStreamingStore: ObservableObject {
             statusLabel: contract.entitlementValidationResponse.entitlementStatus.statusLabel,
             systemImage: "checkmark.shield.fill",
             accessibilityIdentifier: "hf.backendStatus.entitlementValidation"
+        )
+    }
+
+    var backendEntitlementAdapterServiceStatus: HFBackendServiceStatus {
+        let backendState: HFBackendConnectionState = entitlementPlaybackAdapter.canContactStagingEndpoint ? .backendConfigured : .localMode
+        return HFBackendServiceStatus(
+            id: "entitlement-adapter",
+            title: "Entitlement Adapter",
+            detail: "Validating entitlement uses runtime endpoint config only. No request payloads, response bodies, or playback references are logged.",
+            state: backendState,
+            statusLabel: backendEntitlementRequestState.statusLabel,
+            systemImage: "shield.lefthalf.filled",
+            accessibilityIdentifier: "hf.backendStatus.entitlementAdapter"
+        )
+    }
+
+    var backendPlaybackDescriptorAdapterServiceStatus: HFBackendServiceStatus {
+        let backendState: HFBackendConnectionState = activeStagingPlaybackDescriptor == nil ? .localMode : .backendConfigured
+        return HFBackendServiceStatus(
+            id: "playback-descriptor-adapter",
+            title: "Playback Descriptor Adapter",
+            detail: "Requesting playback descriptor follows entitlement approval and keeps the returned reference in memory only.",
+            state: backendState,
+            statusLabel: backendPlaybackDescriptorRequestState.statusLabel,
+            systemImage: "rectangle.connected.to.line.below",
+            accessibilityIdentifier: "hf.backendStatus.playbackDescriptorAdapter"
+        )
+    }
+
+    var serverSideCloudflareSigningBackendServiceStatus: HFBackendServiceStatus {
+        HFBackendServiceStatus(
+            id: "server-side-cloudflare-signing",
+            title: "Server-side Cloudflare Signing",
+            detail: "Server-side Cloudflare signing required. No Cloudflare token in app.",
+            state: .localMode,
+            statusLabel: "Server-side Cloudflare signing required",
+            systemImage: "lock.shield.fill",
+            accessibilityIdentifier: "hf.backendStatus.serverSideCloudflareSigning"
         )
     }
 
@@ -848,6 +908,20 @@ final class HFStreamingStore: ObservableObject {
 
     func playbackDescriptor(for movie: Movie) -> HFPlaybackDescriptor {
         let catalogMovie = self.movie(id: movie.id) ?? movie
+        if let activeStagingPlaybackDescriptor,
+           activeStagingPlaybackDescriptor.movieID == catalogMovie.id {
+            return HFPlaybackDescriptor(
+                id: activeStagingPlaybackDescriptor.id,
+                movieID: activeStagingPlaybackDescriptor.movieID,
+                title: catalogMovie.title,
+                status: activeStagingPlaybackDescriptor.status,
+                provider: activeStagingPlaybackDescriptor.provider,
+                providerAssetMapping: activeStagingPlaybackDescriptor.providerAssetMapping,
+                detail: activeStagingPlaybackDescriptor.detail,
+                boundary: activeStagingPlaybackDescriptor.boundary
+            )
+        }
+
         guard streamingConfiguration.hasAnyRuntimeConfig else {
             return localPreviewPlaybackResolver.descriptor(for: catalogMovie.id, title: catalogMovie.title)
         }
@@ -933,6 +1007,137 @@ final class HFStreamingStore: ObservableObject {
 
     func playbackDescriptorContractStatus(for movie: Movie) -> String {
         backendPlaybackDescriptorContract(for: movie).statusLabel
+    }
+
+    var canRunStagingEntitlementPlaybackCheck: Bool {
+        entitlementPlaybackAdapter.canContactStagingEndpoint
+    }
+
+    func refreshEntitlementAndPlaybackDescriptor(for movie: Movie) async {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        guard canRunStagingEntitlementPlaybackCheck else {
+            let result = HFEntitlementPlaybackResult.localFallback(
+                movieID: catalogMovie.id,
+                detail: "Staging backend not configured. Local Preview fallback active."
+            )
+            entitlementPlaybackResult = result
+            backendEntitlementRequestState = .notConfigured
+            backendPlaybackDescriptorRequestState = .localPreviewFallbackActive
+            activeStagingPlaybackDescriptor = nil
+            lastPlaybackDescriptorAuditContext = result.auditContext
+            return
+        }
+
+        backendEntitlementRequestState = .validatingEntitlement
+        backendPlaybackDescriptorRequestState = .localPreviewFallbackActive
+        activeStagingPlaybackDescriptor = nil
+
+        let entitlementRequest = backendEntitlementValidationRequest(for: catalogMovie)
+        let descriptorRequest = backendPlaybackDescriptorRequest(for: catalogMovie)
+        let result = await entitlementPlaybackAdapter.validateAndRequestPlaybackDescriptor(
+            entitlementRequest: entitlementRequest,
+            descriptorRequest: descriptorRequest
+        )
+
+        entitlementPlaybackResult = result
+        backendEntitlementRequestState = result.entitlementState
+        backendPlaybackDescriptorRequestState = result.descriptorState
+        lastPlaybackDescriptorAuditContext = result.auditContext
+
+        if let descriptor = result.playbackDescriptor {
+            activeStagingPlaybackDescriptor = HFPlaybackDescriptor(
+                id: descriptor.id,
+                movieID: descriptor.movieID,
+                title: catalogMovie.title,
+                status: descriptor.status,
+                provider: descriptor.provider,
+                providerAssetMapping: descriptor.providerAssetMapping,
+                detail: descriptor.detail,
+                boundary: descriptor.boundary
+            )
+        } else {
+            activeStagingPlaybackDescriptor = nil
+        }
+    }
+
+    func validateBackendEntitlement(for movie: Movie) async {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        guard canRunStagingEntitlementPlaybackCheck else {
+            backendEntitlementRequestState = .notConfigured
+            activeStagingPlaybackDescriptor = nil
+            return
+        }
+
+        backendEntitlementRequestState = .validatingEntitlement
+        do {
+            let response = try await entitlementPlaybackAdapter.validateEntitlement(
+                request: backendEntitlementValidationRequest(for: catalogMovie)
+            )
+            backendEntitlementRequestState = response.entitlementStatus == .approved ? .entitlementApproved : .entitlementDenied
+            lastPlaybackDescriptorAuditContext = HFBackendRequestAuditContext(
+                movieID: catalogMovie.id,
+                endpointLabel: HFBackendPlaybackDescriptorEndpoint.entitlementValidation.statusLabel,
+                state: backendEntitlementRequestState,
+                detail: response.detail,
+                localFallback: "Local Preview fallback active"
+            )
+        } catch {
+            backendEntitlementRequestState = .localPreviewFallbackActive
+            activeStagingPlaybackDescriptor = nil
+        }
+    }
+
+    func requestBackendPlaybackDescriptor(for movie: Movie) async {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        guard canRunStagingEntitlementPlaybackCheck else {
+            backendPlaybackDescriptorRequestState = .localPreviewFallbackActive
+            activeStagingPlaybackDescriptor = nil
+            return
+        }
+
+        backendPlaybackDescriptorRequestState = .requestingPlaybackDescriptor
+        do {
+            let response = try await entitlementPlaybackAdapter.requestPlaybackDescriptor(
+                request: backendPlaybackDescriptorRequest(for: catalogMovie)
+            )
+            switch response.error {
+            case .descriptorExpired:
+                backendPlaybackDescriptorRequestState = .playbackDescriptorExpired
+                activeStagingPlaybackDescriptor = nil
+            case .descriptorRefreshRequired:
+                backendPlaybackDescriptorRequestState = .descriptorRefreshRequired
+                activeStagingPlaybackDescriptor = nil
+            case .entitlementDenied:
+                backendPlaybackDescriptorRequestState = .entitlementDenied
+                activeStagingPlaybackDescriptor = nil
+            case .unavailable:
+                backendPlaybackDescriptorRequestState = .playbackDescriptorUnavailable
+                activeStagingPlaybackDescriptor = nil
+            case .none:
+                backendPlaybackDescriptorRequestState = response.playbackDescriptorStatus == .stagingDescriptorReady ? .stagingPlaybackDescriptorReady : .playbackDescriptorUnavailable
+            }
+            lastPlaybackDescriptorAuditContext = HFBackendRequestAuditContext(
+                movieID: catalogMovie.id,
+                endpointLabel: HFBackendPlaybackDescriptorEndpoint.playbackDescriptor.statusLabel,
+                state: backendPlaybackDescriptorRequestState,
+                detail: response.detail,
+                localFallback: "Local Preview fallback active"
+            )
+        } catch {
+            backendPlaybackDescriptorRequestState = .playbackDescriptorUnavailable
+            activeStagingPlaybackDescriptor = nil
+        }
+    }
+
+    func clearTransientPlaybackDescriptor() {
+        activeStagingPlaybackDescriptor = nil
+        entitlementPlaybackResult = nil
+        backendEntitlementRequestState = entitlementPlaybackAdapter.runtimeState
+        backendPlaybackDescriptorRequestState = .localPreviewFallbackActive
+        lastPlaybackDescriptorAuditContext = .localFallback(
+            movieID: continueWatchingMovie.id,
+            detail: "Transient staging descriptor cleared. Local Preview fallback active."
+        )
     }
 
     func streamingProviderStatus(for movie: Movie) -> HFStreamingProviderStatus {
@@ -1774,6 +1979,20 @@ final class HFStreamingStore: ObservableObject {
                 detail: "Cloudflare playback requires backend descriptor. No Cloudflare token in app.",
                 status: response.cloudflareState.statusLabel,
                 systemImage: "network.slash"
+            ),
+            HFPaymentReadinessRow(
+                id: "staging-playback-adapter",
+                title: "Staging backend not configured",
+                detail: "Staging adapter builds endpoint URLs from runtime config only and keeps Local Preview fallback active when config is missing.",
+                status: backendPlaybackDescriptorRequestState.statusLabel,
+                systemImage: "rectangle.connected.to.line.below"
+            ),
+            HFPaymentReadinessRow(
+                id: "server-side-cloudflare-signing",
+                title: "Server-side Cloudflare signing required",
+                detail: "No Cloudflare token in app. Descriptor references are memory-only and not shown.",
+                status: "No Cloudflare token in app",
+                systemImage: "lock.shield.fill"
             ),
             HFPaymentReadinessRow(
                 id: "backend-mediated",
