@@ -2,10 +2,13 @@ import SwiftUI
 
 struct MovieDetailView: View {
     let movie: Movie
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
     @State private var showsProtectedDepthPreview = false
+    @State private var showsAccessReadiness = false
+    @State private var isDetailWorldAwake = false
 
     private var catalogMovie: Movie {
         streamingStore.movie(id: movie.id) ?? movie
@@ -49,10 +52,6 @@ struct MovieDetailView: View {
                 hero
                 overview
                 actionPanel
-                playbackStatusPanel
-                entitlementStatusPanel
-                downloadBoundaryPanel
-                localDepthPreviewSection
                 creatorSection
                 relatedSection
                 castSection
@@ -84,20 +83,44 @@ struct MovieDetailView: View {
         .sheet(isPresented: $showsProtectedDepthPreview) {
             HighFiveProtectedSpatialPeekBridge()
         }
+        .sheet(isPresented: $showsAccessReadiness) {
+            accessPlaybackReadinessSheet
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 4.6).repeatForever(autoreverses: true)) {
+                isDetailWorldAwake = true
+            }
+        }
     }
 
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
             detailArtwork
-                .frame(height: 590)
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                .frame(height: 620)
+                .scaleEffect(reduceMotion ? 1 : (isDetailWorldAwake ? 1.04 : 1.0))
+                .offset(x: reduceMotion ? 0 : (isDetailWorldAwake ? -8 : 8), y: reduceMotion ? 0 : (isDetailWorldAwake ? -5 : 4))
+                .accessibilityIdentifier("hf.spatial.movieDetail.scene")
+
+            detailArtwork
+                .frame(width: 164, height: 238)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.48), lineWidth: 1)
+                )
+                .rotationEffect(.degrees(reduceMotion ? 0 : (isDetailWorldAwake ? 4 : -2)))
+                .offset(x: reduceMotion ? 136 : (isDetailWorldAwake ? 146 : 130), y: reduceMotion ? -172 : (isDetailWorldAwake ? -182 : -160))
+                .shadow(color: HFColors.amberGlow.opacity(0.28), radius: 28, x: 0, y: 18)
 
             LinearGradient(
-                colors: [.clear, HFColors.warmGlow.opacity(0.26), HFColors.background.opacity(0.92), HFColors.background],
+                colors: [.clear, HFColors.warmGlow.opacity(0.22), HFColors.background.opacity(0.90), HFColors.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+
+            HFDepthContourOverlay(color: HFColors.cyanGlow)
+                .opacity(0.72)
 
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top) {
@@ -110,9 +133,6 @@ struct MovieDetailView: View {
                         .clipShape(Capsule())
 
                     Spacer()
-
-                    HFPosterCard(movie: catalogMovie, width: 94, showTitle: false, showProgress: catalogMovie.progress != nil)
-                        .rotationEffect(.degrees(7))
                 }
 
                 Spacer()
@@ -131,38 +151,26 @@ struct MovieDetailView: View {
                     metadataChips
 
                     HStack(spacing: HFSpacing.sm) {
-                        HFButton(catalogMovie.isComingSoon ? "Preview" : "Watch Now", systemImage: "play.fill") {
+                        HFEnergyAction(title: catalogMovie.isComingSoon ? "Preview" : "Watch", systemImage: "play.fill", style: .gold) {
                             streamingStore.markStartedWatching(catalogMovie)
                             previewMovie = catalogMovie
                         }
-                        .accessibilityIdentifier("hf.consumer.movieDetail.watchNow")
-                        .accessibilityIdentifier("hf.route.watchNow")
+                        .accessibilityIdentifier("hf.spatial.movieDetail.watch")
 
-                        Button {
-                            streamingStore.toggleSaved(catalogMovie)
-                        } label: {
-                            Image(systemName: streamingStore.isSaved(catalogMovie) ? "checkmark" : "plus")
-                                .font(.system(size: 18, weight: .black))
-                                .foregroundStyle(HFColors.textPrimary)
-                                .frame(width: 54, height: 54)
-                                .background(Color.white.opacity(0.14))
-                                .clipShape(Capsule())
+                        HFEnergyAction(title: "Depth", systemImage: "cube.transparent", style: .cyan) {
+                            showsProtectedDepthPreview = true
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(streamingStore.isSaved(catalogMovie) ? "Remove from My List" : "Add to My List")
+                        .accessibilityLabel("Open Depth and Peek local preview")
+                        .accessibilityIdentifier("hf.spatial.movieDetail.depth")
                     }
                 }
             }
             .padding(HFSpacing.lg)
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
-                .stroke(HFColors.gold.opacity(0.42), lineWidth: 1)
-        )
         .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 24, x: 0, y: 16)
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-        .padding(.top, HFSpacing.xxl)
-        .accessibilityIdentifier("hf.movieDetail.signatureHero")
+        .frame(height: 620)
+        .clipped()
+        .accessibilityIdentifier("hf.spatial.movieDetail")
     }
 
     private var metadataChips: some View {
@@ -212,20 +220,20 @@ struct MovieDetailView: View {
     }
 
     private var actionPanel: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
-                Label("Ready for your shelf", systemImage: "bookmark.fill")
+                Text("Keep the film close")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
 
                 HStack(spacing: HFSpacing.sm) {
                     detailAction(
-                        title: streamingStore.isSaved(catalogMovie) ? "Saved" : "My List",
+                        title: streamingStore.isSaved(catalogMovie) ? "Saved" : "Save",
                         systemImage: streamingStore.isSaved(catalogMovie) ? "checkmark" : "plus",
                         action: { streamingStore.toggleSaved(catalogMovie) }
                     )
                     detailAction(
-                        title: streamingStore.isDownloaded(catalogMovie) ? "Offline" : "Download",
+                        title: streamingStore.isDownloaded(catalogMovie) ? "Offline" : "Offline",
                         systemImage: streamingStore.isDownloaded(catalogMovie) ? "checkmark.circle.fill" : "arrow.down.circle.fill",
                         action: {
                             if streamingStore.isDownloaded(catalogMovie) {
@@ -237,14 +245,56 @@ struct MovieDetailView: View {
                     )
                 }
 
-                Text("My List, progress, and downloads update instantly across your profile.")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: HFSpacing.sm) {
+                    contextualAction(title: "Watch Together", systemImage: "person.2.fill")
+                    contextualAction(title: "Build Release", systemImage: "shippingbox.fill")
+                    Button {
+                        showsAccessReadiness = true
+                    } label: {
+                        VStack(spacing: HFSpacing.xs) {
+                            Image(systemName: "checkmark.shield.fill")
+                                .font(.system(size: 18, weight: .black))
+                            Text("Access")
+                                .font(HFTypography.caption)
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(HFColors.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 72)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                                .stroke(HFColors.glassStroke, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Access and Playback Readiness")
+                }
             }
-            .padding(HFSpacing.lg)
+            .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func contextualAction(title: String, systemImage: String) -> some View {
+        VStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+            Text(title)
+                .font(HFTypography.caption)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .foregroundStyle(HFColors.textPrimary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 72)
+        .background(Color.white.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
     }
 
     private var playbackStatusPanel: some View {
@@ -553,6 +603,49 @@ struct MovieDetailView: View {
         .accessibilityIdentifier("hf.movieDetail.downloadBoundary")
     }
 
+    private var accessPlaybackReadinessSheet: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Access & Playback Readiness")
+                            .font(HFTypography.title)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local preview remains available while provider, entitlement, and download boundaries stay separated from the title world.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+
+                    playbackStatusPanel
+                    entitlementStatusPanel
+                    downloadBoundaryPanel
+                }
+                .padding(.top, HFSpacing.lg)
+                .padding(.bottom, HFSpacing.xxl)
+            }
+            .background(HFColors.screenBackground.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showsAccessReadiness = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(width: 38, height: 38)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close readiness")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
     private func detailAction(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: HFSpacing.xs) {
@@ -776,9 +869,12 @@ private struct HFPlaybackBoundaryRow: View {
 
 struct HFPlayerServiceSheet: View {
     let movie: Movie
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var showsProtectedDepthPreview = false
+    @State private var showsPlayerReadiness = false
+    @State private var isPlayerAwake = false
 
     private var catalogMovie: Movie {
         streamingStore.movie(id: movie.id) ?? movie
@@ -809,9 +905,8 @@ struct HFPlayerServiceSheet: View {
                 header
                 playerPreview
                 localPreviewPanel
-                providerStatusPanel
-                entitlementGatePanel
                 primaryActions
+                playerReadinessButton
                 Spacer()
             }
             .padding(HFSpacing.lg)
@@ -821,7 +916,16 @@ struct HFPlayerServiceSheet: View {
         .sheet(isPresented: $showsProtectedDepthPreview) {
             HighFiveProtectedSpatialPeekBridge()
         }
-        .accessibilityIdentifier("hf.player.surface")
+        .sheet(isPresented: $showsPlayerReadiness) {
+            playerReadinessSheet
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 4.4).repeatForever(autoreverses: true)) {
+                isPlayerAwake = true
+            }
+        }
+        .accessibilityIdentifier("hf.spatial.player")
     }
 
     private var header: some View {
@@ -864,11 +968,16 @@ struct HFPlayerServiceSheet: View {
                 Image(assetName)
                     .resizable()
                     .scaledToFill()
+                    .scaleEffect(reduceMotion ? 1 : (isPlayerAwake ? 1.035 : 1.0))
+                    .offset(x: reduceMotion ? 0 : (isPlayerAwake ? -6 : 6))
             } else {
                 HFPosterFallback(title: catalogMovie.title)
             }
 
             LinearGradient(colors: [.clear, Color.black.opacity(0.86)], startPoint: .top, endPoint: .bottom)
+
+            HFDepthContourOverlay(color: HFColors.cyanGlow)
+                .opacity(0.64)
 
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
                 Image(systemName: "play.circle.fill")
@@ -877,7 +986,7 @@ struct HFPlayerServiceSheet: View {
                 Text("Local Preview")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                Text("No streaming provider connected")
+                Text("Ready in local preview")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.gold)
                 Text(catalogMovie.metadataLine)
@@ -892,7 +1001,7 @@ struct HFPlayerServiceSheet: View {
             RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
                 .stroke(HFColors.goldStroke, lineWidth: 1)
         )
-        .accessibilityIdentifier("hf.player.cinematicFrame")
+        .accessibilityIdentifier("hf.spatial.player.tiltReveal")
     }
 
     private var localPreviewPanel: some View {
@@ -901,14 +1010,14 @@ struct HFPlayerServiceSheet: View {
                 Label("Local Preview", systemImage: "play.rectangle.fill")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                Text("HighFive Player is using local catalog state only. No streaming provider connected.")
+                Text("HighFive Player is using the local catalog preview for this title.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(HFSpacing.lg)
         }
-        .accessibilityIdentifier("hf.player.localPreview")
+        .accessibilityIdentifier("hf.spatial.player.localPreview")
     }
 
     private var providerStatusPanel: some View {
@@ -1012,5 +1121,59 @@ struct HFPlayerServiceSheet: View {
             .accessibilityIdentifier("hf.player.depthPeekCTA")
         }
         .accessibilityIdentifier("hf.player.primaryActions")
+    }
+
+    private var playerReadinessButton: some View {
+        Button {
+            showsPlayerReadiness = true
+        } label: {
+            Label("Access & Playback Readiness", systemImage: "checkmark.shield.fill")
+                .font(HFTypography.smallAction)
+                .foregroundStyle(HFColors.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 46)
+                .background(Color.white.opacity(0.08))
+                .overlay(Capsule().stroke(HFColors.glassStroke, lineWidth: 1))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var playerReadinessSheet: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Access & Playback Readiness")
+                            .font(HFTypography.title)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Provider and entitlement checks remain reviewable without covering the player surface.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+                    providerStatusPanel
+                    entitlementGatePanel
+                }
+                .padding(HFSpacing.lg)
+            }
+            .background(HFColors.screenBackground.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showsPlayerReadiness = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(width: 38, height: 38)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Close readiness")
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

@@ -3,7 +3,6 @@ import SwiftUI
 enum HFStreamingTab: Hashable {
     case home
     case search
-    case connect
     case library
     case downloads
     case profile
@@ -20,7 +19,6 @@ struct HFStreamingRootView: View {
     private let tabItems: [HFTabItem<HFStreamingTab>] = [
         HFTabItem(value: .home, title: "Home", systemImage: "house.fill"),
         HFTabItem(value: .search, title: "Search", systemImage: "magnifyingglass"),
-        HFTabItem(value: .connect, title: "Connect", systemImage: "play.rectangle.on.rectangle.fill"),
         HFTabItem(value: .library, title: "Library", systemImage: "bookmark.fill"),
         HFTabItem(value: .downloads, title: "Downloads", systemImage: "arrow.down.circle.fill"),
         HFTabItem(value: .profile, title: "Profile", systemImage: "person.crop.circle.fill")
@@ -31,7 +29,7 @@ struct HFStreamingRootView: View {
         if arguments.contains("--hf-start-search") { return .search }
         if arguments.contains("--hf-start-library") { return .library }
         if arguments.contains("--hf-start-downloads") { return .downloads }
-        if arguments.contains("--hf-start-connect") { return .connect }
+        if arguments.contains("--hf-start-connect") { return .profile }
         if Self.shouldStartInProfile { return .profile }
         return .home
     }
@@ -229,8 +227,6 @@ struct HFStreamingRootView: View {
                         )
                     case .search:
                         SearchView(mode: $searchMode)
-                    case .connect:
-                        ConnectHubView()
                     case .library:
                         MyListView(onBrowseDiscover: {
                             searchMode = .discover

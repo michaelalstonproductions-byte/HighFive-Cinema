@@ -7,9 +7,11 @@ struct HomeView: View {
     var onProfile: () -> Void = {}
     var onMyList: () -> Void = {}
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
     @State private var showsProtectedDepthPreview = false
+    @State private var isHeroAwake = false
 
     private var heroMovie: Movie {
         streamingStore.featuredMovie
@@ -22,10 +24,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                header
                 heroSection
-                quickActions
-                streamingStatusPanel
                 continueWatchingSection
                 ForEach(streamingStore.premiumHomeCatalogRails) { category in
                     movieRail(category)
@@ -33,11 +32,9 @@ struct HomeView: View {
                 discoveryPanel
                 activeShelfPanel
             }
-            .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
-        .accessibilityIdentifier("hf.consumer.home.root")
-        .accessibilityIdentifier("hf.home.screen")
+        .accessibilityIdentifier("hf.spatial.home")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(item: $previewMovie) { movie in
             HFPlayerServiceSheet(movie: movie)
@@ -45,6 +42,12 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showsProtectedDepthPreview) {
             HighFiveProtectedSpatialPeekBridge()
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 4.8).repeatForever(autoreverses: true)) {
+                isHeroAwake = true
+            }
         }
     }
 
@@ -117,46 +120,98 @@ struct HomeView: View {
         NavigationLink(value: heroMovie) {
             ZStack(alignment: .bottomLeading) {
                 heroArtwork(heroMovie)
-                    .frame(height: 510)
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                    .frame(height: 590)
+                    .scaleEffect(reduceMotion ? 1 : (isHeroAwake ? 1.045 : 1.0))
+                    .offset(x: reduceMotion ? 0 : (isHeroAwake ? -8 : 8), y: reduceMotion ? 0 : (isHeroAwake ? -5 : 4))
+                    .accessibilityIdentifier("hf.spatial.home.backgroundPlane")
 
-                HFColors.cinematicGoldScrim
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                heroArtwork(heroMovie)
+                    .frame(width: 172, height: 250)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(HFColors.gold.opacity(0.48), lineWidth: 1)
+                    )
+                    .rotationEffect(.degrees(reduceMotion ? 0 : (isHeroAwake ? 3 : -2)))
+                    .offset(x: reduceMotion ? 138 : (isHeroAwake ? 146 : 132), y: reduceMotion ? -112 : (isHeroAwake ? -120 : -104))
+                    .shadow(color: HFColors.amberGlow.opacity(0.26), radius: 26, x: 0, y: 16)
+                    .accessibilityIdentifier("hf.spatial.home.subjectPlane")
 
                 LinearGradient(
-                    colors: [.clear, Color.black.opacity(0.28), Color.black.opacity(0.96)],
-                    startPoint: .center,
+                    colors: [
+                        Color.black.opacity(0.02),
+                        Color.black.opacity(0.30),
+                        Color.black.opacity(0.88),
+                        HFColors.background
+                    ],
+                    startPoint: .top,
                     endPoint: .bottom
                 )
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+
+                HFColors.cinematicGoldScrim
+                    .opacity(0.72)
+
+                HFDepthContourOverlay(color: HFColors.cyanGlow)
+                    .opacity(0.72)
+
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.62)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
 
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     HStack {
-                        Text(heroMovie.isOriginal ? "HIGHFIVE ORIGINAL" : "FEATURED")
-                            .font(HFTypography.micro)
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, HFSpacing.sm)
-                            .frame(height: 26)
-                            .background(HFColors.goldGradient)
-                            .clipShape(Capsule())
+                        ZStack {
+                            Circle()
+                                .fill(HFColors.goldGradient)
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 18, weight: .black))
+                                .foregroundStyle(.black)
+                        }
+                        .frame(width: 40, height: 40)
+
+                        Text("HIGHFIVE")
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(HFColors.gold)
+
                         Spacer()
-                        HFPosterCard(movie: heroMovie, width: 76, showTitle: false, posterOnly: true)
-                            .rotationEffect(.degrees(6))
+
+                        Button(action: onSearch) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(HFColors.textPrimary)
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.48))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Search")
+
+                        Button(action: onProfile) {
+                            Image(systemName: selectedProfile.avatarSystemName)
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.black)
+                                .frame(width: 44, height: 44)
+                                .background(HFColors.goldGradient)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Profile")
                     }
 
                     Spacer()
 
                     VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                        Text("Tonight on HighFive")
+                        Text(heroMovie.isOriginal ? "HIGHFIVE ORIGINAL" : "FEATURED")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.gold)
                             .textCase(.uppercase)
-                            .accessibilityIdentifier("hf.home.tonightOnHighFive")
                         Text(heroMovie.title)
-                            .font(.system(size: 40, weight: .black))
+                            .font(.system(size: 52, weight: .black))
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(2)
-                            .minimumScaleFactor(0.68)
+                            .minimumScaleFactor(0.54)
                         Text(heroMovie.subtitle)
                             .font(HFTypography.body)
                             .foregroundStyle(HFColors.textSecondary)
@@ -169,66 +224,40 @@ struct HomeView: View {
                         }
 
                         HStack(spacing: HFSpacing.sm) {
-                            Button {
+                            HFEnergyAction(title: "Watch", systemImage: "play.fill", style: .gold) {
                                 streamingStore.markStartedWatching(heroMovie)
                                 previewMovie = heroMovie
-                            } label: {
-                                Label("Watch Now", systemImage: "play.fill")
-                                    .font(.system(size: 15, weight: .black))
-                                    .foregroundStyle(.black)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 50)
-                                    .background(HFColors.goldGradient)
-                                    .clipShape(Capsule())
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("hf.functional.player.watchNow")
-                            .accessibilityIdentifier("hf.route.watchNow")
+                            .accessibilityIdentifier("hf.spatial.home.watch")
 
-                            Button {
+                            HFEnergyAction(title: "Depth", systemImage: "cube.transparent", style: .cyan) {
+                                showsProtectedDepthPreview = true
+                            }
+                            .accessibilityIdentifier("hf.spatial.home.depth")
+
+                            HFEnergyAction(
+                                title: streamingStore.isSaved(heroMovie) ? "Saved" : "Save",
+                                systemImage: streamingStore.isSaved(heroMovie) ? "checkmark" : "plus",
+                                style: .glass
+                            ) {
                                 streamingStore.toggleSaved(heroMovie)
-                            } label: {
-                                Image(systemName: streamingStore.isSaved(heroMovie) ? "checkmark" : "plus")
-                                    .font(.system(size: 18, weight: .black))
-                                    .foregroundStyle(HFColors.textPrimary)
-                                    .frame(width: 54, height: 50)
-                                    .background(Color.white.opacity(0.14))
-                                    .clipShape(Capsule())
                             }
-                            .buttonStyle(.plain)
                             .accessibilityLabel(streamingStore.isSaved(heroMovie) ? "Remove from My List" : "Add to My List")
+                            .accessibilityIdentifier("hf.spatial.home.save")
                         }
-
-                        Button {
-                            showsProtectedDepthPreview = true
-                        } label: {
-                            Label("Try Depth + Peek", systemImage: "cube.transparent")
-                                .font(HFTypography.smallAction)
-                                .foregroundStyle(HFColors.textPrimary)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 44)
-                                .background(Color.black.opacity(0.42))
-                                .overlay(Capsule().stroke(HFColors.gold.opacity(0.32), lineWidth: 1))
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Try Depth and Peek local preview")
-                        .accessibilityIdentifier("hf.home.depthPeekCTA")
                     }
+                    .accessibilityIdentifier("hf.spatial.home.foregroundPlane")
                 }
-                .padding(HFSpacing.lg)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .padding(.top, HFSpacing.xxl)
+                .padding(.bottom, HFSpacing.xl)
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
-                    .stroke(HFColors.gold.opacity(0.52), lineWidth: 1)
-            )
-            .shadow(color: HFColors.amberGlow.opacity(0.25), radius: 26, x: 0, y: 18)
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .frame(height: 590)
+            .clipped()
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("hf.consumer.home.hero")
-        .accessibilityIdentifier("hf.home.signatureHero")
-        .accessibilityIdentifier("hf.route.homeToMovieDetail")
+        .accessibilityLabel("\(heroMovie.title), \(heroMovie.subtitle)")
+        .accessibilityIdentifier("hf.spatial.home.hero")
     }
 
     private var quickActions: some View {
