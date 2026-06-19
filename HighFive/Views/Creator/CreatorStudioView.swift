@@ -9,56 +9,69 @@ enum HFCreatorStudioFocus: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+private enum HFSpatialCreatorTool: String, CaseIterable, Identifiable {
+    case look = "Look"
+    case trailer = "Trailer"
+    case sound = "Sound"
+    case social = "Social"
+    case vod = "VOD"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .look: return "paintpalette.fill"
+        case .trailer: return "film.stack.fill"
+        case .sound: return "waveform"
+        case .social: return "bubble.left.and.bubble.right.fill"
+        case .vod: return "play.rectangle.on.rectangle.fill"
+        }
+    }
+
+    var purpose: String {
+        switch self {
+        case .look: return "Mood, poster direction, and color treatment"
+        case .trailer: return "Trailer pull, clip placeholder, and timeline note"
+        case .sound: return "Music mood, sound direction, and mix notes"
+        case .social: return "Local Social Kit handoff"
+        case .vod: return "Local VOD package handoff"
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .look: return "hf.spatial.creatorStudio.look"
+        case .trailer: return "hf.spatial.creatorStudio.trailer"
+        case .sound: return "hf.spatial.creatorStudio.sound"
+        case .social: return "hf.spatial.creatorStudio.social"
+        case .vod: return "hf.spatial.creatorStudio.vod"
+        }
+    }
+}
+
 struct CreatorStudioView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var selectedFocus: HFCreatorStudioFocus
+    @State private var selectedTool: HFSpatialCreatorTool
     @State private var didSaveLocalDraft = false
+    @State private var isWorktableAwake = false
+    @State private var isInspectorPresented = false
 
     init(initialFocus: HFCreatorStudioFocus = .dashboard) {
         _selectedFocus = State(initialValue: initialFocus)
+        _selectedTool = State(initialValue: Self.tool(for: initialFocus))
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                header
-                focusTabs
-
-                switch selectedFocus {
-                case .dashboard:
-                    dashboardSection
-                    toolControlStrip
-                    localDraftActions
-                    socialMediaKitSection
-                    instagramConnectSection
-                    vodPackageSection
-                case .socialMediaKit:
-                    socialMediaKitSection
-                    instagramConnectSection
-                    dashboardSection
-                    toolControlStrip
-                    localDraftActions
-                    vodPackageSection
-                case .instagramConnect:
-                    instagramConnectSection
-                    socialMediaKitSection
-                    dashboardSection
-                    toolControlStrip
-                    localDraftActions
-                    vodPackageSection
-                case .vodPackage:
-                    vodPackageSection
-                    dashboardSection
-                    toolControlStrip
-                    localDraftActions
-                    instagramConnectSection
-                    socialMediaKitSection
-                }
-
-                backendReadinessSection
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                spatialWorktable
+                creatorStudioActions
+                selectedToolHandoff
             }
-            .padding(.top, HFSpacing.xxl)
+            .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .safeAreaInset(edge: .top) {
@@ -74,7 +87,456 @@ struct CreatorStudioView: View {
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationTitle("Creator Studio")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isInspectorPresented) {
+            creatorInspector
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .onAppear {
+            guard !reduceMotion else {
+                isWorktableAwake = true
+                return
+            }
+            withAnimation(.easeOut(duration: 0.7)) {
+                isWorktableAwake = true
+            }
+        }
         .accessibilityIdentifier("hf.creatorStudio.screen")
+        .accessibilityIdentifier("hf.spatial.creatorStudio")
+    }
+
+    private static func tool(for focus: HFCreatorStudioFocus) -> HFSpatialCreatorTool {
+        switch focus {
+        case .dashboard: return .look
+        case .socialMediaKit, .instagramConnect: return .social
+        case .vodPackage: return .vod
+        }
+    }
+
+    private var spatialWorktable: some View {
+        ZStack {
+            opticalBlackWorkSurface
+
+            HFDepthContourOverlay(color: HFColors.violet.opacity(0.72))
+                .opacity(0.34)
+                .blur(radius: 0.3)
+                .padding(.horizontal, -42)
+                .accessibilityHidden(true)
+
+            spatialProjectSlab
+
+            ForEach(HFSpatialCreatorTool.allCases) { tool in
+                spatialToolNode(for: tool)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 560)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Studio spatial worktable with project slab and five tools")
+        .accessibilityIdentifier("hf.spatial.creatorStudio.worktable")
+    }
+
+    private var opticalBlackWorkSurface: some View {
+        RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 10, style: .continuous)
+            .fill(
+                RadialGradient(
+                    colors: [
+                        HFColors.violet.opacity(0.24),
+                        HFColors.background.opacity(0.98),
+                        Color.black
+                    ],
+                    center: .center,
+                    startRadius: 40,
+                    endRadius: 430
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.panelRadius + 10, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                HFColors.gold.opacity(0.38),
+                                HFColors.violet.opacity(0.34),
+                                Color.white.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: HFColors.violet.opacity(0.24), radius: 34, x: 0, y: 16)
+            .accessibilityHidden(true)
+    }
+
+    private var spatialProjectSlab: some View {
+        let movie = streamingStore.featuredMovie
+        let slabLift: CGFloat = isWorktableAwake && !reduceMotion ? -8 : 0
+
+        return VStack(spacing: HFSpacing.sm) {
+            ZStack(alignment: .bottomLeading) {
+                projectArtwork(for: movie)
+                    .frame(width: 214, height: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                            .stroke(HFColors.gold.opacity(0.66), lineWidth: 1.2)
+                    )
+                    .shadow(color: HFColors.gold.opacity(0.32), radius: 24, x: 0, y: 18)
+                    .shadow(color: HFColors.violet.opacity(0.32), radius: 32, x: 0, y: -8)
+
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.86)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HFCreatorStudioPill(title: didSaveLocalDraft ? "Local Draft Saved" : "Local Draft", isActive: true)
+                        .accessibilityIdentifier("hf.creatorStudio.localDraft")
+
+                    Text(movie.title)
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.74)
+                        .accessibilityIdentifier("hf.spatial.creatorStudio.projectTitle")
+
+                    Text("Creative worktable")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                }
+                .padding(HFSpacing.md)
+            }
+            .accessibilityIdentifier("hf.spatial.creatorStudio.project")
+
+            HStack(spacing: HFSpacing.xs) {
+                HFCreatorStudioPill(title: "Provider-ready")
+                    .accessibilityIdentifier("hf.creatorStudio.providerReady")
+                HFCreatorStudioPill(title: "Not Connected Yet")
+                    .accessibilityIdentifier("hf.creatorStudio.notConnected")
+            }
+        }
+        .offset(y: slabLift)
+        .scaleEffect(isWorktableAwake ? 1 : 0.96)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(movie.title) project slab. Local Draft. Selected tool \(selectedTool.rawValue).")
+    }
+
+    @ViewBuilder
+    private func projectArtwork(for movie: Movie) -> some View {
+        if let assetName = movie.backdropAssetName ?? movie.posterAssetName,
+           HFPosterAssetHealth.hasImage(named: assetName) {
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
+        } else {
+            HFPosterFallback(title: movie.title)
+        }
+    }
+
+    private func spatialToolNode(for tool: HFSpatialCreatorTool) -> some View {
+        let isSelected = selectedTool == tool
+        let base = orbitOffset(for: tool)
+        let lift: CGFloat = isWorktableAwake && !reduceMotion ? 1 : 0
+        let selectedPull = isSelected ? selectedOffset(for: tool) : .zero
+        let offset = CGSize(
+            width: base.width + selectedPull.width * lift,
+            height: base.height + selectedPull.height * lift
+        )
+
+        return Button(action: {
+            select(tool)
+        }) {
+            spatialToolNodeLabel(for: tool, isSelected: isSelected)
+        }
+        .buttonStyle(.plain)
+        .frame(minWidth: 72, minHeight: 72)
+        .scaleEffect(isSelected ? 1.08 : 0.94)
+        .opacity(isSelected ? 1 : 0.78)
+        .offset(offset)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.24), value: selectedTool)
+        .accessibilityLabel("\(tool.rawValue) tool")
+        .accessibilityValue(isSelected ? "Selected" : "Available")
+        .accessibilityHint(tool == .social ? "Opens the local Social Media Kit handoff." : tool == .vod ? "Opens the local VOD Package handoff." : tool.purpose)
+        .accessibilityIdentifier(tool.accessibilityIdentifier)
+    }
+
+    private func spatialToolNodeLabel(for tool: HFSpatialCreatorTool, isSelected: Bool) -> some View {
+        VStack(spacing: HFSpacing.xs) {
+            ZStack {
+                Circle()
+                    .fill(isSelected ? AnyShapeStyle(HFColors.violet.opacity(0.88)) : AnyShapeStyle(Color.white.opacity(0.075)))
+                Image(systemName: tool.systemImage)
+                    .font(.system(size: 19, weight: .black))
+                    .foregroundStyle(isSelected ? HFColors.gold : HFColors.textPrimary)
+            }
+            .frame(width: 46, height: 46)
+
+            Text(tool.rawValue)
+                .font(HFTypography.smallAction)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Text(tool.purpose)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(width: 104)
+        .frame(minHeight: 100)
+        .padding(HFSpacing.xs)
+        .background(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .fill(isSelected ? HFColors.violet.opacity(0.26) : Color.black.opacity(0.34))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(isSelected ? HFColors.gold.opacity(0.58) : HFColors.glassStroke, lineWidth: 1)
+        )
+        .shadow(color: isSelected ? HFColors.violet.opacity(0.38) : Color.clear, radius: 18, x: 0, y: 8)
+    }
+
+    private func orbitOffset(for tool: HFSpatialCreatorTool) -> CGSize {
+        switch tool {
+        case .look: return CGSize(width: -112, height: -188)
+        case .trailer: return CGSize(width: 112, height: -188)
+        case .sound: return CGSize(width: -126, height: -2)
+        case .social: return CGSize(width: 126, height: -2)
+        case .vod: return CGSize(width: 0, height: 194)
+        }
+    }
+
+    private func selectedOffset(for tool: HFSpatialCreatorTool) -> CGSize {
+        switch tool {
+        case .look: return CGSize(width: 8, height: 18)
+        case .trailer: return CGSize(width: -8, height: 18)
+        case .sound: return CGSize(width: 20, height: -2)
+        case .social: return CGSize(width: -20, height: -2)
+        case .vod: return CGSize(width: 0, height: -22)
+        }
+    }
+
+    private func select(_ tool: HFSpatialCreatorTool) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+            selectedTool = tool
+            switch tool {
+            case .social:
+                selectedFocus = .socialMediaKit
+            case .vod:
+                selectedFocus = .vodPackage
+            case .look, .trailer, .sound:
+                selectedFocus = .dashboard
+            }
+        }
+    }
+
+    private var creatorStudioActions: some View {
+        VStack(spacing: HFSpacing.sm) {
+            HFEnergyAction(title: "Build the Release", systemImage: "checkmark.seal.fill", style: .gold) {
+                didSaveLocalDraft = true
+                select(.vod)
+            }
+            .accessibilityLabel("Build the Release as a local draft")
+            .accessibilityIdentifier("hf.spatial.creatorStudio.buildRelease")
+
+            HStack(spacing: HFSpacing.sm) {
+                Button {
+                    didSaveLocalDraft = true
+                } label: {
+                    HFCreatorStudioAction(title: didSaveLocalDraft ? "Local Draft Saved" : "Save Local Draft", systemImage: "square.and.arrow.down")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.spatial.creatorStudio.saveDraft")
+                .accessibilityIdentifier("hf.creatorStudio.localDraft")
+
+                Button {
+                    isInspectorPresented = true
+                } label: {
+                    HFCreatorStudioAction(title: "Open Inspector", systemImage: "slider.horizontal.3")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.spatial.creatorStudio.inspector")
+                .accessibilityIdentifier("hf.creatorStudio.inspector")
+            }
+
+            Button {
+                dismiss()
+            } label: {
+                HFCreatorStudioAction(title: "Back to Streaming", systemImage: "play.tv.fill")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("hf.spatial.creatorStudio.backToStreaming")
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    @ViewBuilder
+    private var selectedToolHandoff: some View {
+        switch selectedTool {
+        case .social:
+            compactHandoffPanel(
+                title: "Social Kit",
+                detail: "Caption drafts and platform notes stay local until a future provider connection exists.",
+                systemImage: "bubble.left.and.bubble.right.fill",
+                accent: HFColors.violet,
+                actionTitle: "Prepare the Social Kit",
+                actionIdentifier: "hf.creatorStudio.prepareSocialKit",
+                routeIdentifier: "hf.route.creatorStudioToSocial"
+            ) {
+                selectedFocus = .socialMediaKit
+                didSaveLocalDraft = true
+            }
+        case .vod:
+            compactHandoffPanel(
+                title: "VOD Package",
+                detail: "Trailer, poster, synopsis, and pricing boundaries are grouped for local package review.",
+                systemImage: "shippingbox.fill",
+                accent: HFColors.gold,
+                actionTitle: "Package the VOD",
+                actionIdentifier: "hf.creatorStudio.packageVOD",
+                routeIdentifier: "hf.route.creatorStudioToVOD"
+            ) {
+                selectedFocus = .vodPackage
+                didSaveLocalDraft = true
+            }
+        case .look:
+            creativeToolSummary(title: "Look", detail: "Poster direction, color treatment, and mood notes are staged around the project slab.", systemImage: "paintpalette.fill")
+        case .trailer:
+            creativeToolSummary(title: "Trailer", detail: "Trailer pull and clip placeholders stay local for editorial review.", systemImage: "film.stack.fill")
+        case .sound:
+            creativeToolSummary(title: "Sound", detail: "Music mood, sonic direction, and mix notes remain local notes.", systemImage: "waveform")
+        }
+    }
+
+    private func creativeToolSummary(title: String, detail: String, systemImage: String) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.24)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .frame(width: 44, height: 44)
+                    .background(HFColors.violet.opacity(0.22))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(detail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) tool. \(detail)")
+    }
+
+    private func compactHandoffPanel(
+        title: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        actionTitle: String,
+        actionIdentifier: String,
+        routeIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        let usesGold = title == "VOD Package"
+
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: accent.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(usesGold ? .black : HFColors.gold)
+                        .frame(width: 46, height: 46)
+                        .background(usesGold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.34)))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(title)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Button(action: action) {
+                    HFCreatorStudioAction(title: actionTitle, systemImage: systemImage, isPrimary: true)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(actionIdentifier)
+                .accessibilityIdentifier(routeIdentifier)
+
+                HFCreatorStudioReadinessRow(
+                    title: "No live publishing",
+                    detail: title == "VOD Package" ? "No live VOD provider, storefront, payment, or delivery action is active." : "No social posting, provider account, or platform action is active.",
+                    status: "Local only",
+                    systemImage: "lock.shield.fill",
+                    accent: accent
+                )
+                .accessibilityIdentifier(title == "VOD Package" ? "hf.creatorStudio.noLiveVODProvider" : "hf.creatorStudio.noLivePublishing")
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title) local handoff. \(detail)")
+    }
+
+    private var creatorInspector: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Creative Inspector")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local status, provider boundaries, and package notes stay secondary to the film worktable.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioReadinessRow(title: "Local Draft", detail: didSaveLocalDraft ? "Saved in local preview state." : "Available for this project.", status: "Local", systemImage: "pencil", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.creatorStudio.localDraft")
+                    HFCreatorStudioReadinessRow(title: "Provider-ready", detail: "Creator package fields are staged without live provider behavior.", status: "Ready", systemImage: "checkmark.seal.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.creatorStudio.providerReady")
+                    HFCreatorStudioReadinessRow(title: "Not Connected Yet", detail: "External platform, storefront, and entitlement systems are outside this local preview.", status: "Boundary", systemImage: "network.slash", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.creatorStudio.notConnected")
+                    HFCreatorStudioReadinessRow(title: "Creative assets", detail: "Poster placeholder, trailer placeholder, synopsis, and sound notes are local.", status: "5 items", systemImage: "rectangle.stack.fill", accent: HFColors.violet)
+                    HFCreatorStudioReadinessRow(title: "No live publishing", detail: "No upload, social posting, provider session, or platform action is active.", status: "Safe", systemImage: "lock.shield.fill", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.creatorStudio.noLivePublishing")
+                    HFCreatorStudioReadinessRow(title: "No live VOD provider", detail: "No storefront, distribution, entitlement, or payment action is active.", status: "Safe", systemImage: "lock.shield.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.creatorStudio.noLiveVODProvider")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .accessibilityIdentifier("hf.creatorStudio.inspector")
     }
 
     private var header: some View {
