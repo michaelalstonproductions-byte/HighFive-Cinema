@@ -65,6 +65,8 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-social-media-kit")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-connect")
+            || arguments.contains("--hf-start-premiere-lobby")
             || arguments.contains("--hf-start-backend-status")
             || Self.shouldStartInProfile
     }
@@ -75,7 +77,9 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-profile-rooms")
             || arguments.contains("--hf-start-watch-room")
             || arguments.contains("--hf-start-create-room")
+            || arguments.contains("--hf-start-connect")
             || arguments.contains("--hf-start-connect-room")
+            || arguments.contains("--hf-start-premiere-lobby")
             || arguments.contains("--hf-start-launch-room")
             || arguments.contains("--hf-start-export-room")
             || arguments.contains("--hf-start-creator-studio")
@@ -107,8 +111,22 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package")
     }
 
+    private static var shouldStartInConnect: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-connect")
+            || arguments.contains("--hf-start-connect-room")
+            || arguments.contains("--hf-start-premiere-lobby")
+    }
+
     private static var shouldStartInBackendStatus: Bool {
         ProcessInfo.processInfo.arguments.contains("--hf-start-backend-status")
+    }
+
+    private static var connectInitialMode: HFConnectSpatialMode {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-connect-room") { return .watchRoom }
+        if arguments.contains("--hf-start-premiere-lobby") { return .premiereLobby }
+        return .hub
     }
 
     private static var creatorStudioInitialFocus: HFCreatorStudioFocus {
@@ -134,6 +152,8 @@ struct HFStreamingRootView: View {
                     qaBackendStatusView
                 } else if Self.shouldStartInCreatorStudio {
                     qaCreatorStudioView
+                } else if Self.shouldStartInConnect {
+                    qaConnectView
                 } else if Self.shouldStartInMovieDetail {
                     qaMovieDetailView
                 } else {
@@ -188,6 +208,13 @@ struct HFStreamingRootView: View {
     private var qaCreatorStudioView: some View {
         NavigationStack {
             CreatorStudioView(initialFocus: Self.creatorStudioInitialFocus)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+    }
+
+    private var qaConnectView: some View {
+        NavigationStack {
+            ConnectHubView(initialMode: Self.connectInitialMode)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }

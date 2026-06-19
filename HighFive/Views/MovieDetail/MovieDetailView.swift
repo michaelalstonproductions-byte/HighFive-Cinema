@@ -163,6 +163,24 @@ struct MovieDetailView: View {
                         .accessibilityLabel("Open Depth and Peek local preview")
                         .accessibilityIdentifier("hf.spatial.movieDetail.depth")
                     }
+
+                    NavigationLink {
+                        ConnectHubView(initialMode: .watchRoom, movie: catalogMovie)
+                    } label: {
+                        Label("Watch Together", systemImage: "person.2.fill")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.80)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(Color.white.opacity(0.10))
+                            .overlay(Capsule().stroke(HFColors.cyanGlow.opacity(0.36), lineWidth: 1))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.movieDetail.watchTogether")
+                    .accessibilityIdentifier("hf.route.movieDetailToConnect")
                 }
             }
             .padding(HFSpacing.lg)
@@ -246,7 +264,15 @@ struct MovieDetailView: View {
                 }
 
                 HStack(spacing: HFSpacing.sm) {
-                    contextualAction(title: "Watch Together", systemImage: "person.2.fill")
+                    NavigationLink {
+                        ConnectHubView(initialMode: .watchRoom, movie: catalogMovie)
+                    } label: {
+                        contextualAction(title: "Watch Together", systemImage: "person.2.fill")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.movieDetail.watchTogether")
+                    .accessibilityIdentifier("hf.route.movieDetailToConnect")
+
                     contextualAction(title: "Build Release", systemImage: "shippingbox.fill")
                     Button {
                         showsAccessReadiness = true

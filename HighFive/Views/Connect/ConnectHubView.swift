@@ -1,32 +1,544 @@
 import SwiftUI
 
+enum HFConnectSpatialMode {
+    case hub
+    case watchRoom
+    case premiereLobby
+}
+
 struct ConnectHubView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var followedCreatorIDs: Set<UUID> = []
     @State private var savedRoomIDs: Set<UUID> = []
+    @State private var mode: HFConnectSpatialMode
+    @State private var showingInspector = false
+    @State private var showingActivity = false
+    @State private var showingInvite = false
+    @State private var reactionCount = 3
+
+    private let movie: Movie?
+
+    init(initialMode: HFConnectSpatialMode = .hub, movie: Movie? = nil) {
+        self._mode = State(initialValue: initialMode)
+        self.movie = movie
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                header
-                connectSystemStrip
-                storiesSection
-                featuredReel
-                connectSystemPanel
-                feedEntry
-                featuredCreatorsSection
-                roomsSection
-                projectUpdatesSection
-                signalStrip
-                connectMomentumSection
+                spatialConnectWorld
+                secondaryConnectContexts
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
-            .accessibilityIdentifier("hf.connect.screen")
+            .accessibilityIdentifier("hf.spatial.connect")
         }
-        .background(HFColors.screenBackground.ignoresSafeArea())
+        .background(connectBackground)
         .navigationTitle("Connect")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingInspector) {
+            connectInspector
+        }
+        .sheet(isPresented: $showingActivity) {
+            localActivitySheet
+        }
+        .sheet(isPresented: $showingInvite) {
+            invitationSheet
+        }
         .accessibilityIdentifier("hf.connect.system")
+    }
+
+    private var currentMovie: Movie {
+        movie ?? HFMockData.movie("friendly") ?? HFMockData.movies[0]
+    }
+
+    private var roomTitle: String {
+        switch mode {
+        case .hub:
+            return "Watch Together"
+        case .watchRoom:
+            return "Local Preview Room"
+        case .premiereLobby:
+            return "Premiere Lobby"
+        }
+    }
+
+    private var connectBackground: some View {
+        ZStack {
+            HFColors.screenBackground
+            RadialGradient(
+                colors: [HFColors.cyanGlow.opacity(0.16), .clear],
+                center: .topTrailing,
+                startRadius: 20,
+                endRadius: 380
+            )
+            RadialGradient(
+                colors: [HFColors.amberGlow.opacity(0.15), .clear],
+                center: .bottomLeading,
+                startRadius: 30,
+                endRadius: 360
+            )
+        }
+        .ignoresSafeArea()
+    }
+
+    private var spatialConnectWorld: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.heroRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                let height = proxy.size.height
+                ZStack {
+                    connectDepthSurface
+                    presenceArcs(in: proxy.size)
+                    moviePortal(width: min(width * 0.70, 304), height: min(height * 0.56, 386))
+                        .position(x: width * 0.50, y: height * 0.43)
+                    presenceConstellation(in: proxy.size)
+                    sceneCopy
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    modeStatus
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    roomControls
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .padding(.horizontal, HFSpacing.md)
+                        .padding(.bottom, HFSpacing.md)
+                }
+            }
+            .frame(height: 660)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("\(roomTitle), \(currentMovie.title), room presence preview")
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier(mode == .watchRoom ? "hf.spatial.watchRoom" : mode == .premiereLobby ? "hf.spatial.premiereLobby" : "hf.spatial.connect")
+    }
+
+    private var connectDepthSurface: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.black, HFColors.charcoal.opacity(0.88), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            HFDepthContourOverlay(color: HFColors.cyanGlow, lineWidth: 0.8)
+                .opacity(mode == .premiereLobby ? 0.28 : 0.38)
+            Circle()
+                .fill(HFColors.cyanGlow.opacity(0.12))
+                .frame(width: 250, height: 250)
+                .blur(radius: 42)
+                .offset(x: 92, y: -122)
+            Circle()
+                .fill(HFColors.amberGlow.opacity(0.14))
+                .frame(width: 210, height: 210)
+                .blur(radius: 46)
+                .offset(x: -104, y: 170)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
+    private func moviePortal(width: CGFloat, height: CGFloat) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            portalArtwork
+                .frame(width: width, height: height)
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                .overlay(
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.20), Color.black.opacity(0.84)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: HFSpacing.heroRadius, style: .continuous)
+                        .stroke(HFColors.gold.opacity(mode == .premiereLobby ? 0.66 : 0.42), lineWidth: 1.2)
+                )
+                .overlay(HFDepthContourOverlay(color: HFColors.gold.opacity(0.86), lineWidth: 0.72))
+                .shadow(color: HFColors.cyanGlow.opacity(0.22), radius: reduceMotion ? 0 : 26, x: 0, y: 18)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(currentMovie.title)
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.68)
+
+                Text(mode == .watchRoom ? "Watching locally" : currentMovie.subtitle)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .scaleEffect(reduceMotion ? 1 : (mode == .hub ? 1.0 : 1.025))
+        .animation(.easeOut(duration: reduceMotion ? 0.01 : 0.45), value: mode)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(currentMovie.title), movie portal")
+        .accessibilityIdentifier(mode == .watchRoom ? "hf.spatial.watchRoom.portal" : mode == .premiereLobby ? "hf.spatial.premiereLobby.portal" : "hf.spatial.connect.portal")
+    }
+
+    private var portalArtwork: some View {
+        Group {
+            if let assetName = currentMovie.backdropAssetName ?? currentMovie.posterAssetName,
+               HFPosterAssetHealth.hasImage(named: assetName) {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                LinearGradient(
+                    colors: [HFColors.charcoal, HFColors.warmGlow.opacity(0.42), HFColors.background],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        }
+    }
+
+    private var sceneCopy: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text("Connect")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.gold)
+                .textCase(.uppercase)
+                .tracking(1.4)
+
+            Text(roomTitle)
+                .font(HFTypography.title)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+                .accessibilityIdentifier("hf.spatial.connect.title")
+
+            if mode == .premiereLobby {
+                Text("Countdown preview")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .accessibilityIdentifier("hf.spatial.premiereLobby.countdown")
+            } else {
+                Text("Room presence preview")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+        }
+        .padding(HFSpacing.lg)
+    }
+
+    private var modeStatus: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            if mode == .watchRoom {
+                Text("Playback synchronization not connected")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .padding(.horizontal, HFSpacing.sm)
+                    .frame(height: 28)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+                    .accessibilityIdentifier("hf.spatial.watchRoom.syncNotConnected")
+            }
+
+            Text(mode == .watchRoom ? "Local Preview" : "\(HFConnectPreviewData.featuredCreators.count + 3) viewers nearby")
+                .font(HFTypography.micro)
+                .foregroundStyle(mode == .watchRoom ? HFColors.gold : HFColors.cyanGlow)
+                .padding(.horizontal, HFSpacing.sm)
+                .frame(height: 28)
+                .background(Color.black.opacity(0.42))
+                .overlay(Capsule().stroke(Color.white.opacity(0.13), lineWidth: 1))
+                .clipShape(Capsule())
+                .accessibilityIdentifier(mode == .watchRoom ? "hf.spatial.watchRoom.localPreview" : "hf.spatial.connect.localPreview")
+        }
+        .padding(.leading, HFSpacing.lg)
+        .padding(.bottom, 96)
+    }
+
+    private func presenceArcs(in size: CGSize) -> some View {
+        Path { path in
+            let center = CGPoint(x: size.width * 0.50, y: size.height * 0.42)
+            let points = [
+                CGPoint(x: size.width * 0.22, y: size.height * 0.27),
+                CGPoint(x: size.width * 0.80, y: size.height * 0.30),
+                CGPoint(x: size.width * 0.18, y: size.height * 0.62),
+                CGPoint(x: size.width * 0.82, y: size.height * 0.61)
+            ]
+            for point in points {
+                path.move(to: point)
+                path.addQuadCurve(to: center, control: CGPoint(x: (point.x + center.x) / 2, y: min(point.y, center.y) - 42))
+            }
+        }
+        .stroke(HFColors.cyanGlow.opacity(reduceMotion ? 0.18 : 0.36), style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [4, 8]))
+        .accessibilityHidden(true)
+    }
+
+    private func presenceConstellation(in size: CGSize) -> some View {
+        ZStack {
+            presenceNode(name: "Maya", role: "Host", isHost: true, identifier: mode == .premiereLobby ? "hf.spatial.premiereLobby.host" : mode == .watchRoom ? "hf.spatial.watchRoom.host" : "hf.spatial.connect.host")
+                .position(x: size.width * 0.22, y: size.height * 0.27)
+
+            presenceNode(name: "Ari", role: "Guest", isHost: false, identifier: mode == .watchRoom ? "hf.spatial.watchRoom.guests" : mode == .premiereLobby ? "hf.spatial.premiereLobby.guests" : "hf.spatial.connect.presence")
+                .position(x: size.width * 0.80, y: size.height * 0.30)
+
+            presenceNode(name: "Noah", role: "Guest", isHost: false, identifier: "hf.spatial.connect.presence")
+                .position(x: size.width * 0.18, y: size.height * 0.62)
+
+            presenceNode(name: "Elle", role: "Guest", isHost: false, identifier: "hf.spatial.connect.presence")
+                .position(x: size.width * 0.82, y: size.height * 0.61)
+        }
+        .opacity(mode == .hub ? 0.96 : 1)
+        .scaleEffect(reduceMotion ? 1 : (mode == .watchRoom ? 1.02 : 1))
+        .animation(.easeOut(duration: reduceMotion ? 0.01 : 0.38), value: mode)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Viewer constellation, host and three guests")
+        .accessibilityIdentifier("hf.spatial.connect.constellation")
+    }
+
+    private func presenceNode(name: String, role: String, isHost: Bool, identifier: String) -> some View {
+        VStack(spacing: HFSpacing.xxs) {
+            ZStack {
+                Circle()
+                    .fill(isHost ? HFColors.goldGradient : LinearGradient(colors: [HFColors.cyanGlow.opacity(0.82), Color.white.opacity(0.72)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: isHost ? 54 : 44, height: isHost ? 54 : 44)
+                    .shadow(color: (isHost ? HFColors.amberGlow : HFColors.cyanGlow).opacity(0.38), radius: reduceMotion ? 0 : 14)
+                Image(systemName: isHost ? "star.fill" : "person.fill")
+                    .font(.system(size: isHost ? 18 : 15, weight: .black))
+                    .foregroundStyle(isHost ? .black : HFColors.background)
+            }
+
+            Text(isHost ? "Host" : name)
+                .font(HFTypography.micro)
+                .foregroundStyle(isHost ? HFColors.gold : HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(width: 78, height: 80)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(name), \(role)")
+        .accessibilityIdentifier(identifier)
+    }
+
+    @ViewBuilder
+    private var roomControls: some View {
+        switch mode {
+        case .hub:
+            VStack(spacing: HFSpacing.sm) {
+                HFEnergyAction(title: "Enter Local Room", systemImage: "play.fill", style: .gold) {
+                    mode = .watchRoom
+                }
+                .accessibilityIdentifier("hf.spatial.connect.enterRoom")
+
+                HStack(spacing: HFSpacing.sm) {
+                    HFEnergyAction(title: "Invite", systemImage: "person.badge.plus.fill", style: .cyan) {
+                        showingInvite = true
+                    }
+                    .accessibilityIdentifier("hf.spatial.connect.invite")
+
+                    HFEnergyAction(title: "More", systemImage: "ellipsis", style: .glass) {
+                        showingInspector = true
+                    }
+                    .accessibilityIdentifier("hf.spatial.connect.more")
+                }
+            }
+        case .watchRoom:
+            VStack(spacing: HFSpacing.sm) {
+                HFEnergyAction(title: "Continue Local Preview", systemImage: "play.fill", style: .gold) {}
+                    .accessibilityIdentifier("hf.spatial.watchRoom.localPreview")
+
+                HStack(spacing: HFSpacing.sm) {
+                    HFEnergyAction(title: "React", systemImage: "sparkles", style: .cyan) {
+                        reactionCount += 1
+                    }
+                    .accessibilityIdentifier("hf.spatial.watchRoom.reactions")
+
+                    HFEnergyAction(title: "Invite", systemImage: "person.badge.plus.fill", style: .glass) {
+                        showingInvite = true
+                    }
+                    .accessibilityIdentifier("hf.spatial.watchRoom.invite")
+
+                    HFEnergyAction(title: "Leave", systemImage: "xmark", style: .glass) {
+                        mode = .hub
+                    }
+                    .accessibilityIdentifier("hf.spatial.watchRoom.leave")
+                }
+            }
+        case .premiereLobby:
+            VStack(spacing: HFSpacing.sm) {
+                HFEnergyAction(title: "Enter Lobby", systemImage: "sparkles.tv.fill", style: .gold) {
+                    mode = .watchRoom
+                }
+                .accessibilityIdentifier("hf.spatial.premiereLobby.enter")
+
+                HStack(spacing: HFSpacing.sm) {
+                    HFEnergyAction(title: "Invite", systemImage: "person.badge.plus.fill", style: .cyan) {
+                        showingInvite = true
+                    }
+
+                    HFEnergyAction(title: "More", systemImage: "ellipsis", style: .glass) {
+                        showingInspector = true
+                    }
+                }
+            }
+        }
+    }
+
+    private var secondaryConnectContexts: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Label("Premiere Lobby", systemImage: "sparkles.tv.fill")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    Button("Activity") {
+                        showingActivity = true
+                    }
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .accessibilityIdentifier("hf.connect.activity")
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        mode = .premiereLobby
+                    } label: {
+                        secondaryContextPill(title: "Premiere Lobby", subtitle: "18:00 preview", systemImage: "clock.fill")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CreatorStudioView()
+                    } label: {
+                        creatorCirclePreview
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button {
+                    showingInspector = true
+                } label: {
+                    Label("Activity Local Only", systemImage: "lock.shield.fill")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.connect.activity.localOnly")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var creatorCirclePreview: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Label("Creator Circle", systemImage: "person.3.fill")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .accessibilityIdentifier("hf.spatial.creatorCircle")
+            Text(currentMovie.title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+                .accessibilityIdentifier("hf.spatial.creatorCircle.project")
+            Text("Release milestone reviewed locally")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(2)
+                .accessibilityIdentifier("hf.spatial.creatorCircle.milestone")
+            Text("Open Studio")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.cyanGlow)
+                .accessibilityIdentifier("hf.spatial.creatorCircle.openStudio")
+        }
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(HFColors.glassStroke, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Creator Circle, \(currentMovie.title), release milestone reviewed locally, open studio")
+        .accessibilityIdentifier("hf.spatial.creatorCircle.members")
+    }
+
+    private func secondaryContextPill(title: String, subtitle: String, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .black))
+                .foregroundStyle(HFColors.gold)
+            Text(title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(subtitle)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(HFColors.glassStroke, lineWidth: 1))
+    }
+
+    private var connectInspector: some View {
+        NavigationStack {
+            List {
+                Section("Room Boundary") {
+                    Text("Local Preview Room")
+                    Text("Presence Provider Not Connected")
+                        .accessibilityIdentifier("hf.connect.presenceNotConnected")
+                    Text("Playback Sync Not Connected")
+                        .accessibilityIdentifier("hf.connect.syncNotConnected")
+                    Text("Invitations Local Only")
+                        .accessibilityIdentifier("hf.connect.invitesLocalOnly")
+                }
+
+                Section("Safety") {
+                    Text("No live messaging")
+                        .accessibilityIdentifier("hf.connect.noLiveMessaging")
+                    Text("No remote watch-room provider")
+                        .accessibilityIdentifier("hf.connect.noLiveRoomProvider")
+                }
+            }
+            .navigationTitle("Room Inspector")
+            .accessibilityIdentifier("hf.connect.inspector")
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private var localActivitySheet: some View {
+        NavigationStack {
+            List {
+                Text("Saved \(currentMovie.title)")
+                Text("Joined a local room preview")
+                Text("Opened a creator circle")
+                Text("Reviewed a release milestone")
+                Text("Activity Local Only")
+                    .accessibilityIdentifier("hf.connect.activity.localOnly")
+            }
+            .navigationTitle("Activity")
+            .accessibilityIdentifier("hf.connect.activity")
+        }
+        .presentationDetents([.medium])
+    }
+
+    private var invitationSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                Text("Invite")
+                    .font(HFTypography.title)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Invitations stay local in this preview. No remote delivery or messaging transport is active.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+            .padding(HFSpacing.lg)
+            .background(HFColors.screenBackground.ignoresSafeArea())
+            .navigationTitle("Invite")
+        }
+        .presentationDetents([.medium])
     }
 
     private var header: some View {

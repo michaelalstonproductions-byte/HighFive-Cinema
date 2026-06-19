@@ -141,6 +141,23 @@ struct ProfileView: View {
                         onOpenMyList?()
                     }
                 }
+
+                NavigationLink {
+                    ConnectHubView()
+                } label: {
+                    Label("Connect", systemImage: "person.2.wave.2.fill")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.80)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(Color.white.opacity(0.10))
+                        .overlay(Capsule().stroke(HFColors.cyanGlow.opacity(0.34), lineWidth: 1))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.route.profileToConnect")
             }
             .padding(HFSpacing.lg)
         }
@@ -728,6 +745,14 @@ struct ProfileView: View {
                             HFProfileHubRouteRow(title: "Creator Studio", subtitle: "Local Draft", systemImage: "wand.and.stars")
                         }
                         .buttonStyle(.plain)
+
+                        NavigationLink {
+                            ConnectHubView()
+                        } label: {
+                            HFProfileHubRouteRow(title: "Connect", subtitle: "Local Preview Room", systemImage: "person.2.wave.2.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.route.profileToConnect")
 
                         NavigationLink {
                             CreatorStudioView(initialFocus: .socialMediaKit)
