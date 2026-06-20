@@ -298,11 +298,13 @@ struct HFStreamingRootView: View {
             MovieDetailView(movie: Self.qaMovieDetailMovie)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialNavigationSpine()
     }
 
     private var qaPlayerView: some View {
         HFPlayerServiceSheet(movie: Self.qaMovieDetailMovie)
             .background(HFColors.screenBackground.ignoresSafeArea())
+            .hfSpatialNavigationSpine()
     }
 
     private var qaCreatorStudioView: some View {
@@ -314,6 +316,7 @@ struct HFStreamingRootView: View {
             )
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialNavigationSpine()
     }
 
     private var qaConnectView: some View {
@@ -321,6 +324,7 @@ struct HFStreamingRootView: View {
             ConnectHubView(initialMode: Self.connectInitialMode)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialNavigationSpine()
     }
 
     private var qaBackendStatusView: some View {
@@ -328,6 +332,7 @@ struct HFStreamingRootView: View {
             HFBackendStatusView()
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialNavigationSpine()
     }
 
     private var streamingShell: some View {
@@ -382,6 +387,7 @@ struct HFStreamingRootView: View {
                         )
                     }
                 }
+                .hfSpatialNavigationSpine()
 
                 HFTabBar(items: tabItems, selection: $selectedTab)
                     .accessibilityIdentifier("hf.tabs.locked")

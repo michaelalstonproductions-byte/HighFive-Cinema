@@ -259,6 +259,7 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("\(heroMovie.title), \(heroMovie.subtitle)")
         .accessibilityIdentifier("hf.spatial.home.hero")
+        .hfSpatialFocalHandoff("hf.spatial.handoff.homeToMovie")
     }
 
     private var streamingCommandSurface: some View {
@@ -281,6 +282,8 @@ struct HomeView: View {
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
+
+                        HFSpatialRouteBadge(title: "Home -> Detail", accent: HFColors.gold)
                     }
                 }
 

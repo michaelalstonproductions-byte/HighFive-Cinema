@@ -156,6 +156,7 @@ struct MovieDetailView: View {
                             previewMovie = catalogMovie
                         }
                         .accessibilityIdentifier("hf.spatial.movieDetail.watch")
+                        .hfSpatialFocalHandoff("hf.spatial.handoff.movieToPlayer")
 
                         HFEnergyAction(title: "Depth", systemImage: "cube.transparent", style: .cyan) {
                             showsProtectedDepthPreview = true
@@ -190,6 +191,12 @@ struct MovieDetailView: View {
         .clipped()
         .hfSpatialSceneEntrance(isActive: isDetailWorldAwake, reduceMotion: reduceMotion)
         .accessibilityIdentifier("hf.spatial.movieDetail")
+        .hfSpatialFocalHandoff(
+            "hf.spatial.handoff.homeToMovie",
+            "hf.spatial.handoff.movieToPlayer",
+            "hf.spatial.handoff.movieToConnect",
+            "hf.spatial.handoff.movieToCreator"
+        )
     }
 
     private var metadataChips: some View {
@@ -274,7 +281,15 @@ struct MovieDetailView: View {
                     .accessibilityIdentifier("hf.movieDetail.watchTogether")
                     .accessibilityIdentifier("hf.route.movieDetailToConnect")
 
-                    contextualAction(title: "Build Release", systemImage: "shippingbox.fill")
+                    NavigationLink {
+                        CreatorStudioView()
+                    } label: {
+                        contextualAction(title: "Build Release", systemImage: "shippingbox.fill")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.spatial.handoff.movieToCreator")
+                    .accessibilityIdentifier("hf.route.movieDetailToCreator")
+
                     Button {
                         showsAccessReadiness = true
                     } label: {

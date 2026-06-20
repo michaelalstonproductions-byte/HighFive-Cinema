@@ -30,6 +30,77 @@ enum HFSpatialMotionTokens {
     }
 }
 
+enum HFSpatialRouteTransition {
+    static var animation: Animation {
+        HFSpatialMotionTokens.standardAnimation
+    }
+
+    static func entranceScale(reduceMotion: Bool) -> CGFloat {
+        reduceMotion ? 1 : 0.992
+    }
+}
+
+enum HFSpatialFocalHandoff {
+    static let edgeOpacity: Double = 0.34
+    static let titleLift: CGFloat = -4
+}
+
+private struct HFSpatialNavigationSpineModifier: ViewModifier {
+    let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isActive ? 1 : HFSpatialRouteTransition.entranceScale(reduceMotion: reduceMotion))
+            .animation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialRouteTransition.animation, value: isActive)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                HFColors.gold.opacity(reduceTransparency ? 0.16 : 0.22),
+                                HFColors.cyanGlow.opacity(reduceTransparency ? 0.10 : 0.16),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: differentiateWithoutColor ? 2 : 1)
+                    .opacity(isActive ? 1 : 0)
+                    .accessibilityHidden(true)
+                    .accessibilityIdentifier("hf.spatial.nav.transition")
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityHidden(true)
+                    .accessibilityIdentifier("hf.spatial.nav.spine")
+            }
+    }
+}
+
+private struct HFSpatialFocalHandoffModifier: ViewModifier {
+    let identifiers: [String]
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .topLeading) {
+                VStack {
+                    ForEach(identifiers, id: \.self) { identifier in
+                        Color.clear
+                            .frame(width: 1, height: 1)
+                            .accessibilityHidden(true)
+                            .accessibilityIdentifier(identifier)
+                    }
+                }
+                .accessibilityIdentifier("hf.spatial.nav.focalHandoff")
+            }
+    }
+}
+
 enum HFSpatialDepthState {
     case selected
     case receded
@@ -120,6 +191,14 @@ private struct HFSpatialSceneEntranceModifier: ViewModifier {
 }
 
 extension View {
+    func hfSpatialNavigationSpine(isActive: Bool = true) -> some View {
+        modifier(HFSpatialNavigationSpineModifier(isActive: isActive))
+    }
+
+    func hfSpatialFocalHandoff(_ identifiers: String...) -> some View {
+        modifier(HFSpatialFocalHandoffModifier(identifiers: identifiers))
+    }
+
     func hfSpatialSelectionTreatment(
         isSelected: Bool,
         accent: Color,
@@ -261,6 +340,7 @@ struct HFEnergyAction: View {
             .shadow(color: glowColor, radius: glowRadius, x: 0, y: 8)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(style == .gold ? "hf.spatial.command.primary" : "hf.spatial.command.secondary")
     }
 
     private var foregroundStyle: Color {
@@ -325,6 +405,46 @@ struct HFSpatialActionCluster<Content: View>: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.spatial.motion.system")
         .accessibilityIdentifier("hf.spatial.actionCluster")
+        .accessibilityIdentifier("hf.spatial.nav.commandBar")
+    }
+}
+
+struct HFSpatialCommandBar<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        HFSpatialActionCluster {
+            content
+        }
+        .accessibilityIdentifier("hf.spatial.nav.commandBar")
+    }
+}
+
+struct HFSpatialRouteBadge: View {
+    let title: String
+    var accent: Color = HFColors.gold
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(accent)
+                .frame(width: 6, height: 6)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 24)
+        .background(Color.black.opacity(0.48))
+        .overlay(Capsule().stroke(accent.opacity(0.28), lineWidth: 1))
+        .clipShape(Capsule())
+        .accessibilityIdentifier("hf.spatial.nav.routeBadge")
     }
 }
 

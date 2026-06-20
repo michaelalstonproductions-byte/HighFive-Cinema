@@ -400,6 +400,11 @@ struct CreatorStudioView: View {
         .scaleEffect(isWorktableAwake ? 1 : 0.96)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(movie.title) project slab. Local Draft. Selected tool \(selectedTool.rawValue).")
+        .hfSpatialFocalHandoff(
+            "hf.spatial.handoff.movieToCreator",
+            "hf.spatial.handoff.creatorToSocial",
+            "hf.spatial.handoff.creatorToVOD"
+        )
     }
 
     @ViewBuilder
@@ -614,6 +619,8 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFSpatialRouteBadge(title: "Creator -> Social", accent: HFColors.violet)
+
                         Text("Social Media Kit")
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.gold)
@@ -703,6 +710,7 @@ struct CreatorStudioView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.spatial.social")
+        .hfSpatialFocalHandoff("hf.spatial.handoff.creatorToSocial")
     }
 
     private var socialOpticalBlackSurface: some View {
@@ -921,6 +929,8 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HFSpatialRouteBadge(title: "Creator -> VOD", accent: HFColors.gold)
+
                         Text("VOD Launch Chamber")
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.gold)
@@ -1010,6 +1020,7 @@ struct CreatorStudioView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.spatial.vod")
+        .hfSpatialFocalHandoff("hf.spatial.handoff.creatorToVOD")
     }
 
     private var vodOpticalBlackSurface: some View {

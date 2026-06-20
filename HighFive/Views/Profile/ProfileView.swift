@@ -289,6 +289,8 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            HFSpatialRouteBadge(title: "Profile -> Pass", accent: HFColors.gold)
+
                             Text("HighFive Pass")
                                 .font(.system(size: 32, weight: .black))
                                 .foregroundStyle(HFColors.textPrimary)
@@ -346,6 +348,7 @@ struct ProfileView: View {
         .accessibilityHint("Opens HighFive Pass access preview")
         .accessibilityIdentifier("hf.profile.membershipIdentityPass")
         .accessibilityIdentifier("hf.route.profileToMembership")
+        .hfSpatialFocalHandoff("hf.spatial.handoff.profileToMembership")
     }
 
     private var backendServicesPanel: some View {
@@ -1542,6 +1545,7 @@ private struct HFMembershipIdentityPassView: View {
         .accessibilityLabel("HighFive Pass for \(selectedProfile.name), \(selectedFacet.displayName) selected, Local Account Mode, Local Preview Access")
         .accessibilityHint("Drag gently to tilt the pass. All details are also available without the gesture.")
         .accessibilityIdentifier("hf.spatial.membership.pass")
+        .hfSpatialFocalHandoff("hf.spatial.handoff.profileToMembership")
     }
 
     private var facetGrid: some View {

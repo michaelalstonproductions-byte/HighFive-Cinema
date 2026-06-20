@@ -194,10 +194,11 @@ struct ConnectHubView: View {
             .padding(HFSpacing.lg)
         }
         .scaleEffect(reduceMotion ? 1 : (mode == .hub ? 1.0 : 1.025))
-                .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation, value: mode)
+        .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation, value: mode)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(currentMovie.title), movie portal")
         .accessibilityIdentifier(mode == .watchRoom ? "hf.spatial.watchRoom.portal" : mode == .premiereLobby ? "hf.spatial.premiereLobby.portal" : "hf.spatial.connect.portal")
+        .hfSpatialFocalHandoff("hf.spatial.handoff.movieToConnect")
     }
 
     private var portalArtwork: some View {
