@@ -26,9 +26,9 @@ struct HFStreamingRootView: View {
 
     private static var initialTab: HFStreamingTab {
         let arguments = ProcessInfo.processInfo.arguments
-        if arguments.contains("--hf-start-search") { return .search }
-        if arguments.contains("--hf-start-library") { return .library }
-        if arguments.contains("--hf-start-downloads") { return .downloads }
+        if arguments.contains("--hf-start-search") || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-start-search-empty") { return .search }
+        if arguments.contains("--hf-start-library") || arguments.contains("--hf-start-library-continue") || arguments.contains("--hf-start-library-empty") { return .library }
+        if arguments.contains("--hf-start-downloads") || arguments.contains("--hf-start-downloads-offline") || arguments.contains("--hf-start-downloads-empty") { return .downloads }
         if arguments.contains("--hf-start-connect") { return .profile }
         if Self.shouldStartInProfile { return .profile }
         return .home
@@ -56,8 +56,14 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-home")
             || arguments.contains("--hf-start-search")
+            || arguments.contains("--hf-start-search-results")
+            || arguments.contains("--hf-start-search-empty")
             || arguments.contains("--hf-start-library")
+            || arguments.contains("--hf-start-library-continue")
+            || arguments.contains("--hf-start-library-empty")
             || arguments.contains("--hf-start-downloads")
+            || arguments.contains("--hf-start-downloads-offline")
+            || arguments.contains("--hf-start-downloads-empty")
             || arguments.contains("--hf-start-movie-detail")
             || arguments.contains("--hf-start-player")
             || arguments.contains("--hf-start-protected-depth-preview")

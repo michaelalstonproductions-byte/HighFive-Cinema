@@ -5,61 +5,252 @@ enum HFSearchHubMode: String, Hashable {
     case discover = "Discover"
 }
 
+private enum HFDiscoveryFocus: String, CaseIterable, Identifiable {
+    case tonight
+    case films
+    case series
+    case mystery
+    case creatorPicks
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tonight: return "Tonight"
+        case .films: return "Films"
+        case .series: return "Series"
+        case .mystery: return "Mystery"
+        case .creatorPicks: return "Creator Picks"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .tonight: return "Local mood scan"
+        case .films: return "Feature cinema"
+        case .series: return "Episodic worlds"
+        case .mystery: return "Shadow stories"
+        case .creatorPicks: return "HighFive originals"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .tonight: return "moon.stars.fill"
+        case .films: return "film.stack.fill"
+        case .series: return "rectangle.stack.fill"
+        case .mystery: return "eye.fill"
+        case .creatorPicks: return "sparkles"
+        }
+    }
+
+    var filter: String {
+        switch self {
+        case .films: return "Movies"
+        case .series: return "Series"
+        case .creatorPicks: return "Originals"
+        default: return "All"
+        }
+    }
+
+    var querySeed: String {
+        switch self {
+        case .mystery: return "Mystery"
+        case .creatorPicks: return "HighFive"
+        default: return ""
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        "hf.spatial.search.\(rawValue)"
+    }
+}
+
 struct SearchView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
-    @Binding var mode: HFSearchHubMode
-    @State private var query = ""
-    @State private var selectedFilter = "All"
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Binding private var mode: HFSearchHubMode
+    @State private var query: String
+    @State private var selectedFilter: String
+    @State private var selectedFocus: HFDiscoveryFocus
+    @State private var isSceneAwake = false
+    @State private var showsInspector = false
 
-    private let filters = ["All", "Movies", "Series", "Originals", "Downloaded", "Coming Soon"]
+    private let forcesEmptyState: Bool
+    private let filters = ["All", "Movies", "Series", "Originals", "Downloaded"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
 
+    init(mode: Binding<HFSearchHubMode>) {
+        let arguments = ProcessInfo.processInfo.arguments
+        let startsWithResults = arguments.contains("--hf-start-search-results")
+        let startsEmpty = arguments.contains("--hf-start-search-empty")
+        _mode = mode
+        _query = State(initialValue: startsWithResults ? "Friendly" : "")
+        _selectedFilter = State(initialValue: startsWithResults ? "Movies" : "All")
+        _selectedFocus = State(initialValue: startsWithResults ? .films : .tonight)
+        forcesEmptyState = startsEmpty
+    }
+
+    private var usesFallbackLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize
+    }
+
     private var results: [Movie] {
-        streamingStore.searchMovies(query: query, filter: selectedFilter)
+        guard !forcesEmptyState else { return [] }
+        let seedQuery = query.isEmpty ? selectedFocus.querySeed : query
+        let filter = selectedFilter == "All" ? selectedFocus.filter : selectedFilter
+        return streamingStore.searchMovies(query: seedQuery, filter: filter)
+    }
+
+    private var featuredTitle: Movie {
+        results.first ?? streamingStore.featuredMovie
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
-                HFSegmentedControl(items: [(.search, "Search"), (.discover, "Discover")], selection: $mode)
-                    .padding(.horizontal, HFSpacing.screenHorizontal)
-
-                if mode == .search {
-                    filterChips
-                    searchSuggestions
-                    resultsGrid(title: query.isEmpty ? "Popular on HighFive" : "Results")
-                } else {
-                    DiscoverView(movies: streamingStore.allCatalogMovies, showsHeader: false)
-                }
+                discoveryWorld
+                resultsSection
             }
             .padding(.top, HFSpacing.xxl)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .sheet(isPresented: $showsInspector) {
+            searchInspector
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .onAppear {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+                isSceneAwake = true
+            }
+        }
+        .accessibilityIdentifier("hf.spatial.search")
         .accessibilityIdentifier("hf.consumer.search.root")
         .accessibilityIdentifier("hf.search.screen")
-        .background(HFColors.screenBackground.ignoresSafeArea())
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.md) {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
             Text(mode == .search ? "Search" : "Discover")
                 .font(HFTypography.display)
                 .foregroundStyle(HFColors.textPrimary)
-
-            HFSearchBar(text: $query, placeholder: "Search movies, genres, creators")
-                .onSubmit {
-                    streamingStore.addRecentSearch(query)
-                }
-                .accessibilityIdentifier("hf.consumer.search.field")
+            Text("Spatial Discovery Observatory")
+                .font(HFTypography.body)
+                .foregroundStyle(HFColors.textSecondary)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityIdentifier("hf.search.curatedDiscovery")
+        .accessibilitySortPriority(4)
     }
 
-    private var filterChips: some View {
+    private var discoveryWorld: some View {
+        VStack(spacing: HFSpacing.md) {
+            discoveryLens
+                .accessibilitySortPriority(3)
+
+            HFSpatialActionCluster {
+                HFEnergyAction(title: "Browse Local Catalog", systemImage: "sparkle.magnifyingglass", style: .gold) {
+                    query = ""
+                    selectedFilter = selectedFocus.filter
+                    mode = .search
+                }
+                .accessibilityIdentifier("hf.search.browseCatalog")
+                .accessibilityIdentifier("hf.search.localCatalog")
+
+                HStack(spacing: HFSpacing.sm) {
+                    HFEnergyAction(title: "Clear", systemImage: "xmark.circle.fill", style: .glass) {
+                        query = ""
+                        selectedFilter = "All"
+                    }
+                    HFEnergyAction(title: "Open Inspector", systemImage: "slider.horizontal.3", style: .glass) {
+                        showsInspector = true
+                    }
+                    .accessibilityIdentifier("hf.search.inspector")
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            if !usesFallbackLayout {
+                focusSelector
+                    .accessibilitySortPriority(1)
+            }
+        }
+        .hfSpatialSceneEntrance(isActive: isSceneAwake, reduceMotion: reduceMotion)
+        .accessibilityIdentifier("hf.spatial.search.world")
+        .accessibilityIdentifier("hf.spatial.accessibility.largeType")
+    }
+
+    private var discoveryLens: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.cyanGlow.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HFSearchBar(text: $query, placeholder: "Search your HighFive library")
+                    .onSubmit { streamingStore.addRecentSearch(query) }
+                    .accessibilityIdentifier("hf.spatial.search.field")
+
+                ZStack(alignment: .bottomLeading) {
+                    posterField
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("LOCAL CATALOG")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.cyanGlow)
+                        Text(featuredTitle.title)
+                            .font(HFTypography.display)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+                        Text(featuredTitle.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                        HStack(spacing: HFSpacing.xs) {
+                            Text(selectedFocus.title)
+                            Text("\(results.count) local matches")
+                        }
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textPrimary)
+                    }
+                    .padding(HFSpacing.md)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: usesFallbackLayout ? 282 : 318)
+                .accessibilityIdentifier("hf.spatial.search.lens")
+                .accessibilityIdentifier("hf.spatial.search.featuredTitle")
+                .accessibilityLabel("Discovery lens. Featured local title \(featuredTitle.title). Selected focus \(selectedFocus.title).")
+
+                filterRow
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var posterField: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                .fill(reduceTransparency ? Color.black.opacity(0.95) : Color.black.opacity(0.58))
+            HFDepthContourOverlay(color: HFColors.cyanGlow.opacity(0.62))
+                .opacity(0.30)
+            HStack(spacing: -28) {
+                ForEach(Array(results.prefix(3).enumerated()), id: \.element.id) { index, movie in
+                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 108 : 132, showTitle: false, posterOnly: true)
+                        .rotationEffect(.degrees(Double(index - 1) * (reduceMotion ? 0 : 7)))
+                        .opacity(index == 0 ? 1 : 0.72)
+                        .offset(y: CGFloat(index) * (reduceMotion ? 0 : 10))
+                }
+            }
+            .accessibilityHidden(true)
+        }
+    }
+
+    private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: HFSpacing.xs) {
                 ForEach(filters, id: \.self) { filter in
@@ -68,59 +259,162 @@ struct SearchView: View {
                     }
                 }
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
         }
         .accessibilityIdentifier("hf.consumer.search.genreFilters")
-        .accessibilityIdentifier("hf.search.moodChips")
     }
 
-    @ViewBuilder
-    private var searchSuggestions: some View {
-        if query.isEmpty {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                HFSectionHeader(title: "Quick Searches", actionTitle: nil)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: HFSpacing.xs) {
-                        ForEach(HFMockData.searchSuggestions.prefix(6)) { suggestion in
-                            Button {
-                                query = suggestion.title
-                                streamingStore.addRecentSearch(suggestion.title)
-                            } label: {
-                                HStack(spacing: HFSpacing.xs) {
-                                    Image(systemName: suggestion.movie == nil ? "magnifyingglass" : "play.rectangle.fill")
-                                    Text(suggestion.title)
-                                }
-                                .font(HFTypography.caption)
-                                .foregroundStyle(HFColors.textPrimary)
-                                .padding(.horizontal, HFSpacing.sm)
-                                .frame(height: 34)
-                                .background(Color.white.opacity(0.10))
-                                .clipShape(Capsule())
-                                .overlay(Capsule().stroke(HFColors.glassStroke, lineWidth: 1))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, HFSpacing.screenHorizontal)
-                }
-            }
-        }
-    }
-
-    private func resultsGrid(title: String) -> some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: title, actionTitle: "\(results.count) titles")
-            LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
-                ForEach(results) { movie in
-                    NavigationLink(value: movie) {
-                        HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
-                    }
-                    .buttonStyle(.plain)
+    private var focusSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.sm) {
+                ForEach(HFDiscoveryFocus.allCases) { focus in
+                    focusButton(focus)
+                        .frame(width: usesFallbackLayout ? 150 : 132)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.vertical, HFSpacing.xs)
         }
+        .accessibilityIdentifier("hf.spatial.search.selectedFocus")
+        .accessibilityIdentifier("hf.spatial.accessibility.fallbackLayout")
+    }
+
+    private func focusButton(_ focus: HFDiscoveryFocus) -> some View {
+        let isSelected = selectedFocus == focus
+        return Button {
+            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.focusAnimation) {
+                selectedFocus = focus
+                selectedFilter = focus.filter
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: focus.systemImage)
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(isSelected ? HFColors.cyanGlow : HFColors.textSecondary)
+                Text(focus.title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text(isSelected ? "Selected" : focus.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(isSelected ? HFColors.cyanGlow : HFColors.textMuted)
+                    .lineLimit(2)
+                if differentiateWithoutColor {
+                    Label(isSelected ? "Selected" : "Available", systemImage: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(isSelected ? HFColors.cyanGlow : HFColors.textMuted)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 86, alignment: .topLeading)
+            .padding(HFSpacing.sm)
+            .background(isSelected ? HFColors.cyanGlow.opacity(0.16) : Color.white.opacity(0.07))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(isSelected ? HFColors.cyanGlow.opacity(0.72) : Color.white.opacity(0.12), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .hfSpatialSelectionTreatment(isSelected: isSelected, accent: HFColors.cyanGlow, reduceMotion: reduceMotion, differentiateWithoutColor: differentiateWithoutColor)
+        .accessibilityLabel("\(focus.title), \(focus.detail)")
+        .accessibilityIdentifier(focus.accessibilityIdentifier)
+    }
+
+    private var resultsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: query.isEmpty ? "Local Results" : "Results", actionTitle: "\(results.count)")
+            if results.isEmpty {
+                emptyState
+            } else {
+                LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
+                    ForEach(results) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.search.resultCard")
+                        .accessibilityIdentifier("hf.route.searchToMovieDetail")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.search.results")
         .accessibilityIdentifier("hf.consumer.search.results")
-        .accessibilityIdentifier("hf.search.resultCards")
+    }
+
+    private var emptyState: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: "magnifyingglass.circle.fill")
+                    .font(.system(size: 32, weight: .black))
+                    .foregroundStyle(HFColors.cyanGlow)
+                Text("Search your HighFive library")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Try another title, genre, or mood.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                Text("Local catalog")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .accessibilityIdentifier("hf.search.localOnly")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.search.emptyState")
+    }
+
+    private var searchInspector: some View {
+        NavigationStack {
+            HFSpatialInspectorChrome(
+                title: "Search Inspector",
+                detail: "Discovery stays on the local HighFive catalog. No remote query or provider search is active.",
+                systemImage: "magnifyingglass",
+                accent: HFColors.cyanGlow
+            ) {
+                VStack(spacing: HFSpacing.xs) {
+                    inspectorRow(title: "Local catalog", detail: "\(streamingStore.allCatalogMovies.count) local titles available.", status: "Local", identifier: "hf.search.localCatalog")
+                    inspectorRow(title: "Selected focus", detail: selectedFocus.title, status: "Selected", identifier: "hf.spatial.search.selectedFocus")
+                    inspectorRow(title: "Remote search", detail: "No remote catalog search is connected.", status: "Not Connected Yet", identifier: "hf.search.localOnly")
+                }
+            }
+            .navigationTitle("Inspector")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { showsInspector = false }
+                }
+            }
+        }
+        .accessibilityIdentifier("hf.search.inspector")
+    }
+
+    private func inspectorRow(title: String, detail: String, status: String, identifier: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.cyanGlow)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(minHeight: 24)
+                .background(HFColors.cyanGlow.opacity(0.12))
+                .clipShape(Capsule())
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityIdentifier(identifier)
     }
 }
