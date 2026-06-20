@@ -6,6 +6,7 @@ struct HomeView: View {
     var onDiscover: () -> Void = {}
     var onProfile: () -> Void = {}
     var onMyList: () -> Void = {}
+    var onDownloads: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var streamingStore: HFStreamingStore
@@ -25,12 +26,11 @@ struct HomeView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 heroSection
+                streamingCommandSurface
                 continueWatchingSection
                 ForEach(streamingStore.premiumHomeCatalogRails) { category in
                     movieRail(category)
                 }
-                discoveryPanel
-                activeShelfPanel
             }
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
@@ -120,7 +120,7 @@ struct HomeView: View {
         NavigationLink(value: heroMovie) {
             ZStack(alignment: .bottomLeading) {
                 heroArtwork(heroMovie)
-                    .frame(height: 590)
+                    .frame(height: 420)
                     .scaleEffect(reduceMotion ? 1 : (isHeroAwake ? 1.045 : 1.0))
                     .offset(x: reduceMotion ? 0 : (isHeroAwake ? -8 : 8), y: reduceMotion ? 0 : (isHeroAwake ? -5 : 4))
                     .accessibilityIdentifier("hf.spatial.home.backgroundPlane")
@@ -133,7 +133,7 @@ struct HomeView: View {
                             .stroke(HFColors.gold.opacity(0.48), lineWidth: 1)
                     )
                     .rotationEffect(.degrees(reduceMotion ? 0 : (isHeroAwake ? 3 : -2)))
-                    .offset(x: reduceMotion ? 138 : (isHeroAwake ? 146 : 132), y: reduceMotion ? -112 : (isHeroAwake ? -120 : -104))
+                    .offset(x: reduceMotion ? 138 : (isHeroAwake ? 146 : 132), y: reduceMotion ? -72 : (isHeroAwake ? -78 : -66))
                     .shadow(color: HFColors.amberGlow.opacity(0.26), radius: 26, x: 0, y: 16)
                     .accessibilityIdentifier("hf.spatial.home.subjectPlane")
 
@@ -208,7 +208,7 @@ struct HomeView: View {
                             .foregroundStyle(HFColors.gold)
                             .textCase(.uppercase)
                         Text(heroMovie.title)
-                            .font(.system(size: 52, weight: .black))
+                            .font(.system(size: 46, weight: .black))
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.54)
@@ -252,7 +252,7 @@ struct HomeView: View {
                 .padding(.top, HFSpacing.xxl)
                 .padding(.bottom, HFSpacing.xl)
             }
-            .frame(height: 590)
+            .frame(height: 420)
             .clipped()
             .hfSpatialSceneEntrance(isActive: isHeroAwake, reduceMotion: reduceMotion)
         }
@@ -261,48 +261,59 @@ struct HomeView: View {
         .accessibilityIdentifier("hf.spatial.home.hero")
     }
 
-    private var quickActions: some View {
-        HStack(spacing: HFSpacing.sm) {
-            actionTile(title: "Discover", value: "\(streamingStore.allCatalogMovies.count)", systemImage: "sparkles.tv.fill", action: onDiscover)
-            actionTile(title: "My List", value: "\(streamingStore.savedMovies.count)", systemImage: "bookmark.fill", action: onMyList)
-            actionTile(title: "Offline", value: "\(streamingStore.downloadedMovies.count)", systemImage: "arrow.down.circle.fill", action: {})
-        }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
+    private var streamingCommandSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "sparkles.tv.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
-    private var streamingStatusPanel: some View {
-        let providerStatus = streamingStore.streamingProviderStatus(for: heroMovie)
-        return HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
-            HStack(alignment: .top, spacing: HFSpacing.md) {
-                Image(systemName: providerStatus.systemImage)
-                    .font(.system(size: 16, weight: .black))
-                    .foregroundStyle(HFColors.gold)
-                    .frame(width: 38, height: 38)
-                    .background(HFColors.gold.opacity(0.12))
-                    .clipShape(Circle())
-
-                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                    Text(providerStatus.status.statusLabel)
-                        .font(HFTypography.cardTitle)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Backend-mediated playback only. Cloudflare Stream preferred.")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    HStack(spacing: HFSpacing.xs) {
-                        HFStreamingStatusPill(title: "No streaming provider connected", identifier: "hf.streaming.notConnected")
-                        HFStreamingStatusPill(title: "Cloudflare Stream preferred", identifier: "hf.streaming.cloudflarePreferred")
-                        HFStreamingStatusPill(title: "Fallback planned", identifier: "hf.streaming." + "muxFallback")
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Streaming Command")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Browse the local catalog, return to saved stories, or continue local offline previews without leaving the five-tab shell.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
-                Spacer(minLength: 0)
+                HStack(spacing: HFSpacing.sm) {
+                    actionTile(title: "Discover", value: "\(streamingStore.allCatalogMovies.count)", systemImage: "sparkles", action: onDiscover)
+                    actionTile(title: "Library", value: "\(streamingStore.savedMovies.count)", systemImage: "bookmark.fill", action: onMyList)
+                    actionTile(title: "Offline", value: "\(streamingStore.downloadedMovies.count)", systemImage: "arrow.down.circle.fill", action: onDownloads)
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: selectedProfile.avatarSystemName)
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 38, height: 38)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Circle())
+                    Text("Watching as \(selectedProfile.name)")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                    Spacer()
+                    Text("Local Preview")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.gold)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .frame(height: 24)
+                        .background(HFColors.gold.opacity(0.12))
+                        .clipShape(Capsule())
+                }
             }
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
-        .accessibilityIdentifier("hf.streaming.status")
+        .accessibilityIdentifier("hf.home.streamingCommand")
     }
 
     private func actionTile(title: String, value: String, systemImage: String, action: @escaping () -> Void) -> some View {
@@ -320,12 +331,12 @@ struct HomeView: View {
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(HFSpacing.md)
-            .background(HFColors.surface.opacity(0.82))
+            .padding(HFSpacing.sm)
+            .background(Color.black.opacity(0.54))
             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
-                    .stroke(HFColors.glassStroke, lineWidth: 1)
+                    .stroke(HFColors.gold.opacity(0.24), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -369,49 +380,6 @@ struct HomeView: View {
         }
         .accessibilityIdentifier("hf.home.curatedRails")
     }
-
-    private var discoveryPanel: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                Label("Gold Discovery", systemImage: "sparkles")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                Text("Browse originals, late-night crime, thrillers, documentaries, and coming-soon premieres in one focused discovery path.")
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                HFButton("Open Discover", systemImage: "arrow.right", action: onDiscover)
-            }
-            .padding(HFSpacing.lg)
-        }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
-    private var activeShelfPanel: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
-            HStack(spacing: HFSpacing.md) {
-                Image(systemName: selectedProfile.avatarSystemName)
-                    .font(.system(size: 24, weight: .black))
-                    .foregroundStyle(.black)
-                    .frame(width: 52, height: 52)
-                    .background(HFColors.goldGradient)
-                    .clipShape(Circle())
-
-                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                    Text("Watching as \(selectedProfile.name)")
-                        .font(HFTypography.cardTitle)
-                        .foregroundStyle(HFColors.textPrimary)
-                    Text("Your saved shelf, downloads, and watch progress are ready when you are.")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textSecondary)
-                }
-                Spacer()
-            }
-            .padding(HFSpacing.md)
-        }
-        .padding(.horizontal, HFSpacing.screenHorizontal)
-    }
-
     private func heroChip(_ title: String) -> some View {
         Text(title)
             .font(HFTypography.caption)

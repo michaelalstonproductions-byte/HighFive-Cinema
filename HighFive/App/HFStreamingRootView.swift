@@ -354,6 +354,9 @@ struct HFStreamingRootView: View {
                             },
                             onMyList: {
                                 selectedTab = .library
+                            },
+                            onDownloads: {
+                                selectedTab = .downloads
                             }
                         )
                     case .search:

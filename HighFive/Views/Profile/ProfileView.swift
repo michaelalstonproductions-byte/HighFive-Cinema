@@ -168,7 +168,7 @@ struct ProfileView: View {
                     .font(HFTypography.display)
                     .foregroundStyle(HFColors.textPrimary)
 
-                Text("Manage your viewing profile.")
+                Text("HighFive Pass and rooms gateway.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -899,9 +899,9 @@ struct ProfileView: View {
 
     private var highfiveHub: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
-            HFSectionHeader(title: "HighFive Hub", actionTitle: nil)
+            HFSectionHeader(title: "Rooms Gateway", actionTitle: nil)
 
-            HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
                 VStack(alignment: .leading, spacing: HFSpacing.md) {
                     HStack(alignment: .top, spacing: HFSpacing.md) {
                         Image(systemName: "wand.and.stars")
@@ -912,10 +912,10 @@ struct ProfileView: View {
                             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
                         VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                            Text("Creator Studio")
+                            Text("Creator and Connect Rooms")
                                 .font(HFTypography.section)
                                 .foregroundStyle(HFColors.textPrimary)
-                            Text("Build local drafts, prepare the Social Kit, and package VOD for private review without provider connections.")
+                            Text("Enter Creator Studio, Connect, Social, and VOD as contextual rooms. They remain reference-driven spaces, never bottom tabs.")
                                 .font(HFTypography.caption)
                                 .foregroundStyle(HFColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
