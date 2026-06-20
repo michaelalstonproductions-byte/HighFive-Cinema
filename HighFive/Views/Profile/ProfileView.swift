@@ -1,12 +1,97 @@
 import SwiftUI
 
+enum HFMembershipPassFacet: String, CaseIterable, Identifiable {
+    case identity
+    case premieres
+    case creatorRooms
+    case protectedPlayback
+    case depthPeek
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .identity:
+            return "Identity"
+        case .premieres:
+            return "Premieres"
+        case .creatorRooms:
+            return "Creator Rooms"
+        case .protectedPlayback:
+            return "Protected Playback"
+        case .depthPeek:
+            return "Depth + Peek"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .identity:
+            return "person.crop.circle.badge.checkmark"
+        case .premieres:
+            return "sparkles.tv.fill"
+        case .creatorRooms:
+            return "person.3.sequence.fill"
+        case .protectedPlayback:
+            return "lock.shield.fill"
+        case .depthPeek:
+            return "viewfinder"
+        }
+    }
+
+    var purpose: String {
+        switch self {
+        case .identity:
+            return "HighFive Pass identity and Local Account Mode."
+        case .premieres:
+            return "Premiere-room access preview without a remote event claim."
+        case .creatorRooms:
+            return "Creator Studio and circle access context."
+        case .protectedPlayback:
+            return "Local Preview Access and entitlement boundaries."
+        case .depthPeek:
+            return "Signature spatial experience readiness."
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .identity:
+            return "hf.spatial.membership.identity"
+        case .premieres:
+            return "hf.spatial.membership.premieres"
+        case .creatorRooms:
+            return "hf.spatial.membership.creatorRooms"
+        case .protectedPlayback:
+            return "hf.spatial.membership.protectedPlayback"
+        case .depthPeek:
+            return "hf.spatial.membership.depthPeek"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .identity, .premieres:
+            return HFColors.gold
+        case .creatorRooms:
+            return Color.purple.opacity(0.86)
+        case .protectedPlayback, .depthPeek:
+            return HFColors.cyanGlow
+        }
+    }
+}
+
 struct ProfileView: View {
     @Binding var selectedProfile: UserProfile
+    var initialMembershipFacet: HFMembershipPassFacet = .identity
+    var startInMembership = false
     var onOpenMyList: (() -> Void)?
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var showsProfileSwitcher = false
     @State private var showsSignOutAlert = false
     @State private var mockMessage: ProfileMockMessage?
+    @State private var showsMembershipPass = false
+    @State private var didHandleInitialMembershipRoute = false
 
     private var savedMovies: [Movie] {
         streamingStore.allCatalogMovies.filter { streamingStore.isSaved($0) }
@@ -25,6 +110,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 activeProfileCard
+                membershipPassEntry
                 accountPanel
                 librarySyncReadinessPanel
                 paymentReadinessPanel
@@ -44,6 +130,17 @@ struct ProfileView: View {
         .accessibilityIdentifier("hf.profile.root")
         .accessibilityIdentifier("hf.profile.screen")
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationDestination(isPresented: $showsMembershipPass) {
+            HFMembershipIdentityPassView(
+                selectedProfile: selectedProfile,
+                initialFacet: initialMembershipFacet
+            )
+        }
+        .onAppear {
+            guard startInMembership, !didHandleInitialMembershipRoute else { return }
+            didHandleInitialMembershipRoute = true
+            showsMembershipPass = true
+        }
         .sheet(isPresented: $showsProfileSwitcher) {
             ProfileSwitcherView(selectedProfile: $selectedProfile, showsHeader: true)
                 .padding(HFSpacing.lg)
@@ -162,6 +259,93 @@ struct ProfileView: View {
             .padding(HFSpacing.lg)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var membershipPassEntry: some View {
+        NavigationLink {
+            HFMembershipIdentityPassView(selectedProfile: selectedProfile)
+        } label: {
+            ZStack(alignment: .bottomLeading) {
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(Color.black.opacity(0.82))
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                HFColors.gold.opacity(0.30),
+                                Color.white.opacity(0.05),
+                                Color.black.opacity(0.64)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(HFDepthContourOverlay(color: HFColors.gold.opacity(0.76), lineWidth: 0.8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            .stroke(HFColors.gold.opacity(0.50), lineWidth: 1)
+                    )
+                    .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 28, x: 0, y: 18)
+
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            Text("HighFive Pass")
+                                .font(.system(size: 32, weight: .black))
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+
+                            Text("Local Account Mode")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.gold)
+                                .accessibilityIdentifier("hf.membership.localAccountMode")
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "person.crop.rectangle.stack.fill")
+                            .font(.system(size: 26, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 54, height: 54)
+                            .background(HFColors.goldGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+
+                    Text("\(selectedProfile.name) has Local Preview Access, premiere readiness, and protected playback boundaries in one private pass.")
+                        .font(HFTypography.body)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: HFSpacing.sm) {
+                        Text("Review Access")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(height: 42)
+                            .padding(.horizontal, HFSpacing.md)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+
+                        Text("Profile Entry")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(height: 34)
+                            .padding(.horizontal, HFSpacing.sm)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 238)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Membership Identity Pass for \(selectedProfile.name)")
+        .accessibilityHint("Opens HighFive Pass access preview")
+        .accessibilityIdentifier("hf.profile.membershipIdentityPass")
+        .accessibilityIdentifier("hf.route.profileToMembership")
     }
 
     private var backendServicesPanel: some View {
@@ -1109,6 +1293,651 @@ private struct HFProfileHubRouteRow: View {
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                 .stroke(HFColors.glassStroke, lineWidth: 1)
         )
+    }
+}
+
+private struct HFMembershipIdentityPassView: View {
+    let selectedProfile: UserProfile
+
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @GestureState private var passDrag: CGSize = .zero
+    @State private var selectedFacet: HFMembershipPassFacet
+    @State private var showsAccountInspector = false
+    @State private var showsAccountPrivacy = false
+
+    init(selectedProfile: UserProfile, initialFacet: HFMembershipPassFacet = .identity) {
+        self.selectedProfile = selectedProfile
+        _selectedFacet = State(initialValue: initialFacet)
+    }
+
+    private var profileInitials: String {
+        let parts = selectedProfile.name
+            .split(separator: " ")
+            .prefix(2)
+            .compactMap(\.first)
+        let initials = String(parts).uppercased()
+        return initials.isEmpty ? "HF" : initials
+    }
+
+    private var authStatus: HFAuthRuntimeStatus {
+        streamingStore.accountRuntimeStatus
+    }
+
+    private var entitlementStatus: HFEntitlementRuntimeStatus {
+        streamingStore.entitlementRuntimeStatus
+    }
+
+    private var dragRotationX: Double {
+        guard !reduceMotion else { return 0 }
+        return Double(max(min(passDrag.height / -18, 8), -8))
+    }
+
+    private var dragRotationY: Double {
+        guard !reduceMotion else { return 0 }
+        return Double(max(min(passDrag.width / 16, 10), -10))
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                header
+                passWorld
+                actionCluster
+                facetPreview
+            }
+            .padding(.top, HFSpacing.lg)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+        }
+        .background(membershipBackground)
+        .navigationBarBackButtonHidden(true)
+        .sheet(isPresented: $showsAccountInspector) {
+            accountAccessInspector
+        }
+        .sheet(isPresented: $showsAccountPrivacy) {
+            accountPrivacySheet
+        }
+        .accessibilityIdentifier("hf.spatial.membership")
+    }
+
+    private var header: some View {
+        HStack(spacing: HFSpacing.md) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.white.opacity(0.10))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back to Profile")
+            .accessibilityIdentifier("hf.membership.backToProfile")
+            .accessibilityIdentifier("hf.route.membershipToProfile")
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text("Membership")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.gold)
+                    .textCase(.uppercase)
+
+                Text("HighFive Pass")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var passWorld: some View {
+        VStack(spacing: HFSpacing.md) {
+            identityPass
+                .accessibilitySortPriority(3)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(selectedFacet.displayName)
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                    .accessibilityIdentifier("hf.spatial.membership.selectedFacet")
+
+                Text(selectedFacet.purpose)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            facetGrid
+        }
+        .padding(HFSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .fill(Color.black.opacity(0.46))
+                .overlay(
+                    RadialGradient(
+                        colors: [
+                            HFColors.gold.opacity(0.18),
+                            Color.purple.opacity(0.10),
+                            Color.black.opacity(0.82)
+                        ],
+                        center: .top,
+                        startRadius: 20,
+                        endRadius: 390
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("HighFive Membership Identity Pass world")
+        .accessibilityIdentifier("hf.spatial.membership.world")
+    }
+
+    private var identityPass: some View {
+        HFOpticalGlassSurface(cornerRadius: 32, strokeColor: HFColors.gold.opacity(0.58)) {
+            ZStack(alignment: .bottomLeading) {
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(Color.black.opacity(0.74))
+                    .overlay(
+                        LinearGradient(
+                            colors: [
+                                HFColors.gold.opacity(0.34),
+                                Color.white.opacity(0.06),
+                                Color.black.opacity(0.55)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(HFDepthContourOverlay(color: selectedFacet == .protectedPlayback || selectedFacet == .depthPeek ? HFColors.cyanGlow : HFColors.gold, lineWidth: 0.8))
+
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            Text("HIGHFIVE")
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                                .textCase(.uppercase)
+
+                            Text("PASS")
+                                .font(.system(size: 38, weight: .black))
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.64)
+                                .accessibilityIdentifier("hf.spatial.membership.passTitle")
+                        }
+
+                        Spacer()
+
+                        Text(profileInitials)
+                            .font(.system(size: 18, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 56, height: 56)
+                            .background(HFColors.goldGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .accessibilityHidden(true)
+                    }
+
+                    Spacer(minLength: 10)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(selectedProfile.name)
+                            .font(.system(size: 24, weight: .black))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.70)
+                            .accessibilityIdentifier("hf.spatial.membership.profileIdentity")
+
+                        Text("Local Account Mode")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.membership.localAccountMode")
+
+                        Text("Local Preview Access")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.cyanGlow)
+                            .accessibilityIdentifier("hf.membership.localPreviewAccess")
+                    }
+
+                    HStack(spacing: HFSpacing.xs) {
+                        HFMembershipPassPill(title: selectedFacet.displayName, color: selectedFacet.accent)
+                        HFMembershipPassPill(title: "Private Preview", color: HFColors.gold)
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 218)
+        .rotation3DEffect(.degrees(dragRotationY), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
+        .rotation3DEffect(.degrees(dragRotationX), axis: (x: 1, y: 0, z: 0), perspective: 0.55)
+        .scaleEffect(reduceMotion ? 1 : (passDrag == .zero ? 1 : 1.015))
+        .animation(.spring(response: 0.36, dampingFraction: 0.84), value: passDrag)
+        .gesture(
+            DragGesture(minimumDistance: 6)
+                .updating($passDrag) { value, state, _ in
+                    state = value.translation
+                }
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("HighFive Pass for \(selectedProfile.name), \(selectedFacet.displayName) selected, Local Account Mode, Local Preview Access")
+        .accessibilityHint("Drag gently to tilt the pass. All details are also available without the gesture.")
+        .accessibilityIdentifier("hf.spatial.membership.pass")
+    }
+
+    private var facetGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: HFSpacing.sm),
+            GridItem(.flexible(), spacing: HFSpacing.sm),
+            GridItem(.flexible(), spacing: HFSpacing.sm)
+        ], spacing: HFSpacing.sm) {
+            ForEach(HFMembershipPassFacet.allCases) { facet in
+                facetButton(facet)
+            }
+        }
+    }
+
+    private func facetButton(_ facet: HFMembershipPassFacet) -> some View {
+        let isSelected = selectedFacet == facet
+        return Button {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.12) : .spring(response: 0.32, dampingFraction: 0.76)) {
+                selectedFacet = facet
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: facet.systemImage)
+                    .font(.system(size: 19, weight: .black))
+                    .foregroundStyle(isSelected ? facet.accent : HFColors.textSecondary)
+
+                Text(facet.displayName)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+
+                Text(isSelected ? "Selected" : "Ready")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(isSelected ? facet.accent : HFColors.textMuted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 72, alignment: .topLeading)
+            .padding(HFSpacing.xs)
+            .background(isSelected ? facet.accent.opacity(0.18) : Color.white.opacity(0.065))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(isSelected ? facet.accent.opacity(0.70) : Color.white.opacity(0.10), lineWidth: 1)
+            )
+            .scaleEffect(isSelected ? 1.035 : 0.96)
+            .opacity(isSelected ? 1 : 0.68)
+            .offset(y: isSelected || reduceMotion ? 0 : 6)
+            .shadow(color: isSelected ? facet.accent.opacity(0.24) : .clear, radius: 16, x: 0, y: 10)
+        }
+        .buttonStyle(.plain)
+        .frame(minHeight: 76)
+        .contentShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityLabel("\(facet.displayName), \(facet.purpose)")
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityIdentifier(facet.accessibilityIdentifier)
+        .accessibilityIdentifier(routeIdentifier(for: facet))
+    }
+
+    private func routeIdentifier(for facet: HFMembershipPassFacet) -> String {
+        switch facet {
+        case .identity:
+            return "hf.route.membershipIdentity"
+        case .premieres:
+            return "hf.route.membershipPremieres"
+        case .creatorRooms:
+            return "hf.route.membershipCreatorRooms"
+        case .protectedPlayback:
+            return "hf.route.membershipProtectedPlayback"
+        case .depthPeek:
+            return "hf.route.membershipDepthPeek"
+        }
+    }
+
+    @ViewBuilder
+    private var facetPreview: some View {
+        switch selectedFacet {
+        case .identity:
+            HFMembershipFacetPreview(
+                title: "HighFive Pass",
+                subtitle: "Private identity for \(selectedProfile.name)",
+                detail: "Local profile identity is active in Local Account Mode. No remote account number is shown.",
+                systemImage: "person.crop.circle.badge.checkmark",
+                accent: HFColors.gold,
+                identifier: "hf.membership.identityPreview"
+            ) {
+                HFMembershipInspectorRow(title: "Local Account Mode", detail: authStatus.detail, status: authStatus.statusLabel, systemImage: "person.crop.circle.fill", identifier: "hf.membership.localAccountMode")
+                HFMembershipInspectorRow(title: "Local profile", detail: selectedProfile.name, status: "Active", systemImage: selectedProfile.avatarSystemName, identifier: "hf.membership.localProfile")
+            }
+        case .premieres:
+            HFMembershipFacetPreview(
+                title: "Premiere Access",
+                subtitle: "Local lobby readiness",
+                detail: "Premiere benefit preview is staged locally. No scheduled remote event is implied.",
+                systemImage: "sparkles.tv.fill",
+                accent: HFColors.gold,
+                identifier: "hf.membership.premierePreview"
+            ) {
+                HFMembershipInspectorRow(title: "Premiere Access", detail: "Local lobby preview available for review.", status: "Preview", systemImage: "sparkles.tv.fill", identifier: "hf.membership.premiereAccess")
+            }
+        case .creatorRooms:
+            HFMembershipFacetPreview(
+                title: "Creator Rooms",
+                subtitle: "Studio and circle context",
+                detail: "Creator Studio and Creator Circle access are represented locally without collaboration transport.",
+                systemImage: "person.3.sequence.fill",
+                accent: Color.purple.opacity(0.88),
+                identifier: "hf.membership.creatorRoomsPreview"
+            ) {
+                HFMembershipInspectorRow(title: "Creator Studio", detail: "Project slab access remains local.", status: "Available", systemImage: "wand.and.stars", identifier: "hf.membership.creatorStudioAccess")
+                HFMembershipInspectorRow(title: "Creator Circles", detail: "Circle presence is a local preview.", status: "Preview", systemImage: "person.2.wave.2.fill", identifier: "hf.membership.creatorCircleAccess")
+            }
+        case .protectedPlayback:
+            HFMembershipFacetPreview(
+                title: "Protected Playback",
+                subtitle: "Access boundary",
+                detail: "Local Preview Access remains available while server entitlement validation and playback descriptor boundaries stay secondary.",
+                systemImage: "lock.shield.fill",
+                accent: HFColors.cyanGlow,
+                identifier: "hf.membership.protectedPlaybackPreview"
+            ) {
+                HFMembershipInspectorRow(title: "Local Preview Access", detail: "Consumer playback can continue locally.", status: entitlementStatus.accessState.statusLabel, systemImage: "play.rectangle.fill", identifier: "hf.membership.localPreviewAccess")
+                HFMembershipInspectorRow(title: "Server entitlement validation required", detail: entitlementStatus.boundary.detail, status: "Required", systemImage: "lock.shield.fill", identifier: "hf.membership.entitlementValidation")
+                HFMembershipInspectorRow(title: "Playback descriptor boundary", detail: "Provider playback requires a backend descriptor before live access.", status: "Boundary", systemImage: "doc.badge.gearshape.fill", identifier: "hf.membership.playbackDescriptorBoundary")
+            }
+        case .depthPeek:
+            HFMembershipFacetPreview(
+                title: "Depth + Peek",
+                subtitle: "Signature spatial benefit",
+                detail: "Depth and tilt-peek remain protected systems. The pass presents readiness without changing engine internals.",
+                systemImage: "viewfinder",
+                accent: HFColors.cyanGlow,
+                identifier: "hf.membership.depthPeekPreview"
+            ) {
+                HFMembershipInspectorRow(title: "Depth access", detail: "Spatial presentation remains available through existing preview surfaces.", status: "Preview", systemImage: "square.3.layers.3d", identifier: "hf.membership.depthAccess")
+                HFMembershipInspectorRow(title: "Tilt + Peek access", detail: "Protected motion behavior remains unchanged.", status: "Protected", systemImage: "viewfinder", identifier: "hf.membership.tiltPeekAccess")
+            }
+        }
+    }
+
+    private var actionCluster: some View {
+        VStack(spacing: HFSpacing.sm) {
+            HFEnergyAction(title: "Review Access", systemImage: "checkmark.seal.fill", style: .gold) {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    selectedFacet = .protectedPlayback
+                }
+            }
+            .accessibilityIdentifier("hf.membership.reviewAccess")
+
+            HStack(spacing: HFSpacing.sm) {
+                HFEnergyAction(title: "Account & Privacy", systemImage: "person.text.rectangle.fill", style: .glass) {
+                    showsAccountPrivacy = true
+                }
+                .accessibilityIdentifier("hf.membership.accountPrivacy")
+
+                HFEnergyAction(title: "Open Inspector", systemImage: "slider.horizontal.3", style: .glass) {
+                    showsAccountInspector = true
+                }
+                .accessibilityIdentifier("hf.membership.inspector")
+            }
+        }
+    }
+
+    private var accountAccessInspector: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    Text("Account & Access Inspector")
+                        .font(HFTypography.display)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+
+                    Text("Membership Preview")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                        .accessibilityIdentifier("hf.membership.membershipPreview")
+
+                    VStack(spacing: HFSpacing.xs) {
+                        HFMembershipInspectorRow(title: "Local Account Mode", detail: authStatus.detail, status: authStatus.statusLabel, systemImage: "person.crop.circle.fill", identifier: "hf.membership.localAccountMode")
+                        HFMembershipInspectorRow(title: "StoreKit product mapping", detail: "\(streamingStore.storeKitPaywallMappings.count) mapped product references are staged for review.", status: "Mapped", systemImage: "cart.badge.questionmark", identifier: "hf.membership.storeKitMapping")
+                        HFMembershipInspectorRow(title: "Paywall readiness", detail: "Product mapping and app review notes remain readiness-only.", status: "Paywall readiness", systemImage: "lock.rectangle.stack.fill", identifier: "hf.membership.paywallReadiness")
+                        HFMembershipInspectorRow(title: "Local Preview Access", detail: "Playback fallback remains available without a live transaction.", status: entitlementStatus.accessState.statusLabel, systemImage: "play.rectangle.fill", identifier: "hf.membership.localPreviewAccess")
+                        HFMembershipInspectorRow(title: "Server entitlement validation required", detail: entitlementStatus.boundary.detail, status: "Required", systemImage: "lock.shield.fill", identifier: "hf.membership.entitlementValidation")
+                        HFMembershipInspectorRow(title: "Payment Provider Not Connected Yet", detail: "Payment readiness is informational only.", status: entitlementStatus.paymentProviderLabel, systemImage: "network.slash", identifier: "hf.membership.paymentProviderNotConnected")
+                        HFMembershipInspectorRow(title: "Restore Purchases Not Active Yet", detail: "Restore readiness waits for provider and server validation.", status: entitlementStatus.restoreState.statusLabel, systemImage: "arrow.counterclockwise.circle.fill", identifier: "hf.membership.restoreNotActive")
+                        HFMembershipInspectorRow(title: "Privacy readiness", detail: streamingStore.profilePrivacyState, status: "Ready", systemImage: "hand.raised.fill", identifier: "hf.membership.privacyReadiness")
+                        HFMembershipInspectorRow(title: "Device and session preview", detail: authStatus.sessionState.detail, status: authStatus.sessionState.statusLabel, systemImage: "iphone.gen3", identifier: "hf.membership.deviceSession")
+                        HFMembershipInspectorRow(title: "Account deletion boundary", detail: authStatus.deletionRequest.detail, status: authStatus.deletionRequest.statusLabel, systemImage: "trash.slash.fill", identifier: "hf.membership.deleteBoundary")
+                        HFMembershipInspectorRow(title: "Data export boundary", detail: authStatus.exportRequest.detail, status: authStatus.exportRequest.statusLabel, systemImage: "square.and.arrow.up.on.square", identifier: "hf.membership.exportBoundary")
+                        HFMembershipInspectorRow(title: "No live purchase", detail: "No payment provider connected. Review stays local.", status: "Local only", systemImage: "nosign", identifier: "hf.membership.noLivePurchase")
+                    }
+                }
+                .padding(HFSpacing.lg)
+                .padding(.bottom, HFSpacing.lg)
+            }
+            .background(HFColors.screenBackground.ignoresSafeArea())
+            .navigationTitle("Inspector")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        showsAccountInspector = false
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("hf.membership.accountInspector")
+    }
+
+    private var accountPrivacySheet: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    Text("Account & Privacy")
+                        .font(HFTypography.display)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+
+                    HFMembershipFacetPreview(
+                        title: "Review Account & Privacy",
+                        subtitle: "Local account boundary",
+                        detail: "Profile identity, privacy readiness, device/session preview, deletion boundary, and data export boundary remain local or readiness-only.",
+                        systemImage: "person.text.rectangle.fill",
+                        accent: HFColors.gold,
+                        identifier: "hf.membership.accountInspector"
+                    ) {
+                        HFMembershipInspectorRow(title: "Local Account Mode", detail: authStatus.detail, status: authStatus.statusLabel, systemImage: "person.crop.circle.fill", identifier: "hf.membership.localAccountMode")
+                        HFMembershipInspectorRow(title: "Privacy readiness", detail: streamingStore.profilePrivacyState, status: "Ready", systemImage: "hand.raised.fill", identifier: "hf.membership.privacyReadiness")
+                        HFMembershipInspectorRow(title: "Device and session preview", detail: authStatus.sessionState.detail, status: authStatus.sessionState.statusLabel, systemImage: "iphone.gen3", identifier: "hf.membership.deviceSession")
+                    }
+                }
+                .padding(HFSpacing.lg)
+                .padding(.bottom, HFSpacing.lg)
+            }
+            .background(HFColors.screenBackground.ignoresSafeArea())
+            .navigationTitle("Account")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        showsAccountPrivacy = false
+                    }
+                }
+            }
+        }
+    }
+
+    private var membershipBackground: some View {
+        ZStack {
+            HFColors.screenBackground.ignoresSafeArea()
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    HFColors.gold.opacity(0.09),
+                    Color.purple.opacity(0.07),
+                    Color.black
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        }
+    }
+}
+
+private struct HFMembershipPassPill: View {
+    let title: String
+    let color: Color
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.68)
+            .frame(height: 26)
+            .padding(.horizontal, HFSpacing.xs)
+            .background(color.opacity(0.12))
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(color.opacity(0.42), lineWidth: 1))
+    }
+}
+
+private struct HFMembershipFacetPreview<Rows: View>: View {
+    let title: String
+    let subtitle: String
+    let detail: String
+    let systemImage: String
+    let accent: Color
+    let identifier: String
+    let rows: Rows
+
+    init(
+        title: String,
+        subtitle: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        identifier: String,
+        @ViewBuilder rows: () -> Rows
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.detail = detail
+        self.systemImage = systemImage
+        self.accent = accent
+        self.identifier = identifier
+        self.rows = rows()
+    }
+
+    var body: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.46)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    accent.opacity(0.95),
+                                    accent.opacity(0.58)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text(title)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.78)
+
+                        Text(subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(accent)
+
+                        Text(detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    rows
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier(identifier)
+    }
+}
+
+private struct HFMembershipInspectorRow: View {
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+    let identifier: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(status.contains("Local") || status.contains("Ready") ? HFColors.gold : HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 24)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.045))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(status), \(detail)")
+        .accessibilityIdentifier(identifier)
     }
 }
 

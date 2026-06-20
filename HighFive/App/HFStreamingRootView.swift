@@ -75,6 +75,12 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package-synopsis")
             || arguments.contains("--hf-start-vod-package-access")
             || arguments.contains("--hf-start-vod-package-release")
+            || arguments.contains("--hf-start-membership")
+            || arguments.contains("--hf-start-membership-identity")
+            || arguments.contains("--hf-start-membership-premieres")
+            || arguments.contains("--hf-start-membership-creator-rooms")
+            || arguments.contains("--hf-start-membership-protected-playback")
+            || arguments.contains("--hf-start-membership-depth-peek")
             || arguments.contains("--hf-start-connect")
             || arguments.contains("--hf-start-premiere-lobby")
             || arguments.contains("--hf-start-backend-status")
@@ -106,6 +112,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package-synopsis")
             || arguments.contains("--hf-start-vod-package-access")
             || arguments.contains("--hf-start-vod-package-release")
+            || Self.shouldStartInMembership
             || arguments.contains("--hf-start-backend-status")
             || arguments.contains("--hf-start-developer-qa")
             || arguments.contains("--hf-start-demo-tour")
@@ -203,6 +210,25 @@ struct HFStreamingRootView: View {
         if arguments.contains("--hf-start-vod-package-access") { return .access }
         if arguments.contains("--hf-start-vod-package-release") { return .release }
         return .trailer
+    }
+
+    private static var shouldStartInMembership: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-membership")
+            || arguments.contains("--hf-start-membership-identity")
+            || arguments.contains("--hf-start-membership-premieres")
+            || arguments.contains("--hf-start-membership-creator-rooms")
+            || arguments.contains("--hf-start-membership-protected-playback")
+            || arguments.contains("--hf-start-membership-depth-peek")
+    }
+
+    private static var membershipInitialFacet: HFMembershipPassFacet {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-membership-premieres") { return .premieres }
+        if arguments.contains("--hf-start-membership-creator-rooms") { return .creatorRooms }
+        if arguments.contains("--hf-start-membership-protected-playback") { return .protectedPlayback }
+        if arguments.contains("--hf-start-membership-depth-peek") { return .depthPeek }
+        return .identity
     }
 
     private static var qaMovieDetailMovie: Movie {
@@ -339,6 +365,8 @@ struct HFStreamingRootView: View {
                     case .profile:
                         ProfileView(
                             selectedProfile: $selectedProfile,
+                            initialMembershipFacet: Self.membershipInitialFacet,
+                            startInMembership: Self.shouldStartInMembership,
                             onOpenMyList: {
                                 selectedTab = .library
                             }
