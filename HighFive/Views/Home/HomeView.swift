@@ -44,8 +44,8 @@ struct HomeView: View {
             HighFiveProtectedSpatialPeekBridge()
         }
         .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 4.8).repeatForever(autoreverses: true)) {
+            guard !isHeroAwake else { return }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isHeroAwake = true
             }
         }
@@ -254,6 +254,7 @@ struct HomeView: View {
             }
             .frame(height: 590)
             .clipped()
+            .hfSpatialSceneEntrance(isActive: isHeroAwake, reduceMotion: reduceMotion)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(heroMovie.title), \(heroMovie.subtitle)")

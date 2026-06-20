@@ -8,6 +8,9 @@ enum HFConnectSpatialMode {
 
 struct ConnectHubView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var followedCreatorIDs: Set<UUID> = []
     @State private var savedRoomIDs: Set<UUID> = []
     @State private var mode: HFConnectSpatialMode
@@ -17,6 +20,10 @@ struct ConnectHubView: View {
     @State private var reactionCount = 3
 
     private let movie: Movie?
+
+    private var usesSpatialFallbackLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize
+    }
 
     init(initialMode: HFConnectSpatialMode = .hub, movie: Movie? = nil) {
         self._mode = State(initialValue: initialMode)
@@ -84,28 +91,44 @@ struct ConnectHubView: View {
 
     private var spatialConnectWorld: some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.heroRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
-            GeometryReader { proxy in
-                let width = proxy.size.width
-                let height = proxy.size.height
-                ZStack {
-                    connectDepthSurface
-                    presenceArcs(in: proxy.size)
-                    moviePortal(width: min(width * 0.70, 304), height: min(height * 0.56, 386))
-                        .position(x: width * 0.50, y: height * 0.43)
-                    presenceConstellation(in: proxy.size)
-                    sceneCopy
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    modeStatus
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                    roomControls
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        .padding(.horizontal, HFSpacing.md)
-                        .padding(.bottom, HFSpacing.md)
+            Group {
+                if usesSpatialFallbackLayout {
+                    VStack(alignment: .leading, spacing: HFSpacing.md) {
+                        sceneCopy
+                        moviePortal(width: 286, height: 342)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        presenceSummaryFallback
+                        modeStatus
+                        roomControls
+                    }
+                    .padding(HFSpacing.md)
+                    .accessibilityIdentifier("hf.spatial.accessibility.fallbackLayout")
+                } else {
+                    GeometryReader { proxy in
+                        let width = proxy.size.width
+                        let height = proxy.size.height
+                        ZStack {
+                            connectDepthSurface
+                            presenceArcs(in: proxy.size)
+                            moviePortal(width: min(width * 0.70, 304), height: min(height * 0.56, 386))
+                                .position(x: width * 0.50, y: height * 0.43)
+                            presenceConstellation(in: proxy.size)
+                            sceneCopy
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            modeStatus
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                            roomControls
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                                .padding(.horizontal, HFSpacing.md)
+                                .padding(.bottom, HFSpacing.md)
+                        }
+                    }
                 }
             }
-            .frame(height: 660)
+            .frame(height: usesSpatialFallbackLayout ? 760 : 660)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("\(roomTitle), \(currentMovie.title), room presence preview")
+            .accessibilityIdentifier("hf.spatial.accessibility.largeType")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier(mode == .watchRoom ? "hf.spatial.watchRoom" : mode == .premiereLobby ? "hf.spatial.premiereLobby" : "hf.spatial.connect")
@@ -114,7 +137,7 @@ struct ConnectHubView: View {
     private var connectDepthSurface: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.black, HFColors.charcoal.opacity(0.88), Color.black],
+                colors: [Color.black, reduceTransparency ? Color.black : HFColors.charcoal.opacity(0.88), Color.black],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -171,7 +194,7 @@ struct ConnectHubView: View {
             .padding(HFSpacing.lg)
         }
         .scaleEffect(reduceMotion ? 1 : (mode == .hub ? 1.0 : 1.025))
-        .animation(.easeOut(duration: reduceMotion ? 0.01 : 0.45), value: mode)
+                .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation, value: mode)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(currentMovie.title), movie portal")
         .accessibilityIdentifier(mode == .watchRoom ? "hf.spatial.watchRoom.portal" : mode == .premiereLobby ? "hf.spatial.premiereLobby.portal" : "hf.spatial.connect.portal")
@@ -284,7 +307,7 @@ struct ConnectHubView: View {
         }
         .opacity(mode == .hub ? 0.96 : 1)
         .scaleEffect(reduceMotion ? 1 : (mode == .watchRoom ? 1.02 : 1))
-        .animation(.easeOut(duration: reduceMotion ? 0.01 : 0.38), value: mode)
+        .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.standardAnimation, value: mode)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Viewer constellation, host and three guests")
         .accessibilityIdentifier("hf.spatial.connect.constellation")
@@ -300,6 +323,13 @@ struct ConnectHubView: View {
                 Image(systemName: isHost ? "star.fill" : "person.fill")
                     .font(.system(size: isHost ? 18 : 15, weight: .black))
                     .foregroundStyle(isHost ? .black : HFColors.background)
+                if differentiateWithoutColor && isHost {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundStyle(.black)
+                        .offset(x: 18, y: -18)
+                        .accessibilityHidden(true)
+                }
             }
 
             Text(isHost ? "Host" : name)
@@ -315,13 +345,26 @@ struct ConnectHubView: View {
         .accessibilityIdentifier(identifier)
     }
 
+    private var presenceSummaryFallback: some View {
+        HStack(spacing: HFSpacing.sm) {
+            presenceNode(name: "Maya", role: "Host", isHost: true, identifier: mode == .premiereLobby ? "hf.spatial.premiereLobby.host" : mode == .watchRoom ? "hf.spatial.watchRoom.host" : "hf.spatial.connect.host")
+            presenceNode(name: "Ari", role: "Guest", isHost: false, identifier: mode == .watchRoom ? "hf.spatial.watchRoom.guests" : mode == .premiereLobby ? "hf.spatial.premiereLobby.guests" : "hf.spatial.connect.presence")
+            presenceNode(name: "Noah", role: "Guest", isHost: false, identifier: "hf.spatial.connect.presence")
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Host and guest presence summary")
+    }
+
     @ViewBuilder
     private var roomControls: some View {
         switch mode {
         case .hub:
-            VStack(spacing: HFSpacing.sm) {
+            HFSpatialActionCluster {
                 HFEnergyAction(title: "Enter Local Room", systemImage: "play.fill", style: .gold) {
-                    mode = .watchRoom
+                    withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.standardAnimation) {
+                        mode = .watchRoom
+                    }
                 }
                 .accessibilityIdentifier("hf.spatial.connect.enterRoom")
 
@@ -338,7 +381,7 @@ struct ConnectHubView: View {
                 }
             }
         case .watchRoom:
-            VStack(spacing: HFSpacing.sm) {
+            HFSpatialActionCluster {
                 HFEnergyAction(title: "Continue Local Preview", systemImage: "play.fill", style: .gold) {}
                     .accessibilityIdentifier("hf.spatial.watchRoom.localPreview")
 
@@ -354,15 +397,19 @@ struct ConnectHubView: View {
                     .accessibilityIdentifier("hf.spatial.watchRoom.invite")
 
                     HFEnergyAction(title: "Leave", systemImage: "xmark", style: .glass) {
-                        mode = .hub
+                        withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.standardAnimation) {
+                            mode = .hub
+                        }
                     }
                     .accessibilityIdentifier("hf.spatial.watchRoom.leave")
                 }
             }
         case .premiereLobby:
-            VStack(spacing: HFSpacing.sm) {
+            HFSpatialActionCluster {
                 HFEnergyAction(title: "Enter Lobby", systemImage: "sparkles.tv.fill", style: .gold) {
-                    mode = .watchRoom
+                    withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.standardAnimation) {
+                        mode = .watchRoom
+                    }
                 }
                 .accessibilityIdentifier("hf.spatial.premiereLobby.enter")
 
@@ -482,8 +529,12 @@ struct ConnectHubView: View {
 
     private var connectInspector: some View {
         NavigationStack {
-            List {
-                Section("Room Boundary") {
+            HFSpatialInspectorChrome(
+                title: "Room Inspector",
+                detail: "Local room status, presence boundaries, and messaging boundaries stay secondary to the movie portal.",
+                accent: HFColors.cyanGlow
+            ) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
                     Text("Local Preview Room")
                     Text("Presence Provider Not Connected")
                         .accessibilityIdentifier("hf.connect.presenceNotConnected")
@@ -491,16 +542,14 @@ struct ConnectHubView: View {
                         .accessibilityIdentifier("hf.connect.syncNotConnected")
                     Text("Invitations Local Only")
                         .accessibilityIdentifier("hf.connect.invitesLocalOnly")
-                }
-
-                Section("Safety") {
                     Text("No live messaging")
                         .accessibilityIdentifier("hf.connect.noLiveMessaging")
                     Text("No remote watch-room provider")
                         .accessibilityIdentifier("hf.connect.noLiveRoomProvider")
                 }
+                .font(HFTypography.body)
+                .foregroundStyle(HFColors.textPrimary)
             }
-            .navigationTitle("Room Inspector")
             .accessibilityIdentifier("hf.connect.inspector")
         }
         .presentationDetents([.medium, .large])

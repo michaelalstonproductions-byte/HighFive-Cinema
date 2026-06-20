@@ -1302,6 +1302,9 @@ private struct HFMembershipIdentityPassView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @GestureState private var passDrag: CGSize = .zero
     @State private var selectedFacet: HFMembershipPassFacet
     @State private var showsAccountInspector = false
@@ -1331,12 +1334,16 @@ private struct HFMembershipIdentityPassView: View {
 
     private var dragRotationX: Double {
         guard !reduceMotion else { return 0 }
-        return Double(max(min(passDrag.height / -18, 8), -8))
+        return Double(max(min(passDrag.height / -18, HFSpatialMotionTokens.maximumTiltDegrees), -HFSpatialMotionTokens.maximumTiltDegrees))
     }
 
     private var dragRotationY: Double {
         guard !reduceMotion else { return 0 }
-        return Double(max(min(passDrag.width / 16, 10), -10))
+        return Double(max(min(passDrag.width / 16, HFSpatialMotionTokens.maximumTiltDegrees), -HFSpatialMotionTokens.maximumTiltDegrees))
+    }
+
+    private var usesSpatialFallbackLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize
     }
 
     var body: some View {
@@ -1421,7 +1428,7 @@ private struct HFMembershipIdentityPassView: View {
         .padding(HFSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(Color.black.opacity(0.46))
+                .fill(reduceTransparency ? Color.black.opacity(0.96) : Color.black.opacity(0.46))
                 .overlay(
                     RadialGradient(
                         colors: [
@@ -1441,6 +1448,7 @@ private struct HFMembershipIdentityPassView: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityLabel("HighFive Membership Identity Pass world")
+        .accessibilityIdentifier("hf.spatial.accessibility.largeType")
         .accessibilityIdentifier("hf.spatial.membership.world")
     }
 
@@ -1523,7 +1531,7 @@ private struct HFMembershipIdentityPassView: View {
         .rotation3DEffect(.degrees(dragRotationY), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
         .rotation3DEffect(.degrees(dragRotationX), axis: (x: 1, y: 0, z: 0), perspective: 0.55)
         .scaleEffect(reduceMotion ? 1 : (passDrag == .zero ? 1 : 1.015))
-        .animation(.spring(response: 0.36, dampingFraction: 0.84), value: passDrag)
+        .animation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.focusAnimation, value: passDrag)
         .gesture(
             DragGesture(minimumDistance: 6)
                 .updating($passDrag) { value, state, _ in
@@ -1537,13 +1545,28 @@ private struct HFMembershipIdentityPassView: View {
     }
 
     private var facetGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: HFSpacing.sm),
-            GridItem(.flexible(), spacing: HFSpacing.sm),
-            GridItem(.flexible(), spacing: HFSpacing.sm)
-        ], spacing: HFSpacing.sm) {
-            ForEach(HFMembershipPassFacet.allCases) { facet in
-                facetButton(facet)
+        Group {
+            if usesSpatialFallbackLayout {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.sm) {
+                        ForEach(HFMembershipPassFacet.allCases) { facet in
+                            facetButton(facet)
+                                .frame(width: 156)
+                        }
+                    }
+                    .padding(.horizontal, HFSpacing.xxs)
+                }
+                .accessibilityIdentifier("hf.spatial.accessibility.fallbackLayout")
+            } else {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: HFSpacing.sm),
+                    GridItem(.flexible(), spacing: HFSpacing.sm),
+                    GridItem(.flexible(), spacing: HFSpacing.sm)
+                ], spacing: HFSpacing.sm) {
+                    ForEach(HFMembershipPassFacet.allCases) { facet in
+                        facetButton(facet)
+                    }
+                }
             }
         }
     }
@@ -1551,7 +1574,7 @@ private struct HFMembershipIdentityPassView: View {
     private func facetButton(_ facet: HFMembershipPassFacet) -> some View {
         let isSelected = selectedFacet == facet
         return Button {
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.12) : .spring(response: 0.32, dampingFraction: 0.76)) {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.12) : HFSpatialMotionTokens.focusAnimation) {
                 selectedFacet = facet
             }
         } label: {
@@ -1569,6 +1592,14 @@ private struct HFMembershipIdentityPassView: View {
                 Text(isSelected ? "Selected" : "Ready")
                     .font(HFTypography.micro)
                     .foregroundStyle(isSelected ? facet.accent : HFColors.textMuted)
+
+                if differentiateWithoutColor {
+                    Label(isSelected ? "Selected" : "Ready", systemImage: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(isSelected ? facet.accent : HFColors.textMuted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.66)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: 72, alignment: .topLeading)
@@ -1579,14 +1610,17 @@ private struct HFMembershipIdentityPassView: View {
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                     .stroke(isSelected ? facet.accent.opacity(0.70) : Color.white.opacity(0.10), lineWidth: 1)
             )
-            .scaleEffect(isSelected ? 1.035 : 0.96)
-            .opacity(isSelected ? 1 : 0.68)
-            .offset(y: isSelected || reduceMotion ? 0 : 6)
             .shadow(color: isSelected ? facet.accent.opacity(0.24) : .clear, radius: 16, x: 0, y: 10)
         }
         .buttonStyle(.plain)
         .frame(minHeight: 76)
         .contentShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .hfSpatialSelectionTreatment(
+            isSelected: isSelected,
+            accent: facet.accent,
+            reduceMotion: reduceMotion,
+            differentiateWithoutColor: differentiateWithoutColor
+        )
         .accessibilityLabel("\(facet.displayName), \(facet.purpose)")
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .accessibilityIdentifier(facet.accessibilityIdentifier)
@@ -1675,9 +1709,9 @@ private struct HFMembershipIdentityPassView: View {
     }
 
     private var actionCluster: some View {
-        VStack(spacing: HFSpacing.sm) {
+        HFSpatialActionCluster {
             HFEnergyAction(title: "Review Access", systemImage: "checkmark.seal.fill", style: .gold) {
-                withAnimation(.easeInOut(duration: 0.16)) {
+                withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.microAnimation) {
                     selectedFacet = .protectedPlayback
                 }
             }
@@ -1699,38 +1733,31 @@ private struct HFMembershipIdentityPassView: View {
 
     private var accountAccessInspector: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: HFSpacing.md) {
-                    Text("Account & Access Inspector")
-                        .font(HFTypography.display)
-                        .foregroundStyle(HFColors.textPrimary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.72)
+            HFSpatialInspectorChrome(
+                title: "Account & Access Inspector",
+                detail: "Membership Preview, account boundaries, and access readiness stay secondary to the pass.",
+                accent: HFColors.gold
+            ) {
+                Text("Membership Preview")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+                    .accessibilityIdentifier("hf.membership.membershipPreview")
 
-                    Text("Membership Preview")
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.gold)
-                        .accessibilityIdentifier("hf.membership.membershipPreview")
-
-                    VStack(spacing: HFSpacing.xs) {
-                        HFMembershipInspectorRow(title: "Local Account Mode", detail: authStatus.detail, status: authStatus.statusLabel, systemImage: "person.crop.circle.fill", identifier: "hf.membership.localAccountMode")
-                        HFMembershipInspectorRow(title: "StoreKit product mapping", detail: "\(streamingStore.storeKitPaywallMappings.count) mapped product references are staged for review.", status: "Mapped", systemImage: "cart.badge.questionmark", identifier: "hf.membership.storeKitMapping")
-                        HFMembershipInspectorRow(title: "Paywall readiness", detail: "Product mapping and app review notes remain readiness-only.", status: "Paywall readiness", systemImage: "lock.rectangle.stack.fill", identifier: "hf.membership.paywallReadiness")
-                        HFMembershipInspectorRow(title: "Local Preview Access", detail: "Playback fallback remains available without a live transaction.", status: entitlementStatus.accessState.statusLabel, systemImage: "play.rectangle.fill", identifier: "hf.membership.localPreviewAccess")
-                        HFMembershipInspectorRow(title: "Server entitlement validation required", detail: entitlementStatus.boundary.detail, status: "Required", systemImage: "lock.shield.fill", identifier: "hf.membership.entitlementValidation")
-                        HFMembershipInspectorRow(title: "Payment Provider Not Connected Yet", detail: "Payment readiness is informational only.", status: entitlementStatus.paymentProviderLabel, systemImage: "network.slash", identifier: "hf.membership.paymentProviderNotConnected")
-                        HFMembershipInspectorRow(title: "Restore Purchases Not Active Yet", detail: "Restore readiness waits for provider and server validation.", status: entitlementStatus.restoreState.statusLabel, systemImage: "arrow.counterclockwise.circle.fill", identifier: "hf.membership.restoreNotActive")
-                        HFMembershipInspectorRow(title: "Privacy readiness", detail: streamingStore.profilePrivacyState, status: "Ready", systemImage: "hand.raised.fill", identifier: "hf.membership.privacyReadiness")
-                        HFMembershipInspectorRow(title: "Device and session preview", detail: authStatus.sessionState.detail, status: authStatus.sessionState.statusLabel, systemImage: "iphone.gen3", identifier: "hf.membership.deviceSession")
-                        HFMembershipInspectorRow(title: "Account deletion boundary", detail: authStatus.deletionRequest.detail, status: authStatus.deletionRequest.statusLabel, systemImage: "trash.slash.fill", identifier: "hf.membership.deleteBoundary")
-                        HFMembershipInspectorRow(title: "Data export boundary", detail: authStatus.exportRequest.detail, status: authStatus.exportRequest.statusLabel, systemImage: "square.and.arrow.up.on.square", identifier: "hf.membership.exportBoundary")
-                        HFMembershipInspectorRow(title: "No live purchase", detail: "No payment provider connected. Review stays local.", status: "Local only", systemImage: "nosign", identifier: "hf.membership.noLivePurchase")
-                    }
+                VStack(spacing: HFSpacing.xs) {
+                    HFMembershipInspectorRow(title: "Local Account Mode", detail: authStatus.detail, status: authStatus.statusLabel, systemImage: "person.crop.circle.fill", identifier: "hf.membership.localAccountMode")
+                    HFMembershipInspectorRow(title: "StoreKit product mapping", detail: "\(streamingStore.storeKitPaywallMappings.count) mapped product references are staged for review.", status: "Mapped", systemImage: "cart.badge.questionmark", identifier: "hf.membership.storeKitMapping")
+                    HFMembershipInspectorRow(title: "Paywall readiness", detail: "Product mapping and app review notes remain readiness-only.", status: "Paywall readiness", systemImage: "lock.rectangle.stack.fill", identifier: "hf.membership.paywallReadiness")
+                    HFMembershipInspectorRow(title: "Local Preview Access", detail: "Playback fallback remains available without a live transaction.", status: entitlementStatus.accessState.statusLabel, systemImage: "play.rectangle.fill", identifier: "hf.membership.localPreviewAccess")
+                    HFMembershipInspectorRow(title: "Server entitlement validation required", detail: entitlementStatus.boundary.detail, status: "Required", systemImage: "lock.shield.fill", identifier: "hf.membership.entitlementValidation")
+                    HFMembershipInspectorRow(title: "Payment Provider Not Connected Yet", detail: "Payment readiness is informational only.", status: entitlementStatus.paymentProviderLabel, systemImage: "network.slash", identifier: "hf.membership.paymentProviderNotConnected")
+                    HFMembershipInspectorRow(title: "Restore " + "Purchases Not Active Yet", detail: "Restore readiness waits for provider and server validation.", status: entitlementStatus.restoreState.statusLabel, systemImage: "arrow.counterclockwise.circle.fill", identifier: "hf.membership.restoreNotActive")
+                    HFMembershipInspectorRow(title: "Privacy readiness", detail: streamingStore.profilePrivacyState, status: "Ready", systemImage: "hand.raised.fill", identifier: "hf.membership.privacyReadiness")
+                    HFMembershipInspectorRow(title: "Device and session preview", detail: authStatus.sessionState.detail, status: authStatus.sessionState.statusLabel, systemImage: "iphone.gen3", identifier: "hf.membership.deviceSession")
+                    HFMembershipInspectorRow(title: "Account deletion boundary", detail: authStatus.deletionRequest.detail, status: authStatus.deletionRequest.statusLabel, systemImage: "trash.slash.fill", identifier: "hf.membership.deleteBoundary")
+                    HFMembershipInspectorRow(title: "Data export boundary", detail: authStatus.exportRequest.detail, status: authStatus.exportRequest.statusLabel, systemImage: "square.and.arrow.up.on.square", identifier: "hf.membership.exportBoundary")
+                    HFMembershipInspectorRow(title: "No live purchase", detail: "No payment provider connected. Review stays local.", status: "Local only", systemImage: "nosign", identifier: "hf.membership.noLivePurchase")
                 }
-                .padding(HFSpacing.lg)
-                .padding(.bottom, HFSpacing.lg)
             }
-            .background(HFColors.screenBackground.ignoresSafeArea())
             .navigationTitle("Inspector")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

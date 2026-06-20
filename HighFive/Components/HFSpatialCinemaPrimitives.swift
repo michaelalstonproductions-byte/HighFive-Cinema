@@ -1,9 +1,151 @@
 import SwiftUI
 
+enum HFSpatialMotionTokens {
+    static let microResponse: Double = 0.16
+    static let standardTransition: Double = 0.26
+    static let sceneEntrance: Double = 0.48
+    static let focusSpringResponse: Double = 0.42
+    static let focusSpringDamping: Double = 0.86
+    static let selectedScale: CGFloat = 1.055
+    static let recededScale: CGFloat = 0.93
+    static let selectedLift: CGFloat = -8
+    static let recededOffset: CGFloat = 5
+    static let maximumTiltDegrees: Double = 7
+    static let maximumDecorativeBlur: CGFloat = 2
+
+    static var microAnimation: Animation {
+        .easeInOut(duration: microResponse)
+    }
+
+    static var standardAnimation: Animation {
+        .easeInOut(duration: standardTransition)
+    }
+
+    static var sceneEntranceAnimation: Animation {
+        .easeOut(duration: sceneEntrance)
+    }
+
+    static var focusAnimation: Animation {
+        .spring(response: focusSpringResponse, dampingFraction: focusSpringDamping)
+    }
+}
+
+enum HFSpatialDepthState {
+    case selected
+    case receded
+}
+
+enum HFSpatialSelectionTreatment {
+    static func scale(for state: HFSpatialDepthState, reduceMotion: Bool) -> CGFloat {
+        guard !reduceMotion else { return state == .selected ? 1.02 : 1 }
+        switch state {
+        case .selected:
+            return HFSpatialMotionTokens.selectedScale
+        case .receded:
+            return HFSpatialMotionTokens.recededScale
+        }
+    }
+
+    static func opacity(for state: HFSpatialDepthState) -> Double {
+        state == .selected ? 1 : 0.74
+    }
+
+    static func offset(for state: HFSpatialDepthState, reduceMotion: Bool) -> CGFloat {
+        guard !reduceMotion else { return 0 }
+        return state == .selected ? HFSpatialMotionTokens.selectedLift : HFSpatialMotionTokens.recededOffset
+    }
+}
+
+typealias HFSpatialFocusTransform = HFSpatialSelectionTreatment
+
+enum HFSpatialSceneEntrance {
+    static var animation: Animation {
+        HFSpatialMotionTokens.sceneEntranceAnimation
+    }
+}
+
+private struct HFSpatialSelectionModifier: ViewModifier {
+    let isSelected: Bool
+    let accent: Color
+    let reduceMotion: Bool
+    let differentiateWithoutColor: Bool
+
+    private var state: HFSpatialDepthState {
+        isSelected ? .selected : .receded
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(HFSpatialSelectionTreatment.scale(for: state, reduceMotion: reduceMotion))
+            .opacity(HFSpatialSelectionTreatment.opacity(for: state))
+            .offset(y: HFSpatialSelectionTreatment.offset(for: state, reduceMotion: reduceMotion))
+            .zIndex(isSelected ? 2 : 0)
+            .overlay(alignment: .topTrailing) {
+                if isSelected && differentiateWithoutColor {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 15, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 24, height: 24)
+                        .background(accent)
+                        .clipShape(Circle())
+                        .padding(5)
+                        .accessibilityHidden(true)
+                        .accessibilityIdentifier("hf.spatial.accessibility.differentiateWithoutColor")
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .accessibilityHidden(true)
+                    .accessibilityIdentifier("hf.spatial.motion.selection")
+            }
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityValue(isSelected ? "Selected" : "Not selected")
+            .accessibilityIdentifier(isSelected ? "hf.spatial.motion.selected" : "hf.spatial.motion.receded")
+    }
+}
+
+private struct HFSpatialSceneEntranceModifier: ViewModifier {
+    let isActive: Bool
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(reduceMotion ? 1 : (isActive ? 1 : 0.985))
+            .opacity(isActive ? 1 : 0.94)
+            .offset(y: reduceMotion ? 0 : (isActive ? 0 : 8))
+            .animation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialSceneEntrance.animation, value: isActive)
+            .accessibilityIdentifier(reduceMotion ? "hf.spatial.motion.reduceMotionFallback" : "hf.spatial.motion.sceneEntrance")
+    }
+}
+
+extension View {
+    func hfSpatialSelectionTreatment(
+        isSelected: Bool,
+        accent: Color,
+        reduceMotion: Bool,
+        differentiateWithoutColor: Bool
+    ) -> some View {
+        modifier(
+            HFSpatialSelectionModifier(
+                isSelected: isSelected,
+                accent: accent,
+                reduceMotion: reduceMotion,
+                differentiateWithoutColor: differentiateWithoutColor
+            )
+        )
+    }
+
+    func hfSpatialSceneEntrance(isActive: Bool, reduceMotion: Bool) -> some View {
+        modifier(HFSpatialSceneEntranceModifier(isActive: isActive, reduceMotion: reduceMotion))
+    }
+}
+
 struct HFOpticalGlassSurface<Content: View>: View {
     let cornerRadius: CGFloat
     let strokeColor: Color
     let content: Content
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         cornerRadius: CGFloat = HFSpacing.panelRadius,
@@ -19,17 +161,17 @@ struct HFOpticalGlassSurface<Content: View>: View {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.black.opacity(0.72))
+                    .fill(reduceTransparency ? Color.black.opacity(0.96) : Color.black.opacity(0.72))
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(Color.white.opacity(0.035))
+                            .fill(Color.white.opacity(reduceTransparency ? 0.02 : 0.035))
                     )
                     .overlay(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.12),
-                                Color.white.opacity(0.02),
-                                Color.black.opacity(0.36)
+                                Color.white.opacity(reduceTransparency ? 0.08 : 0.12),
+                                Color.white.opacity(reduceTransparency ? 0.01 : 0.02),
+                                Color.black.opacity(reduceTransparency ? 0.50 : 0.36)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -42,6 +184,7 @@ struct HFOpticalGlassSurface<Content: View>: View {
                     .stroke(strokeColor, lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.55), radius: 18, x: 0, y: 12)
+            .accessibilityIdentifier(reduceTransparency ? "hf.spatial.material.reduceTransparency" : "hf.spatial.material.opticalBlack")
     }
 }
 
@@ -94,20 +237,28 @@ struct HFEnergyAction: View {
     let systemImage: String
     let style: Style
     let action: () -> Void
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(HFTypography.smallAction)
-                .foregroundStyle(foregroundStyle)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(backgroundStyle)
-                .overlay(border)
-                .clipShape(Capsule())
-                .shadow(color: glowColor, radius: glowRadius, x: 0, y: 8)
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                Text(title)
+                if style == .gold && differentiateWithoutColor {
+                    Image(systemName: "checkmark.seal.fill")
+                        .accessibilityHidden(true)
+                }
+            }
+            .font(HFTypography.smallAction)
+            .foregroundStyle(foregroundStyle)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 52)
+            .background(backgroundStyle)
+            .overlay(border)
+            .clipShape(Capsule())
+            .shadow(color: glowColor, radius: glowRadius, x: 0, y: 8)
         }
         .buttonStyle(.plain)
     }
@@ -157,5 +308,93 @@ struct HFEnergyAction: View {
 
     private var glowRadius: CGFloat {
         style == .glass ? 0 : 16
+    }
+}
+
+struct HFSpatialActionCluster<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: HFSpacing.sm) {
+            content
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.spatial.motion.system")
+        .accessibilityIdentifier("hf.spatial.actionCluster")
+    }
+}
+
+struct HFSpatialInspectorChrome<Content: View>: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    let accent: Color
+    let content: Content
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    init(
+        title: String,
+        detail: String,
+        systemImage: String = "slider.horizontal.3",
+        accent: Color = HFColors.gold,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.detail = detail
+        self.systemImage = systemImage
+        self.accent = accent
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(
+                            LinearGradient(
+                                colors: [accent.opacity(0.98), accent.opacity(0.64)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(title)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+                        Text(detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                content
+            }
+            .padding(HFSpacing.lg)
+            .padding(.bottom, HFSpacing.lg)
+        }
+        .background(inspectorBackground)
+        .accessibilityIdentifier("hf.spatial.inspector.chrome")
+    }
+
+    @ViewBuilder
+    private var inspectorBackground: some View {
+        if reduceTransparency {
+            HFColors.background.ignoresSafeArea()
+        } else {
+            HFColors.screenBackground.ignoresSafeArea()
+        }
     }
 }

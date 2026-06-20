@@ -87,8 +87,8 @@ struct MovieDetailView: View {
             accessPlaybackReadinessSheet
         }
         .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 4.6).repeatForever(autoreverses: true)) {
+            guard !isDetailWorldAwake else { return }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isDetailWorldAwake = true
             }
         }
@@ -188,6 +188,7 @@ struct MovieDetailView: View {
         .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 24, x: 0, y: 16)
         .frame(height: 620)
         .clipped()
+        .hfSpatialSceneEntrance(isActive: isDetailWorldAwake, reduceMotion: reduceMotion)
         .accessibilityIdentifier("hf.spatial.movieDetail")
     }
 
