@@ -63,6 +63,11 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-social-media-kit-poster")
+            || arguments.contains("--hf-start-social-media-kit-reel")
+            || arguments.contains("--hf-start-social-media-kit-caption")
+            || arguments.contains("--hf-start-social-media-kit-story")
+            || arguments.contains("--hf-start-social-media-kit-platforms")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
             || arguments.contains("--hf-start-connect")
@@ -84,6 +89,11 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-export-room")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-social-media-kit-poster")
+            || arguments.contains("--hf-start-social-media-kit-reel")
+            || arguments.contains("--hf-start-social-media-kit-caption")
+            || arguments.contains("--hf-start-social-media-kit-story")
+            || arguments.contains("--hf-start-social-media-kit-platforms")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
             || arguments.contains("--hf-start-backend-status")
@@ -107,6 +117,11 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-social-media-kit-poster")
+            || arguments.contains("--hf-start-social-media-kit-reel")
+            || arguments.contains("--hf-start-social-media-kit-caption")
+            || arguments.contains("--hf-start-social-media-kit-story")
+            || arguments.contains("--hf-start-social-media-kit-platforms")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
     }
@@ -131,10 +146,29 @@ struct HFStreamingRootView: View {
 
     private static var creatorStudioInitialFocus: HFCreatorStudioFocus {
         let arguments = ProcessInfo.processInfo.arguments
-        if arguments.contains("--hf-start-social-media-kit") { return .socialMediaKit }
+        if Self.shouldStartInSocialMediaKit { return .socialMediaKit }
         if arguments.contains("--hf-start-instagram-connect") { return .instagramConnect }
         if arguments.contains("--hf-start-vod-package") { return .vodPackage }
         return .dashboard
+    }
+
+    private static var shouldStartInSocialMediaKit: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-social-media-kit")
+            || arguments.contains("--hf-start-social-media-kit-poster")
+            || arguments.contains("--hf-start-social-media-kit-reel")
+            || arguments.contains("--hf-start-social-media-kit-caption")
+            || arguments.contains("--hf-start-social-media-kit-story")
+            || arguments.contains("--hf-start-social-media-kit-platforms")
+    }
+
+    private static var socialCampaignInitialFocus: HFSocialCampaignFocus {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-social-media-kit-reel") { return .reel }
+        if arguments.contains("--hf-start-social-media-kit-caption") { return .caption }
+        if arguments.contains("--hf-start-social-media-kit-story") { return .story }
+        if arguments.contains("--hf-start-social-media-kit-platforms") { return .platforms }
+        return .poster
     }
 
     private static var qaMovieDetailMovie: Movie {
@@ -207,7 +241,7 @@ struct HFStreamingRootView: View {
 
     private var qaCreatorStudioView: some View {
         NavigationStack {
-            CreatorStudioView(initialFocus: Self.creatorStudioInitialFocus)
+            CreatorStudioView(initialFocus: Self.creatorStudioInitialFocus, initialSocialFocus: Self.socialCampaignInitialFocus)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }

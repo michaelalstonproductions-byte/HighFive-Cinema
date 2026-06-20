@@ -9,6 +9,56 @@ enum HFCreatorStudioFocus: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum HFSocialCampaignFocus: String, CaseIterable, Identifiable {
+    case poster
+    case reel
+    case caption
+    case story
+    case platforms
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .poster: return "Poster"
+        case .reel: return "Reel"
+        case .caption: return "Caption"
+        case .story: return "Story"
+        case .platforms: return "Platforms"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .poster: return "photo.fill"
+        case .reel: return "film.stack.fill"
+        case .caption: return "text.quote"
+        case .story: return "rectangle.portrait.fill"
+        case .platforms: return "square.grid.2x2.fill"
+        }
+    }
+
+    var purpose: String {
+        switch self {
+        case .poster: return "Cinematic key-art crop and title lockup"
+        case .reel: return "Local vertical clip placeholder and trailer note"
+        case .caption: return "Dominant campaign caption and local alternates"
+        case .story: return "Vertical story composition and title callout"
+        case .platforms: return "Spatial variants with readiness kept secondary"
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .poster: return "hf.spatial.social.poster"
+        case .reel: return "hf.spatial.social.reel"
+        case .caption: return "hf.spatial.social.caption"
+        case .story: return "hf.spatial.social.story"
+        case .platforms: return "hf.spatial.social.platforms"
+        }
+    }
+}
+
 private enum HFSpatialCreatorTool: String, CaseIterable, Identifiable {
     case look = "Look"
     case trailer = "Trailer"
@@ -55,21 +105,29 @@ struct CreatorStudioView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var selectedFocus: HFCreatorStudioFocus
     @State private var selectedTool: HFSpatialCreatorTool
+    @State private var selectedSocialFocus: HFSocialCampaignFocus
     @State private var didSaveLocalDraft = false
+    @State private var didSaveSocialCampaign = false
     @State private var isWorktableAwake = false
     @State private var isInspectorPresented = false
+    @State private var isSocialInspectorPresented = false
 
-    init(initialFocus: HFCreatorStudioFocus = .dashboard) {
+    init(initialFocus: HFCreatorStudioFocus = .dashboard, initialSocialFocus: HFSocialCampaignFocus = .poster) {
         _selectedFocus = State(initialValue: initialFocus)
         _selectedTool = State(initialValue: Self.tool(for: initialFocus))
+        _selectedSocialFocus = State(initialValue: initialSocialFocus)
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                spatialWorktable
-                creatorStudioActions
-                selectedToolHandoff
+                if selectedFocus == .socialMediaKit {
+                    socialCampaignAuthoringWorld
+                } else {
+                    spatialWorktable
+                    creatorStudioActions
+                    selectedToolHandoff
+                }
             }
             .padding(.top, HFSpacing.lg)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
@@ -85,10 +143,15 @@ struct CreatorStudioView: View {
                 .accessibilityIdentifier("hf.safeArea.bottomProtected")
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle("Creator Studio")
+        .navigationTitle(selectedFocus == .socialMediaKit ? "Social Media Kit" : "Creator Studio")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isInspectorPresented) {
             creatorInspector
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isSocialInspectorPresented) {
+            socialCampaignInspector
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -380,18 +443,7 @@ struct CreatorStudioView: View {
     private var selectedToolHandoff: some View {
         switch selectedTool {
         case .social:
-            compactHandoffPanel(
-                title: "Social Kit",
-                detail: "Caption drafts and platform notes stay local until a future provider connection exists.",
-                systemImage: "bubble.left.and.bubble.right.fill",
-                accent: HFColors.violet,
-                actionTitle: "Prepare the Social Kit",
-                actionIdentifier: "hf.creatorStudio.prepareSocialKit",
-                routeIdentifier: "hf.route.creatorStudioToSocial"
-            ) {
-                selectedFocus = .socialMediaKit
-                didSaveLocalDraft = true
-            }
+            socialCampaignAuthoringWorld
         case .vod:
             compactHandoffPanel(
                 title: "VOD Package",
@@ -439,6 +491,287 @@ struct CreatorStudioView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) tool. \(detail)")
+    }
+
+    private var socialCampaignAuthoringWorld: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.violet.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Social Media Kit")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                            .textCase(.uppercase)
+                            .tracking(1.2)
+
+                        Text(streamingStore.featuredMovie.title)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.74)
+                            .accessibilityIdentifier("hf.spatial.social.projectTitle")
+
+                        Text("\(selectedSocialFocus.displayName) campaign format")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .accessibilityIdentifier("hf.spatial.social.selectedFormat")
+                    }
+
+                    Spacer(minLength: HFSpacing.sm)
+
+                    Button {
+                        select(.look)
+                    } label: {
+                        Label("Back to Creator Studio", systemImage: "chevron.left")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.70)
+                            .padding(.horizontal, HFSpacing.xs)
+                            .frame(height: 34)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.spatial.social.backToStudio")
+                    .accessibilityIdentifier("hf.route.socialToCreatorStudio")
+                }
+
+                ZStack {
+                    socialOpticalBlackSurface
+                    socialCampaignPreview
+                    ForEach(HFSocialCampaignFocus.allCases) { focus in
+                        socialCreativeObject(focus)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 430)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Campaign preview first. Selected format \(selectedSocialFocus.displayName). Five local creative formats.")
+                .accessibilityIdentifier("hf.spatial.social.world")
+
+                VStack(spacing: HFSpacing.sm) {
+                    HFEnergyAction(title: "Review Campaign", systemImage: "checkmark.seal.fill", style: .gold) {
+                        didSaveSocialCampaign = true
+                        didSaveLocalDraft = true
+                    }
+                    .accessibilityIdentifier("hf.spatial.social.reviewCampaign")
+                    .accessibilityIdentifier("hf.creatorStudio.prepareSocialKit")
+                    .accessibilityIdentifier("hf.route.creatorStudioToSocial")
+
+                    HStack(spacing: HFSpacing.sm) {
+                        HFEnergyAction(title: didSaveSocialCampaign ? "Campaign Saved" : "Save Local Campaign", systemImage: "square.and.arrow.down", style: .glass) {
+                            didSaveSocialCampaign = true
+                            didSaveLocalDraft = true
+                        }
+                        .accessibilityIdentifier("hf.spatial.social.saveDraft")
+
+                        HFEnergyAction(title: "Open Inspector", systemImage: "slider.horizontal.3", style: .glass) {
+                            isSocialInspectorPresented = true
+                        }
+                        .accessibilityIdentifier("hf.spatial.social.inspector")
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.spatial.social")
+    }
+
+    private var socialOpticalBlackSurface: some View {
+        RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+            .fill(
+                RadialGradient(
+                    colors: [
+                        HFColors.violet.opacity(0.28),
+                        HFColors.background.opacity(0.98),
+                        Color.black
+                    ],
+                    center: .center,
+                    startRadius: 30,
+                    endRadius: 390
+                )
+            )
+            .overlay(
+                HFDepthContourOverlay(color: HFColors.violet.opacity(0.78), lineWidth: 0.8)
+                    .opacity(0.34)
+                    .padding(.horizontal, -30)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+            .accessibilityHidden(true)
+    }
+
+    private var socialCampaignPreview: some View {
+        ZStack(alignment: .bottomLeading) {
+            projectArtwork(for: streamingStore.featuredMovie)
+                .frame(width: 214, height: 316)
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                .overlay(
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.28), Color.black.opacity(0.92)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.64), lineWidth: 1.2)
+                )
+                .shadow(color: HFColors.violet.opacity(reduceMotion ? 0 : 0.35), radius: reduceMotion ? 0 : 30, x: 0, y: 18)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(selectedSocialFocus.displayName)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.violet.opacity(0.95))
+                    .textCase(.uppercase)
+                    .tracking(1.1)
+
+                Text(streamingStore.featuredMovie.title)
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.68)
+
+                socialPreviewContent
+            }
+            .frame(maxWidth: 182, alignment: .leading)
+            .padding(HFSpacing.md)
+            .padding(.bottom, selectedSocialFocus == .platforms ? 58 : 0)
+        }
+        .scaleEffect(reduceMotion ? 1 : 1.02)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Dominant vertical campaign preview. \(selectedSocialFocus.displayName). \(selectedSocialFocus.purpose).")
+        .accessibilityIdentifier("hf.spatial.social.preview")
+    }
+
+    @ViewBuilder
+    private var socialPreviewContent: some View {
+        Group {
+            switch selectedSocialFocus {
+            case .poster:
+                Text("Key-art crop. Title lockup. Local composition note.")
+                    .accessibilityIdentifier("hf.social.posterPreview")
+            case .reel:
+                Text("Vertical clip placeholder. 00:18 local trailer note.")
+                    .accessibilityIdentifier("hf.social.reelPreview")
+            case .caption:
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tonight on HighFive: choose the scene you would replay first.")
+                        .accessibilityIdentifier("hf.social.captionPreview")
+                    Text("2 alternate local drafts")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.social.captionDrafts")
+                }
+            case .story:
+                Text("Vertical story composition. Premiere callout. Local-only preview.")
+                    .accessibilityIdentifier("hf.social.storyPreview")
+            case .platforms:
+                Text("Campaign variants staged locally. Readiness stays in the inspector.")
+                    .accessibilityIdentifier("hf.social.platformPreview")
+            }
+        }
+        .font(HFTypography.caption)
+        .foregroundStyle(HFColors.textPrimary)
+        .lineLimit(3)
+        .minimumScaleFactor(0.74)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func socialCreativeObject(_ focus: HFSocialCampaignFocus) -> some View {
+        let isSelected = selectedSocialFocus == focus
+        let offset = socialFocusOffset(focus, isSelected: isSelected)
+
+        return Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                selectedSocialFocus = focus
+            }
+        } label: {
+            VStack(spacing: HFSpacing.xxs) {
+                Image(systemName: focus.systemImage)
+                    .font(.system(size: isSelected ? 20 : 17, weight: .black))
+                    .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                    .frame(width: isSelected ? 54 : 46, height: isSelected ? 54 : 46)
+                    .background(isSelected ? AnyShapeStyle(LinearGradient(colors: [HFColors.violet, HFColors.gold.opacity(0.88)], startPoint: .topLeading, endPoint: .bottomTrailing)) : AnyShapeStyle(Color.white.opacity(0.08)))
+                    .clipShape(Circle())
+
+                Text(focus.displayName)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(isSelected ? HFColors.gold : HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(width: 88, height: 88)
+            .background(isSelected ? HFColors.violet.opacity(0.18) : Color.black.opacity(0.22))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(isSelected ? HFColors.violet.opacity(0.62) : HFColors.glassStroke, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isSelected ? 1.08 : 0.88)
+        .opacity(isSelected ? 1 : 0.70)
+        .offset(offset)
+        .accessibilityLabel("\(focus.displayName), \(isSelected ? "selected" : "not selected"). \(focus.purpose)")
+        .accessibilityIdentifier(focus.accessibilityIdentifier)
+    }
+
+    private func socialFocusOffset(_ focus: HFSocialCampaignFocus, isSelected: Bool) -> CGSize {
+        let selectedLift: CGFloat = isSelected && !reduceMotion ? -10 : 0
+        switch focus {
+        case .poster: return CGSize(width: -118, height: -154 + selectedLift)
+        case .reel: return CGSize(width: 118, height: -154 + selectedLift)
+        case .caption: return CGSize(width: -128, height: 4 + selectedLift)
+        case .story: return CGSize(width: 128, height: 4 + selectedLift)
+        case .platforms: return CGSize(width: 0, height: 162 + selectedLift)
+        }
+    }
+
+    private var socialCampaignInspector: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Campaign Inspector",
+                    detail: "Local Draft, provider readiness, and platform boundaries stay secondary to the campaign preview.",
+                    systemImage: "slider.horizontal.3",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioReadinessRow(title: "Local Draft", detail: didSaveSocialCampaign ? "Campaign saved locally for review." : "Campaign remains editable locally.", status: "Local", systemImage: "pencil", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.localDraft")
+                    HFCreatorStudioReadinessRow(title: "Provider-ready", detail: "Campaign fields are staged without provider behavior.", status: "Ready", systemImage: "checkmark.seal.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.providerReady")
+                    HFCreatorStudioReadinessRow(title: "Not Connected Yet", detail: "No provider account is connected for this local campaign.", status: "Boundary", systemImage: "network.slash", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.social.notConnected")
+                    HFCreatorStudioReadinessRow(title: "Caption drafts", detail: "\(captionDraftCards.count) local caption drafts remain available.", status: "Local", systemImage: "text.quote", accent: HFColors.violet)
+                    HFCreatorStudioReadinessRow(title: "Poster placeholder", detail: "Key-art crop remains a local composition preview.", status: "Local", systemImage: "photo.fill", accent: HFColors.violet)
+                    HFCreatorStudioReadinessRow(title: "Reel placeholder", detail: "Vertical moving-image placeholder remains local.", status: "Local", systemImage: "film.fill", accent: HFColors.violet)
+                    HFCreatorStudioReadinessRow(title: "Story placeholder", detail: "Story composition remains local-only.", status: "Local", systemImage: "rectangle.portrait.fill", accent: HFColors.violet)
+                    HFCreatorStudioReadinessRow(title: "Instagram readiness", detail: "Poster and caption planning only.", status: "Provider-ready", systemImage: "camera.viewfinder", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.instagramReadiness")
+                    HFCreatorStudioReadinessRow(title: "TikTok readiness", detail: "Reel placeholder and caption planning only.", status: "Provider-ready", systemImage: "music.note", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.tiktokReadiness")
+                    HFCreatorStudioReadinessRow(title: "YouTube Shorts readiness", detail: "Short-form preview planning only.", status: "Provider-ready", systemImage: "play.rectangle.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.youtubeShortsReadiness")
+                    HFCreatorStudioReadinessRow(title: "X / Threads readiness", detail: "Prompt and copy planning only.", status: "Provider-ready", systemImage: "text.bubble.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.threadsReadiness")
+                    HFCreatorStudioReadinessRow(title: "No live publishing", detail: "No posting, scheduling, upload, or platform action is active.", status: "Safe", systemImage: "lock.shield.fill", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.social.noLivePublishing")
+                    HFCreatorStudioReadinessRow(title: "No provider account connected", detail: "Campaign authoring remains local and provider-free.", status: "Safe", systemImage: "person.crop.circle.badge.xmark", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.social.noProviderConnection")
+                    HFCreatorStudioReadinessRow(title: "Campaign remains local", detail: "No export, file picker, upload, or media write is active.", status: "Local", systemImage: "lock.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.social.campaignLocalOnly")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .accessibilityIdentifier("hf.social.inspector")
     }
 
     private func compactHandoffPanel(
