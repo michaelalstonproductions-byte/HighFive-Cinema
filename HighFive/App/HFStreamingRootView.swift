@@ -66,6 +66,10 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-downloads-empty")
             || arguments.contains("--hf-start-movie-detail")
             || arguments.contains("--hf-start-player")
+            || arguments.contains("--hf-start-player-controls")
+            || arguments.contains("--hf-start-player-metadata")
+            || arguments.contains("--hf-start-player-watch-together")
+            || arguments.contains("--hf-start-player-creator-commentary")
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-social-media-kit")
@@ -133,7 +137,21 @@ struct HFStreamingRootView: View {
     }
 
     private static var shouldStartInPlayer: Bool {
-        ProcessInfo.processInfo.arguments.contains("--hf-start-player")
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-player")
+            || arguments.contains("--hf-start-player-controls")
+            || arguments.contains("--hf-start-player-metadata")
+            || arguments.contains("--hf-start-player-watch-together")
+            || arguments.contains("--hf-start-player-creator-commentary")
+    }
+
+    private static var playerInitialSurface: HFPlayerSurfaceFocus {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-player-controls") { return .controls }
+        if arguments.contains("--hf-start-player-metadata") { return .metadata }
+        if arguments.contains("--hf-start-player-watch-together") { return .watchTogether }
+        if arguments.contains("--hf-start-player-creator-commentary") { return .creatorCommentary }
+        return .cinema
     }
 
     private static var shouldStartInCreatorStudio: Bool {
@@ -302,9 +320,11 @@ struct HFStreamingRootView: View {
     }
 
     private var qaPlayerView: some View {
-        HFPlayerServiceSheet(movie: Self.qaMovieDetailMovie)
-            .background(HFColors.screenBackground.ignoresSafeArea())
-            .hfSpatialNavigationSpine()
+        NavigationStack {
+            HFPlayerServiceSheet(movie: Self.qaMovieDetailMovie, initialSurface: Self.playerInitialSurface)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialNavigationSpine()
     }
 
     private var qaCreatorStudioView: some View {

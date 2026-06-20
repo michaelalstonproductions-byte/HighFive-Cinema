@@ -909,33 +909,76 @@ private struct HFPlaybackBoundaryRow: View {
     }
 }
 
+enum HFPlayerSurfaceFocus: String, CaseIterable, Identifiable {
+    case cinema
+    case controls
+    case metadata
+    case watchTogether
+    case creatorCommentary
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .cinema: return "Cinema"
+        case .controls: return "Controls"
+        case .metadata: return "Metadata"
+        case .watchTogether: return "Watch Together"
+        case .creatorCommentary: return "Creator Commentary"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .cinema: return "play.rectangle.fill"
+        case .controls: return "slider.horizontal.3"
+        case .metadata: return "info.circle.fill"
+        case .watchTogether: return "person.2.fill"
+        case .creatorCommentary: return "quote.bubble.fill"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .watchTogether:
+            return HFColors.cyanGlow
+        case .creatorCommentary:
+            return HFColors.violet
+        default:
+            return HFColors.gold
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        "hf.player.surface.\(rawValue)"
+    }
+}
+
 struct HFPlayerServiceSheet: View {
     let movie: Movie
+    let initialSurface: HFPlayerSurfaceFocus
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var showsProtectedDepthPreview = false
-    @State private var showsPlayerReadiness = false
-    @State private var isPlayerAwake = false
+    @State private var showsPlayerDetails = false
+    @State private var isSceneReady = false
+    @State private var selectedSurface: HFPlayerSurfaceFocus
+
+    init(movie: Movie, initialSurface: HFPlayerSurfaceFocus = .cinema) {
+        self.movie = movie
+        self.initialSurface = initialSurface
+        _selectedSurface = State(initialValue: initialSurface)
+    }
 
     private var catalogMovie: Movie {
         streamingStore.movie(id: movie.id) ?? movie
     }
 
-    private var playbackDescriptor: HFPlaybackDescriptor {
-        streamingStore.playbackDescriptor(for: catalogMovie)
-    }
-
-    private var entitlementContext: HFPlaybackDescriptorEntitlementContext {
-        streamingStore.playbackEntitlementContext(for: catalogMovie)
-    }
-
     private var gatedPlaybackDescriptor: HFPlaybackDescriptorAccessResponse {
         streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
-    }
-
-    private var backendContract: HFBackendPlaybackDescriptorContract {
-        streamingStore.backendPlaybackDescriptorContract(for: catalogMovie)
     }
 
     var body: some View {
@@ -943,47 +986,83 @@ struct HFPlayerServiceSheet: View {
             HFColors.screenBackground
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
-                header
-                playerPreview
-                localPreviewPanel
-                primaryActions
-                playerReadinessButton
-                Spacer()
+            atmosphereLayer
+
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    header
+                    playerPreview
+                    routeSpotlight
+                    premiumTimeline
+                    floatingControls
+                    viewerIntelligenceStrip
+                    gatewaySurface
+                    metadataSurface
+                }
+                .padding(HFSpacing.lg)
+                .padding(.bottom, HFSpacing.xxl)
             }
-            .padding(HFSpacing.lg)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showsProtectedDepthPreview) {
             HighFiveProtectedSpatialPeekBridge()
         }
-        .sheet(isPresented: $showsPlayerReadiness) {
-            playerReadinessSheet
+        .sheet(isPresented: $showsPlayerDetails) {
+            playerDetailsSheet
         }
         .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 4.4).repeatForever(autoreverses: true)) {
-                isPlayerAwake = true
+            guard !isSceneReady else { return }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+                isSceneReady = true
             }
         }
+        .hfSpatialSceneEntrance(isActive: isSceneReady, reduceMotion: reduceMotion)
+        .hfSpatialFocalHandoff("hf.spatial.handoff.movieToPlayer")
         .accessibilityIdentifier("hf.spatial.player")
+    }
+
+    private var atmosphereLayer: some View {
+        ZStack {
+            RadialGradient(
+                colors: [
+                    selectedSurface.accent.opacity(reduceTransparency ? 0.14 : 0.24),
+                    HFColors.background.opacity(0.82),
+                    Color.black
+                ],
+                center: .topTrailing,
+                startRadius: 16,
+                endRadius: 520
+            )
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.24),
+                    selectedSurface.accent.opacity(reduceTransparency ? 0.08 : 0.16),
+                    Color.black.opacity(0.72)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+        .accessibilityIdentifier("hf.player.atmosphereLayer")
     }
 
     private var header: some View {
         HStack(alignment: .top, spacing: HFSpacing.md) {
             VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text("HighFive Player")
-                    .font(HFTypography.section)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("Local Preview")
-                    .font(HFTypography.caption)
+                Text("HIGHFIVE PLAYER")
+                    .font(HFTypography.micro)
                     .foregroundStyle(HFColors.gold)
                 Text(catalogMovie.title)
                     .font(HFTypography.display)
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
+                Text("Local Preview destination")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
             }
 
             Spacer()
@@ -1001,17 +1080,20 @@ struct HFPlayerServiceSheet: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Close Player")
         }
+        .accessibilityElement(children: .combine)
+        .accessibilitySortPriority(10)
+        .accessibilityIdentifier("hf.player.header")
     }
 
     private var playerPreview: some View {
-        ZStack(alignment: .bottomLeading) {
+        ZStack(alignment: .bottom) {
             if HFPosterAssetHealth.hasImage(named: catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName),
                let assetName = catalogMovie.backdropAssetName ?? catalogMovie.posterAssetName {
                 Image(assetName)
                     .resizable()
                     .scaledToFill()
-                    .scaleEffect(reduceMotion ? 1 : (isPlayerAwake ? 1.035 : 1.0))
-                    .offset(x: reduceMotion ? 0 : (isPlayerAwake ? -6 : 6))
+                    .scaleEffect(reduceMotion ? 1 : (isSceneReady ? 1.025 : 1.0))
+                    .offset(y: reduceMotion ? 0 : (isSceneReady ? -3 : 5))
             } else {
                 HFPosterFallback(title: catalogMovie.title)
             }
@@ -1021,180 +1103,303 @@ struct HFPlayerServiceSheet: View {
             HFDepthContourOverlay(color: HFColors.cyanGlow)
                 .opacity(0.64)
 
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 48, weight: .black))
-                    .foregroundStyle(HFColors.gold)
-                Text("Local Preview")
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("Ready in local preview")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                Text(catalogMovie.metadataLine)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .center, spacing: HFSpacing.md) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 58, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .shadow(color: HFColors.amberGlow.opacity(0.42), radius: 18)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Local Preview")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(catalogMovie.metadataLine)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFPlayerStatusPill(title: "Cinema Mode", color: HFColors.gold)
+                    HFPlayerStatusPill(title: "Local", color: HFColors.cyanGlow)
+                    HFPlayerStatusPill(title: gatedPlaybackDescriptor.gateStatus.statusLabel, color: HFColors.gold)
+                }
             }
             .padding(HFSpacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 340)
+        .frame(height: 390)
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
                 .stroke(HFColors.goldStroke, lineWidth: 1)
         )
-        .accessibilityIdentifier("hf.spatial.player.tiltReveal")
-    }
-
-    private var localPreviewPanel: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Label("Local Preview", systemImage: "play.rectangle.fill")
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("HighFive Player is using the local catalog preview for this title.")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(HFSpacing.lg)
+        .overlay(alignment: .topLeading) {
+            HFSpatialRouteBadge(title: "Movie -> Player", accent: HFColors.gold)
+                .padding(HFSpacing.md)
         }
-        .accessibilityIdentifier("hf.spatial.player.localPreview")
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Player frame, \(catalogMovie.title), Local Preview")
+        .accessibilitySortPriority(9)
+        .accessibilityIdentifier("hf.player.cinematicFrame")
     }
 
-    private var providerStatusPanel: some View {
-        let providerStatus = streamingStore.streamingProviderStatus(for: catalogMovie)
-        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Label(providerStatus.status.statusLabel, systemImage: providerStatus.systemImage)
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("Backend-mediated playback only. \(playbackDescriptor.boundary.detail)")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+    @ViewBuilder
+    private var routeSpotlight: some View {
+        switch selectedSurface {
+        case .cinema:
+            EmptyView()
+        case .controls:
+            HFOpticalGlassSurface(cornerRadius: 26, strokeColor: HFColors.gold.opacity(0.58)) {
+                HStack(spacing: HFSpacing.md) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.14))
+                        .clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Floating Controls")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Timeline and command deck are active for local preview.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                    }
+                }
+                .padding(HFSpacing.md)
             }
-            .padding(HFSpacing.lg)
-        }
-        .accessibilityIdentifier("hf.player.providerStatus")
-        .accessibilityIdentifier(providerStatus.accessibilityIdentifier)
-    }
-
-    private var entitlementGatePanel: some View {
-        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Label("Playback descriptor requires entitlement", systemImage: "lock.shield.fill")
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("\(gatedPlaybackDescriptor.gateStatus.statusLabel). Entitlement validation required before a backend descriptor can enable provider playback.")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.entitlementGate")
-                Text("Cloudflare playback requires backend descriptor. \(gatedPlaybackDescriptor.cloudflareState.statusLabel).")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.cloudflareDescriptorRequired")
-                Text("No Cloudflare token in app")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.noCloudflareToken")
-                Text("Backend playback descriptor endpoint required")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.backendDescriptorContract")
-                Text(streamingStore.backendEntitlementRequestState.statusLabel)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.stagingEntitlementState")
-                Text(streamingStore.backendPlaybackDescriptorRequestState.statusLabel)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.stagingDescriptorState")
-                Text(backendContract.entitlementValidationResponse.entitlementStatus.statusLabel)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.serverEntitlementValidation")
-                Text("Local Preview fallback active")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.gold)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("hf.player.localPreviewFallback")
-            }
-            .padding(HFSpacing.lg)
+            .accessibilityIdentifier("hf.player.controlsSpotlight")
+        case .metadata:
+            metadataSurface
+        case .watchTogether:
+            gatewayCard(
+                title: "Watch Together Gateway",
+                detail: "Player routes into the local Connect room for this title.",
+                systemImage: "person.2.fill",
+                color: HFColors.cyanGlow,
+                isSelected: true
+            )
+            .accessibilityIdentifier("hf.player.watchTogetherGatewaySpotlight")
+        case .creatorCommentary:
+            gatewayCard(
+                title: "Creator Commentary Gateway",
+                detail: "Player routes into Creator Studio context without changing playback.",
+                systemImage: "quote.bubble.fill",
+                color: HFColors.violet,
+                isSelected: true
+            )
+            .accessibilityIdentifier("hf.player.creatorCommentaryGatewaySpotlight")
         }
     }
 
-    private var primaryActions: some View {
-        VStack(spacing: HFSpacing.sm) {
-            Button {
+    private var premiumTimeline: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.gold.opacity(selectedSurface == .controls ? 0.58 : 0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack {
+                    Label("Premium Timeline", systemImage: "waveform.path.ecg")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer()
+                    Text("00:42 / 1:47:00")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.gold)
+                }
+
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.12))
+                        Capsule()
+                            .fill(HFColors.goldGradient)
+                            .frame(width: proxy.size.width * 0.22)
+                        Circle()
+                            .fill(HFColors.gold)
+                            .frame(width: 16, height: 16)
+                            .offset(x: max(0, proxy.size.width * 0.22 - 8))
+                    }
+                }
+                .frame(height: 12)
+                .accessibilityHidden(true)
+
+                HStack {
+                    Text("Chapter 01")
+                    Spacer()
+                    Text("Opening pull")
+                    Spacer()
+                    Text("Depth cues ready")
+                }
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityLabel("Premium Timeline, 42 seconds elapsed")
+        .accessibilityIdentifier("hf.player.timeline")
+    }
+
+    private var floatingControls: some View {
+        HFSpatialCommandBar {
+            HFEnergyAction(title: "Continue Local Preview", systemImage: "play.fill", style: .gold) {
                 streamingStore.markStartedWatching(catalogMovie)
-            } label: {
-                Label("Continue Local Preview", systemImage: "play.fill")
-                    .font(HFTypography.smallAction)
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(HFColors.goldGradient)
-                    .clipShape(Capsule())
+                selectedSurface = .controls
             }
-            .buttonStyle(.plain)
             .accessibilityIdentifier("hf.player.continueLocalPreview")
 
-            Button {
-                showsProtectedDepthPreview = true
+            HStack(spacing: HFSpacing.sm) {
+                HFEnergyAction(title: "Depth + Peek", systemImage: "cube.transparent", style: .cyan) {
+                    showsProtectedDepthPreview = true
+                    selectedSurface = .controls
+                }
+                .accessibilityIdentifier("hf.player.depthPeekCTA")
+
+                HFEnergyAction(title: "Player Details", systemImage: "info.circle.fill", style: .glass) {
+                    selectedSurface = .metadata
+                    showsPlayerDetails = true
+                }
+                .accessibilityIdentifier("hf.player.details")
+            }
+        }
+        .accessibilityIdentifier("hf.player.floatingControls")
+    }
+
+    private var viewerIntelligenceStrip: some View {
+        HFOpticalGlassSurface(cornerRadius: 26, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            HStack(spacing: HFSpacing.sm) {
+                HFPlayerInsight(title: "Local Signal", value: "Ready", systemImage: "antenna.radiowaves.left.and.right", color: HFColors.cyanGlow)
+                HFPlayerInsight(title: "Best Scene", value: "Opening", systemImage: "sparkles.tv.fill", color: HFColors.gold)
+                HFPlayerInsight(title: "Room Fit", value: "3 viewers", systemImage: "person.2.fill", color: HFColors.cyanGlow)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Viewer Intelligence, Local Signal Ready, Best Scene Opening, Room Fit 3 viewers")
+        .accessibilityIdentifier("hf.player.viewerIntelligence")
+    }
+
+    private var gatewaySurface: some View {
+        HStack(spacing: HFSpacing.md) {
+            NavigationLink {
+                ConnectHubView(initialMode: .watchRoom)
             } label: {
-                Label("Try Depth + Peek", systemImage: "cube.transparent")
-                    .font(HFTypography.smallAction)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(Color.white.opacity(0.10))
-                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.32), lineWidth: 1))
-                    .clipShape(Capsule())
+                gatewayCard(
+                    title: "Watch Together",
+                    detail: "Open a local room around this title.",
+                    systemImage: "person.2.fill",
+                    color: HFColors.cyanGlow,
+                    isSelected: selectedSurface == .watchTogether
+                )
             }
             .buttonStyle(.plain)
-            .accessibilityIdentifier("hf.player.depthPeekCTA")
+            .simultaneousGesture(TapGesture().onEnded { selectedSurface = .watchTogether })
+            .accessibilityIdentifier("hf.player.watchTogetherGateway")
+
+            NavigationLink {
+                CreatorStudioView()
+            } label: {
+                gatewayCard(
+                    title: "Creator Commentary",
+                    detail: "Review the creator context locally.",
+                    systemImage: "quote.bubble.fill",
+                    color: HFColors.violet,
+                    isSelected: selectedSurface == .creatorCommentary
+                )
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded { selectedSurface = .creatorCommentary })
+            .accessibilityIdentifier("hf.player.creatorCommentaryGateway")
         }
-        .accessibilityIdentifier("hf.player.primaryActions")
     }
 
-    private var playerReadinessButton: some View {
-        Button {
-            showsPlayerReadiness = true
-        } label: {
-            Label("Access & Playback Readiness", systemImage: "checkmark.shield.fill")
-                .font(HFTypography.smallAction)
+    private func gatewayCard(title: String, detail: String, systemImage: String, color: Color, isSelected: Bool) -> some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: color.opacity(isSelected ? 0.74 : 0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundStyle(color)
+                    .frame(width: 48, height: 48)
+                    .background(color.opacity(0.14))
+                    .clipShape(Circle())
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.76)
+                Text(detail)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                if isSelected || differentiateWithoutColor {
+                    Label(isSelected ? "Selected gateway" : "Gateway", systemImage: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(color)
+                }
+            }
+            .padding(HFSpacing.md)
+            .frame(maxWidth: .infinity, minHeight: 190, alignment: .topLeading)
+        }
+        .hfSpatialSelectionTreatment(isSelected: isSelected, accent: color, reduceMotion: reduceMotion, differentiateWithoutColor: differentiateWithoutColor)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isSelected ? "Selected" : "Available")
+    }
+
+    private var metadataSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(selectedSurface == .metadata ? 0.56 : 0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label("Premium Metadata", systemImage: "rectangle.stack.fill")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text("Local preview uses the on-device catalog surface for this title. Access, source, and room context remain reviewable without changing playback systems.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    metadataItem(title: "Format", value: "Cinematic")
+                    metadataItem(title: "Preview", value: "Local")
+                    metadataItem(title: "Access", value: gatedPlaybackDescriptor.gateStatus.statusLabel)
+                    metadataItem(title: "Room", value: "Ready")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.player.metadataSurface")
+    }
+
+    private func metadataItem(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title.uppercased())
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+            Text(value)
+                .font(HFTypography.caption.weight(.bold))
                 .foregroundStyle(HFColors.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 46)
-                .background(Color.white.opacity(0.08))
-                .overlay(Capsule().stroke(HFColors.glassStroke, lineWidth: 1))
-                .clipShape(Capsule())
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
         }
-        .buttonStyle(.plain)
+        .padding(HFSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private var playerReadinessSheet: some View {
+    private var playerDetailsSheet: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("Access & Playback Readiness")
+                        Text("Player Details")
                             .font(HFTypography.title)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("Provider and entitlement checks remain reviewable without covering the player surface.")
+                        Text("Local preview, viewer context, and access state stay secondary to the cinematic frame.")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                     }
-                    providerStatusPanel
-                    entitlementGatePanel
+                    metadataSurface
+                    viewerIntelligenceStrip
                 }
                 .padding(HFSpacing.lg)
             }
@@ -1202,7 +1407,7 @@ struct HFPlayerServiceSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showsPlayerReadiness = false
+                        showsPlayerDetails = false
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .bold))
@@ -1212,10 +1417,54 @@ struct HFPlayerServiceSheet: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Close readiness")
+                    .accessibilityLabel("Close player details")
                 }
             }
         }
         .presentationDetents([.medium, .large])
+    }
+}
+
+private struct HFPlayerStatusPill: View {
+    let title: String
+    let color: Color
+
+    var body: some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, HFSpacing.sm)
+            .frame(height: 26)
+            .background(color.opacity(0.12))
+            .overlay(Capsule().stroke(color.opacity(0.32), lineWidth: 1))
+            .clipShape(Capsule())
+    }
+}
+
+private struct HFPlayerInsight: View {
+    let title: String
+    let value: String
+    let systemImage: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(color)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(value)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
