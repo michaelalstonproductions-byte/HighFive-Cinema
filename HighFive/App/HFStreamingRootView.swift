@@ -70,6 +70,11 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-social-media-kit-platforms")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-vod-package-trailer")
+            || arguments.contains("--hf-start-vod-package-poster")
+            || arguments.contains("--hf-start-vod-package-synopsis")
+            || arguments.contains("--hf-start-vod-package-access")
+            || arguments.contains("--hf-start-vod-package-release")
             || arguments.contains("--hf-start-connect")
             || arguments.contains("--hf-start-premiere-lobby")
             || arguments.contains("--hf-start-backend-status")
@@ -96,6 +101,11 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-social-media-kit-platforms")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-vod-package-trailer")
+            || arguments.contains("--hf-start-vod-package-poster")
+            || arguments.contains("--hf-start-vod-package-synopsis")
+            || arguments.contains("--hf-start-vod-package-access")
+            || arguments.contains("--hf-start-vod-package-release")
             || arguments.contains("--hf-start-backend-status")
             || arguments.contains("--hf-start-developer-qa")
             || arguments.contains("--hf-start-demo-tour")
@@ -124,6 +134,11 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-social-media-kit-platforms")
             || arguments.contains("--hf-start-instagram-connect")
             || arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-vod-package-trailer")
+            || arguments.contains("--hf-start-vod-package-poster")
+            || arguments.contains("--hf-start-vod-package-synopsis")
+            || arguments.contains("--hf-start-vod-package-access")
+            || arguments.contains("--hf-start-vod-package-release")
     }
 
     private static var shouldStartInConnect: Bool {
@@ -148,7 +163,7 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         if Self.shouldStartInSocialMediaKit { return .socialMediaKit }
         if arguments.contains("--hf-start-instagram-connect") { return .instagramConnect }
-        if arguments.contains("--hf-start-vod-package") { return .vodPackage }
+        if Self.shouldStartInVODPackage { return .vodPackage }
         return .dashboard
     }
 
@@ -169,6 +184,25 @@ struct HFStreamingRootView: View {
         if arguments.contains("--hf-start-social-media-kit-story") { return .story }
         if arguments.contains("--hf-start-social-media-kit-platforms") { return .platforms }
         return .poster
+    }
+
+    private static var shouldStartInVODPackage: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-vod-package-trailer")
+            || arguments.contains("--hf-start-vod-package-poster")
+            || arguments.contains("--hf-start-vod-package-synopsis")
+            || arguments.contains("--hf-start-vod-package-access")
+            || arguments.contains("--hf-start-vod-package-release")
+    }
+
+    private static var vodReleaseInitialFocus: HFVODReleaseFocus {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-vod-package-poster") { return .poster }
+        if arguments.contains("--hf-start-vod-package-synopsis") { return .synopsis }
+        if arguments.contains("--hf-start-vod-package-access") { return .access }
+        if arguments.contains("--hf-start-vod-package-release") { return .release }
+        return .trailer
     }
 
     private static var qaMovieDetailMovie: Movie {
@@ -241,7 +275,11 @@ struct HFStreamingRootView: View {
 
     private var qaCreatorStudioView: some View {
         NavigationStack {
-            CreatorStudioView(initialFocus: Self.creatorStudioInitialFocus, initialSocialFocus: Self.socialCampaignInitialFocus)
+            CreatorStudioView(
+                initialFocus: Self.creatorStudioInitialFocus,
+                initialSocialFocus: Self.socialCampaignInitialFocus,
+                initialVODFocus: Self.vodReleaseInitialFocus
+            )
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
     }

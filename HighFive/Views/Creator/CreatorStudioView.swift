@@ -59,6 +59,66 @@ enum HFSocialCampaignFocus: String, CaseIterable, Identifiable {
     }
 }
 
+enum HFVODReleaseFocus: String, CaseIterable, Identifiable {
+    case trailer
+    case poster
+    case synopsis
+    case access
+    case release
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .trailer: return "Trailer"
+        case .poster: return "Poster"
+        case .synopsis: return "Synopsis"
+        case .access: return "Access"
+        case .release: return "Release"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .trailer: return "film.stack.fill"
+        case .poster: return "photo.fill"
+        case .synopsis: return "text.alignleft"
+        case .access: return "checkmark.shield.fill"
+        case .release: return "sparkles.tv.fill"
+        }
+    }
+
+    var purpose: String {
+        switch self {
+        case .trailer: return "Local trailer-pull preview and timeline note"
+        case .poster: return "Cinematic key art, title lockup, and poster note"
+        case .synopsis: return "Short and long copy staged locally"
+        case .access: return "Pricing, entitlement, and product mapping boundary"
+        case .release: return "Distribution and storefront readiness review"
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .trailer: return "hf.spatial.vod.trailer"
+        case .poster: return "hf.spatial.vod.poster"
+        case .synopsis: return "hf.spatial.vod.synopsis"
+        case .access: return "hf.spatial.vod.access"
+        case .release: return "hf.spatial.vod.release"
+        }
+    }
+
+    var routeIdentifier: String {
+        switch self {
+        case .trailer: return "hf.route.vodTrailer"
+        case .poster: return "hf.route.vodPoster"
+        case .synopsis: return "hf.route.vodSynopsis"
+        case .access: return "hf.route.vodAccess"
+        case .release: return "hf.route.vodRelease"
+        }
+    }
+}
+
 private enum HFSpatialCreatorTool: String, CaseIterable, Identifiable {
     case look = "Look"
     case trailer = "Trailer"
@@ -106,16 +166,24 @@ struct CreatorStudioView: View {
     @State private var selectedFocus: HFCreatorStudioFocus
     @State private var selectedTool: HFSpatialCreatorTool
     @State private var selectedSocialFocus: HFSocialCampaignFocus
+    @State private var selectedVODFocus: HFVODReleaseFocus
     @State private var didSaveLocalDraft = false
     @State private var didSaveSocialCampaign = false
+    @State private var didSaveVODPackage = false
     @State private var isWorktableAwake = false
     @State private var isInspectorPresented = false
     @State private var isSocialInspectorPresented = false
+    @State private var isVODInspectorPresented = false
 
-    init(initialFocus: HFCreatorStudioFocus = .dashboard, initialSocialFocus: HFSocialCampaignFocus = .poster) {
+    init(
+        initialFocus: HFCreatorStudioFocus = .dashboard,
+        initialSocialFocus: HFSocialCampaignFocus = .poster,
+        initialVODFocus: HFVODReleaseFocus = .trailer
+    ) {
         _selectedFocus = State(initialValue: initialFocus)
         _selectedTool = State(initialValue: Self.tool(for: initialFocus))
         _selectedSocialFocus = State(initialValue: initialSocialFocus)
+        _selectedVODFocus = State(initialValue: initialVODFocus)
     }
 
     var body: some View {
@@ -123,6 +191,8 @@ struct CreatorStudioView: View {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 if selectedFocus == .socialMediaKit {
                     socialCampaignAuthoringWorld
+                } else if selectedFocus == .vodPackage {
+                    vodLaunchChamber
                 } else {
                     spatialWorktable
                     creatorStudioActions
@@ -143,7 +213,7 @@ struct CreatorStudioView: View {
                 .accessibilityIdentifier("hf.safeArea.bottomProtected")
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .navigationTitle(selectedFocus == .socialMediaKit ? "Social Media Kit" : "Creator Studio")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isInspectorPresented) {
             creatorInspector
@@ -152,6 +222,11 @@ struct CreatorStudioView: View {
         }
         .sheet(isPresented: $isSocialInspectorPresented) {
             socialCampaignInspector
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isVODInspectorPresented) {
+            vodReleaseInspector
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -166,6 +241,14 @@ struct CreatorStudioView: View {
         }
         .accessibilityIdentifier("hf.creatorStudio.screen")
         .accessibilityIdentifier("hf.spatial.creatorStudio")
+    }
+
+    private var navigationTitle: String {
+        switch selectedFocus {
+        case .socialMediaKit: return "Social Media Kit"
+        case .vodPackage: return "VOD Package"
+        case .dashboard, .instagramConnect: return "Creator Studio"
+        }
     }
 
     private static func tool(for focus: HFCreatorStudioFocus) -> HFSpatialCreatorTool {
@@ -445,18 +528,7 @@ struct CreatorStudioView: View {
         case .social:
             socialCampaignAuthoringWorld
         case .vod:
-            compactHandoffPanel(
-                title: "VOD Package",
-                detail: "Trailer, poster, synopsis, and pricing boundaries are grouped for local package review.",
-                systemImage: "shippingbox.fill",
-                accent: HFColors.gold,
-                actionTitle: "Package the VOD",
-                actionIdentifier: "hf.creatorStudio.packageVOD",
-                routeIdentifier: "hf.route.creatorStudioToVOD"
-            ) {
-                selectedFocus = .vodPackage
-                didSaveLocalDraft = true
-            }
+            vodLaunchChamber
         case .look:
             creativeToolSummary(title: "Look", detail: "Poster direction, color treatment, and mood notes are staged around the project slab.", systemImage: "paintpalette.fill")
         case .trailer:
@@ -772,6 +844,342 @@ struct CreatorStudioView: View {
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .accessibilityIdentifier("hf.social.inspector")
+    }
+
+    private var vodLaunchChamber: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("VOD Launch Chamber")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                            .textCase(.uppercase)
+                            .tracking(1.2)
+
+                        Text(streamingStore.featuredMovie.title)
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.74)
+                            .accessibilityIdentifier("hf.spatial.vod.projectTitle")
+
+                        Text(selectedVODFocus == .release ? "Release readiness focus" : "\(selectedVODFocus.displayName) release focus")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .accessibilityIdentifier("hf.spatial.vod.selectedFocus")
+                    }
+
+                    Spacer(minLength: HFSpacing.sm)
+
+                    Button {
+                        select(.look)
+                    } label: {
+                        Label("Back to Creator Studio", systemImage: "chevron.left")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.70)
+                            .padding(.horizontal, HFSpacing.xs)
+                            .frame(height: 34)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.vod.backToStudio")
+                    .accessibilityIdentifier("hf.route.vodToCreatorStudio")
+                }
+
+                ZStack {
+                    vodOpticalBlackSurface
+                    vodReleaseCore
+                    ForEach(HFVODReleaseFocus.allCases) { focus in
+                        vodReleaseObject(focus)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 452)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Release core first. Selected focus \(selectedVODFocus.displayName). Five local VOD release focuses.")
+                .accessibilityIdentifier("hf.spatial.vod.chamber")
+
+                VStack(spacing: HFSpacing.sm) {
+                    HFEnergyAction(title: "Review Release", systemImage: "checkmark.seal.fill", style: .gold) {
+                        didSaveVODPackage = true
+                        didSaveLocalDraft = true
+                    }
+                    .accessibilityIdentifier("hf.vod.reviewRelease")
+                    .accessibilityIdentifier("hf.creatorStudio.packageVOD")
+                    .accessibilityIdentifier("hf.route.creatorStudioToVOD")
+
+                    HStack(spacing: HFSpacing.sm) {
+                        HFEnergyAction(title: didSaveVODPackage ? "Package Saved" : "Save Local Package", systemImage: "square.and.arrow.down", style: .glass) {
+                            didSaveVODPackage = true
+                            didSaveLocalDraft = true
+                        }
+                        .accessibilityIdentifier("hf.vod.saveDraft")
+
+                        HFEnergyAction(title: "Open Inspector", systemImage: "slider.horizontal.3", style: .glass) {
+                            isVODInspectorPresented = true
+                        }
+                        .accessibilityIdentifier("hf.vod.inspector")
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.spatial.vod")
+    }
+
+    private var vodOpticalBlackSurface: some View {
+        RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+            .fill(
+                RadialGradient(
+                    colors: [
+                        HFColors.gold.opacity(0.22),
+                        HFColors.violet.opacity(0.16),
+                        HFColors.background.opacity(0.98),
+                        Color.black
+                    ],
+                    center: .center,
+                    startRadius: 24,
+                    endRadius: 410
+                )
+            )
+            .overlay(
+                HFDepthContourOverlay(color: HFColors.gold.opacity(0.70), lineWidth: 0.78)
+                    .opacity(0.28)
+                    .padding(.horizontal, -36)
+            )
+            .overlay(
+                Circle()
+                    .trim(from: 0.08, to: 0.86)
+                    .stroke(
+                        LinearGradient(
+                            colors: [HFColors.gold.opacity(0.62), HFColors.violet.opacity(0.28), Color.white.opacity(0.10)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 1.2, lineCap: .round)
+                    )
+                    .frame(width: 286, height: 286)
+                    .rotationEffect(.degrees(reduceMotion ? 0 : -12))
+                    .opacity(0.78)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+            .accessibilityHidden(true)
+    }
+
+    private var vodReleaseCore: some View {
+        ZStack(alignment: .bottomLeading) {
+            projectArtwork(for: streamingStore.featuredMovie)
+                .frame(width: 226, height: 318)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .overlay(
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.24), Color.black.opacity(0.92)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.72), lineWidth: 1.3)
+                )
+                .shadow(color: HFColors.gold.opacity(reduceMotion ? 0 : 0.34), radius: reduceMotion ? 0 : 28, x: 0, y: 20)
+                .shadow(color: HFColors.violet.opacity(reduceMotion ? 0 : 0.28), radius: reduceMotion ? 0 : 30, x: 0, y: -8)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(selectedVODFocus.displayName)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.gold.opacity(0.96))
+                    .textCase(.uppercase)
+                    .tracking(1.1)
+
+                Text(streamingStore.featuredMovie.title)
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.68)
+
+                vodReleasePreviewContent
+            }
+            .frame(maxWidth: 186, alignment: .leading)
+            .padding(HFSpacing.md)
+            .padding(.bottom, selectedVODFocus == .release ? 46 : 0)
+        }
+        .scaleEffect(reduceMotion ? 1 : 1.02)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Dominant VOD release core. \(selectedVODFocus.displayName). \(selectedVODFocus.purpose).")
+        .accessibilityIdentifier("hf.spatial.vod.core")
+    }
+
+    @ViewBuilder
+    private var vodReleasePreviewContent: some View {
+        Group {
+            switch selectedVODFocus {
+            case .trailer:
+                Text("Trailer frame. 00:42 local pull. Timeline note staged for review.")
+                    .accessibilityIdentifier("hf.vod.trailerPreview")
+            case .poster:
+                Text("Cinematic poster treatment. Title lockup. Local poster-readiness note.")
+                    .accessibilityIdentifier("hf.vod.posterPreview")
+            case .synopsis:
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("A compact release synopsis sits inside the chamber.")
+                        .accessibilityIdentifier("hf.vod.synopsisPreview")
+                    Text("Short copy ready")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.shortSynopsis")
+                    Text("Long copy staged locally")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.longSynopsis")
+                }
+            case .access:
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Access boundary review. Local Preview remains available.")
+                        .accessibilityIdentifier("hf.vod.accessPreview")
+                    Text("Pricing boundary")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.pricingBoundary")
+                    Text("Entitlement boundary")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.entitlementBoundary")
+                    Text("StoreKit product mapping readiness")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.storeKitMapping")
+                    Text("Local Preview fallback")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.localPreviewFallback")
+                }
+            case .release:
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Local release review. Provider readiness stays secondary.")
+                        .accessibilityIdentifier("hf.vod.releasePreview")
+                    Text("Distribution readiness")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.distributionReadiness")
+                    Text("Storefront readiness")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.storefrontReadiness")
+                    Text("Release package remains local")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .accessibilityIdentifier("hf.vod.releaseLocalOnly")
+                }
+            }
+        }
+        .font(HFTypography.caption)
+        .foregroundStyle(HFColors.textPrimary)
+        .lineLimit(5)
+        .minimumScaleFactor(0.72)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func vodReleaseObject(_ focus: HFVODReleaseFocus) -> some View {
+        let isSelected = selectedVODFocus == focus
+        let offset = vodFocusOffset(focus, isSelected: isSelected)
+
+        return Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                selectedVODFocus = focus
+            }
+        } label: {
+            VStack(spacing: HFSpacing.xxs) {
+                Image(systemName: focus.systemImage)
+                    .font(.system(size: isSelected ? 20 : 17, weight: .black))
+                    .foregroundStyle(isSelected ? .black : HFColors.textPrimary)
+                    .frame(width: isSelected ? 54 : 46, height: isSelected ? 54 : 46)
+                    .background(isSelected ? AnyShapeStyle(LinearGradient(colors: [HFColors.gold, HFColors.violet.opacity(0.82)], startPoint: .topLeading, endPoint: .bottomTrailing)) : AnyShapeStyle(Color.white.opacity(0.08)))
+                    .clipShape(Circle())
+
+                Text(focus.displayName)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(isSelected ? HFColors.gold : HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(width: 92, height: 88)
+            .background(isSelected ? HFColors.gold.opacity(0.16) : Color.black.opacity(0.22))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(isSelected ? HFColors.gold.opacity(0.62) : HFColors.glassStroke, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isSelected ? 1.08 : 0.88)
+        .opacity(isSelected ? 1 : 0.70)
+        .offset(offset)
+        .accessibilityLabel("\(focus.displayName), \(isSelected ? "selected" : "not selected"). \(focus.purpose)")
+        .accessibilityValue(isSelected ? "Selected" : "Available")
+        .accessibilityIdentifier(focus.accessibilityIdentifier)
+        .accessibilityIdentifier(focus.routeIdentifier)
+    }
+
+    private func vodFocusOffset(_ focus: HFVODReleaseFocus, isSelected: Bool) -> CGSize {
+        let selectedLift: CGFloat = isSelected && !reduceMotion ? -10 : 0
+        switch focus {
+        case .trailer: return CGSize(width: -120, height: -164 + selectedLift)
+        case .poster: return CGSize(width: 120, height: -164 + selectedLift)
+        case .synopsis: return CGSize(width: -132, height: 6 + selectedLift)
+        case .access: return CGSize(width: 132, height: 6 + selectedLift)
+        case .release: return CGSize(width: 0, height: 170 + selectedLift)
+        }
+    }
+
+    private var vodReleaseInspector: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Release Inspector",
+                    detail: "Local Draft, access boundaries, and release readiness stay secondary to the launch chamber.",
+                    systemImage: "slider.horizontal.3",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioReadinessRow(title: "Local Draft", detail: didSaveVODPackage ? "Release package saved locally for review." : "Release package remains editable locally.", status: "Local", systemImage: "pencil", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.vod.localDraft")
+                    HFCreatorStudioReadinessRow(title: "Provider-ready", detail: "Release fields are staged without provider behavior.", status: "Ready", systemImage: "checkmark.seal.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.vod.providerReady")
+                    HFCreatorStudioReadinessRow(title: "Not Connected Yet", detail: "Distribution, storefront, and entitlement providers are outside this local chamber.", status: "Boundary", systemImage: "network.slash", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.vod.notConnected")
+                    HFCreatorStudioReadinessRow(title: "Trailer readiness", detail: "Trailer frame and duration note are staged locally.", status: "Local", systemImage: "film.fill", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.vod.trailerReadiness")
+                    HFCreatorStudioReadinessRow(title: "Poster readiness", detail: "Key-art crop and title lockup are ready for local review.", status: "Local", systemImage: "photo.fill", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.vod.posterReadiness")
+                    HFCreatorStudioReadinessRow(title: "Synopsis readiness", detail: "Short and long synopsis copy remain local.", status: "Local", systemImage: "text.alignleft", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.vod.synopsisReadiness")
+                    HFCreatorStudioReadinessRow(title: "Pricing boundary", detail: "Access planning is staged without transaction behavior.", status: "Boundary", systemImage: "tag.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.vod.pricingBoundary")
+                    HFCreatorStudioReadinessRow(title: "Entitlement boundary", detail: "Server validation remains a future provider boundary.", status: "Boundary", systemImage: "checkmark.shield.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.vod.entitlementBoundary")
+                    HFCreatorStudioReadinessRow(title: "No live VOD provider", detail: "No release provider is active in this local package.", status: "Safe", systemImage: "lock.shield.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.vod.noLiveProvider")
+                    HFCreatorStudioReadinessRow(title: "No distribution provider connected", detail: "Distribution readiness is a local review state.", status: "Safe", systemImage: "network.slash", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.vod.noDistributionProvider")
+                    HFCreatorStudioReadinessRow(title: "No storefront provider connected", detail: "Storefront readiness is a local review state.", status: "Safe", systemImage: "cart.badge.questionmark", accent: HFColors.violet)
+                        .accessibilityIdentifier("hf.vod.noStorefrontProvider")
+                    HFCreatorStudioReadinessRow(title: "Release package remains local", detail: "No media transfer, file generation, provider session, or transaction path is active.", status: "Local", systemImage: "lock.fill", accent: HFColors.gold)
+                        .accessibilityIdentifier("hf.vod.packageLocalOnly")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .accessibilityIdentifier("hf.vod.inspector")
     }
 
     private func compactHandoffPanel(
