@@ -6,6 +6,27 @@ enum HFConnectSpatialMode {
     case premiereLobby
 }
 
+private enum HFConnectProSpotlight {
+    case command
+    case lobby
+    case audience
+    case commentary
+    case roster
+    case seatMap
+    case afterparty
+
+    static var launchSpotlight: HFConnectProSpotlight {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-connect-pro-lobby") { return .lobby }
+        if arguments.contains("--hf-connect-pro-audience") { return .audience }
+        if arguments.contains("--hf-connect-pro-commentary") { return .commentary }
+        if arguments.contains("--hf-connect-pro-roster") { return .roster }
+        if arguments.contains("--hf-connect-pro-seat-map") { return .seatMap }
+        if arguments.contains("--hf-connect-pro-afterparty") { return .afterparty }
+        return .command
+    }
+}
+
 struct ConnectHubView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -18,6 +39,7 @@ struct ConnectHubView: View {
     @State private var showingActivity = false
     @State private var showingInvite = false
     @State private var reactionCount = 3
+    private let proSpotlight: HFConnectProSpotlight
 
     private let movie: Movie?
 
@@ -28,11 +50,13 @@ struct ConnectHubView: View {
     init(initialMode: HFConnectSpatialMode = .hub, movie: Movie? = nil) {
         self._mode = State(initialValue: initialMode)
         self.movie = movie
+        proSpotlight = HFConnectProSpotlight.launchSpotlight
     }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                connectProSurface
                 spatialConnectWorld
                 secondaryConnectContexts
             }
@@ -87,6 +111,408 @@ struct ConnectHubView: View {
             )
         }
         .ignoresSafeArea()
+    }
+
+    private var connectProSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.heroRadius, strokeColor: HFColors.cyanGlow.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "play.tv.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 56, height: 56)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Connect Watch Rooms Pro")
+                            .font(HFTypography.title)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+
+                        Text("Private screening room, premiere lobby, audience presence, commentary, and afterparty preview.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                connectProSpotlightPanel
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    premiereLobbyHero
+                    audiencePresenceWall
+                    creatorPresenceCard
+                    roomTimelinePanel
+                    commentarySurface
+                    reactionsLayer
+                    watchPartyRoster
+                    roomReadinessChecklist
+                    spatialSeatMap
+                    roomEnergyMeter
+                    afterpartyPreview
+                    invitePreview
+                    creatorQAPreview
+                    countdownPreview
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Connect Watch Rooms Pro command center for \(currentMovie.title)")
+        .accessibilityIdentifier("hf.connect.pro.commandCenter")
+    }
+
+    @ViewBuilder
+    private var connectProSpotlightPanel: some View {
+        switch proSpotlight {
+        case .command:
+            connectProModule(
+                title: "Watch Room Command Center",
+                detail: "\(currentMovie.title) is staged for a local room preview with audience, seats, and reactions.",
+                systemImage: "rectangle.grid.2x2.fill",
+                accent: HFColors.gold,
+                identifier: "hf.connect.pro.commandCenter"
+            ) {
+                HStack(spacing: HFSpacing.xs) {
+                    connectProStat("Room", "Local")
+                    connectProStat("Seats", "12")
+                    connectProStat("Signal", "\(reactionCount)")
+                }
+            }
+        case .lobby:
+            premiereLobbyHero
+        case .audience:
+            audiencePresenceWall
+        case .commentary:
+            commentarySurface
+        case .roster:
+            watchPartyRoster
+        case .seatMap:
+            spatialSeatMap
+        case .afterparty:
+            afterpartyPreview
+        }
+    }
+
+    private var premiereLobbyHero: some View {
+        connectProModule(
+            title: "Premiere Lobby Hero",
+            detail: "Gold-lit holding room for the next local premiere moment.",
+            systemImage: "sparkles.tv.fill",
+            accent: HFColors.gold,
+            identifier: "hf.connect.pro.premiereLobby"
+        ) {
+            Button {
+                withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.standardAnimation) {
+                    mode = .premiereLobby
+                }
+            } label: {
+                connectProCapsule("Open Lobby Preview", systemImage: "clock.fill", accent: HFColors.gold)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var audiencePresenceWall: some View {
+        connectProModule(
+            title: "Audience Presence Wall",
+            detail: "A local presence wall shows room energy in preview state.",
+            systemImage: "person.3.sequence.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.connect.pro.audiencePresence"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                connectSeatDot("H", isActive: true, accent: HFColors.gold)
+                connectSeatDot("A", isActive: true, accent: HFColors.cyanGlow)
+                connectSeatDot("B", isActive: true, accent: HFColors.cyanGlow)
+                connectSeatDot("C", isActive: false, accent: HFColors.textMuted)
+            }
+        }
+    }
+
+    private var creatorPresenceCard: some View {
+        connectProModule(
+            title: "Creator Presence Card",
+            detail: "Creator seat is highlighted as host commentary context.",
+            systemImage: "person.crop.circle.badge.checkmark",
+            accent: HFColors.violet,
+            identifier: "hf.connect.pro.creatorPresence"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                connectProCapsule("Host Seat", systemImage: "star.fill", accent: HFColors.violet)
+                connectProCapsule("Ready", systemImage: "checkmark.seal.fill", accent: HFColors.gold)
+            }
+        }
+    }
+
+    private var roomTimelinePanel: some View {
+        connectProModule(
+            title: "Room Timeline",
+            detail: "Lobby, feature, commentary, and afterparty beats are previewed locally.",
+            systemImage: "timeline.selection",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.connect.pro.roomTimeline"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                connectTimelineRow("Lobby", "00:00")
+                connectTimelineRow("Feature", "00:05")
+                connectTimelineRow("Afterparty", "Later")
+            }
+        }
+    }
+
+    private var commentarySurface: some View {
+        connectProModule(
+            title: "Live Commentary Surface",
+            detail: "Commentary cards are visual preview notes only.",
+            systemImage: "quote.bubble.fill",
+            accent: HFColors.violet,
+            identifier: "hf.connect.pro.commentarySurface"
+        ) {
+            Text("Director note: watch the frame shift before the hallway reveal.")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var reactionsLayer: some View {
+        connectProModule(
+            title: "Reactions Layer",
+            detail: "Local reaction glow and applause meters respond in preview state.",
+            systemImage: "sparkles",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.connect.pro.reactionsLayer"
+        ) {
+            Button {
+                reactionCount += 1
+            } label: {
+                connectProCapsule("\(reactionCount) local reactions", systemImage: "hand.thumbsup.fill", accent: HFColors.cyanGlow)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var watchPartyRoster: some View {
+        connectProModule(
+            title: "Watch Party Roster",
+            detail: "Seat labels represent local preview participants.",
+            systemImage: "person.2.fill",
+            accent: HFColors.gold,
+            identifier: "hf.connect.pro.watchPartyRoster"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                connectProCapsule("Host", systemImage: "star.fill", accent: HFColors.gold)
+                connectProCapsule("Seats 2-4", systemImage: "person.2.fill", accent: HFColors.cyanGlow)
+            }
+        }
+    }
+
+    private var roomReadinessChecklist: some View {
+        connectProModule(
+            title: "Room Readiness Checklist",
+            detail: "Portal, seats, reactions, and commentary are ready for local review.",
+            systemImage: "checklist.checked",
+            accent: HFColors.gold,
+            identifier: "hf.connect.pro.readinessChecklist"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                connectTimelineRow("Portal", "Ready")
+                connectTimelineRow("Seats", "Ready")
+                connectTimelineRow("Delivery", "Local")
+            }
+        }
+    }
+
+    private var spatialSeatMap: some View {
+        connectProModule(
+            title: "Spatial Seat Map",
+            detail: "Theater seats are arranged as a visual-only room map.",
+            systemImage: "rectangle.3.group.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.connect.pro.seatMap"
+        ) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
+                ForEach(0..<12, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(index == 0 ? HFColors.gold : (index < 8 ? HFColors.cyanGlow.opacity(0.72) : Color.white.opacity(0.12)))
+                        .frame(height: 18)
+                        .accessibilityLabel("Seat \(index + 1)")
+                }
+            }
+        }
+    }
+
+    private var roomEnergyMeter: some View {
+        connectProModule(
+            title: "Room Signal / Energy Meter",
+            detail: "Cyan room signal and gold host energy stay visual and local.",
+            systemImage: "waveform.path.ecg",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.connect.pro.energyMeter"
+        ) {
+            HStack(alignment: .bottom, spacing: 5) {
+                ForEach([0.34, 0.58, 0.42, 0.78, 0.64, 0.86], id: \.self) { height in
+                    Capsule()
+                        .fill(HFColors.cyanGlow.opacity(0.76))
+                        .frame(width: 10, height: 58 * height)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var afterpartyPreview: some View {
+        connectProModule(
+            title: "Afterparty Preview",
+            detail: "A local post-feature room preview keeps audience energy contained.",
+            systemImage: "moon.stars.fill",
+            accent: HFColors.violet,
+            identifier: "hf.connect.pro.afterpartyPreview"
+        ) {
+            connectProCapsule("Preview Only", systemImage: "lock.fill", accent: HFColors.violet)
+        }
+    }
+
+    private var invitePreview: some View {
+        connectProModule(
+            title: "Invite Preview",
+            detail: "Invitation composition is displayed without delivery.",
+            systemImage: "person.badge.plus.fill",
+            accent: HFColors.gold,
+            identifier: "hf.connect.pro.invitePreview"
+        ) {
+            connectProCapsule("Local Invite Card", systemImage: "envelope.fill", accent: HFColors.gold)
+        }
+    }
+
+    private var creatorQAPreview: some View {
+        connectProModule(
+            title: "Creator Q&A Preview",
+            detail: "Question prompts stay as local cards for the creator room.",
+            systemImage: "questionmark.bubble.fill",
+            accent: HFColors.violet,
+            identifier: "hf.connect.pro.creatorQAPreview"
+        ) {
+            Text("What shot should the room revisit after the premiere?")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var countdownPreview: some View {
+        connectProModule(
+            title: "Premiere Countdown Preview",
+            detail: "Countdown treatment is static and ready for local review.",
+            systemImage: "timer",
+            accent: HFColors.gold,
+            identifier: "hf.connect.pro.countdownPreview"
+        ) {
+            Text("T-18:00")
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(HFColors.gold)
+        }
+    }
+
+    private func connectProModule<Content: View>(
+        title: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        identifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 40, height: 40)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.16)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                    Text(detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(accent.opacity(0.28), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func connectProStat(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func connectProCapsule(_ title: String, systemImage: String, accent: Color) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(HFTypography.micro)
+            .foregroundStyle(accent == HFColors.gold ? .black : HFColors.textPrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, HFSpacing.xs)
+            .frame(height: 30)
+            .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+            .clipShape(Capsule())
+    }
+
+    private func connectSeatDot(_ title: String, isActive: Bool, accent: Color) -> some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(isActive ? .black : HFColors.textMuted)
+            .frame(width: 30, height: 30)
+            .background(isActive ? AnyShapeStyle(accent) : AnyShapeStyle(Color.white.opacity(0.10)))
+            .clipShape(Circle())
+    }
+
+    private func connectTimelineRow(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+            Spacer(minLength: HFSpacing.xs)
+            Text(value)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.gold)
+        }
     }
 
     private var spatialConnectWorld: some View {

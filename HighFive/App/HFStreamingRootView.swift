@@ -176,7 +176,14 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-connect")
             || arguments.contains("--hf-start-connect-room")
+            || arguments.contains("--hf-start-connect-watch-room")
             || arguments.contains("--hf-start-premiere-lobby")
+            || arguments.contains("--hf-connect-pro-lobby")
+            || arguments.contains("--hf-connect-pro-audience")
+            || arguments.contains("--hf-connect-pro-commentary")
+            || arguments.contains("--hf-connect-pro-roster")
+            || arguments.contains("--hf-connect-pro-seat-map")
+            || arguments.contains("--hf-connect-pro-afterparty")
     }
 
     private static var shouldStartInBackendStatus: Bool {
@@ -186,7 +193,9 @@ struct HFStreamingRootView: View {
     private static var connectInitialMode: HFConnectSpatialMode {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("--hf-start-connect-room") { return .watchRoom }
+        if arguments.contains("--hf-start-connect-watch-room") { return .watchRoom }
         if arguments.contains("--hf-start-premiere-lobby") { return .premiereLobby }
+        if arguments.contains("--hf-connect-pro-lobby") { return .premiereLobby }
         return .hub
     }
 
