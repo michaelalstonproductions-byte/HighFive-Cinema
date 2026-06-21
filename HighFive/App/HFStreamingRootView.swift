@@ -9,6 +9,11 @@ enum HFStreamingTab: Hashable {
 }
 
 private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
+    case commandCenter
+    case analytics
+    case executiveDashboard
+    case controlWall
+    case intelligence
     case dashboard
     case activity
     case spotlight
@@ -19,6 +24,11 @@ private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .commandCenter: return "Command Center"
+        case .analytics: return "Analytics"
+        case .executiveDashboard: return "Executive"
+        case .controlWall: return "Control Wall"
+        case .intelligence: return "Intelligence"
         case .dashboard: return "Dashboard"
         case .activity: return "Activity"
         case .spotlight: return "Spotlight"
@@ -29,6 +39,11 @@ private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
+        case .commandCenter: return "rectangle.3.group.fill"
+        case .analytics: return "chart.xyaxis.line"
+        case .executiveDashboard: return "gauge.with.dots.needle.50percent"
+        case .controlWall: return "rectangle.grid.3x2.fill"
+        case .intelligence: return "brain.head.profile"
         case .dashboard: return "rectangle.grid.2x2.fill"
         case .activity: return "waveform.path.ecg"
         case .spotlight: return "sparkle.magnifyingglass"
@@ -175,7 +190,13 @@ struct HFStreamingRootView: View {
 
     private static var shouldStartInHighFiveOS: Bool {
         let arguments = ProcessInfo.processInfo.arguments
-        return arguments.contains("--hf-os-dashboard")
+        return arguments.contains("--hf-spatial-command-center")
+            || arguments.contains("--hf-command-center-deck")
+            || arguments.contains("--hf-command-center-analytics")
+            || arguments.contains("--hf-command-center-executive")
+            || arguments.contains("--hf-command-center-control-wall")
+            || arguments.contains("--hf-command-center-intelligence")
+            || arguments.contains("--hf-os-dashboard")
             || arguments.contains("--hf-os-activity")
             || arguments.contains("--hf-os-spotlight")
             || arguments.contains("--hf-os-mission-control")
@@ -184,6 +205,11 @@ struct HFStreamingRootView: View {
 
     private static var highFiveOSInitialMode: HFHighFiveOSMode {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-command-center-analytics") { return .analytics }
+        if arguments.contains("--hf-command-center-executive") { return .executiveDashboard }
+        if arguments.contains("--hf-command-center-control-wall") { return .controlWall }
+        if arguments.contains("--hf-command-center-intelligence") { return .intelligence }
+        if arguments.contains("--hf-spatial-command-center") || arguments.contains("--hf-command-center-deck") { return .commandCenter }
         if arguments.contains("--hf-os-activity") { return .activity }
         if arguments.contains("--hf-os-spotlight") { return .spotlight }
         if arguments.contains("--hf-os-mission-control") { return .missionControl }
@@ -549,6 +575,17 @@ private struct HFHighFiveOSView: View {
         streamingStore.savedMovies.count
     }
 
+    private var commandMetrics: [HFCommandMetric] {
+        [
+            HFCommandMetric(title: "Viewer Activity", value: featuredMovie.title, detail: "Continue path staged", accent: HFColors.gold, systemImage: "play.rectangle.fill"),
+            HFCommandMetric(title: "Creator Activity", value: "Studio Pro", detail: "Draft surfaces aligned", accent: HFColors.violet, systemImage: "wand.and.stars"),
+            HFCommandMetric(title: "Release Activity", value: "Final Review", detail: "Launch remains visual", accent: HFColors.gold, systemImage: "sparkles.tv.fill"),
+            HFCommandMetric(title: "Room Status", value: "Local", detail: "Connect preview ready", accent: HFColors.cyanGlow, systemImage: "person.3.sequence.fill"),
+            HFCommandMetric(title: "Platform Health", value: "Ready", detail: "Local only", accent: HFColors.cyanGlow, systemImage: "checkmark.seal.fill"),
+            HFCommandMetric(title: "Growth", value: "\(savedCount) saved", detail: "Local signals only", accent: HFColors.gold, systemImage: "chart.line.uptrend.xyaxis")
+        ]
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -588,7 +625,7 @@ private struct HFHighFiveOSView: View {
                         .foregroundStyle(HFColors.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
-                    Text("One local command layer for Watch, Create, Connect, Launch, and Pass.")
+                    Text("Spatial Command Center for Watch, Create, Connect, Launch, Pass, and local platform signals.")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -673,6 +710,16 @@ private struct HFHighFiveOSView: View {
     @ViewBuilder
     private var activeModeSurface: some View {
         switch selectedMode {
+        case .commandCenter:
+            commandCenterSurface
+        case .analytics:
+            analyticsSurface
+        case .executiveDashboard:
+            executiveDashboardSurface
+        case .controlWall:
+            controlWallSurface
+        case .intelligence:
+            intelligenceSurface
         case .dashboard:
             dashboardSurface
         case .activity:
@@ -684,6 +731,196 @@ private struct HFHighFiveOSView: View {
         case .health:
             healthSurface
         }
+    }
+
+    private var commandCenterSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            globalCommandDeck
+            livePreviewPanels
+            roomStatusGrid
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.command.center.globalDeck")
+    }
+
+    private var globalCommandDeck: some View {
+        HFOpticalGlassSurface(cornerRadius: 36, strokeColor: HFColors.gold.opacity(0.52)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.3.group.fill")
+                        .font(.system(size: 28, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 66, height: 66)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Global Command Deck")
+                            .font(.system(size: 34, weight: .black))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+                        Text("Executive cockpit for Watch, Create, Connect, Launch, Pass, and Analytics.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandPillar("Watch", "Streaming", "play.tv.fill", HFColors.gold)
+                    commandPillar("Create", "Studio", "wand.and.stars", HFColors.violet)
+                    commandPillar("Connect", "Rooms", "person.3.sequence.fill", HFColors.cyanGlow)
+                    commandPillar("Launch", "Release", "sparkles.tv.fill", HFColors.gold)
+                    commandPillar("Pass", "Member", "person.text.rectangle.fill", HFColors.gold)
+                    commandPillar("Analytics", "Signals", "chart.xyaxis.line", HFColors.cyanGlow)
+                }
+
+                HFSpatialActionCluster {
+                    HFEnergyAction(title: "Open Executive Dashboard", systemImage: "gauge.with.dots.needle.50percent", style: .gold) {
+                        selectedMode = .executiveDashboard
+                    }
+                    HStack(spacing: HFSpacing.sm) {
+                        HFEnergyAction(title: "Control Wall", systemImage: "rectangle.grid.3x2.fill", style: .glass) {
+                            selectedMode = .controlWall
+                        }
+                        HFEnergyAction(title: "Insights", systemImage: "brain.head.profile", style: .glass) {
+                            selectedMode = .intelligence
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+    }
+
+    private var analyticsSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.48)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Analytics Command Center", detail: "Growth, creator activity, viewer activity, and release activity shown as local visual signals.")
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        ForEach(commandMetrics) { metric in
+                            commandMetricCard(metric)
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            activitySignalsPanel
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.command.center.analytics")
+    }
+
+    private var executiveDashboardSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: 36, strokeColor: HFColors.gold.opacity(0.50)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Executive Dashboard", detail: "One read-only platform cockpit for the HighFive ecosystem.")
+                    HStack(alignment: .top, spacing: HFSpacing.sm) {
+                        executiveTile("Platform Health", "Ready", "Local visual state", HFColors.cyanGlow)
+                        executiveTile("Growth", "\(savedCount) saved", "Local library signal", HFColors.gold)
+                    }
+                    HStack(alignment: .top, spacing: HFSpacing.sm) {
+                        executiveTile("Creator Status", "Draft", "Studio surfaces staged", HFColors.violet)
+                        executiveTile("Launch Status", "Review", "Distribution center preview", HFColors.gold)
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            roomStatusGrid
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.command.center.executiveDashboard")
+    }
+
+    private var controlWallSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            cinematicControlWall
+            livePreviewPanels
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.command.center.controlWall")
+    }
+
+    private var intelligenceSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Intelligence Layer", detail: "Recommendations, insights, and activity signals remain local visual previews.")
+                    insightCard("Recommendations", "Feature \(featuredMovie.title) beside creator-room and launch-review surfaces.", "sparkles", HFColors.gold)
+                    insightCard("Insights", "Viewer, creator, and release signals are aligned in one command layer.", "lightbulb.fill", HFColors.cyanGlow)
+                    insightCard("Activity Signals", "Recent watch, room, pass, and launch events stay read-only and local.", "waveform.path.ecg", HFColors.violet)
+                }
+                .padding(HFSpacing.lg)
+            }
+            activitySignalsPanel
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.command.center.intelligenceLayer")
+    }
+
+    private var cinematicControlWall: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.46)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Cinematic Control Wall", detail: "A premium wall of local platform views and visual room controls.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    previewPanel("Watch Preview", featuredMovie.title, "play.rectangle.fill", HFColors.gold)
+                    previewPanel("Create Preview", "Creator Studio Pro", "wand.and.stars", HFColors.violet)
+                    previewPanel("Connect Preview", "Watch Room", "person.3.sequence.fill", HFColors.cyanGlow)
+                    previewPanel("Launch Preview", "Final Gate", "sparkles.tv.fill", HFColors.gold)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.controlWallPanels")
+    }
+
+    private var livePreviewPanels: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                osSectionHeader(title: "Live Preview Panels", detail: "Visual-only windows for Watch, Create, Connect, Launch, and Pass.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    previewPanel("Watch", "Local Preview", "play.tv.fill", HFColors.gold)
+                    previewPanel("Create", "Draft Studio", "wand.and.stars", HFColors.violet)
+                    previewPanel("Connect", "Room Preview", "person.3.sequence.fill", HFColors.cyanGlow)
+                    previewPanel("Launch", "Review Gate", "sparkles.tv.fill", HFColors.gold)
+                    previewPanel("Pass", selectedProfile.name, "person.text.rectangle.fill", HFColors.gold)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.livePreviewPanels")
+    }
+
+    private var roomStatusGrid: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                osSectionHeader(title: "Room Status Center", detail: "Room, launch, and creator status presented as local read-only state.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Room Status", value: "Local", detail: "Audience preview ready", accent: HFColors.cyanGlow, systemImage: "person.3.sequence.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Launch Status", value: "Review", detail: "Final gate visual only", accent: HFColors.gold, systemImage: "sparkles.tv.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Creator Status", value: "Draft", detail: "Pro surfaces staged", accent: HFColors.violet, systemImage: "wand.and.stars"))
+                    commandMetricCard(HFCommandMetric(title: "Pass Status", value: "Active", detail: selectedProfile.name, accent: HFColors.gold, systemImage: "person.text.rectangle.fill"))
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.roomStatus")
+    }
+
+    private var activitySignalsPanel: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                osSectionHeader(title: "Activity Signals", detail: "Viewer, creator, release, and membership signals grouped from local preview state.")
+                activityRow(room: .watchRoom, title: "Viewer Activity", detail: "\(featuredMovie.title) remains staged for local preview", status: "Watch")
+                activityRow(room: .createRoom, title: "Creator Activity", detail: "Creator Studio Pro and commentary gateways stay visual", status: "Create")
+                activityRow(room: .launchRoom, title: "Release Activity", detail: "Launch center preview and review surfaces remain local", status: "Launch")
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.activitySignals")
     }
 
     private var dashboardSurface: some View {
@@ -876,6 +1113,157 @@ private struct HFHighFiveOSView: View {
         .accessibilityIdentifier(identifier)
     }
 
+    private func commandPillar(_ title: String, _ value: String, _ systemImage: String, _ accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                .frame(width: 42, height: 42)
+                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(HFTypography.micro)
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func commandMetricCard(_ metric: HFCommandMetric) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top) {
+                Image(systemName: metric.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(metric.accent == HFColors.gold ? .black : metric.accent)
+                    .frame(width: 42, height: 42)
+                    .background(metric.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(metric.accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Spacer()
+                Text(metric.title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(metric.accent)
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.68)
+            }
+            Text(metric.value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.64)
+            Text(metric.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.28))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(metric.accent.opacity(0.25), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func executiveTile(_ title: String, _ value: String, _ detail: String, _ accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(value)
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.30))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func previewPanel(_ title: String, _ value: String, _ systemImage: String, _ accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 40, height: 40)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Spacer()
+                Circle()
+                    .fill(accent)
+                    .frame(width: 8, height: 8)
+            }
+            Spacer(minLength: HFSpacing.xs)
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 138, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(
+            LinearGradient(
+                colors: [accent.opacity(0.18), Color.black.opacity(0.42)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.25), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func insightCard(_ title: String, _ detail: String, _ systemImage: String, _ accent: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                .frame(width: 42, height: 42)
+                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text(detail)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.28))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
     private func roomStatusCard(_ room: HFOSRoom, value: String, status: String) -> some View {
         Button {
             selectedRoom = room
@@ -1047,6 +1435,15 @@ private struct HFHighFiveOSView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
+}
+
+private struct HFCommandMetric: Identifiable {
+    let id = UUID()
+    let title: String
+    let value: String
+    let detail: String
+    let accent: Color
+    let systemImage: String
 }
 
 private enum HFOSRoom: String, CaseIterable, Identifiable {
