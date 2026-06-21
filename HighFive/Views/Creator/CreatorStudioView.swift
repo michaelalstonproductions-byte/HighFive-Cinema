@@ -161,6 +161,7 @@ private enum HFSpatialCreatorTool: String, CaseIterable, Identifiable {
 
 private enum HFCreatorProSpotlight {
     case dashboard
+    case cms
     case pipeline
     case socialAssets
     case vodPackage
@@ -168,6 +169,10 @@ private enum HFCreatorProSpotlight {
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-content-management") { return .cms }
+        if arguments.contains("--hf-cms-content-types") { return .cms }
+        if arguments.contains("--hf-cms-collections") { return .cms }
+        if arguments.contains("--hf-cms-relationships") { return .cms }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -1996,6 +2001,8 @@ struct CreatorStudioView: View {
                     creatorProStat(title: "Ready", value: "Review")
                 }
             }
+        case .cms:
+            contentManagementSpotlightPanel
         case .pipeline:
             creatorPublishingSpotlightPanel
         case .socialAssets:
@@ -2009,9 +2016,14 @@ struct CreatorStudioView: View {
 
     private var creatorStudioProSurface: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
+            contentManagementSystemSection
             creatorPublishingPipelineSection
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                contentTypesSection
+                collectionManagementSection
+                contentStatusSection
+                contentRelationshipsSection
                 projectPipelineSection
                 releaseReadinessSection
                 socialAssetKitSection
@@ -2024,6 +2036,180 @@ struct CreatorStudioView: View {
             commentaryGatewaySection
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var contentManagementSpotlightPanel: some View {
+        creatorProSpotlight(
+            title: "Content Management System",
+            detail: "Movies, series, episodes, trailers, collections, creators, metadata, status, and relationships are indexed locally.",
+            systemImage: "rectangle.stack.badge.person.crop.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.cms.dashboard"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                creatorProStat(title: "Records", value: "\(streamingStore.cmsContentRecords.count)")
+                creatorProStat(title: "Collections", value: "\(streamingStore.cmsCollections.count)")
+                creatorProStat(title: "Relations", value: "\(streamingStore.cmsRelationships.count)")
+            }
+        }
+    }
+
+    private var contentManagementSystemSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius + 6, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Content Management System",
+                    detail: "A local content backbone for movies, series, episodes, trailers, collections, creators, metadata, and relationships.",
+                    systemImage: "rectangle.stack.badge.person.crop.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(HFCMSContentType.allCases) { type in
+                        cmsTypeTile(type)
+                    }
+                }
+                .accessibilityIdentifier("hf.cms.contentTypes")
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Metadata Management")
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Title, description, genre, tags, runtime, rating, artwork, trailer, creator, collection, series, and related-title fields are represented from local catalog records.")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(HFSpacing.sm)
+                .background(Color.black.opacity(0.26))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                .accessibilityIdentifier("hf.cms.metadataManagement")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Content Management System. Local content backbone for movies, series, episodes, trailers, collections, creators, metadata, and relationships.")
+        .accessibilityIdentifier("hf.cms.dashboard")
+    }
+
+    private var contentTypesSection: some View {
+        creatorProSpotlight(
+            title: "Content Types",
+            detail: "Movies, series, episodes, trailers, collections, and creators share one local catalog model.",
+            systemImage: "square.grid.3x2.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.cms.contentTypes"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                creatorProStat(title: "Movies", value: "\(cmsCount(.movie))")
+                creatorProStat(title: "Series", value: "\(cmsCount(.series))")
+                creatorProStat(title: "Episodes", value: "\(cmsCount(.episode))")
+            }
+        }
+    }
+
+    private var collectionManagementSection: some View {
+        creatorProSpotlight(
+            title: "Collection Management",
+            detail: "Horror, crime, drama, documentary, western, premieres, and creator collections are managed locally.",
+            systemImage: "rectangle.grid.2x2.fill",
+            accent: HFColors.gold,
+            identifier: "hf.cms.collectionManagement"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(streamingStore.cmsCollections.prefix(3)) { collection in
+                    cmsCompactRow(title: collection.title, detail: "\(collection.movieIDs.count) titles", color: HFColors.gold)
+                }
+            }
+        }
+    }
+
+    private var contentStatusSection: some View {
+        creatorProSpotlight(
+            title: "Content Status",
+            detail: "Draft, review, scheduled, published, and archived states are shared with the publishing pipeline.",
+            systemImage: "checkmark.seal.fill",
+            accent: HFColors.violet,
+            identifier: "hf.cms.statusBoard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(streamingStore.cmsStatusCounts) { status in
+                    cmsCompactRow(title: status.state.rawValue, detail: "\(status.count) records", color: status.state == .published ? HFColors.gold : HFColors.violet)
+                }
+            }
+        }
+    }
+
+    private var contentRelationshipsSection: some View {
+        creatorProSpotlight(
+            title: "Content Relationships",
+            detail: "Movie to creator, collection, series, and related-title relationships power discovery and profiles.",
+            systemImage: "point.3.connected.trianglepath.dotted",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.cms.relationships"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                ForEach(streamingStore.cmsRelationships.prefix(3)) { relationship in
+                    cmsCompactRow(title: relationship.relationship, detail: "\(relationship.source) -> \(relationship.target)", color: HFColors.cyanGlow)
+                }
+            }
+        }
+    }
+
+    private func cmsTypeTile(_ type: HFCMSContentType) -> some View {
+        let count = cmsCount(type)
+        return VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Image(systemName: type.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .accessibilityHidden(true)
+            Text("\(count)")
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(type.rawValue)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.28))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(HFColors.cyanGlow.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(type.rawValue), \(count) records")
+    }
+
+    private func cmsCompactRow(title: String, detail: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.xs) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+                .padding(.top, 5)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.70)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func cmsCount(_ type: HFCMSContentType) -> Int {
+        streamingStore.cmsContentRecords.filter { $0.type == type }.count
     }
 
     private var creatorPublishingSummaryStrip: some View {

@@ -217,6 +217,68 @@ struct HFCreatorProfile: Identifiable {
     var id: String { creator.id }
 }
 
+enum HFCMSContentType: String, CaseIterable, Identifiable {
+    case movie = "Movie"
+    case series = "Series"
+    case episode = "Episode"
+    case trailer = "Trailer"
+    case collection = "Collection"
+    case creator = "Creator"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .movie: return "film.stack.fill"
+        case .series: return "rectangle.stack.fill"
+        case .episode: return "play.square.stack.fill"
+        case .trailer: return "play.rectangle.fill"
+        case .collection: return "rectangle.grid.2x2.fill"
+        case .creator: return "person.crop.rectangle.stack.fill"
+        }
+    }
+}
+
+struct HFCMSContentRecord: Identifiable {
+    let id: String
+    var title: String
+    var type: HFCMSContentType
+    var description: String
+    var creatorName: String
+    var genre: String
+    var tags: [String]
+    var runtime: String
+    var rating: String
+    var artworkStatus: HFCreatorPublishingAssetStatus
+    var trailerStatus: HFCreatorPublishingAssetStatus
+    var releaseState: HFCreatorReleaseState
+    var collectionIDs: [String]
+    var seriesID: String?
+    var relatedTitleIDs: [String]
+}
+
+struct HFCMSCollectionRecord: Identifiable {
+    let id: String
+    var title: String
+    var description: String
+    var movieIDs: [String]
+}
+
+struct HFCMSRelationshipRecord: Identifiable {
+    let id: String
+    var source: String
+    var target: String
+    var relationship: String
+    var detail: String
+}
+
+struct HFCMSStatusCount: Identifiable {
+    let state: HFCreatorReleaseState
+    var count: Int
+
+    var id: String { state.rawValue }
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -927,6 +989,146 @@ final class HFStreamingStore: ObservableObject {
 
     var creatorPublishedMovies: [Movie] {
         creatorPublishedProjects.map(\.movie)
+    }
+
+    var cmsContentRecords: [HFCMSContentRecord] {
+        let titleRecords = allCatalogMovies.map { cmsRecord(for: $0) }
+        let episodeRecords = cmsEpisodeRecords
+        let trailerRecords = creatorPublishingContents.map { project in
+            HFCMSContentRecord(
+                id: "\(project.id)-trailer",
+                title: "\(project.title) Trailer",
+                type: .trailer,
+                description: "Trailer management record for \(project.title).",
+                creatorName: project.creator,
+                genre: project.genre,
+                tags: project.tags + ["Trailer"],
+                runtime: "Preview",
+                rating: "Unrated",
+                artworkStatus: project.artworkStatus,
+                trailerStatus: project.trailerStatus,
+                releaseState: project.releaseState,
+                collectionIDs: cmsCollectionIDs(for: project.movie),
+                seriesID: nil,
+                relatedTitleIDs: []
+            )
+        }
+        let collectionRecords = cmsCollections.map { collection in
+            HFCMSContentRecord(
+                id: "cms-content-\(collection.id)",
+                title: collection.title,
+                type: .collection,
+                description: collection.description,
+                creatorName: "HighFive CMS",
+                genre: "Collection",
+                tags: ["Collection"],
+                runtime: "\(collection.movieIDs.count) titles",
+                rating: "Local",
+                artworkStatus: .ready,
+                trailerStatus: .placeholder,
+                releaseState: .published,
+                collectionIDs: [collection.id],
+                seriesID: nil,
+                relatedTitleIDs: collection.movieIDs
+            )
+        }
+        let creatorRecords = creatorProfiles.map { profile in
+            HFCMSContentRecord(
+                id: "cms-creator-\(profile.id)",
+                title: profile.creator.name,
+                type: .creator,
+                description: profile.bio,
+                creatorName: profile.creator.name,
+                genre: profile.creator.role,
+                tags: ["Creator", "Profile"],
+                runtime: "\(profile.filmography.count) titles",
+                rating: "Local",
+                artworkStatus: .ready,
+                trailerStatus: .placeholder,
+                releaseState: .published,
+                collectionIDs: profile.collections.map(\.id),
+                seriesID: nil,
+                relatedTitleIDs: profile.filmography.map(\.id)
+            )
+        }
+        return titleRecords + episodeRecords + trailerRecords + collectionRecords + creatorRecords
+    }
+
+    var cmsCollections: [HFCMSCollectionRecord] {
+        let managedCollections = collectionSystem.map { category in
+            HFCMSCollectionRecord(
+                id: category.id,
+                title: category.title,
+                description: category.subtitle ?? "Managed local collection",
+                movieIDs: category.movies.map(\.id)
+            )
+        }
+        return managedCollections + creatorProfiles.flatMap { profile in
+            profile.collections.map { category in
+                HFCMSCollectionRecord(
+                    id: category.id,
+                    title: category.title,
+                    description: category.subtitle ?? "Creator collection",
+                    movieIDs: category.movies.map(\.id)
+                )
+            }
+        }
+    }
+
+    var cmsStatusCounts: [HFCMSStatusCount] {
+        HFCreatorReleaseState.allCases.map { state in
+            HFCMSStatusCount(
+                state: state,
+                count: cmsContentRecords.filter { $0.releaseState == state && [.movie, .series, .episode, .trailer].contains($0.type) }.count
+            )
+        }
+    }
+
+    var cmsRelationships: [HFCMSRelationshipRecord] {
+        let movieCreator = allCatalogMovies.map { movie in
+            HFCMSRelationshipRecord(
+                id: "creator-\(movie.id)",
+                source: movie.title,
+                target: movie.creatorName,
+                relationship: "Movie -> Creator",
+                detail: "Creator ownership and profile routing"
+            )
+        }
+        let movieCollections = allCatalogMovies.flatMap { movie in
+            cmsCollections
+                .filter { $0.movieIDs.contains(movie.id) }
+                .map { collection in
+                    HFCMSRelationshipRecord(
+                        id: "collection-\(movie.id)-\(collection.id)",
+                        source: movie.title,
+                        target: collection.title,
+                        relationship: "Movie -> Collection",
+                        detail: "Discovery and browse grouping"
+                    )
+                }
+        }
+        let seriesEpisodes = cmsEpisodeRecords.map { episode in
+            HFCMSRelationshipRecord(
+                id: "episode-\(episode.id)",
+                source: episode.title,
+                target: episode.seriesID ?? "Series",
+                relationship: "Episode -> Series",
+                detail: "Series structure for scalable catalog browsing"
+            )
+        }
+        let related = allCatalogMovies.flatMap { movie in
+            relatedMovies(for: movie).prefix(2).map { related in
+                HFCMSRelationshipRecord(
+                    id: "related-\(movie.id)-\(related.id)",
+                    source: movie.title,
+                    target: related.title,
+                    relationship: "Movie -> Related Titles",
+                    detail: "Recommendation and detail-page connection"
+                )
+            }
+        }
+        var seen = Set<String>()
+        return (movieCreator + movieCollections + seriesEpisodes + related).filter { seen.insert($0.id).inserted }
     }
 
     var creatorProfiles: [HFCreatorProfile] {
@@ -1681,6 +1883,56 @@ final class HFStreamingStore: ObservableObject {
             movie.isOriginal || !fromSameCreator(as: movie).isEmpty || !searchableTags(for: movie).isEmpty
         }
         return creatorLed.filter { seen.insert($0.id).inserted }
+    }
+
+    private var cmsEpisodeRecords: [HFCMSContentRecord] {
+        guard let series = movie(id: "paranormall-s1") else { return [] }
+        return (1...7).map { episode in
+            HFCMSContentRecord(
+                id: "paranormall-s1-e\(episode)",
+                title: "Paranormall Episode \(episode)",
+                type: .episode,
+                description: "Episode \(episode) metadata placeholder attached to Paranormall Season 1.",
+                creatorName: series.creatorName,
+                genre: "Horror",
+                tags: ["Episode", "Series", "Mystery"],
+                runtime: "Episode",
+                rating: series.rating,
+                artworkStatus: .ready,
+                trailerStatus: .placeholder,
+                releaseState: .published,
+                collectionIDs: cmsCollectionIDs(for: series),
+                seriesID: series.id,
+                relatedTitleIDs: relatedMovies(for: series).map(\.id)
+            )
+        }
+    }
+
+    private func cmsRecord(for movie: Movie) -> HFCMSContentRecord {
+        let project = creatorPublishingContents.first { $0.id == movie.id }
+        return HFCMSContentRecord(
+            id: "cms-title-\(movie.id)",
+            title: movie.title,
+            type: movie.duration.localizedCaseInsensitiveContains("episode") || movie.genres.contains("Series") ? .series : .movie,
+            description: movie.synopsis,
+            creatorName: movie.creatorName,
+            genre: movie.genres.first ?? "Cinema",
+            tags: searchableTags(for: movie) + movie.genres,
+            runtime: movie.duration,
+            rating: movie.rating,
+            artworkStatus: project?.artworkStatus ?? (movie.posterAssetName == nil ? .placeholder : .ready),
+            trailerStatus: project?.trailerStatus ?? (movie.isComingSoon ? .placeholder : .ready),
+            releaseState: project?.releaseState ?? (movie.isComingSoon ? .scheduled : .published),
+            collectionIDs: cmsCollectionIDs(for: movie),
+            seriesID: movie.duration.localizedCaseInsensitiveContains("episode") || movie.genres.contains("Series") ? movie.id : nil,
+            relatedTitleIDs: relatedMovies(for: movie).map(\.id)
+        )
+    }
+
+    private func cmsCollectionIDs(for movie: Movie) -> [String] {
+        (discoveryCollections + collectionSystem)
+            .filter { category in category.movies.contains { $0.id == movie.id } }
+            .map(\.id)
     }
 
     private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
