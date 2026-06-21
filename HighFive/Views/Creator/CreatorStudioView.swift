@@ -168,6 +168,7 @@ private enum HFCreatorProSpotlight {
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
         if arguments.contains("--hf-creator-pro-vod-package") { return .vodPackage }
@@ -1924,6 +1925,7 @@ struct CreatorStudioView: View {
                 )
 
                 creatorIdentityCard
+                creatorPublishingSummaryStrip
                 creatorProSpotlightPanel
             }
             .padding(HFSpacing.lg)
@@ -1995,7 +1997,7 @@ struct CreatorStudioView: View {
                 }
             }
         case .pipeline:
-            projectPipelineSection
+            creatorPublishingSpotlightPanel
         case .socialAssets:
             socialAssetKitSection
         case .vodPackage:
@@ -2007,6 +2009,8 @@ struct CreatorStudioView: View {
 
     private var creatorStudioProSurface: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
+            creatorPublishingPipelineSection
+
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                 projectPipelineSection
                 releaseReadinessSection
@@ -2016,9 +2020,266 @@ struct CreatorStudioView: View {
                 launchControlPreviewSection
             }
 
+            creatorPublishingLibrarySection
             commentaryGatewaySection
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var creatorPublishingSummaryStrip: some View {
+        HStack(spacing: HFSpacing.xs) {
+            creatorProStat(title: "Drafts", value: "\(streamingStore.creatorDraftProjects.count)")
+            creatorProStat(title: "Review", value: "\(streamingStore.creatorReviewProjects.count)")
+            creatorProStat(title: "Published", value: "\(streamingStore.creatorPublishedProjects.count)")
+            creatorProStat(title: "Archived", value: "\(streamingStore.creatorArchivedProjects.count)")
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Creator publishing summary. \(streamingStore.creatorDraftProjects.count) drafts, \(streamingStore.creatorReviewProjects.count) in review, \(streamingStore.creatorPublishedProjects.count) published, \(streamingStore.creatorArchivedProjects.count) archived.")
+        .accessibilityIdentifier("hf.creator.pipeline.creatorLibrary")
+    }
+
+    private var creatorPublishingPipelineSection: some View {
+        let project = creatorPrimaryPublishingProject
+
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius + 6, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Creator Publishing Pipeline",
+                    detail: "Content object, metadata, poster, trailer, creator library state, and local discovery connection.",
+                    systemImage: "square.stack.3d.up.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text(project.title)
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.74)
+
+                    Text("\(project.creator) • \(project.genre) • \(project.runtime) • \(project.releaseState.rawValue)")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+
+                    Text(project.description)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("hf.creator.pipeline.contentObject")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    publishingStatusTile(title: "Poster", status: project.posterStatus.rawValue, systemImage: "photo.fill.on.rectangle.fill", identifier: "hf.creator.pipeline.posterStatus", accent: HFColors.gold)
+                    publishingStatusTile(title: "Trailer", status: project.trailerStatus.rawValue, systemImage: "film.stack.fill", identifier: "hf.creator.pipeline.trailerStatus", accent: HFColors.cyanGlow)
+                    publishingStatusTile(title: "Metadata", status: project.metadataStatus.rawValue, systemImage: "text.justify.left", identifier: "hf.creator.pipeline.metadataStatus", accent: HFColors.violet)
+                    publishingStatusTile(title: "Artwork", status: project.artworkStatus.rawValue, systemImage: "rectangle.stack.fill", identifier: "hf.creator.pipeline.artworkStatus", accent: HFColors.gold)
+                }
+
+                HStack(alignment: .center, spacing: HFSpacing.sm) {
+                    Label(project.readyForReview ? "Ready For Review" : "Needs Local Review", systemImage: project.readyForReview ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(project.readyForReview ? HFColors.gold : HFColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                        .accessibilityIdentifier("hf.creator.pipeline.readyForReview")
+
+                    Spacer(minLength: HFSpacing.xs)
+
+                    Text(project.discoveryEligible ? "Visible in local discovery" : "Creator library only")
+                        .font(HFTypography.micro.weight(.semibold))
+                        .foregroundStyle(project.discoveryEligible ? HFColors.cyanGlow : HFColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                        .accessibilityIdentifier("hf.creator.pipeline.discoveryConnection")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator publishing pipeline. \(project.title). \(project.releaseState.rawValue).")
+        .accessibilityIdentifier("hf.creator.pipeline.dashboard")
+    }
+
+    private var creatorPublishingLibrarySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Creator Library",
+                    detail: "My Projects, drafts, published titles, and archived packages stay local until a project reaches Published.",
+                    systemImage: "books.vertical.fill",
+                    accent: HFColors.violet
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.sm) {
+                        ForEach(streamingStore.creatorPublishingContents) { project in
+                            creatorPublishingProjectCard(project)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioPill(title: "My Projects \(streamingStore.creatorPublishingContents.count)", isActive: true)
+                    HFCreatorStudioPill(title: "Draft \(streamingStore.creatorDraftProjects.count)")
+                    HFCreatorStudioPill(title: "Published \(streamingStore.creatorPublishedProjects.count)")
+                    HFCreatorStudioPill(title: "Archived \(streamingStore.creatorArchivedProjects.count)")
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Creator library filters for my projects, drafts, published, and archived.")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator library. My Projects, Drafts, Published, and Archived.")
+        .accessibilityIdentifier("hf.creator.pipeline.creatorLibrary")
+    }
+
+    private var creatorPublishingSpotlightPanel: some View {
+        let project = creatorPrimaryPublishingProject
+
+        return creatorProSpotlight(
+            title: "Creator Publishing Pipeline",
+            detail: "Content ingestion, metadata, poster, trailer, creator library state, and discovery connection are staged locally.",
+            systemImage: "square.stack.3d.up.fill",
+            accent: HFColors.gold,
+            identifier: "hf.creator.pipeline.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(project.title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.74)
+                    Text("\(project.releaseState.rawValue) • \(project.creator) • \(project.genre)")
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+                }
+                .accessibilityIdentifier("hf.creator.pipeline.contentObject")
+
+                HStack(spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Drafts", value: "\(streamingStore.creatorDraftProjects.count)")
+                    creatorProStat(title: "Review", value: "\(streamingStore.creatorReviewProjects.count)")
+                    creatorProStat(title: "Published", value: "\(streamingStore.creatorPublishedProjects.count)")
+                }
+
+                Label(project.readyForReview ? "Ready For Review" : "Needs Local Review", systemImage: "checkmark.seal.fill")
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(project.readyForReview ? HFColors.gold : HFColors.textSecondary)
+                    .accessibilityIdentifier("hf.creator.pipeline.readyForReview")
+
+                Text(project.discoveryEligible ? "Published content appears in local discovery." : "Project remains in Creator Library until Published.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.creator.pipeline.discoveryConnection")
+            }
+        }
+    }
+
+    private var creatorPrimaryPublishingProject: HFCreatorPublishingContent {
+        streamingStore.creatorReviewProjects.first
+            ?? streamingStore.creatorDraftProjects.first
+            ?? streamingStore.creatorScheduledProjects.first
+            ?? streamingStore.creatorPublishedProjects.first
+            ?? streamingStore.creatorPublishingContents[0]
+    }
+
+    private func publishingStatusTile(title: String, status: String, systemImage: String, identifier: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(accent)
+                .accessibilityHidden(true)
+
+            Text(status)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.28))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(accent.opacity(0.26), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) status \(status).")
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: project.releaseState == .published ? "checkmark.seal.fill" : "doc.text.image.fill")
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundStyle(project.releaseState == .published ? HFColors.gold : HFColors.cyanGlow)
+                Text(project.releaseState.rawValue)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(project.releaseState == .published ? HFColors.gold : HFColors.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Text(project.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+
+            Text(project.updatedAtLabel)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.74)
+
+            Spacer(minLength: 0)
+
+            Text(project.discoveryEligible ? "Discovery connected" : "Library only")
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(project.discoveryEligible ? HFColors.cyanGlow : HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(width: 168, height: 146, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(project.releaseState == .published ? HFColors.gold.opacity(0.34) : HFColors.violet.opacity(0.22), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(project.title). \(project.releaseState.rawValue). \(project.updatedAtLabel).")
+        .accessibilityIdentifier(accessibilityIdentifier(for: project.releaseState))
+    }
+
+    private func accessibilityIdentifier(for state: HFCreatorReleaseState) -> String {
+        switch state {
+        case .draft:
+            return "hf.creator.pipeline.drafts"
+        case .review:
+            return "hf.creator.pipeline.review"
+        case .scheduled:
+            return "hf.creator.pipeline.scheduled"
+        case .published:
+            return "hf.creator.pipeline.published"
+        case .archived:
+            return "hf.creator.pipeline.archived"
+        }
     }
 
     private var projectPipelineSection: some View {

@@ -140,6 +140,67 @@ struct HFLaunchCampaignReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
+enum HFCreatorReleaseState: String, CaseIterable, Codable, Equatable {
+    case draft = "Draft"
+    case review = "Review"
+    case scheduled = "Scheduled"
+    case published = "Published"
+    case archived = "Archived"
+}
+
+enum HFCreatorPublishingAssetStatus: String, Codable, Equatable {
+    case missing = "Missing"
+    case placeholder = "Placeholder"
+    case ready = "Ready"
+    case needsReview = "Needs Review"
+}
+
+struct HFCreatorPublishingContent: Identifiable, Codable, Equatable {
+    let id: String
+    var title: String
+    var description: String
+    var posterAssetName: String?
+    var trailerStatus: HFCreatorPublishingAssetStatus
+    var creator: String
+    var genre: String
+    var tags: [String]
+    var runtime: String
+    var releaseState: HFCreatorReleaseState
+    var posterStatus: HFCreatorPublishingAssetStatus
+    var metadataStatus: HFCreatorPublishingAssetStatus
+    var artworkStatus: HFCreatorPublishingAssetStatus
+    var updatedAtLabel: String
+
+    var readyForReview: Bool {
+        [posterStatus, trailerStatus, metadataStatus, artworkStatus].allSatisfy { $0 == .ready || $0 == .needsReview }
+            && releaseState != .archived
+    }
+
+    var discoveryEligible: Bool {
+        releaseState == .published
+    }
+
+    var movie: Movie {
+        Movie(
+            id: id,
+            title: title,
+            subtitle: releaseState == .published ? "Creator published title" : "\(releaseState.rawValue) creator project",
+            synopsis: description,
+            year: "2026",
+            rating: "TV-14",
+            duration: runtime,
+            genres: Array(Set([genre, "Creator"].filter { !$0.isEmpty } + tags)).sorted(),
+            posterAssetName: posterAssetName,
+            backdropAssetName: posterAssetName,
+            creatorName: creator,
+            isOriginal: true,
+            isComingSoon: releaseState != .published,
+            isDownloaded: false,
+            progress: releaseState == .published ? nil : 0.12
+        )
+    }
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -259,6 +320,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var entitlementPlaybackResult: HFEntitlementPlaybackResult?
     @Published private(set) var activeStagingPlaybackDescriptor: HFPlaybackDescriptor?
     @Published private(set) var lastPlaybackDescriptorAuditContext: HFBackendRequestAuditContext?
+    @Published private(set) var creatorPublishingContents: [HFCreatorPublishingContent]
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -353,6 +415,7 @@ final class HFStreamingStore: ObservableObject {
             "Draft: Invite viewers to choose who they would watch The Friendly with.",
             "Preview: Share a behind-the-scenes note before premiere week."
         ]
+        creatorPublishingContents = Self.makeCreatorPublishingContents()
         let savedLaunchStates = defaults.array(forKey: launchChecklistKey) as? [Bool]
         launchChecklistStates = savedLaunchStates?.count == launchChecklistItems.count ? savedLaunchStates ?? [] : Array(repeating: false, count: launchChecklistItems.count)
         generatedDeliverySummary = ""
@@ -804,7 +867,10 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.catalogIdentity
     // hf.services.movieLookup
     var allCatalogMovies: [Movie] {
-        HFMockData.movies
+        var seen = Set<String>()
+        return (HFMockData.movies + creatorPublishedMovies).filter { movie in
+            seen.insert(movie.id).inserted
+        }
     }
 
     var movieCatalogStatus: String {
@@ -819,8 +885,36 @@ final class HFStreamingStore: ObservableObject {
         allCatalogMovies.filter(\.isOriginal)
     }
 
+    var creatorDraftProjects: [HFCreatorPublishingContent] {
+        creatorPublishingContents.filter { $0.releaseState == .draft }
+    }
+
+    var creatorReviewProjects: [HFCreatorPublishingContent] {
+        creatorPublishingContents.filter { $0.releaseState == .review }
+    }
+
+    var creatorScheduledProjects: [HFCreatorPublishingContent] {
+        creatorPublishingContents.filter { $0.releaseState == .scheduled }
+    }
+
+    var creatorPublishedProjects: [HFCreatorPublishingContent] {
+        creatorPublishingContents.filter { $0.releaseState == .published }
+    }
+
+    var creatorArchivedProjects: [HFCreatorPublishingContent] {
+        creatorPublishingContents.filter { $0.releaseState == .archived }
+    }
+
+    var creatorReadyForReviewProjects: [HFCreatorPublishingContent] {
+        creatorPublishingContents.filter(\.readyForReview)
+    }
+
+    var creatorPublishedMovies: [Movie] {
+        creatorPublishedProjects.map(\.movie)
+    }
+
     var newThisWeekCatalog: [Movie] {
-        ["friendly", "paranormall-s1", "behind-vision", "artist-development", "big-loss"].compactMap(movie(id:))
+        ["friendly", "paranormall-s1", "behind-vision", "artist-development", "big-loss"].compactMap(movie(id:)) + creatorPublishedMovies
     }
 
     var downloadableCatalog: [Movie] {
@@ -828,12 +922,24 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var premiumHomeCatalogRails: [Category] {
-        [
+        var rails = [
             Category(id: "new-this-week", title: "New This Week", subtitle: "Fresh HighFive picks", movies: newThisWeekCatalog),
             Category(id: "continue-watching", title: "Continue Watching", subtitle: "Pick up where you left off", movies: allCatalogMovies.filter { $0.progress != nil }),
             Category(id: "recommended", title: "Recommended", subtitle: "Selected for your viewing profile", movies: ["black-turnip", "sunshine", "arrival-time", "maple-street", "night-file"].compactMap(movie(id:))),
             Category(id: "only-on-highfive", title: "Only On HighFive", subtitle: "Originals and local showcase titles", movies: originalsCatalog)
         ]
+        if !creatorPublishedMovies.isEmpty {
+            rails.insert(
+                Category(
+                    id: "creator-library-published",
+                    title: "Creator Published",
+                    subtitle: "Titles promoted from Creator Library",
+                    movies: creatorPublishedMovies
+                ),
+                at: 1
+            )
+        }
+        return rails
     }
 
     var catalogReadinessRows: [String] {
@@ -1430,13 +1536,24 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func catalogRails(filter: String = "All") -> [Category] {
-        let rails = [
+        var rails = [
             Category(id: "trending", title: "Trending Now", subtitle: nil, movies: ["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"].compactMap(movie(id:))),
             Category(id: "originals", title: "HighFive Originals", subtitle: "Premium original films and series", movies: originalsCatalog.filter { !$0.isComingSoon }),
             Category(id: "fresh-finds", title: "Fresh Finds", subtitle: "New from the HighFive slate", movies: Array(allCatalogMovies.suffix(10))),
             Category(id: "coming-soon", title: "Coming Soon", subtitle: "Scripted originals in development", movies: allCatalogMovies.filter { $0.isComingSoon }),
             Category(id: "my-movies", title: "My Movies", subtitle: "Saved and local titles", movies: allCatalogMovies.filter { isDownloaded($0) || $0.progress != nil })
         ]
+        if !creatorPublishedMovies.isEmpty {
+            rails.insert(
+                Category(
+                    id: "creator-published",
+                    title: "Creator Published",
+                    subtitle: "Published from the local creator pipeline",
+                    movies: creatorPublishedMovies
+                ),
+                at: 2
+            )
+        }
 
         switch filter {
         case "Originals":
@@ -2167,6 +2284,91 @@ final class HFStreamingStore: ObservableObject {
             return Set(fallback)
         }
         return fallbackIDs
+    }
+
+    private static func makeCreatorPublishingContents() -> [HFCreatorPublishingContent] {
+        [
+            HFCreatorPublishingContent(
+                id: "creator-pipeline-night-file",
+                title: "The Night File: Creator Cut",
+                description: "A compact thriller package moving from local edit notes into metadata, poster, and trailer review.",
+                posterAssetName: nil,
+                trailerStatus: .placeholder,
+                creator: "HighFive Cinema",
+                genre: "Thriller",
+                tags: ["Creator", "Pipeline", "Mystery"],
+                runtime: "44m",
+                releaseState: .draft,
+                posterStatus: .placeholder,
+                metadataStatus: .ready,
+                artworkStatus: .needsReview,
+                updatedAtLabel: "Draft saved locally"
+            ),
+            HFCreatorPublishingContent(
+                id: "creator-pipeline-behind-vision",
+                title: "Behind the Vision: Studio Notes",
+                description: "A creator documentary package with metadata, poster, and trailer materials ready for local review.",
+                posterAssetName: "poster_artist_development_coming_soon",
+                trailerStatus: .ready,
+                creator: "HighFive Cinema",
+                genre: "Documentary",
+                tags: ["Creator Spotlight", "Original"],
+                runtime: "22m",
+                releaseState: .review,
+                posterStatus: .ready,
+                metadataStatus: .ready,
+                artworkStatus: .ready,
+                updatedAtLabel: "Ready for review"
+            ),
+            HFCreatorPublishingContent(
+                id: "creator-pipeline-maple-street",
+                title: "Maple Street: Premiere Preview",
+                description: "A scheduled creator release preview for the local catalog, campaign, and collection surfaces.",
+                posterAssetName: "poster_maple_street_coming_soon",
+                trailerStatus: .ready,
+                creator: "In The Light Productions",
+                genre: "Mystery",
+                tags: ["Premiere", "Collection"],
+                runtime: "Limited Series",
+                releaseState: .scheduled,
+                posterStatus: .ready,
+                metadataStatus: .ready,
+                artworkStatus: .ready,
+                updatedAtLabel: "Scheduled preview"
+            ),
+            HFCreatorPublishingContent(
+                id: "creator-pipeline-friendly-commentary",
+                title: "The Friendly: Creator Commentary",
+                description: "A published local creator title that now appears in Home, Search, Discovery rails, collections, and creator surfaces.",
+                posterAssetName: "the_friendly",
+                trailerStatus: .ready,
+                creator: "HigherKey Inc.",
+                genre: "Drama",
+                tags: ["Commentary", "Creator", "Published"],
+                runtime: "31m",
+                releaseState: .published,
+                posterStatus: .ready,
+                metadataStatus: .ready,
+                artworkStatus: .ready,
+                updatedAtLabel: "Published to local discovery"
+            ),
+            HFCreatorPublishingContent(
+                id: "creator-pipeline-archive",
+                title: "Artist Development: Early Assembly",
+                description: "Archived creator package retained for local library history and excluded from discovery.",
+                posterAssetName: "poster_artist_development_coming_soon",
+                trailerStatus: .needsReview,
+                creator: "HigherKey Studios",
+                genre: "Documentary",
+                tags: ["Archive", "Music"],
+                runtime: "18m",
+                releaseState: .archived,
+                posterStatus: .ready,
+                metadataStatus: .ready,
+                artworkStatus: .needsReview,
+                updatedAtLabel: "Archived locally"
+            )
+        ]
     }
 
     private static func makeLocalProfiles(defaults: UserDefaults) -> [HFLocalViewingProfile] {
