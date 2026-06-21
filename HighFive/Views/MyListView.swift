@@ -63,6 +63,8 @@ struct MyListView: View {
                     emptyVault
                 } else {
                     vaultWorld
+                    premiumVaultStats
+                    premiumVaultCollections
                     savedForTonightShelf
                     watchShelf
                     additionalSavedTitles
@@ -83,6 +85,7 @@ struct MyListView: View {
             }
         }
         .accessibilityIdentifier("hf.spatial.library")
+        .accessibilityIdentifier("hf.streaming.premium.libraryVault")
         .accessibilityIdentifier("hf.consumer.library.root")
         .accessibilityIdentifier("hf.library.screen")
     }
@@ -140,7 +143,79 @@ struct MyListView: View {
         }
         .hfSpatialSceneEntrance(isActive: isSceneAwake, reduceMotion: reduceMotion)
         .accessibilityIdentifier("hf.spatial.library.vault")
+        .accessibilityIdentifier("hf.streaming.premium.libraryVault")
         .accessibilityIdentifier("hf.spatial.accessibility.largeType")
+    }
+
+    private var premiumVaultStats: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+            vaultStat(title: "Saved", value: "\(savedMovies.count)", systemImage: "bookmark.fill", color: HFColors.gold)
+            vaultStat(title: "Watching", value: "\(progressMovies.count)", systemImage: "play.circle.fill", color: HFColors.cyanGlow)
+            vaultStat(title: "Offline", value: "\(offlineMovies.count)", systemImage: "arrow.down.circle.fill", color: HFColors.violet)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var premiumVaultCollections: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Vault Collections", actionTitle: "Saved")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.md) {
+                    vaultCollectionCard(title: "Tonight", detail: "Saved stories for later.", color: HFColors.gold, systemImage: "moon.stars.fill")
+                    vaultCollectionCard(title: "In Progress", detail: "Continue watching paths.", color: HFColors.cyanGlow, systemImage: "play.rectangle.on.rectangle.fill")
+                    vaultCollectionCard(title: "Creator Picks", detail: "Artist-led saved titles.", color: HFColors.violet, systemImage: "wand.and.stars.inverse")
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+    }
+
+    private func vaultStat(title: String, value: String, systemImage: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(color)
+            Text(value)
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(color.opacity(0.26), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func vaultCollectionCard(title: String, detail: String, color: Color, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(color == HFColors.gold ? .black : color)
+                .frame(width: 46, height: 46)
+                .background(color == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(color.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            Text(title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+        }
+        .frame(width: 188, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(color.opacity(0.26), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
     private func vaultObject(for movie: Movie) -> some View {

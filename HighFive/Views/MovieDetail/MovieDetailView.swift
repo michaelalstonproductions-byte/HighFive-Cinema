@@ -50,6 +50,7 @@ struct MovieDetailView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 hero
+                premiumDetailBrandLayer
                 overview
                 actionPanel
                 creatorSection
@@ -60,6 +61,7 @@ struct MovieDetailView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.root")
+        .accessibilityIdentifier("hf.streaming.premium.movieDetail")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -191,12 +193,101 @@ struct MovieDetailView: View {
         .clipped()
         .hfSpatialSceneEntrance(isActive: isDetailWorldAwake, reduceMotion: reduceMotion)
         .accessibilityIdentifier("hf.spatial.movieDetail")
+        .accessibilityIdentifier("hf.streaming.premium.movieDetail")
         .hfSpatialFocalHandoff(
             "hf.spatial.handoff.homeToMovie",
             "hf.spatial.handoff.movieToPlayer",
             "hf.spatial.handoff.movieToConnect",
             "hf.spatial.handoff.movieToCreator"
         )
+    }
+
+    private var premiumDetailBrandLayer: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: catalogMovie.isOriginal ? "sparkles.tv.fill" : "film.stack.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 54, height: 54)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(catalogMovie.isOriginal ? "HighFive Original" : "Premium Title World")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("A cinematic metadata surface for local preview, creator context, premiere cards, and related collections.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    premiumDetailSignal(title: "Creator", value: creator.name, color: HFColors.violet)
+                    premiumDetailSignal(title: "Premiere", value: catalogMovie.year, color: HFColors.gold)
+                    premiumDetailSignal(title: "Collection", value: catalogMovie.genres.first ?? "Cinema", color: HFColors.cyanGlow)
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.sm) {
+                        premiumDetailCard(title: "Creator Card", detail: creator.role, systemImage: "person.crop.rectangle.stack.fill", color: HFColors.violet)
+                        premiumDetailCard(title: "Premiere Preview", detail: "Available in local catalog", systemImage: "sparkles.tv.fill", color: HFColors.gold)
+                        premiumDetailCard(title: "Related World", detail: "\(relatedTitles.count) connected titles", systemImage: "rectangle.stack.fill", color: HFColors.cyanGlow)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Premium movie detail brand layer for \(catalogMovie.title)")
+    }
+
+    private func premiumDetailSignal(title: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.black.opacity(0.28))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func premiumDetailCard(title: String, detail: String, systemImage: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(color == HFColors.gold ? .black : color)
+                .frame(width: 42, height: 42)
+                .background(color == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(color.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+        }
+        .frame(width: 210, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(color.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
     private var metadataChips: some View {

@@ -87,7 +87,7 @@ struct SearchView: View {
 
     init(mode: Binding<HFSearchHubMode>) {
         let arguments = ProcessInfo.processInfo.arguments
-        let startsWithResults = arguments.contains("--hf-start-search-results")
+        let startsWithResults = arguments.contains("--hf-start-search-results") || arguments.contains("--hf-premium-streaming-discovery")
         let startsEmpty = arguments.contains("--hf-start-search-empty")
         _mode = mode
         _query = State(initialValue: startsWithResults ? "Friendly" : "")
@@ -116,6 +116,7 @@ struct SearchView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 discoveryWorld
+                premiumDiscoveryCollections
                 resultsSection
             }
             .padding(.top, HFSpacing.xxl)
@@ -133,6 +134,7 @@ struct SearchView: View {
             }
         }
         .accessibilityIdentifier("hf.spatial.search")
+        .accessibilityIdentifier("hf.streaming.premium.discovery")
         .accessibilityIdentifier("hf.consumer.search.root")
         .accessibilityIdentifier("hf.search.screen")
     }
@@ -341,7 +343,84 @@ struct SearchView: View {
             }
         }
         .accessibilityIdentifier("hf.search.results")
+        .accessibilityIdentifier("hf.streaming.premium.searchResults")
         .accessibilityIdentifier("hf.consumer.search.results")
+    }
+
+    private var premiumDiscoveryCollections: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Discovery 2.0", actionTitle: "Local catalog")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.md) {
+                    premiumDiscoveryCard(
+                        title: "Originals",
+                        detail: "HighFive originals and creator-led stories.",
+                        systemImage: "sparkles.tv.fill",
+                        accent: HFColors.gold,
+                        focus: .creatorPicks
+                    )
+                    premiumDiscoveryCard(
+                        title: "Premiere Preview",
+                        detail: "Upcoming local catalog titles.",
+                        systemImage: "clock.badge.checkmark.fill",
+                        accent: HFColors.cyanGlow,
+                        focus: .tonight
+                    )
+                    premiumDiscoveryCard(
+                        title: "Mystery Room",
+                        detail: "Shadow stories and late-night picks.",
+                        systemImage: "eye.fill",
+                        accent: HFColors.violet,
+                        focus: .mystery
+                    )
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.streaming.premium.collectionWorlds")
+    }
+
+    private func premiumDiscoveryCard(
+        title: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        focus: HFDiscoveryFocus
+    ) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
+                selectedFocus = focus
+                selectedFilter = focus.filter
+                query = focus.querySeed
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 48, height: 48)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(width: 190, alignment: .leading)
+            .padding(HFSpacing.md)
+            .background(Color.white.opacity(0.06))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .stroke(accent.opacity(0.28), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {

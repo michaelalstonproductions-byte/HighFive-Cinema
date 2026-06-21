@@ -14,6 +14,8 @@ struct HomeView: View {
     @State private var showsProtectedDepthPreview = false
     @State private var isHeroAwake = false
 
+    private let showsCollectionsFirst = ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-collections")
+
     private var heroMovie: Movie {
         streamingStore.featuredMovie
     }
@@ -26,6 +28,13 @@ struct HomeView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 heroSection
+                if showsCollectionsFirst {
+                    collectionWorlds
+                    premiumBrandSystem
+                } else {
+                    premiumBrandSystem
+                }
+                premiumStreamingRails
                 streamingCommandSurface
                 continueWatchingSection
                 ForEach(streamingStore.premiumHomeCatalogRails) { category in
@@ -35,6 +44,7 @@ struct HomeView: View {
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.spatial.home")
+        .accessibilityIdentifier("hf.streaming.premium.home")
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(item: $previewMovie) { movie in
             HFPlayerServiceSheet(movie: movie)
@@ -259,7 +269,153 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("\(heroMovie.title), \(heroMovie.subtitle)")
         .accessibilityIdentifier("hf.spatial.home.hero")
+        .accessibilityIdentifier("hf.streaming.premium.heroTheater")
         .hfSpatialFocalHandoff("hf.spatial.handoff.homeToMovie")
+    }
+
+    private var premiumBrandSystem: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "sparkles.tv.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 54, height: 54)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("HighFive Premium")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Originals, premieres, collections, and local continue-watching paths share one cinematic service layer.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack(spacing: HFSpacing.xs) {
+                    premiumSignal(title: "Originals", value: "\(streamingStore.originalsCatalog.count)", color: HFColors.gold)
+                    premiumSignal(title: "Catalog", value: "\(streamingStore.allCatalogMovies.count)", color: HFColors.cyanGlow)
+                    premiumSignal(title: "Saved", value: "\(streamingStore.savedMovies.count)", color: HFColors.violet)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("HighFive premium streaming brand system")
+        .accessibilityIdentifier("hf.streaming.premium.brandSystem")
+    }
+
+    private var premiumStreamingRails: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            premiumRail(
+                title: "HighFive Originals",
+                subtitle: "Only on HighFive",
+                movies: streamingStore.originalsCatalog.filter { !$0.isComingSoon },
+                identifier: "hf.streaming.premium.originalsRail"
+            )
+            premiumRail(
+                title: "Premiere Previews",
+                subtitle: "Featured local catalog",
+                movies: streamingStore.allCatalogMovies.filter(\.isComingSoon),
+                identifier: "hf.streaming.premium.premieresRail"
+            )
+            premiumRail(
+                title: "Trending Now",
+                subtitle: "Tonight's local picks",
+                movies: Array(streamingStore.allCatalogMovies.prefix(8)),
+                identifier: "hf.streaming.premium.trendingRail"
+            )
+            premiumRail(
+                title: "Creator Spotlight",
+                subtitle: "Creator-led stories",
+                movies: Array(streamingStore.allCatalogMovies.filter { $0.creatorName == heroMovie.creatorName }.prefix(8)),
+                identifier: "hf.streaming.premium.creatorSpotlightRail"
+            )
+            premiumRail(
+                title: "Award Winners",
+                subtitle: "Editorial collection",
+                movies: Array(streamingStore.allCatalogMovies.reversed().prefix(8)),
+                identifier: "hf.streaming.premium.awardWinnersRail"
+            )
+            collectionWorlds
+        }
+    }
+
+    private func premiumRail(title: String, subtitle: String, movies: [Movie], identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: title, actionTitle: subtitle)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach((movies.isEmpty ? streamingStore.allCatalogMovies : movies).prefix(10)) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 148, showMetadata: true, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    private var collectionWorlds: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Collection Worlds", actionTitle: "Editorial")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.md) {
+                    collectionWorldCard(title: "Gold Room", detail: "Prestige originals", color: HFColors.gold, systemImage: "sparkles.tv.fill")
+                    collectionWorldCard(title: "Deep Space", detail: "Spatial cinema", color: HFColors.cyanGlow, systemImage: "cube.transparent")
+                    collectionWorldCard(title: "Creator Cuts", detail: "Artist-led picks", color: HFColors.violet, systemImage: "wand.and.stars.inverse")
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.streaming.premium.collectionWorlds")
+    }
+
+    private func premiumSignal(title: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.black.opacity(0.28))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func collectionWorldCard(title: String, detail: String, color: Color, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(color == HFColors.gold ? .black : color)
+                .frame(width: 48, height: 48)
+                .background(color == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(color.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            Text(title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+        }
+        .frame(width: 190, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(color.opacity(0.28), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
     private var streamingCommandSurface: some View {
@@ -363,6 +519,7 @@ struct HomeView: View {
                     .padding(.horizontal, HFSpacing.screenHorizontal)
                 }
             }
+            .accessibilityIdentifier("hf.streaming.premium.continueWatchingRail")
         }
     }
 

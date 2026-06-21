@@ -11,7 +11,7 @@ enum HFStreamingTab: Hashable {
 struct HFStreamingRootView: View {
     @State private var selectedTab: HFStreamingTab = Self.initialTab
     @State private var selectedProfile = HFMockData.userProfiles[0]
-    @State private var searchMode: HFSearchHubMode = .search
+    @State private var searchMode: HFSearchHubMode = Self.initialSearchMode
     @State private var hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro
     @AppStorage("hf.hasCompletedCinematicOnboarding") private var hasCompletedOnboarding = false
     @StateObject private var streamingStore = HFStreamingStore()
@@ -26,12 +26,16 @@ struct HFStreamingRootView: View {
 
     private static var initialTab: HFStreamingTab {
         let arguments = ProcessInfo.processInfo.arguments
-        if arguments.contains("--hf-start-search") || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-start-search-empty") { return .search }
-        if arguments.contains("--hf-start-library") || arguments.contains("--hf-start-library-continue") || arguments.contains("--hf-start-library-empty") { return .library }
-        if arguments.contains("--hf-start-downloads") || arguments.contains("--hf-start-downloads-offline") || arguments.contains("--hf-start-downloads-empty") { return .downloads }
+        if arguments.contains("--hf-start-search") || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-start-search-empty") || arguments.contains("--hf-premium-streaming-discovery") { return .search }
+        if arguments.contains("--hf-start-library") || arguments.contains("--hf-start-library-continue") || arguments.contains("--hf-start-library-empty") || arguments.contains("--hf-premium-streaming-library") { return .library }
+        if arguments.contains("--hf-start-downloads") || arguments.contains("--hf-start-downloads-offline") || arguments.contains("--hf-start-downloads-empty") || arguments.contains("--hf-premium-streaming-downloads") { return .downloads }
         if arguments.contains("--hf-start-connect") { return .profile }
         if Self.shouldStartInProfile { return .profile }
         return .home
+    }
+
+    private static var initialSearchMode: HFSearchHubMode {
+        ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-discovery") ? .discover : .search
     }
 
     private static var shouldSkipLaunchIntro: Bool {
@@ -55,6 +59,12 @@ struct HFStreamingRootView: View {
     private static var shouldStartAfterOnboarding: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-home")
+            || arguments.contains("--hf-premium-streaming-home")
+            || arguments.contains("--hf-premium-streaming-discovery")
+            || arguments.contains("--hf-premium-streaming-library")
+            || arguments.contains("--hf-premium-streaming-downloads")
+            || arguments.contains("--hf-premium-streaming-detail")
+            || arguments.contains("--hf-premium-streaming-collections")
             || arguments.contains("--hf-start-search")
             || arguments.contains("--hf-start-search-results")
             || arguments.contains("--hf-start-search-empty")
@@ -133,7 +143,9 @@ struct HFStreamingRootView: View {
     }
 
     private static var shouldStartInMovieDetail: Bool {
-        ProcessInfo.processInfo.arguments.contains("--hf-start-movie-detail")
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-movie-detail")
+            || arguments.contains("--hf-premium-streaming-detail")
     }
 
     private static var shouldStartInProtectedDepthPreview: Bool {

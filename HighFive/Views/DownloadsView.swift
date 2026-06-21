@@ -39,6 +39,7 @@ struct DownloadsView: View {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 capsuleWorld
+                premiumCapsuleStats
                 localOfflineShelf
                 if downloads.isEmpty {
                     emptyShelf
@@ -61,6 +62,7 @@ struct DownloadsView: View {
             }
         }
         .accessibilityIdentifier("hf.spatial.downloads")
+        .accessibilityIdentifier("hf.streaming.premium.downloadsCapsule")
         .accessibilityIdentifier("hf.consumer.downloads.root")
         .accessibilityIdentifier("hf.downloads.screen")
     }
@@ -153,8 +155,9 @@ struct DownloadsView: View {
                             Text("Real Downloads Not Active Yet")
                                 .font(HFTypography.micro)
                                 .foregroundStyle(HFColors.gold)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.72)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .minimumScaleFactor(0.78)
                                 .accessibilityIdentifier("hf.downloads.realDownloadsNotActive")
                         }
                     }
@@ -169,6 +172,38 @@ struct DownloadsView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Offline Preview Capsule for \(selectedMovie.title). Real downloads are not active yet.")
         .accessibilityIdentifier("hf.spatial.downloads.capsule")
+        .accessibilityIdentifier("hf.streaming.premium.downloadsCapsule")
+    }
+
+    private var premiumCapsuleStats: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+            capsuleStat(title: "Shelf", value: "\(downloads.count)", systemImage: "rectangle.stack.fill", color: HFColors.cyanGlow)
+            capsuleStat(title: "Preview", value: "Local", systemImage: "play.rectangle.fill", color: HFColors.gold)
+            capsuleStat(title: "Storage", value: "Visual", systemImage: "internaldrive.fill", color: HFColors.violet)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func capsuleStat(title: String, value: String, systemImage: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(color)
+            Text(value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(color.opacity(0.26), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
     private var localOfflineShelf: some View {
