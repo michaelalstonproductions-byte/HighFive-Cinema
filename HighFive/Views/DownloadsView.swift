@@ -152,7 +152,7 @@ struct DownloadsView: View {
                             .accessibilityIdentifier("hf.downloads.localOfflineShelf")
                         VStack(alignment: .leading, spacing: HFSpacing.xs) {
                             statusPill("Local only", color: HFColors.cyanGlow, identifier: "hf.downloads.localOnlyBoundary")
-                            Text("Real Downloads Not Active Yet")
+                            Text("No real media file")
                                 .font(HFTypography.micro)
                                 .foregroundStyle(HFColors.gold)
                                 .lineLimit(2)

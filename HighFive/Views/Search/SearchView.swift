@@ -240,16 +240,20 @@ struct SearchView: View {
                 .fill(reduceTransparency ? Color.black.opacity(0.95) : Color.black.opacity(0.58))
             HFDepthContourOverlay(color: HFColors.cyanGlow.opacity(0.62))
                 .opacity(0.30)
-            HStack(spacing: -28) {
+            HStack(spacing: usesFallbackLayout ? -18 : -24) {
                 ForEach(Array(results.prefix(3).enumerated()), id: \.element.id) { index, movie in
-                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 108 : 132, showTitle: false, posterOnly: true)
-                        .rotationEffect(.degrees(Double(index - 1) * (reduceMotion ? 0 : 7)))
+                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 96 : 118, showTitle: false, posterOnly: true)
+                        .rotationEffect(.degrees(Double(index - 1) * (reduceMotion ? 0 : 6)))
                         .opacity(index == 0 ? 1 : 0.72)
-                        .offset(y: CGFloat(index) * (reduceMotion ? 0 : 10))
+                        .offset(y: CGFloat(index) * (reduceMotion ? 0 : 8))
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .padding(.horizontal, HFSpacing.md)
+            .clipped()
             .accessibilityHidden(true)
         }
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
     }
 
     private var filterRow: some View {

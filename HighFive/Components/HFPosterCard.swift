@@ -8,26 +8,29 @@ struct HFPosterCard: View {
     var showProgress: Bool = false
     var posterOnly: Bool = false
 
+    private var posterHeight: CGFloat {
+        width * 1.5
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
             ZStack(alignment: .bottomLeading) {
                 posterArtwork
-                    .frame(width: width, height: width * 1.5)
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    .frame(width: width, height: posterHeight)
 
                 LinearGradient(
                     colors: [.clear, Color.black.opacity(0.30), Color.black.opacity(0.78)],
                     startPoint: .center,
                     endPoint: .bottom
                 )
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                .frame(width: width, height: posterHeight)
 
                 LinearGradient(
                     colors: [Color.white.opacity(0.16), .clear],
                     startPoint: .topLeading,
                     endPoint: .center
                 )
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                .frame(width: width, height: posterHeight)
 
                 if movie.isComingSoon {
                     Text("Coming\nSoon")
@@ -70,6 +73,9 @@ struct HFPosterCard: View {
                     .padding(.bottom, HFSpacing.xs)
                 }
             }
+            .frame(width: width, height: posterHeight)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                     .stroke(
@@ -123,10 +129,14 @@ struct HFPosterCard: View {
         if HFPosterAssetHealth.hasImage(named: movie.posterAssetName), let assetName = movie.posterAssetName {
             Image(assetName)
                 .resizable()
+                .aspectRatio(2 / 3, contentMode: .fill)
                 .scaledToFill()
+                .frame(width: width, height: posterHeight)
+                .clipped()
                 .accessibilityLabel(movie.title)
         } else {
             HFPosterFallback(title: movie.title)
+                .frame(width: width, height: posterHeight)
         }
     }
 }

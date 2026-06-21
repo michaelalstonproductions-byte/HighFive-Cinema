@@ -235,15 +235,15 @@ struct ConnectHubView: View {
 
     private var creatorPresenceCard: some View {
         connectProModule(
-            title: "Creator Presence Card",
+            title: "Creator Presence",
             detail: "Creator seat is highlighted as host commentary context.",
             systemImage: "person.crop.circle.badge.checkmark",
             accent: HFColors.violet,
             identifier: "hf.connect.pro.creatorPresence"
         ) {
             HStack(spacing: HFSpacing.xs) {
-                connectProCapsule("Host Seat", systemImage: "star.fill", accent: HFColors.violet)
-                connectProCapsule("Ready", systemImage: "checkmark.seal.fill", accent: HFColors.gold)
+                connectProCapsule("Host", systemImage: "star.fill", accent: HFColors.violet)
+                connectProCapsule("OK", systemImage: "checkmark.seal.fill", accent: HFColors.gold)
             }
         }
     }

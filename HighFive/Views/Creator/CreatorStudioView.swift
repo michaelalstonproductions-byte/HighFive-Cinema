@@ -1077,8 +1077,8 @@ struct CreatorStudioView: View {
 
     private var launchCommandDashboard: some View {
         launchProModule(
-            title: "Launch Command Dashboard",
-            detail: "Operating view for release readiness, target boards, campaign notes, and local final review.",
+            title: "Launch Command",
+            detail: "Release readiness, target boards, and local final review.",
             systemImage: "rectangle.grid.2x2.fill",
             accent: HFColors.gold,
             identifier: "hf.launch.pro.dashboard"
@@ -1092,8 +1092,8 @@ struct CreatorStudioView: View {
 
     private var releaseReadinessMatrix: some View {
         launchProModule(
-            title: "Release Readiness Matrix",
-            detail: "Trailer, poster, synopsis, VOD, campaign, and final review are checked as visual states.",
+            title: "Readiness Matrix",
+            detail: "Local checks only.",
             systemImage: "checklist.checked",
             accent: HFColors.gold,
             identifier: "hf.launch.pro.readinessMatrix"
@@ -1109,7 +1109,7 @@ struct CreatorStudioView: View {
     private var distributionPipeline: some View {
         launchProModule(
             title: "Distribution Pipeline",
-            detail: "Package, target preview, campaign board, and review gate are arranged in a local pipeline.",
+            detail: "Package, target preview, campaign board, and review gate stay local.",
             systemImage: "arrow.triangle.branch",
             accent: HFColors.cyanGlow,
             identifier: "hf.launch.pro.distributionPipeline"
@@ -1125,8 +1125,8 @@ struct CreatorStudioView: View {
 
     private var platformTargetsPreview: some View {
         launchProModule(
-            title: "Platform Targets Preview",
-            detail: "Mock platform target cards keep storefront, VOD, premiere, and campaign placement visual only.",
+            title: "Platform Targets",
+            detail: "Mock target cards keep storefront, VOD, premiere, and campaign visual.",
             systemImage: "square.grid.2x2.fill",
             accent: HFColors.cyanGlow,
             identifier: "hf.launch.pro.platformTargets"
