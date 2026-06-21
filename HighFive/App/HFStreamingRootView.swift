@@ -8,6 +8,36 @@ enum HFStreamingTab: Hashable {
     case profile
 }
 
+private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
+    case dashboard
+    case activity
+    case spotlight
+    case missionControl
+    case health
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .dashboard: return "Dashboard"
+        case .activity: return "Activity"
+        case .spotlight: return "Spotlight"
+        case .missionControl: return "Mission Control"
+        case .health: return "Health"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .dashboard: return "rectangle.grid.2x2.fill"
+        case .activity: return "waveform.path.ecg"
+        case .spotlight: return "sparkle.magnifyingglass"
+        case .missionControl: return "square.grid.3x3.fill"
+        case .health: return "checkmark.seal.fill"
+        }
+    }
+}
+
 struct HFStreamingRootView: View {
     @State private var selectedTab: HFStreamingTab = Self.initialTab
     @State private var selectedProfile = HFMockData.userProfiles[0]
@@ -59,6 +89,7 @@ struct HFStreamingRootView: View {
     private static var shouldStartAfterOnboarding: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-home")
+            || Self.shouldStartInHighFiveOS
             || arguments.contains("--hf-premium-streaming-home")
             || arguments.contains("--hf-premium-streaming-discovery")
             || arguments.contains("--hf-premium-streaming-library")
@@ -140,6 +171,24 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-backend-status")
             || arguments.contains("--hf-start-developer-qa")
             || arguments.contains("--hf-start-demo-tour")
+    }
+
+    private static var shouldStartInHighFiveOS: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-os-dashboard")
+            || arguments.contains("--hf-os-activity")
+            || arguments.contains("--hf-os-spotlight")
+            || arguments.contains("--hf-os-mission-control")
+            || arguments.contains("--hf-os-health")
+    }
+
+    private static var highFiveOSInitialMode: HFHighFiveOSMode {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-os-activity") { return .activity }
+        if arguments.contains("--hf-os-spotlight") { return .spotlight }
+        if arguments.contains("--hf-os-mission-control") { return .missionControl }
+        if arguments.contains("--hf-os-health") { return .health }
+        return .dashboard
     }
 
     private static var shouldStartInMovieDetail: Bool {
@@ -311,7 +360,9 @@ struct HFStreamingRootView: View {
     var body: some View {
         Group {
             if shouldShowStreamingShell {
-                if Self.shouldStartInProtectedDepthPreview {
+                if Self.shouldStartInHighFiveOS {
+                    qaHighFiveOSView
+                } else if Self.shouldStartInProtectedDepthPreview {
                     HighFiveProtectedSpatialPeekBridge()
                 } else if Self.shouldStartInPlayer {
                     qaPlayerView
@@ -358,6 +409,11 @@ struct HFStreamingRootView: View {
             hasCompletedLaunchIntro = true
             hasCompletedOnboarding = true
         }
+    }
+
+    private var qaHighFiveOSView: some View {
+        HFHighFiveOSView(initialMode: Self.highFiveOSInitialMode, selectedProfile: selectedProfile)
+            .environmentObject(streamingStore)
     }
 
     private var qaMovieDetailView: some View {
@@ -465,6 +521,584 @@ struct HFStreamingRootView: View {
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)
             }
+        }
+    }
+}
+
+private struct HFHighFiveOSView: View {
+    let initialMode: HFHighFiveOSMode
+    let selectedProfile: UserProfile
+
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var selectedMode: HFHighFiveOSMode
+    @State private var selectedRoom: HFOSRoom = .watchRoom
+    @State private var isAwake = false
+
+    init(initialMode: HFHighFiveOSMode, selectedProfile: UserProfile) {
+        self.initialMode = initialMode
+        self.selectedProfile = selectedProfile
+        _selectedMode = State(initialValue: initialMode)
+    }
+
+    private var featuredMovie: Movie {
+        streamingStore.featuredMovie
+    }
+
+    private var savedCount: Int {
+        streamingStore.savedMovies.count
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                osHeader
+                osDock
+                modeSwitcher
+                activeModeSurface
+                osFooter
+            }
+            .padding(.top, HFSpacing.xxl)
+            .padding(.bottom, HFSpacing.xxl)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialSceneEntrance(isActive: isAwake, reduceMotion: reduceMotion)
+        .onAppear {
+            guard !isAwake else { return }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+                isAwake = true
+            }
+        }
+        .accessibilityIdentifier("hf.os.commandLayer")
+    }
+
+    private var osHeader: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HStack(alignment: .center, spacing: HFSpacing.md) {
+                Image(systemName: "sparkles.tv.fill")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 64, height: 64)
+                    .background(HFColors.goldGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("HIGHFIVE OS")
+                        .font(.system(size: 42, weight: .black))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text("One local command layer for Watch, Create, Connect, Launch, and Pass.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack(spacing: HFSpacing.xs) {
+                HFSpatialRouteBadge(title: "Local Preview", accent: HFColors.cyanGlow)
+                HFSpatialRouteBadge(title: selectedProfile.name, accent: HFColors.gold)
+                HFSpatialRouteBadge(title: selectedMode.title, accent: HFColors.violet)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("HighFive OS, \(selectedMode.title), local command layer")
+    }
+
+    private var osDock: some View {
+        HFOpticalGlassSurface(cornerRadius: 34, strokeColor: HFColors.gold.opacity(0.38)) {
+            HStack(spacing: HFSpacing.xs) {
+                ForEach(HFOSRoom.allCases) { room in
+                    Button {
+                        withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.focusAnimation) {
+                            selectedRoom = room
+                        }
+                    } label: {
+                        VStack(spacing: HFSpacing.xs) {
+                            Image(systemName: room.systemImage)
+                                .font(.system(size: 20, weight: .black))
+                                .foregroundStyle(selectedRoom == room ? .black : room.accent)
+                                .frame(width: 46, height: 46)
+                                .background(selectedRoom == room ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(room.accent.opacity(0.16)))
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            Text(room.shortTitle)
+                                .font(HFTypography.micro)
+                                .foregroundStyle(selectedRoom == room ? HFColors.gold : HFColors.textSecondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.68)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(room.title) room")
+                    .accessibilityValue(selectedRoom == room ? "Selected" : "Available")
+                }
+            }
+            .padding(HFSpacing.sm)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.os.dock")
+    }
+
+    private var modeSwitcher: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: HFSpacing.sm) {
+                ForEach(HFHighFiveOSMode.allCases) { mode in
+                    Button {
+                        withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.standardAnimation) {
+                            selectedMode = mode
+                        }
+                    } label: {
+                        Label(mode.title, systemImage: mode.systemImage)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(selectedMode == mode ? .black : HFColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .padding(.horizontal, HFSpacing.sm)
+                            .frame(height: 42)
+                            .background(selectedMode == mode ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(Color.white.opacity(0.08)))
+                            .overlay(Capsule().stroke((selectedMode == mode ? HFColors.gold : HFColors.cyanGlow).opacity(0.28), lineWidth: 1))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(selectedMode == mode ? "Selected" : "Available")
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityIdentifier("hf.os.quickActions")
+    }
+
+    @ViewBuilder
+    private var activeModeSurface: some View {
+        switch selectedMode {
+        case .dashboard:
+            dashboardSurface
+        case .activity:
+            activitySurface
+        case .spotlight:
+            spotlightSurface
+        case .missionControl:
+            missionControlSurface
+        case .health:
+            healthSurface
+        }
+    }
+
+    private var dashboardSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            primaryCommandPanel(
+                title: "\(selectedRoom.title) Command Layer",
+                detail: selectedRoom.detail,
+                systemImage: selectedRoom.systemImage,
+                accent: selectedRoom.accent,
+                identifier: "hf.os.commandPalette"
+            )
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                roomStatusCard(.watchRoom, value: featuredMovie.title, status: "Ready")
+                roomStatusCard(.createRoom, value: "Studio Pro", status: "Draft")
+                roomStatusCard(.roomConnect, value: "Room Preview", status: "Local")
+                roomStatusCard(.launchRoom, value: "Final Gate", status: "Review")
+                roomStatusCard(.passRoom, value: selectedProfile.name, status: "Active")
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.os.roomStatusCenter")
+    }
+
+    private var activitySurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Activity Center", detail: "Recent local room motion across the HighFive product.")
+                activityFeed
+                recentTimeline
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.os.activityCenter")
+    }
+
+    private var activityFeed: some View {
+        VStack(spacing: HFSpacing.sm) {
+            activityRow(room: .watchRoom, title: "Continue Watching", detail: featuredMovie.title, status: "Local")
+            activityRow(room: .createRoom, title: "Creator Work", detail: "Release notes and social kit preview", status: "Draft")
+            activityRow(room: .roomConnect, title: "Room Activity", detail: "Watch room command center reviewed", status: "Preview")
+            activityRow(room: .launchRoom, title: "Launch Activity", detail: "Mock targets and final gate aligned", status: "Review")
+            activityRow(room: .passRoom, title: "Pass Activity", detail: "Local account mode remains active", status: "Private")
+        }
+        .accessibilityIdentifier("hf.os.activityFeed")
+    }
+
+    private var spotlightSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: 34, strokeColor: HFColors.gold.opacity(0.50)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "OS Spotlight", detail: "Visual command palette for titles, rooms, recents, and local actions.")
+
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: "sparkle.magnifyingglass")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                    Text("Search titles, open rooms, review recent local activity")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                }
+                .padding(HFSpacing.md)
+                .background(Color.black.opacity(0.34))
+                .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(HFColors.gold.opacity(0.24), lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    quickAction("Open Watch", systemImage: "play.tv.fill", room: .watchRoom)
+                    quickAction("Open Create", systemImage: "wand.and.stars", room: .createRoom)
+                    quickAction("Open Connect", systemImage: "person.3.sequence.fill", room: .roomConnect)
+                    quickAction("Open Launch", systemImage: "sparkles.tv.fill", room: .launchRoom)
+                    quickAction("Open Pass", systemImage: "person.text.rectangle.fill", room: .passRoom)
+                    quickAction("Recent Room", systemImage: "clock.fill", room: selectedRoom)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.os.spotlight")
+        .accessibilityIdentifier("hf.os.commandPalette")
+    }
+
+    private var missionControlSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.44)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    osSectionHeader(title: "OS Mission Control", detail: "A unified overview of every HighFive room.")
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        missionCard(.watchRoom, metric: "Now")
+                        missionCard(.createRoom, metric: "Pro")
+                        missionCard(.roomConnect, metric: "Room")
+                        missionCard(.launchRoom, metric: "Gate")
+                        missionCard(.passRoom, metric: "Gold")
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.os.missionControl")
+    }
+
+    private var healthSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.44)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Room Health Board", detail: "Read-only local status for the HighFive OS surfaces.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    healthCard(title: "Watch", value: "Ready", accent: HFColors.gold)
+                    healthCard(title: "Create", value: "Draft", accent: HFColors.violet)
+                    healthCard(title: "Connect", value: "Local", accent: HFColors.cyanGlow)
+                    healthCard(title: "Launch", value: "Review", accent: HFColors.gold)
+                    healthCard(title: "Pass", value: "Active", accent: HFColors.gold)
+                    healthCard(title: "Signals", value: "\(savedCount) saved", accent: HFColors.cyanGlow)
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.os.healthBoard")
+    }
+
+    private var recentTimeline: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            osSectionHeader(title: "Recent Activity Timeline", detail: "Local preview events grouped by room.")
+            timelineStep("Watch", "Featured title staged in the hero theater", HFColors.gold)
+            timelineStep("Create", "Creator Studio Pro remains draft-focused", HFColors.violet)
+            timelineStep("Connect", "Audience room preview is ready", HFColors.cyanGlow)
+            timelineStep("Launch", "Distribution center final gate is visual only", HFColors.gold)
+        }
+        .accessibilityIdentifier("hf.os.recentTimeline")
+    }
+
+    private var osFooter: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Text("Unified Room Footer")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("HighFive OS is a visual command layer. The locked streaming tabs remain Home, Search, Library, Downloads, and Profile.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func primaryCommandPanel(title: String, detail: String, systemImage: String, accent: Color, identifier: String) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: accent.opacity(0.46)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 26, weight: .black))
+                        .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                        .frame(width: 62, height: 62)
+                        .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(title)
+                            .font(HFTypography.title)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+                        Text(detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HFSpatialActionCluster {
+                    HFEnergyAction(title: "Review \(selectedRoom.shortTitle)", systemImage: selectedRoom.systemImage, style: .gold) {
+                        selectedMode = .missionControl
+                    }
+                    HStack(spacing: HFSpacing.sm) {
+                        HFEnergyAction(title: "Activity", systemImage: "waveform.path.ecg", style: .glass) {
+                            selectedMode = .activity
+                        }
+                        HFEnergyAction(title: "Spotlight", systemImage: "sparkle.magnifyingglass", style: .glass) {
+                            selectedMode = .spotlight
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func roomStatusCard(_ room: HFOSRoom, value: String, status: String) -> some View {
+        Button {
+            selectedRoom = room
+            selectedMode = .missionControl
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: room.systemImage)
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(room.accent == HFColors.gold ? .black : room.accent)
+                    .frame(width: 46, height: 46)
+                    .background(room.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(room.accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Text(room.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text(value)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(status)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(room.accent)
+            }
+            .frame(maxWidth: .infinity, minHeight: 168, alignment: .topLeading)
+            .padding(HFSpacing.md)
+            .background(Color.white.opacity(0.055))
+            .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(room.accent.opacity(0.28), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func activityRow(room: HFOSRoom, title: String, detail: String, status: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: room.systemImage)
+                .font(.system(size: 17, weight: .black))
+                .foregroundStyle(room.accent == HFColors.gold ? .black : room.accent)
+                .frame(width: 38, height: 38)
+                .background(room.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(room.accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+            }
+            Spacer(minLength: HFSpacing.xs)
+            Text(status)
+                .font(HFTypography.micro)
+                .foregroundStyle(room.accent)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 26)
+                .background(room.accent.opacity(0.12))
+                .clipShape(Capsule())
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.26))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func quickAction(_ title: String, systemImage: String, room: HFOSRoom) -> some View {
+        Button {
+            selectedRoom = room
+            selectedMode = .dashboard
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(room.accent == HFColors.gold ? .black : room.accent)
+                    .frame(width: 44, height: 44)
+                    .background(room.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(room.accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text("Visual command")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+            .padding(HFSpacing.sm)
+            .background(Color.white.opacity(0.055))
+            .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(room.accent.opacity(0.24), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func missionCard(_ room: HFOSRoom, metric: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Image(systemName: room.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(room.accent)
+                Spacer()
+                Text(metric)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(room.accent)
+            }
+            Text(room.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+            Text(room.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.28))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(room.accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func healthCard(title: String, value: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(accent)
+        }
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.30))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func timelineStep(_ title: String, _ detail: String, _ accent: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Circle()
+                .fill(accent)
+                .frame(width: 10, height: 10)
+                .padding(.top, 5)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+        }
+    }
+
+    private func osSectionHeader(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(title)
+                .font(HFTypography.section)
+                .foregroundStyle(HFColors.textPrimary)
+            Text(detail)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private enum HFOSRoom: String, CaseIterable, Identifiable {
+    case watchRoom
+    case createRoom
+    case roomConnect
+    case launchRoom
+    case passRoom
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .watchRoom: return "Watch"
+        case .createRoom: return "Create"
+        case .roomConnect: return "Connect"
+        case .launchRoom: return "Launch"
+        case .passRoom: return "Pass"
+        }
+    }
+
+    var shortTitle: String {
+        title.uppercased()
+    }
+
+    var detail: String {
+        switch self {
+        case .watchRoom: return "Streaming home, detail world, player, and local preview paths."
+        case .createRoom: return "Creator Studio Pro, social asset kit, and commentary room gateway."
+        case .roomConnect: return "Watch room, premiere lobby, audience presence, and room energy."
+        case .launchRoom: return "Distribution center, mock targets, visual pipeline, and final review."
+        case .passRoom: return "HighFive Pass, local account mode, and private access readiness."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .watchRoom: return "play.tv.fill"
+        case .createRoom: return "wand.and.stars"
+        case .roomConnect: return "person.3.sequence.fill"
+        case .launchRoom: return "sparkles.tv.fill"
+        case .passRoom: return "person.text.rectangle.fill"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .watchRoom: return HFColors.gold
+        case .createRoom: return HFColors.violet
+        case .roomConnect: return HFColors.cyanGlow
+        case .launchRoom: return HFColors.gold
+        case .passRoom: return HFColors.gold
         }
     }
 }
