@@ -80,7 +80,7 @@ struct SearchView: View {
     @State private var showsInspector = false
 
     private let forcesEmptyState: Bool
-    private let filters = ["All", "Movies", "Series", "Originals", "Downloaded"]
+    private let filters = ["All", "Movies", "Series", "Originals", "Creator Published", "Downloaded"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
@@ -117,6 +117,7 @@ struct SearchView: View {
                 header
                 discoveryWorld
                 premiumDiscoveryCollections
+                recommendationLayer
                 resultsSection
             }
             .padding(.top, HFSpacing.xxl)
@@ -353,67 +354,52 @@ struct SearchView: View {
 
     private var premiumDiscoveryCollections: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Discovery 2.0", actionTitle: "Local catalog")
+            HFSectionHeader(title: "Discovery Engine", actionTitle: "Local catalog")
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HFSpacing.md) {
-                    premiumDiscoveryCard(
-                        title: "Originals",
-                        detail: "HighFive originals and creator-led stories.",
-                        systemImage: "sparkles.tv.fill",
-                        accent: HFColors.gold,
-                        focus: .creatorPicks
-                    )
-                    premiumDiscoveryCard(
-                        title: "Premiere Preview",
-                        detail: "Upcoming local catalog titles.",
-                        systemImage: "clock.badge.checkmark.fill",
-                        accent: HFColors.cyanGlow,
-                        focus: .tonight
-                    )
-                    premiumDiscoveryCard(
-                        title: "Mystery Room",
-                        detail: "Shadow stories and late-night picks.",
-                        systemImage: "eye.fill",
-                        accent: HFColors.violet,
-                        focus: .mystery
-                    )
+                    ForEach(streamingStore.discoveryCollections) { category in
+                        premiumDiscoveryCard(category)
+                    }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Discovery collections including featured, trending, new releases, HighFive originals, creator published, award winners, and premieres.")
+        .accessibilityIdentifier("hf.discovery.engine.collections")
         .accessibilityIdentifier("hf.streaming.premium.collectionWorlds")
     }
 
-    private func premiumDiscoveryCard(
-        title: String,
-        detail: String,
-        systemImage: String,
-        accent: Color,
-        focus: HFDiscoveryFocus
-    ) -> some View {
-        Button {
+    private func premiumDiscoveryCard(_ category: Category) -> some View {
+        let accent = discoveryAccent(for: category.id)
+
+        return Button {
             withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
-                selectedFocus = focus
-                selectedFilter = focus.filter
-                query = focus.querySeed
+                selectedFilter = category.id == "creator-published" ? "Creator Published" : "All"
+                query = category.title
             }
         } label: {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: systemImage)
+                Image(systemName: discoveryIcon(for: category.id))
                     .font(.system(size: 22, weight: .black))
                     .foregroundStyle(accent == HFColors.gold ? .black : accent)
                     .frame(width: 48, height: 48)
                     .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
                     .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-                Text(title)
+                Text(category.title)
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                Text(detail)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(category.subtitle ?? "\(category.movies.count) local titles")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
+                Text("\(category.movies.count) titles")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(accent)
             }
             .frame(width: 190, alignment: .leading)
             .padding(HFSpacing.md)
@@ -425,6 +411,76 @@ struct SearchView: View {
             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Open \(category.title) collection. \(category.subtitle ?? "")")
+    }
+
+    private var recommendationLayer: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Recommendation Layer", actionTitle: "Local first")
+
+            VStack(spacing: HFSpacing.md) {
+                ForEach(streamingStore.recommendationCollections(anchor: featuredTitle)) { category in
+                    recommendationRail(category)
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Local recommendation layer with because you watched, similar titles, from same creator, and continue watching.")
+        .accessibilityIdentifier("hf.discovery.engine.recommendations")
+    }
+
+    private func recommendationRail(_ category: Category) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(category.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            if let subtitle = category.subtitle, !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(category.movies.prefix(8)) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 112, showMetadata: false, showProgress: movie.progress != nil)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open recommended title \(movie.title)")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.discovery.engine.\(category.id)")
+    }
+
+    private func discoveryIcon(for id: String) -> String {
+        switch id {
+        case "featured": return "star.fill"
+        case "trending": return "chart.line.uptrend.xyaxis"
+        case "new-releases": return "sparkles.tv.fill"
+        case "highfive-originals": return "hifispeaker.2.fill"
+        case "creator-published": return "checkmark.seal.fill"
+        case "award-winners": return "rosette"
+        case "premieres": return "theatermasks.fill"
+        default: return "rectangle.stack.fill"
+        }
+    }
+
+    private func discoveryAccent(for id: String) -> Color {
+        switch id {
+        case "creator-published", "new-releases":
+            return HFColors.violet
+        case "premieres", "trending":
+            return HFColors.cyanGlow
+        default:
+            return HFColors.gold
+        }
     }
 
     private var emptyState: some View {

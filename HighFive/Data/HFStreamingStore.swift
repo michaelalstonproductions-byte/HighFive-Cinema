@@ -1508,6 +1508,42 @@ final class HFStreamingStore: ObservableObject {
         return (genreMatches + creatorMatches + fallback).filter { seen.insert($0.id).inserted }.prefix(8).map { $0 }
     }
 
+    var discoveryCollections: [Category] {
+        compactCategories([
+            Category(id: "featured", title: "Featured", subtitle: "High-signal local picks for the first watch decision", movies: [featuredMovie]),
+            Category(id: "trending", title: "Trending", subtitle: "Local momentum from the HighFive catalog", movies: moviesByIDs(["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"])),
+            Category(id: "new-releases", title: "New Releases", subtitle: "Fresh and recently staged local catalog titles", movies: newThisWeekCatalog),
+            Category(id: "highfive-originals", title: "HighFive Originals", subtitle: "Original films, series, creator cuts, and local premieres", movies: originalsCatalog.filter { !$0.isComingSoon }),
+            Category(id: "creator-published", title: "Creator Published", subtitle: "Titles promoted from the Creator Publishing Pipeline", movies: creatorPublishedMovies),
+            Category(id: "award-winners", title: "Award Winners", subtitle: "Prestige-style local programming for editorial rails", movies: moviesByIDs(["friendly", "artist-development", "behind-vision", "black-turnip", "sunshine"])),
+            Category(id: "premieres", title: "Premieres", subtitle: "Premiere-ready and coming-soon worlds", movies: allCatalogMovies.filter { $0.isComingSoon || $0.genres.contains("Premiere") })
+        ])
+    }
+
+    func recommendationCollections(anchor movie: Movie? = nil) -> [Category] {
+        let selected = movie ?? continueWatchingMovie
+        return compactCategories([
+            Category(id: "because-you-watched", title: "Because You Watched \(selected.title)", subtitle: "Genre, tone, and creator-adjacent local picks", movies: relatedMovies(for: selected)),
+            Category(id: "similar-titles", title: "Similar Titles", subtitle: selected.genres.prefix(2).joined(separator: " + "), movies: similarTitles(to: selected)),
+            Category(id: "same-creator", title: "From \(selected.creatorName)", subtitle: "More local titles from the same creator", movies: fromSameCreator(as: selected)),
+            Category(id: "continue-watching", title: "Continue Watching", subtitle: "Resume local progress", movies: allCatalogMovies.filter { $0.progress != nil })
+        ])
+    }
+
+    var collectionSystem: [Category] {
+        compactCategories([
+            collectionCategory(id: "horror", title: "Horror", genre: "Horror"),
+            collectionCategory(id: "documentary", title: "Documentary", genre: "Documentary"),
+            collectionCategory(id: "western", title: "Western", genre: "Western"),
+            collectionCategory(id: "crime", title: "Crime", genre: "Crime"),
+            collectionCategory(id: "drama", title: "Drama", genre: "Drama"),
+            Category(id: "premiere-collection", title: "Premieres", subtitle: "Scheduled and coming-soon local titles", movies: allCatalogMovies.filter { movie in
+                movie.isComingSoon || searchableTags(for: movie).contains { $0.localizedCaseInsensitiveContains("Premiere") }
+            }),
+            Category(id: "creator-collections", title: "Creator Collections", subtitle: "Creator-led discovery paths", movies: creatorCollectionMovies)
+        ])
+    }
+
     func searchMovies(query: String, filter: String) -> [Movie] {
         let base: [Movie]
         switch filter {
@@ -1517,6 +1553,8 @@ final class HFStreamingStore: ObservableObject {
             base = allCatalogMovies.filter { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }
         case "Originals":
             base = originalsCatalog
+        case "Creator Published":
+            base = creatorPublishedMovies
         case "Downloaded":
             base = downloadedMovies
         default:
@@ -1528,42 +1566,119 @@ final class HFStreamingStore: ObservableObject {
             return Array(base.prefix(8))
         }
 
-        return base.filter {
-            $0.title.localizedCaseInsensitiveContains(searchTerm) ||
-            $0.subtitle.localizedCaseInsensitiveContains(searchTerm) ||
-            $0.genres.joined(separator: " ").localizedCaseInsensitiveContains(searchTerm)
-        }
+        return base
+            .map { movie in (movie, searchScore(for: movie, term: searchTerm)) }
+            .filter { $0.1 > 0 }
+            .sorted { lhs, rhs in
+                if lhs.1 == rhs.1 {
+                    return lhs.0.title < rhs.0.title
+                }
+                return lhs.1 > rhs.1
+            }
+            .map(\.0)
     }
 
     func catalogRails(filter: String = "All") -> [Category] {
-        var rails = [
-            Category(id: "trending", title: "Trending Now", subtitle: nil, movies: ["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"].compactMap(movie(id:))),
-            Category(id: "originals", title: "HighFive Originals", subtitle: "Premium original films and series", movies: originalsCatalog.filter { !$0.isComingSoon }),
-            Category(id: "fresh-finds", title: "Fresh Finds", subtitle: "New from the HighFive slate", movies: Array(allCatalogMovies.suffix(10))),
-            Category(id: "coming-soon", title: "Coming Soon", subtitle: "Scripted originals in development", movies: allCatalogMovies.filter { $0.isComingSoon }),
-            Category(id: "my-movies", title: "My Movies", subtitle: "Saved and local titles", movies: allCatalogMovies.filter { isDownloaded($0) || $0.progress != nil })
-        ]
-        if !creatorPublishedMovies.isEmpty {
-            rails.insert(
-                Category(
-                    id: "creator-published",
-                    title: "Creator Published",
-                    subtitle: "Published from the local creator pipeline",
-                    movies: creatorPublishedMovies
-                ),
-                at: 2
-            )
-        }
+        let rails = discoveryCollections + recommendationCollections() + collectionSystem
 
         switch filter {
         case "Originals":
-            return rails.filter { $0.id == "originals" }
-        case "Drama", "Thriller", "Mystery", "Documentary":
-            return [Category(id: filter.lowercased(), title: "\(filter) Picks", subtitle: nil, movies: allCatalogMovies.filter { $0.genres.contains(filter) })]
+            return rails.filter { $0.id == "highfive-originals" }
+        case "Creator Published":
+            return rails.filter { $0.id == "creator-published" }
+        case "Premieres":
+            return rails.filter { $0.id == "premieres" || $0.id == "premiere-collection" }
+        case "Award Winners":
+            return rails.filter { $0.id == "award-winners" }
+        case "Drama", "Thriller", "Mystery", "Documentary", "Horror", "Western", "Crime":
+            return [collectionCategory(id: filter.lowercased(), title: "\(filter) Picks", genre: filter)]
         case "Coming Soon":
-            return rails.filter { $0.id == "coming-soon" }
+            return [Category(id: "coming-soon", title: "Coming Soon", subtitle: "Scripted originals in development", movies: allCatalogMovies.filter { $0.isComingSoon })]
         default:
             return rails
+        }
+    }
+
+    private var creatorCollectionMovies: [Movie] {
+        var seen = Set<String>()
+        let creatorLed = allCatalogMovies.filter { movie in
+            movie.isOriginal || !fromSameCreator(as: movie).isEmpty || !searchableTags(for: movie).isEmpty
+        }
+        return creatorLed.filter { seen.insert($0.id).inserted }
+    }
+
+    private func moviesByIDs(_ ids: [String]) -> [Movie] {
+        ids.compactMap(movie(id:))
+    }
+
+    private func compactCategories(_ categories: [Category]) -> [Category] {
+        categories.filter { !$0.movies.isEmpty }
+    }
+
+    private func collectionCategory(id: String, title: String, genre: String) -> Category {
+        Category(
+            id: id,
+            title: title,
+            subtitle: "\(genre) collection from the local catalog",
+            movies: allCatalogMovies.filter { movie in
+                movie.genres.contains { $0.localizedCaseInsensitiveCompare(genre) == .orderedSame }
+            }
+        )
+    }
+
+    private func similarTitles(to movie: Movie) -> [Movie] {
+        let anchorGenres = Set(movie.genres)
+        return allCatalogMovies
+            .filter { candidate in
+                candidate.id != movie.id && !anchorGenres.isDisjoint(with: Set(candidate.genres))
+            }
+            .prefix(10)
+            .map { $0 }
+    }
+
+    private func fromSameCreator(as movie: Movie) -> [Movie] {
+        allCatalogMovies
+            .filter { $0.id != movie.id && $0.creatorName == movie.creatorName }
+            .prefix(10)
+            .map { $0 }
+    }
+
+    private func searchableTags(for movie: Movie) -> [String] {
+        creatorPublishingContents.first { $0.id == movie.id }?.tags ?? []
+    }
+
+    private func collectionNames(for movie: Movie) -> [String] {
+        (discoveryCollections + collectionSystem)
+            .filter { category in category.movies.contains { $0.id == movie.id } }
+            .flatMap { [$0.title, $0.subtitle ?? ""] }
+    }
+
+    private func searchScore(for movie: Movie, term: String) -> Int {
+        let normalized = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return 0 }
+
+        let fields: [(String, Int)] = [
+            (movie.title, 120),
+            (movie.subtitle, 55),
+            (movie.creatorName, 70),
+            (movie.genres.joined(separator: " "), 60),
+            (searchableTags(for: movie).joined(separator: " "), 65),
+            (collectionNames(for: movie).joined(separator: " "), 50),
+            (movie.synopsis, 28),
+            (movie.duration, 12),
+            (movie.year, 8)
+        ]
+
+        return fields.reduce(0) { partial, field in
+            let value = field.0
+            let weight = field.1
+            if value.localizedCaseInsensitiveCompare(normalized) == .orderedSame {
+                return partial + weight + 40
+            }
+            if value.localizedCaseInsensitiveContains(normalized) {
+                return partial + weight
+            }
+            return partial
         }
     }
 

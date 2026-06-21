@@ -138,7 +138,7 @@ enum HFMockData {
     }
 
     static var discoveryGenres: [String] {
-        ["All", "Originals", "Drama", "Thriller", "Mystery", "Documentary", "Coming Soon"]
+        ["All", "Originals", "Creator Published", "Award Winners", "Premieres", "Horror", "Documentary", "Western", "Crime", "Drama", "Thriller", "Mystery", "Coming Soon"]
     }
 
     static func creator(for movie: Movie) -> Creator {
