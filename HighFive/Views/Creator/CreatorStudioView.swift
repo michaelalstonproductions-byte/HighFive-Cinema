@@ -159,6 +159,23 @@ private enum HFSpatialCreatorTool: String, CaseIterable, Identifiable {
     }
 }
 
+private enum HFCreatorProSpotlight {
+    case dashboard
+    case pipeline
+    case socialAssets
+    case vodPackage
+    case analytics
+
+    static var launchSpotlight: HFCreatorProSpotlight {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
+        if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
+        if arguments.contains("--hf-creator-pro-vod-package") { return .vodPackage }
+        if arguments.contains("--hf-creator-pro-analytics") { return .analytics }
+        return .dashboard
+    }
+}
+
 struct CreatorStudioView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -177,6 +194,7 @@ struct CreatorStudioView: View {
     @State private var isInspectorPresented = false
     @State private var isSocialInspectorPresented = false
     @State private var isVODInspectorPresented = false
+    private let proSpotlight: HFCreatorProSpotlight
 
     init(
         initialFocus: HFCreatorStudioFocus = .dashboard,
@@ -187,6 +205,7 @@ struct CreatorStudioView: View {
         _selectedTool = State(initialValue: Self.tool(for: initialFocus))
         _selectedSocialFocus = State(initialValue: initialSocialFocus)
         _selectedVODFocus = State(initialValue: initialVODFocus)
+        proSpotlight = HFCreatorProSpotlight.launchSpotlight
     }
 
     var body: some View {
@@ -197,8 +216,10 @@ struct CreatorStudioView: View {
                 } else if selectedFocus == .vodPackage {
                     vodLaunchChamber
                 } else {
+                    creatorStudioProHero
                     spatialWorktable
                     creatorStudioActions
+                    creatorStudioProSurface
                     selectedToolHandoff
                 }
             }
@@ -1343,6 +1364,302 @@ struct CreatorStudioView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(title) local handoff. \(detail)")
+    }
+
+    private var creatorStudioProHero: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.gold.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Creator Studio Pro",
+                    detail: "Local command surface for release planning, social assets, VOD package state, commentary rooms, and creator identity.",
+                    systemImage: "wand.and.stars.inverse",
+                    accent: HFColors.gold
+                )
+
+                creatorIdentityCard
+                creatorProSpotlightPanel
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Studio Pro dashboard for \(streamingStore.featuredMovie.title)")
+        .accessibilityIdentifier("hf.creator.pro.dashboard")
+    }
+
+    private var creatorIdentityCard: some View {
+        HStack(alignment: .center, spacing: HFSpacing.md) {
+            ZStack {
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .fill(HFColors.goldGradient)
+                Image(systemName: streamingStore.activeViewingProfile.avatarSymbol)
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(.black)
+            }
+            .frame(width: 78, height: 78)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(streamingStore.activeViewingProfile.displayName)
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.74)
+
+                Text("Creator identity card")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.gold)
+
+                Text("Current project: \(streamingStore.featuredMovie.title)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.76)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+        }
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Creator identity card. \(streamingStore.activeViewingProfile.displayName). Current project \(streamingStore.featuredMovie.title).")
+        .accessibilityIdentifier("hf.creator.pro.identityCard")
+    }
+
+    @ViewBuilder
+    private var creatorProSpotlightPanel: some View {
+        switch proSpotlight {
+        case .dashboard:
+            creatorProSpotlight(
+                title: "Creator Command Dashboard",
+                detail: "A compact operating center for local project status, creative notes, and room handoffs.",
+                systemImage: "rectangle.grid.2x2.fill",
+                accent: HFColors.gold,
+                identifier: "hf.creator.pro.dashboard"
+            ) {
+                HStack(spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Project", value: "Local")
+                    creatorProStat(title: "Rooms", value: "3")
+                    creatorProStat(title: "Ready", value: "Review")
+                }
+            }
+        case .pipeline:
+            projectPipelineSection
+        case .socialAssets:
+            socialAssetKitSection
+        case .vodPackage:
+            vodPackageStatusSection
+        case .analytics:
+            analyticsPreviewSection
+        }
+    }
+
+    private var creatorStudioProSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                projectPipelineSection
+                releaseReadinessSection
+                socialAssetKitSection
+                vodPackageStatusSection
+                analyticsPreviewSection
+                launchControlPreviewSection
+            }
+
+            commentaryGatewaySection
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var projectPipelineSection: some View {
+        creatorProSpotlight(
+            title: "Project Pipeline",
+            detail: "Look, trailer, sound, campaign, and VOD steps stay staged as local review states.",
+            systemImage: "point.3.connected.trianglepath.dotted",
+            accent: HFColors.violet,
+            identifier: "hf.creator.pro.projectPipeline"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFCreatorStudioPill(title: "Look", isActive: selectedTool == .look)
+                HFCreatorStudioPill(title: "Trailer", isActive: selectedTool == .trailer)
+                HFCreatorStudioPill(title: "Social", isActive: selectedTool == .social)
+            }
+        }
+    }
+
+    private var releaseReadinessSection: some View {
+        creatorProSpotlight(
+            title: "Release Readiness",
+            detail: didSaveLocalDraft ? "Local draft is marked for review." : "Local draft is ready to review before launch planning.",
+            systemImage: "checkmark.seal.fill",
+            accent: HFColors.gold,
+            identifier: "hf.creator.pro.releaseReadiness"
+        ) {
+            Button {
+                didSaveLocalDraft = true
+            } label: {
+                HFCreatorStudioAction(title: didSaveLocalDraft ? "Draft Ready" : "Mark Ready", systemImage: "checkmark.seal.fill", isPrimary: true)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var socialAssetKitSection: some View {
+        creatorProSpotlight(
+            title: "Social Asset Kit",
+            detail: "Poster note, caption draft, vertical reel note, and story copy stay local.",
+            systemImage: "bubble.left.and.bubble.right.fill",
+            accent: HFColors.violet,
+            identifier: "hf.creator.pro.socialAssetKit"
+        ) {
+            Button {
+                select(.social)
+            } label: {
+                HFCreatorStudioAction(title: "Review Social Kit", systemImage: "bubble.left.and.bubble.right.fill")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var vodPackageStatusSection: some View {
+        creatorProSpotlight(
+            title: "VOD Package Status",
+            detail: "Trailer, poster, synopsis, access notes, and release copy are grouped for local review.",
+            systemImage: "play.rectangle.on.rectangle.fill",
+            accent: HFColors.gold,
+            identifier: "hf.creator.pro.vodPackage"
+        ) {
+            Button {
+                select(.vod)
+            } label: {
+                HFCreatorStudioAction(title: "Review VOD Package", systemImage: "play.rectangle.on.rectangle.fill")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var analyticsPreviewSection: some View {
+        creatorProSpotlight(
+            title: "Creator Analytics Preview",
+            detail: "Local preview signals summarize watch interest, saves, and room activity.",
+            systemImage: "chart.bar.xaxis",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.creator.pro.analyticsPreview"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                creatorProStat(title: "Saves", value: "\(max(12, streamingStore.savedMovieIDs.count * 6))")
+                creatorProStat(title: "Signals", value: "Local")
+            }
+        }
+    }
+
+    private var launchControlPreviewSection: some View {
+        creatorProSpotlight(
+            title: "Launch Control Preview",
+            detail: "A local launch review surface keeps release, campaign, and room steps visible.",
+            systemImage: "sparkles.tv.fill",
+            accent: HFColors.gold,
+            identifier: "hf.creator.pro.launchControl"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                HFCreatorStudioPill(title: "Review", isActive: true)
+                HFCreatorStudioPill(title: "Local")
+            }
+        }
+    }
+
+    private var commentaryGatewaySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "quote.bubble.fill")
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 50, height: 50)
+                    .background(HFColors.cyanGlow)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Commentary Room Gateway")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text("Creator notes, watch-party context, and commentary entry stay local to this project.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Commentary room gateway. Creator notes and watch party context stay local.")
+        .accessibilityIdentifier("hf.creator.pro.commentaryGateway")
+    }
+
+    private func creatorProSpotlight<Content: View>(
+        title: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        identifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.16)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text(title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                    Text(detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(accent.opacity(0.28), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func creatorProStat(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 
     private var creatorInspector: some View {
