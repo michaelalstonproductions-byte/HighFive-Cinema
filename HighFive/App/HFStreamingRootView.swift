@@ -244,6 +244,9 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-membership-creator-rooms")
             || arguments.contains("--hf-start-membership-protected-playback")
             || arguments.contains("--hf-start-membership-depth-peek")
+            || arguments.contains("--hf-start-membership-stats")
+            || arguments.contains("--hf-start-membership-collection-vault")
+            || arguments.contains("--hf-start-membership-achievements")
     }
 
     private static var membershipInitialFacet: HFMembershipPassFacet {
@@ -253,6 +256,14 @@ struct HFStreamingRootView: View {
         if arguments.contains("--hf-start-membership-protected-playback") { return .protectedPlayback }
         if arguments.contains("--hf-start-membership-depth-peek") { return .depthPeek }
         return .identity
+    }
+
+    private static var membershipInitialShowcase: HFMembershipShowcaseFocus {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-membership-stats") { return .stats }
+        if arguments.contains("--hf-start-membership-collection-vault") { return .collectionVault }
+        if arguments.contains("--hf-start-membership-achievements") { return .achievements }
+        return .pass
     }
 
     private static var qaMovieDetailMovie: Movie {
@@ -400,6 +411,7 @@ struct HFStreamingRootView: View {
                         ProfileView(
                             selectedProfile: $selectedProfile,
                             initialMembershipFacet: Self.membershipInitialFacet,
+                            initialMembershipShowcase: Self.membershipInitialShowcase,
                             startInMembership: Self.shouldStartInMembership,
                             onOpenMyList: {
                                 selectedTab = .library

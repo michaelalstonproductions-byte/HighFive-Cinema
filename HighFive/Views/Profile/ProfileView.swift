@@ -81,9 +81,17 @@ enum HFMembershipPassFacet: String, CaseIterable, Identifiable {
     }
 }
 
+enum HFMembershipShowcaseFocus {
+    case pass
+    case stats
+    case collectionVault
+    case achievements
+}
+
 struct ProfileView: View {
     @Binding var selectedProfile: UserProfile
     var initialMembershipFacet: HFMembershipPassFacet = .identity
+    var initialMembershipShowcase: HFMembershipShowcaseFocus = .pass
     var startInMembership = false
     var onOpenMyList: (() -> Void)?
     @EnvironmentObject private var streamingStore: HFStreamingStore
@@ -133,7 +141,8 @@ struct ProfileView: View {
         .navigationDestination(isPresented: $showsMembershipPass) {
             HFMembershipIdentityPassView(
                 selectedProfile: selectedProfile,
-                initialFacet: initialMembershipFacet
+                initialFacet: initialMembershipFacet,
+                initialShowcase: initialMembershipShowcase
             )
         }
         .onAppear {
@@ -1301,6 +1310,7 @@ private struct HFProfileHubRouteRow: View {
 
 private struct HFMembershipIdentityPassView: View {
     let selectedProfile: UserProfile
+    let initialShowcase: HFMembershipShowcaseFocus
 
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @Environment(\.dismiss) private var dismiss
@@ -1310,12 +1320,19 @@ private struct HFMembershipIdentityPassView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @GestureState private var passDrag: CGSize = .zero
     @State private var selectedFacet: HFMembershipPassFacet
+    @State private var selectedShowcase: HFMembershipShowcaseFocus
     @State private var showsAccountInspector = false
     @State private var showsAccountPrivacy = false
 
-    init(selectedProfile: UserProfile, initialFacet: HFMembershipPassFacet = .identity) {
+    init(
+        selectedProfile: UserProfile,
+        initialFacet: HFMembershipPassFacet = .identity,
+        initialShowcase: HFMembershipShowcaseFocus = .pass
+    ) {
         self.selectedProfile = selectedProfile
+        self.initialShowcase = initialShowcase
         _selectedFacet = State(initialValue: initialFacet)
+        _selectedShowcase = State(initialValue: initialShowcase)
     }
 
     private var profileInitials: String {
@@ -1353,8 +1370,10 @@ private struct HFMembershipIdentityPassView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 header
+                routeShowcase
                 passWorld
                 actionCluster
+                premiumMembershipSections
                 facetPreview
             }
             .padding(.top, HFSpacing.lg)
@@ -1403,6 +1422,20 @@ private struct HFMembershipIdentityPassView: View {
             }
 
             Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private var routeShowcase: some View {
+        switch selectedShowcase {
+        case .pass:
+            EmptyView()
+        case .stats:
+            membershipStatsSection
+        case .collectionVault:
+            collectionVaultSection
+        case .achievements:
+            achievementsSection
         }
     }
 
@@ -1544,8 +1577,273 @@ private struct HFMembershipIdentityPassView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("HighFive Pass for \(selectedProfile.name), \(selectedFacet.displayName) selected, Local Account Mode, Local Preview Access")
         .accessibilityHint("Drag gently to tilt the pass. All details are also available without the gesture.")
+        .accessibilityIdentifier("hf.membership.passHero")
         .accessibilityIdentifier("hf.spatial.membership.pass")
         .hfSpatialFocalHandoff("hf.spatial.handoff.profileToMembership")
+    }
+
+    private var premiumMembershipSections: some View {
+        VStack(spacing: HFSpacing.md) {
+            memberIdentityCard
+            membershipStatsSection
+            collectionVaultSection
+            achievementsSection
+            premiereAccessSection
+            watchPartyHistorySection
+            creatorSupportSection
+        }
+    }
+
+    private var memberIdentityCard: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.gold.opacity(0.42)) {
+            HStack(spacing: HFSpacing.md) {
+                Text(profileInitials)
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 62, height: 62)
+                    .background(HFColors.goldGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                    Text("Member Identity")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(selectedProfile.name)
+                        .font(HFTypography.body.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                    Text("Local Account Mode keeps this pass private on device.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.membership.identityCard")
+    }
+
+    private var membershipStatsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.cyanGlow.opacity(selectedShowcase == .stats ? 0.58 : 0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionHeader(title: "Viewing Stats", subtitle: "Local viewing rhythm", systemImage: "chart.bar.xaxis", color: HFColors.cyanGlow)
+
+                HStack(spacing: HFSpacing.sm) {
+                    premiumStat(title: "Hours", value: "42", detail: "previewed")
+                    premiumStat(title: "Stories", value: "\(max(continueWatchingMovies.count, 3))", detail: "active")
+                    premiumStat(title: "Rooms", value: "8", detail: "joined locally")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.membership.stats")
+    }
+
+    private var collectionVaultSection: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.gold.opacity(selectedShowcase == .collectionVault ? 0.60 : 0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionHeader(title: "Collection Vault", subtitle: "Saved watch shelf", systemImage: "rectangle.stack.badge.play.fill", color: HFColors.gold)
+
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(savedVaultMovies.prefix(3)) { movie in
+                        VStack(alignment: .leading, spacing: 6) {
+                            vaultPoster(for: movie)
+                                .frame(height: 104)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(HFColors.gold.opacity(0.34), lineWidth: 1)
+                                )
+                            Text(movie.title)
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.70)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.membership.collectionVault")
+    }
+
+    private var achievementsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.gold.opacity(selectedShowcase == .achievements ? 0.60 : 0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionHeader(title: "Achievement Badges", subtitle: "Local milestones", systemImage: "rosette", color: HFColors.gold)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    achievementBadge(title: "Opening Night", detail: "Premiere ready", systemImage: "sparkles.tv.fill", color: HFColors.gold)
+                    achievementBadge(title: "Depth Curious", detail: "Peek explored", systemImage: "viewfinder", color: HFColors.cyanGlow)
+                    achievementBadge(title: "Vault Keeper", detail: "Saved shelf", systemImage: "bookmark.fill", color: HFColors.gold)
+                    achievementBadge(title: "Room Regular", detail: "Watch parties", systemImage: "person.2.fill", color: HFColors.cyanGlow)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.membership.achievements")
+    }
+
+    private var premiereAccessSection: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                sectionHeader(title: "Premiere Access", subtitle: "Local lobby preview", systemImage: "sparkles.tv.fill", color: HFColors.gold)
+                Text("Preview upcoming room access, featured titles, and member-only lobby context without claiming a remote event.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityIdentifier("hf.membership.premiereAccess")
+    }
+
+    private var watchPartyHistorySection: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                sectionHeader(title: "Watch Party History", subtitle: "Local room memory", systemImage: "person.2.wave.2.fill", color: HFColors.cyanGlow)
+                HStack(spacing: HFSpacing.sm) {
+                    historyPill(title: "The Friendly", detail: "3 viewers")
+                    historyPill(title: "Premiere Lobby", detail: "Local preview")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityIdentifier("hf.membership.watchPartyHistory")
+    }
+
+    private var creatorSupportSection: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.violet.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                sectionHeader(title: "Creator Support", subtitle: "Room-aware fandom", systemImage: "wand.and.stars", color: HFColors.violet)
+                Text("Follow creator context, commentary readiness, and studio-room entry points as local membership benefits.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityIdentifier("hf.membership.creatorSupport")
+    }
+
+    private var savedVaultMovies: [Movie] {
+        let saved = streamingStore.allCatalogMovies.filter { streamingStore.isSaved($0) }
+        return saved.isEmpty ? Array(streamingStore.allCatalogMovies.prefix(3)) : saved
+    }
+
+    private var continueWatchingMovies: [Movie] {
+        streamingStore.allCatalogMovies.filter { $0.progress != nil }
+    }
+
+    @ViewBuilder
+    private func vaultPoster(for movie: Movie) -> some View {
+        if let posterAssetName = movie.posterAssetName,
+           HFPosterAssetHealth.hasImage(named: posterAssetName) {
+            Image(posterAssetName)
+                .resizable()
+                .scaledToFill()
+        } else {
+            HFPosterFallback(title: movie.title)
+        }
+    }
+
+    private func sectionHeader(title: String, subtitle: String, systemImage: String, color: Color) -> some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(color)
+                .frame(width: 42, height: 42)
+                .background(color.opacity(0.14))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text(subtitle)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func premiumStat(title: String, value: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased())
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+            Text(value)
+                .font(.system(size: 26, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+        }
+        .padding(HFSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func achievementBadge(title: String, detail: String, systemImage: String, color: Color) -> some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .black))
+                .foregroundStyle(color)
+                .frame(width: 34, height: 34)
+                .background(color.opacity(0.14))
+                .clipShape(Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func historyPill(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+        }
+        .padding(HFSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var facetGrid: some View {
