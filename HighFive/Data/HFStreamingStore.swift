@@ -201,6 +201,22 @@ struct HFCreatorPublishingContent: Identifiable, Codable, Equatable {
     }
 }
 
+struct HFCreatorProfile: Identifiable {
+    let creator: Creator
+    let bio: String
+    let bannerTitle: String
+    let avatarSymbol: String
+    let filmography: [Movie]
+    let publishedTitles: [Movie]
+    let scheduledTitles: [Movie]
+    let archivedTitles: [Movie]
+    let collections: [Category]
+    let featuredProject: Movie?
+    let latestRelease: Movie?
+
+    var id: String { creator.id }
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -913,6 +929,23 @@ final class HFStreamingStore: ObservableObject {
         creatorPublishedProjects.map(\.movie)
     }
 
+    var creatorProfiles: [HFCreatorProfile] {
+        let publishingCreators = creatorPublishingContents.map(\.creator)
+        let catalogCreators = allCatalogMovies.map(\.creatorName)
+        var seen = Set<String>()
+        let creators = (HFMockData.creators + (publishingCreators + catalogCreators).compactMap { name -> Creator? in
+            guard seen.insert(name).inserted, !HFMockData.creators.contains(where: { $0.name == name }) else { return nil }
+            return Creator(
+                id: name.lowercased().replacingOccurrences(of: " ", with: "-"),
+                name: name,
+                role: "Creator",
+                avatarAssetName: nil,
+                featuredMovieIDs: allCatalogMovies.filter { $0.creatorName == name }.map(\.id)
+            )
+        })
+        return creators.map { creatorProfile(for: $0) }
+    }
+
     var newThisWeekCatalog: [Movie] {
         ["friendly", "paranormall-s1", "behind-vision", "artist-development", "big-loss"].compactMap(movie(id:)) + creatorPublishedMovies
     }
@@ -1508,6 +1541,49 @@ final class HFStreamingStore: ObservableObject {
         return (genreMatches + creatorMatches + fallback).filter { seen.insert($0.id).inserted }.prefix(8).map { $0 }
     }
 
+    func creatorProfile(for creator: Creator) -> HFCreatorProfile {
+        let publishingRecords = creatorPublishingContents.filter { $0.creator == creator.name }
+        let published = publishingRecords.filter { $0.releaseState == .published }.map(\.movie)
+        let scheduled = publishingRecords.filter { $0.releaseState == .scheduled }.map(\.movie)
+        let archived = publishingRecords.filter { $0.releaseState == .archived }.map(\.movie)
+        let catalogTitles = allCatalogMovies.filter { movie in
+            movie.creatorName == creator.name || creator.featuredMovieIDs.contains(movie.id)
+        }
+        let filmography = uniqueMovies(catalogTitles + published + scheduled + archived)
+        let featured = creator.featuredMovieIDs.compactMap(movie(id:)).first ?? filmography.first
+        let latest = published.first ?? filmography.first
+        return HFCreatorProfile(
+            creator: creator,
+            bio: creatorBio(for: creator),
+            bannerTitle: "\(creator.name) Spotlight",
+            avatarSymbol: creatorAvatarSymbol(for: creator),
+            filmography: filmography,
+            publishedTitles: uniqueMovies(published + catalogTitles.filter { !$0.isComingSoon }),
+            scheduledTitles: uniqueMovies(scheduled + catalogTitles.filter(\.isComingSoon)),
+            archivedTitles: archived,
+            collections: creatorCollections(for: creator, filmography: filmography, records: publishingRecords),
+            featuredProject: featured,
+            latestRelease: latest
+        )
+    }
+
+    func searchCreatorProfiles(query: String) -> [HFCreatorProfile] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else {
+            return Array(creatorProfiles.prefix(6))
+        }
+        return creatorProfiles
+            .map { profile in (profile, creatorSearchScore(for: profile, term: term)) }
+            .filter { $0.1 > 0 }
+            .sorted { lhs, rhs in
+                if lhs.1 == rhs.1 {
+                    return lhs.0.creator.name < rhs.0.creator.name
+                }
+                return lhs.1 > rhs.1
+            }
+            .map(\.0)
+    }
+
     var discoveryCollections: [Category] {
         compactCategories([
             Category(id: "featured", title: "Featured", subtitle: "High-signal local picks for the first watch decision", movies: [featuredMovie]),
@@ -1605,6 +1681,72 @@ final class HFStreamingStore: ObservableObject {
             movie.isOriginal || !fromSameCreator(as: movie).isEmpty || !searchableTags(for: movie).isEmpty
         }
         return creatorLed.filter { seen.insert($0.id).inserted }
+    }
+
+    private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
+        var seen = Set<String>()
+        return movies.filter { seen.insert($0.id).inserted }
+    }
+
+    private func creatorBio(for creator: Creator) -> String {
+        switch creator.name {
+        case "HigherKey Inc.":
+            return "A HighFive studio identity for crime, drama, music, and creator-led releases built around strong local catalog momentum."
+        case "HighFive Cinema":
+            return "The flagship originals label behind paranormal worlds, creator cuts, and premium streaming stories inside the HighFive catalog."
+        case "In The Light Productions":
+            return "A production partner focused on mystery, thriller, and premiere-ready stories with a cinematic independent voice."
+        default:
+            return "A HighFive creator profile generated from local publishing and catalog records."
+        }
+    }
+
+    private func creatorAvatarSymbol(for creator: Creator) -> String {
+        switch creator.role {
+        case "Studio": return "building.columns.fill"
+        case "Originals": return "sparkles.tv.fill"
+        case "Production Partner": return "camera.aperture"
+        default: return "person.crop.rectangle.stack.fill"
+        }
+    }
+
+    private func creatorCollections(for creator: Creator, filmography: [Movie], records: [HFCreatorPublishingContent]) -> [Category] {
+        let commentary = filmography.filter { movie in
+            movie.title.localizedCaseInsensitiveContains("Commentary")
+                || searchableTags(for: movie).contains { $0.localizedCaseInsensitiveContains("Commentary") }
+        }
+        return compactCategories([
+            Category(id: "\(creator.id)-documentaries", title: "Documentaries", subtitle: "Documentary work from \(creator.name)", movies: filmography.filter { $0.genres.contains("Documentary") }),
+            Category(id: "\(creator.id)-crime", title: "Crime Stories", subtitle: "Crime and thriller titles from the creator catalog", movies: filmography.filter { movie in
+                movie.genres.contains("Crime") || movie.genres.contains("Thriller")
+            }),
+            Category(id: "\(creator.id)-commentary", title: "Creator Commentary", subtitle: "Commentary and creator-led releases", movies: commentary),
+            Category(id: "\(creator.id)-premieres", title: "Premieres", subtitle: "Scheduled and premiere-ready projects", movies: filmography.filter { movie in
+                movie.isComingSoon
+                    || movie.genres.contains("Premiere")
+                    || records.contains { $0.id == movie.id && $0.releaseState == .scheduled }
+            })
+        ])
+    }
+
+    private func creatorSearchScore(for profile: HFCreatorProfile, term: String) -> Int {
+        let fields: [(String, Int)] = [
+            (profile.creator.name, 140),
+            (profile.creator.role, 70),
+            (profile.bio, 48),
+            (profile.filmography.map(\.title).joined(separator: " "), 92),
+            (profile.filmography.flatMap(\.genres).joined(separator: " "), 58),
+            (profile.collections.map(\.title).joined(separator: " "), 52)
+        ]
+        return fields.reduce(0) { partial, field in
+            if field.0.localizedCaseInsensitiveCompare(term) == .orderedSame {
+                return partial + field.1 + 35
+            }
+            if field.0.localizedCaseInsensitiveContains(term) {
+                return partial + field.1
+            }
+            return partial
+        }
     }
 
     private func moviesByIDs(_ ids: [String]) -> [Movie] {

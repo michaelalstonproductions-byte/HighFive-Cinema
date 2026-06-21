@@ -232,7 +232,11 @@ struct MovieDetailView: View {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: HFSpacing.sm) {
-                        premiumDetailCard(title: "Creator Card", detail: creator.role, systemImage: "person.crop.rectangle.stack.fill", color: HFColors.violet)
+                        NavigationLink(value: creator) {
+                            premiumDetailCard(title: "Creator Profile", detail: creator.role, systemImage: "person.crop.rectangle.stack.fill", color: HFColors.violet)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.route.movieDetailToCreatorProfile")
                         premiumDetailCard(title: "Premiere Preview", detail: "Available in local catalog", systemImage: "sparkles.tv.fill", color: HFColors.gold)
                         premiumDetailCard(title: "Related World", detail: "\(relatedTitles.count) connected titles", systemImage: "rectangle.stack.fill", color: HFColors.cyanGlow)
                     }
@@ -847,28 +851,35 @@ struct MovieDetailView: View {
     private var creatorSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Presented By", actionTitle: nil)
-            HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
-                HStack(spacing: HFSpacing.md) {
-                    Image(systemName: "sparkles.tv.fill")
-                        .font(.system(size: 24, weight: .black))
-                        .foregroundStyle(.black)
-                        .frame(width: 58, height: 58)
-                        .background(HFColors.goldGradient)
-                        .clipShape(Circle())
+            NavigationLink(value: creator) {
+                HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
+                    HStack(spacing: HFSpacing.md) {
+                        Image(systemName: "sparkles.tv.fill")
+                            .font(.system(size: 24, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 58, height: 58)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Circle())
 
-                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                        Text(creator.name)
-                            .font(HFTypography.cardTitle)
-                            .foregroundStyle(HFColors.textPrimary)
-                        Text(creator.role)
-                            .font(HFTypography.body)
-                            .foregroundStyle(HFColors.textSecondary)
+                        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            Text(creator.name)
+                                .font(HFTypography.cardTitle)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text(creator.role)
+                                .font(HFTypography.body)
+                                .foregroundStyle(HFColors.textSecondary)
+                            Label("Open Creator Profile", systemImage: "arrow.right.circle.fill")
+                                .font(HFTypography.micro.weight(.bold))
+                                .foregroundStyle(HFColors.gold)
+                        }
+                        Spacer()
                     }
-                    Spacer()
+                    .padding(HFSpacing.md)
                 }
-                .padding(HFSpacing.md)
             }
+            .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
+            .accessibilityIdentifier("hf.route.movieDetailToCreatorProfile")
         }
     }
 
@@ -1557,5 +1568,331 @@ private struct HFPlayerInsight: View {
                 .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct CreatorProfileView: View {
+    let creator: Creator
+
+    @EnvironmentObject private var streamingStore: HFStreamingStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dismiss) private var dismiss
+    @State private var isAwake = false
+
+    private var profile: HFCreatorProfile {
+        streamingStore.creatorProfile(for: creator)
+    }
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+                hero
+                discoveryConnection
+                filmographySection
+                publishedSection
+                collectionsSection
+                releaseStateSection
+            }
+            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 42, height: 42)
+                        .background(Color.black.opacity(0.50))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Back")
+            }
+        }
+        .onAppear {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+                isAwake = true
+            }
+        }
+        .accessibilityIdentifier("hf.creator.profile")
+    }
+
+    private var hero: some View {
+        ZStack(alignment: .bottomLeading) {
+            creatorBannerArtwork
+                .frame(height: 520)
+                .scaleEffect(reduceMotion ? 1 : (isAwake ? 1.03 : 0.98))
+                .offset(y: reduceMotion ? 0 : (isAwake ? -6 : 8))
+
+            LinearGradient(
+                colors: [.clear, HFColors.background.opacity(0.70), HFColors.background],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            HFDepthContourOverlay(color: HFColors.violet.opacity(0.70))
+                .opacity(0.36)
+
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                Text("CREATOR SPOTLIGHT")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, HFSpacing.sm)
+                    .frame(height: 28)
+                    .background(HFColors.goldGradient)
+                    .clipShape(Capsule())
+
+                Spacer()
+
+                HStack(alignment: .bottom, spacing: HFSpacing.md) {
+                    Image(systemName: profile.avatarSymbol)
+                        .font(.system(size: 38, weight: .black))
+                        .foregroundStyle(HFColors.violet)
+                        .frame(width: 84, height: 84)
+                        .background(Color.black.opacity(0.72))
+                        .overlay(Circle().stroke(HFColors.gold.opacity(0.62), lineWidth: 1))
+                        .clipShape(Circle())
+                        .shadow(color: HFColors.amberGlow.opacity(0.26), radius: 20, x: 0, y: 12)
+                        .accessibilityIdentifier("hf.creator.profile.avatar")
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text(profile.creator.name)
+                            .font(HFTypography.heroTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.58)
+                        Text(profile.creator.role)
+                            .font(HFTypography.body.weight(.semibold))
+                            .foregroundStyle(HFColors.violet)
+                    }
+                }
+
+                Text(profile.bio)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.creator.profile.bio")
+
+                if let latest = profile.latestRelease {
+                    HStack(spacing: HFSpacing.sm) {
+                        NavigationLink(value: latest) {
+                            Label("Watch Now", systemImage: "play.fill")
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(.black)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 48)
+                                .background(HFColors.goldGradient)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.creator.profile.watchNow")
+                        .accessibilityIdentifier("hf.route.creatorProfileToMovieDetail")
+
+                        Text("Latest Release")
+                            .font(HFTypography.caption.weight(.bold))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Capsule())
+                            .accessibilityIdentifier("hf.creator.profile.latestRelease")
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .frame(height: 520)
+        .clipped()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator profile for \(profile.creator.name). \(profile.creator.role).")
+        .accessibilityIdentifier("hf.creator.profile.banner")
+    }
+
+    private var creatorBannerArtwork: some View {
+        ZStack {
+            if let movie = profile.featuredProject, let asset = movie.backdropAssetName, HFPosterAssetHealth.hasImage(named: asset) {
+                Image(asset)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                LinearGradient(
+                    colors: [Color.black, HFColors.violet.opacity(0.30), HFColors.gold.opacity(0.22), Color.black],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+
+            HStack(spacing: -28) {
+                ForEach(Array(profile.filmography.prefix(3).enumerated()), id: \.element.id) { index, movie in
+                    HFPosterCard(movie: movie, width: 118, showTitle: false, posterOnly: true)
+                        .rotationEffect(.degrees(Double(index - 1) * (reduceMotion ? 0 : 7)))
+                        .offset(y: CGFloat(index) * (reduceMotion ? 0 : 12))
+                        .opacity(index == 0 ? 0.92 : 0.68)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+            .padding(.trailing, HFSpacing.lg)
+            .accessibilityHidden(true)
+        }
+        .accessibilityIdentifier("hf.creator.profile.featuredProject")
+    }
+
+    private var discoveryConnection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                Label("Discovery Connection", systemImage: "sparkle.magnifyingglass")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text("\(profile.creator.name) is connected to Search, Discovery, Movie Detail, and this Creator Profile using local catalog and publishing records.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    creatorStat(title: "\(profile.publishedTitles.count)", detail: "Published")
+                    creatorStat(title: "\(profile.scheduledTitles.count)", detail: "Scheduled")
+                    creatorStat(title: "\(profile.archivedTitles.count)", detail: "Archived")
+                    creatorStat(title: "\(profile.collections.count)", detail: "Collections")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.creator.profile.discoveryConnection")
+    }
+
+    private var filmographySection: some View {
+        creatorMovieRail(
+            title: "Creator Filmography",
+            identifier: "hf.creator.profile.filmography",
+            movies: profile.filmography
+        )
+    }
+
+    private var publishedSection: some View {
+        creatorMovieRail(
+            title: "Published Titles",
+            identifier: "hf.creator.profile.publishedTitles",
+            movies: profile.publishedTitles
+        )
+    }
+
+    private var collectionsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Creator Collections", actionTitle: nil)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.md) {
+                    ForEach(profile.collections) { collection in
+                        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+                            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                                Image(systemName: "rectangle.stack.fill")
+                                    .font(.system(size: 22, weight: .black))
+                                    .foregroundStyle(HFColors.violet)
+                                    .frame(width: 46, height: 46)
+                                    .background(HFColors.violet.opacity(0.14))
+                                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                                Text(collection.title)
+                                    .font(HFTypography.cardTitle)
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .lineLimit(2)
+                                Text(collection.subtitle ?? "Creator collection")
+                                    .font(HFTypography.caption)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .lineLimit(3)
+                                Text("\(collection.movies.count) titles")
+                                    .font(HFTypography.micro.weight(.bold))
+                                    .foregroundStyle(HFColors.gold)
+                            }
+                            .padding(HFSpacing.md)
+                            .frame(width: 210, alignment: .topLeading)
+                            .frame(minHeight: 182, alignment: .topLeading)
+                        }
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.creator.profile.collections")
+    }
+
+    private var releaseStateSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                Label("Publishing States", systemImage: "checkmark.seal.fill")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                creatorStateRow(title: "Published", detail: "Available to Discovery and Creator Profile", count: profile.publishedTitles.count, color: HFColors.gold)
+                creatorStateRow(title: "Scheduled", detail: "Shown as upcoming creator work", count: profile.scheduledTitles.count, color: HFColors.cyanGlow)
+                creatorStateRow(title: "Archived", detail: "Preserved in creator filmography context", count: profile.archivedTitles.count, color: HFColors.violet)
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    @ViewBuilder
+    private func creatorMovieRail(title: String, identifier: String, movies: [Movie]) -> some View {
+        if !movies.isEmpty {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HFSectionHeader(title: title, actionTitle: "\(movies.count)")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        ForEach(movies) { movie in
+                            NavigationLink(value: movie) {
+                                HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showMetadata: true, showProgress: movie.progress != nil)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("hf.route.creatorProfileToMovieDetail")
+                        }
+                    }
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+                }
+            }
+            .accessibilityIdentifier(identifier)
+        }
+    }
+
+    private func creatorStat(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func creatorStateRow(title: String, detail: String, count: Int, color: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: 10, weight: .black))
+                .foregroundStyle(color)
+                .padding(.top, 5)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+            Spacer()
+            Text("\(count)")
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(color)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 }

@@ -111,12 +111,18 @@ struct SearchView: View {
         results.first ?? streamingStore.featuredMovie
     }
 
+    private var creatorProfiles: [HFCreatorProfile] {
+        let seedQuery = query.isEmpty ? selectedFocus.querySeed : query
+        return streamingStore.searchCreatorProfiles(query: seedQuery)
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
                 discoveryWorld
                 premiumDiscoveryCollections
+                creatorProfilesSection
                 recommendationLayer
                 resultsSection
             }
@@ -427,6 +433,91 @@ struct SearchView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Local recommendation layer with because you watched, similar titles, from same creator, and continue watching.")
         .accessibilityIdentifier("hf.discovery.engine.recommendations")
+    }
+
+    private var creatorProfilesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Creator Profiles", actionTitle: "Discovery")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(creatorProfiles) { profile in
+                        NavigationLink(value: profile.creator) {
+                            creatorProfileCard(profile)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.route.searchToCreatorProfile")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator profiles searchable from discovery.")
+        .accessibilityIdentifier("hf.search.creatorProfiles")
+        .accessibilityIdentifier("hf.discovery.creatorProfiles")
+    }
+
+    private func creatorProfileCard(_ profile: HFCreatorProfile) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: profile.avatarSymbol)
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.violet)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.violet.opacity(0.14))
+                        .clipShape(Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(profile.creator.name)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.70)
+                        Text(profile.creator.role)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.violet)
+                            .lineLimit(1)
+                    }
+                }
+
+                Text(profile.bio)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    creatorMetricPill(title: "\(profile.publishedTitles.count)", detail: "Published")
+                    creatorMetricPill(title: "\(profile.filmography.count)", detail: "Filmography")
+                }
+
+                Label("Open Creator Profile", systemImage: "person.crop.rectangle.stack.fill")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+            }
+            .padding(HFSpacing.md)
+            .frame(width: 244, alignment: .topLeading)
+            .frame(minHeight: 214, alignment: .topLeading)
+        }
+        .accessibilityLabel("\(profile.creator.name), \(profile.creator.role), \(profile.publishedTitles.count) published titles")
+    }
+
+    private func creatorMetricPill(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 48)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 
     private func recommendationRail(_ category: Category) -> some View {

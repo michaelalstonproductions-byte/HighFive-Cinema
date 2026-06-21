@@ -126,6 +126,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-premium-streaming-downloads")
             || arguments.contains("--hf-premium-streaming-detail")
             || arguments.contains("--hf-premium-streaming-collections")
+            || arguments.contains("--hf-start-creator-profile")
             || arguments.contains("--hf-start-search")
             || arguments.contains("--hf-start-search-results")
             || arguments.contains("--hf-start-search-empty")
@@ -249,6 +250,10 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-movie-detail")
             || arguments.contains("--hf-premium-streaming-detail")
+    }
+
+    private static var shouldStartInCreatorProfile: Bool {
+        ProcessInfo.processInfo.arguments.contains("--hf-start-creator-profile")
     }
 
     private static var shouldStartInProtectedDepthPreview: Bool {
@@ -427,6 +432,8 @@ struct HFStreamingRootView: View {
                     qaCreatorStudioView
                 } else if Self.shouldStartInConnect {
                     qaConnectView
+                } else if Self.shouldStartInCreatorProfile {
+                    qaCreatorProfileView
                 } else if Self.shouldStartInMovieDetail {
                     qaMovieDetailView
                 } else {
@@ -474,6 +481,17 @@ struct HFStreamingRootView: View {
     private var qaMovieDetailView: some View {
         NavigationStack {
             MovieDetailView(movie: Self.qaMovieDetailMovie)
+        }
+        .background(HFColors.screenBackground.ignoresSafeArea())
+        .hfSpatialNavigationSpine()
+    }
+
+    private var qaCreatorProfileView: some View {
+        NavigationStack {
+            CreatorProfileView(creator: HFMockData.creator(for: Self.qaMovieDetailMovie))
+                .navigationDestination(for: Movie.self) { movie in
+                    MovieDetailView(movie: movie)
+                }
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .hfSpatialNavigationSpine()
@@ -575,6 +593,9 @@ struct HFStreamingRootView: View {
             }
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)
+            }
+            .navigationDestination(for: Creator.self) { creator in
+                CreatorProfileView(creator: creator)
             }
         }
     }
