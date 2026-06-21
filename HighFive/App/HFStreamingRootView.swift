@@ -85,6 +85,8 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package-synopsis")
             || arguments.contains("--hf-start-vod-package-access")
             || arguments.contains("--hf-start-vod-package-release")
+            || Self.shouldStartInVODPackage
+            || Self.shouldStartInLaunchPro
             || arguments.contains("--hf-start-membership")
             || arguments.contains("--hf-start-membership-identity")
             || arguments.contains("--hf-start-membership-premieres")
@@ -122,6 +124,8 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package-synopsis")
             || arguments.contains("--hf-start-vod-package-access")
             || arguments.contains("--hf-start-vod-package-release")
+            || Self.shouldStartInVODPackage
+            || Self.shouldStartInLaunchPro
             || Self.shouldStartInMembership
             || arguments.contains("--hf-start-backend-status")
             || arguments.contains("--hf-start-developer-qa")
@@ -170,6 +174,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-vod-package-synopsis")
             || arguments.contains("--hf-start-vod-package-access")
             || arguments.contains("--hf-start-vod-package-release")
+            || Self.shouldStartInLaunchPro
     }
 
     private static var shouldStartInConnect: Bool {
@@ -229,11 +234,23 @@ struct HFStreamingRootView: View {
     private static var shouldStartInVODPackage: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-vod-package")
+            || arguments.contains("--hf-start-vod")
             || arguments.contains("--hf-start-vod-package-trailer")
             || arguments.contains("--hf-start-vod-package-poster")
             || arguments.contains("--hf-start-vod-package-synopsis")
             || arguments.contains("--hf-start-vod-package-access")
             || arguments.contains("--hf-start-vod-package-release")
+            || Self.shouldStartInLaunchPro
+    }
+
+    private static var shouldStartInLaunchPro: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-launch-pro-dashboard")
+            || arguments.contains("--hf-launch-pro-pipeline")
+            || arguments.contains("--hf-launch-pro-platforms")
+            || arguments.contains("--hf-launch-pro-campaign")
+            || arguments.contains("--hf-launch-pro-assets")
+            || arguments.contains("--hf-launch-pro-final-gate")
     }
 
     private static var vodReleaseInitialFocus: HFVODReleaseFocus {

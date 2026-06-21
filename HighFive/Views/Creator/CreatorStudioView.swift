@@ -176,6 +176,25 @@ private enum HFCreatorProSpotlight {
     }
 }
 
+private enum HFLaunchProSpotlight {
+    case dashboard
+    case pipeline
+    case platforms
+    case campaign
+    case assets
+    case finalGate
+
+    static var launchSpotlight: HFLaunchProSpotlight {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-launch-pro-pipeline") { return .pipeline }
+        if arguments.contains("--hf-launch-pro-platforms") { return .platforms }
+        if arguments.contains("--hf-launch-pro-campaign") { return .campaign }
+        if arguments.contains("--hf-launch-pro-assets") { return .assets }
+        if arguments.contains("--hf-launch-pro-final-gate") { return .finalGate }
+        return .dashboard
+    }
+}
+
 struct CreatorStudioView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -195,6 +214,7 @@ struct CreatorStudioView: View {
     @State private var isSocialInspectorPresented = false
     @State private var isVODInspectorPresented = false
     private let proSpotlight: HFCreatorProSpotlight
+    private let launchProSpotlight: HFLaunchProSpotlight
 
     init(
         initialFocus: HFCreatorStudioFocus = .dashboard,
@@ -206,6 +226,7 @@ struct CreatorStudioView: View {
         _selectedSocialFocus = State(initialValue: initialSocialFocus)
         _selectedVODFocus = State(initialValue: initialVODFocus)
         proSpotlight = HFCreatorProSpotlight.launchSpotlight
+        launchProSpotlight = HFLaunchProSpotlight.launchSpotlight
     }
 
     var body: some View {
@@ -214,6 +235,7 @@ struct CreatorStudioView: View {
                 if selectedFocus == .socialMediaKit {
                     socialCampaignAuthoringWorld
                 } else if selectedFocus == .vodPackage {
+                    launchProSurface
                     vodLaunchChamber
                 } else {
                     creatorStudioProHero
@@ -943,6 +965,531 @@ struct CreatorStudioView: View {
             }
         }
         .accessibilityIdentifier("hf.social.inspector")
+    }
+
+    private var launchProSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.gold.opacity(0.44)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                launchProHero
+                launchProSpotlightPanel
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    launchCommandDashboard
+                    releaseReadinessMatrix
+                    distributionPipeline
+                    platformTargetsPreview
+                    campaignTimeline
+                    premiereSchedulingPreview
+                    marketingAssetsBoard
+                    trailerPosterSynopsisChecklist
+                    vodPackageReview
+                    pricingPreview
+                    territoryPreview
+                    rightsClearancePreview
+                    analyticsForecastPreview
+                    creatorRevenuePreview
+                    launchControlRoom
+                    finalReviewGate
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Launch and Distribution Center Pro. Local release review for \(streamingStore.featuredMovie.title).")
+    }
+
+    private var launchProHero: some View {
+        HStack(alignment: .top, spacing: HFSpacing.md) {
+            ZStack {
+                RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                    .fill(HFColors.goldGradient)
+                Image(systemName: "sparkles.tv.fill")
+                    .font(.system(size: 30, weight: .black))
+                    .foregroundStyle(.black)
+            }
+            .frame(width: 76, height: 76)
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Launch & Distribution Center Pro")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+
+                Text("Studio release command surface for local review, draft readiness, mock platform targets, and final gate planning.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioPill(title: "Draft", isActive: true)
+                    HFCreatorStudioPill(title: "Visual only")
+                    HFCreatorStudioPill(title: "Not released")
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Launch and Distribution Center Pro. Draft, visual only, not released.")
+    }
+
+    @ViewBuilder
+    private var launchProSpotlightPanel: some View {
+        switch launchProSpotlight {
+        case .dashboard:
+            launchProSpotlight(
+                title: "Launch Command Dashboard",
+                detail: "Release state, target boards, and final review stay organized as local preview signals.",
+                systemImage: "rectangle.grid.2x2.fill",
+                accent: HFColors.gold,
+                identifier: "hf.launch.pro.dashboard"
+            ) {
+                HStack(spacing: HFSpacing.xs) {
+                    launchProStat(title: "Release", value: "Draft")
+                    launchProStat(title: "Targets", value: "Mock")
+                    launchProStat(title: "Gate", value: "Review")
+                }
+            }
+        case .pipeline:
+            launchProSpotlight(
+                title: "Distribution Pipeline",
+                detail: "Trailer, artwork, copy, pricing note, territories, and rights checks are staged visually.",
+                systemImage: "point.3.connected.trianglepath.dotted",
+                accent: HFColors.cyanGlow,
+                identifier: "hf.launch.pro.distributionPipeline"
+            ) {
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    launchProCapsule("Package", active: true, accent: HFColors.gold)
+                    launchProCapsule("Targets", active: true, accent: HFColors.cyanGlow)
+                    launchProCapsule("Final gate", active: false, accent: HFColors.violet)
+                }
+            }
+        case .platforms:
+            platformTargetsPreview
+        case .campaign:
+            campaignTimeline
+        case .assets:
+            marketingAssetsBoard
+        case .finalGate:
+            finalReviewGate
+        }
+    }
+
+    private var launchCommandDashboard: some View {
+        launchProModule(
+            title: "Launch Command Dashboard",
+            detail: "Operating view for release readiness, target boards, campaign notes, and local final review.",
+            systemImage: "rectangle.grid.2x2.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.dashboard"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProStat(title: "Mode", value: "Draft")
+                launchProStat(title: "Review", value: "Local")
+            }
+        }
+    }
+
+    private var releaseReadinessMatrix: some View {
+        launchProModule(
+            title: "Release Readiness Matrix",
+            detail: "Trailer, poster, synopsis, VOD, campaign, and final review are checked as visual states.",
+            systemImage: "checklist.checked",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.readinessMatrix"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                launchProCapsule("Trailer", active: true, accent: HFColors.gold)
+                launchProCapsule("Poster", active: true, accent: HFColors.gold)
+                launchProCapsule("Synopsis", active: true, accent: HFColors.gold)
+            }
+        }
+    }
+
+    private var distributionPipeline: some View {
+        launchProModule(
+            title: "Distribution Pipeline",
+            detail: "Package, target preview, campaign board, and review gate are arranged in a local pipeline.",
+            systemImage: "arrow.triangle.branch",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.launch.pro.distributionPipeline"
+        ) {
+            HStack(spacing: 6) {
+                launchProStep("01")
+                launchProStep("02")
+                launchProStep("03")
+                launchProStep("04", muted: true)
+            }
+        }
+    }
+
+    private var platformTargetsPreview: some View {
+        launchProModule(
+            title: "Platform Targets Preview",
+            detail: "Mock platform target cards keep storefront, VOD, premiere, and campaign placement visual only.",
+            systemImage: "square.grid.2x2.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.launch.pro.platformTargets"
+        ) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                launchProMiniTarget("VOD")
+                launchProMiniTarget("Store")
+                launchProMiniTarget("Premiere")
+                launchProMiniTarget("Social")
+            }
+        }
+    }
+
+    private var campaignTimeline: some View {
+        launchProModule(
+            title: "Campaign Timeline",
+            detail: "Key art, trailer tease, premiere reminder, and release review beats remain planned locally.",
+            systemImage: "timeline.selection",
+            accent: HFColors.violet,
+            identifier: "hf.launch.pro.campaignTimeline"
+        ) {
+            VStack(alignment: .leading, spacing: 4) {
+                launchTimelineRow("Key art", "Planned")
+                launchTimelineRow("Trailer tease", "Draft")
+                launchTimelineRow("Review gate", "Local")
+            }
+        }
+    }
+
+    private var premiereSchedulingPreview: some View {
+        launchProModule(
+            title: "Premiere Scheduling Preview",
+            detail: "A visual premiere window keeps date planning separate from external date systems.",
+            systemImage: "clock.badge.checkmark.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.premiereScheduling"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProStat(title: "Window", value: "Fri")
+                launchProStat(title: "State", value: "Planned")
+            }
+        }
+    }
+
+    private var marketingAssetsBoard: some View {
+        launchProModule(
+            title: "Marketing Assets Board",
+            detail: "Poster crop, trailer card, synopsis copy, and campaign note are grouped for local review.",
+            systemImage: "photo.on.rectangle.angled",
+            accent: HFColors.violet,
+            identifier: "hf.launch.pro.marketingAssets"
+        ) {
+            HStack(spacing: 6) {
+                launchAssetTile("Poster", accent: HFColors.gold)
+                launchAssetTile("Trailer", accent: HFColors.cyanGlow)
+                launchAssetTile("Copy", accent: HFColors.violet)
+            }
+        }
+    }
+
+    private var trailerPosterSynopsisChecklist: some View {
+        launchProModule(
+            title: "Trailer / Poster / Synopsis Checklist",
+            detail: "Three core release assets stay staged as review-ready visual checks.",
+            systemImage: "checkmark.rectangle.stack.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.assetChecklist"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                launchCheckRow("Trailer frame")
+                launchCheckRow("Poster lockup")
+                launchCheckRow("Synopsis copy")
+            }
+        }
+    }
+
+    private var vodPackageReview: some View {
+        launchProModule(
+            title: "VOD Package Review",
+            detail: "Trailer, poster, synopsis, access note, and release focus remain tied to the VOD chamber.",
+            systemImage: "play.rectangle.on.rectangle.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.vodReview"
+        ) {
+            Button {
+                selectedVODFocus = .release
+            } label: {
+                HFCreatorStudioAction(title: "Review VOD", systemImage: "play.rectangle.on.rectangle.fill")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var pricingPreview: some View {
+        launchProModule(
+            title: "Pricing Preview",
+            detail: "Visual pricing tiers remain draft notes without commerce behavior.",
+            systemImage: "tag.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.pricingPreview"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProStat(title: "Rent", value: "$4.99")
+                launchProStat(title: "Own", value: "$14")
+            }
+        }
+    }
+
+    private var territoryPreview: some View {
+        launchProModule(
+            title: "Territory Preview",
+            detail: "Market regions are visual planning chips for local review.",
+            systemImage: "globe.americas.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.launch.pro.territoryPreview"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProCapsule("US", active: true, accent: HFColors.cyanGlow)
+                launchProCapsule("CA", active: true, accent: HFColors.cyanGlow)
+                launchProCapsule("UK", active: false, accent: HFColors.cyanGlow)
+            }
+        }
+    }
+
+    private var rightsClearancePreview: some View {
+        launchProModule(
+            title: "Rights & Clearance Preview",
+            detail: "Clearance checkpoints are read-only visual review notes.",
+            systemImage: "doc.badge.gearshape.fill",
+            accent: HFColors.violet,
+            identifier: "hf.launch.pro.rightsClearance"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                launchCheckRow("Music note")
+                launchCheckRow("Artwork note")
+                launchCheckRow("Talent note")
+            }
+        }
+    }
+
+    private var analyticsForecastPreview: some View {
+        launchProModule(
+            title: "Analytics Forecast Preview",
+            detail: "Local forecast cards show interest, saves, and room energy as mock planning signals.",
+            systemImage: "chart.line.uptrend.xyaxis",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.launch.pro.analyticsForecast"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProStat(title: "Saves", value: "\(max(18, streamingStore.savedMovieIDs.count * 8))")
+                launchProStat(title: "Energy", value: "High")
+            }
+        }
+    }
+
+    private var creatorRevenuePreview: some View {
+        launchProModule(
+            title: "Creator Revenue Preview",
+            detail: "Visual revenue cards stay planning-only and do not activate commerce flows.",
+            systemImage: "dollarsign.circle.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.creatorRevenue"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProStat(title: "Gross", value: "Mock")
+                launchProStat(title: "Share", value: "Plan")
+            }
+        }
+    }
+
+    private var launchControlRoom: some View {
+        launchProModule(
+            title: "Launch Control Room",
+            detail: "Final checks, room handoff, VOD review, and campaign readiness are collected in one board.",
+            systemImage: "slider.horizontal.3",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.controlRoom"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProCapsule("Room", active: true, accent: HFColors.cyanGlow)
+                launchProCapsule("VOD", active: true, accent: HFColors.gold)
+                launchProCapsule("Campaign", active: true, accent: HFColors.violet)
+            }
+        }
+    }
+
+    private var finalReviewGate: some View {
+        launchProModule(
+            title: "Final Review Gate",
+            detail: "A locked local gate confirms draft readiness before any future release workflow.",
+            systemImage: "lock.shield.fill",
+            accent: HFColors.gold,
+            identifier: "hf.launch.pro.finalReviewGate"
+        ) {
+            HStack(spacing: HFSpacing.xs) {
+                launchProCapsule("Visual only", active: true, accent: HFColors.gold)
+                launchProCapsule("Not released", active: false, accent: HFColors.violet)
+            }
+        }
+    }
+
+    private func launchProSpotlight<Content: View>(
+        title: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        identifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        launchProModule(
+            title: title,
+            detail: detail,
+            systemImage: systemImage,
+            accent: accent,
+            identifier: identifier,
+            content: content
+        )
+        .background(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .fill(accent.opacity(0.06))
+        )
+    }
+
+    private func launchProModule<Content: View>(
+        title: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        identifier: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top, spacing: HFSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 42, height: 42)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.16)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.70)
+                    Text(detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.70)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(accent.opacity(0.28), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func launchProStat(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func launchProCapsule(_ title: String, active: Bool, accent: Color) -> some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(active ? .black : HFColors.textSecondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.70)
+            .padding(.horizontal, HFSpacing.xs)
+            .frame(height: 28)
+            .background(active ? AnyShapeStyle(accent == HFColors.gold ? HFColors.goldGradient : LinearGradient(colors: [accent.opacity(0.92), accent.opacity(0.58)], startPoint: .topLeading, endPoint: .bottomTrailing)) : AnyShapeStyle(Color.white.opacity(0.07)))
+            .clipShape(Capsule())
+    }
+
+    private func launchProStep(_ title: String, muted: Bool = false) -> some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(muted ? HFColors.textSecondary : .black)
+            .frame(maxWidth: .infinity)
+            .frame(height: 30)
+            .background(muted ? AnyShapeStyle(Color.white.opacity(0.08)) : AnyShapeStyle(HFColors.cyanGlow.opacity(0.88)))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func launchProMiniTarget(_ title: String) -> some View {
+        Text(title)
+            .font(HFTypography.micro)
+            .foregroundStyle(HFColors.textPrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.70)
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .background(HFColors.cyanGlow.opacity(0.16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(HFColors.cyanGlow.opacity(0.24), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private func launchTimelineRow(_ title: String, _ state: String) -> some View {
+        HStack {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+            Spacer(minLength: HFSpacing.xs)
+            Text(state)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+        }
+    }
+
+    private func launchAssetTile(_ title: String, accent: Color) -> some View {
+        VStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(accent.opacity(0.28))
+                .frame(height: 36)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func launchCheckRow(_ title: String) -> some View {
+        Label(title, systemImage: "checkmark.seal.fill")
+            .font(HFTypography.micro)
+            .foregroundStyle(HFColors.textSecondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.70)
     }
 
     private var vodLaunchChamber: some View {
