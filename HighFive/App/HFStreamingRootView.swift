@@ -9,6 +9,11 @@ enum HFStreamingTab: Hashable {
 }
 
 private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
+    case universeMap
+    case relationshipGraph
+    case networkCreator
+    case networkAudience
+    case cinemaGalaxy
     case commandCenter
     case analytics
     case executiveDashboard
@@ -24,6 +29,11 @@ private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .universeMap: return "Universe Map"
+        case .relationshipGraph: return "Graph"
+        case .networkCreator: return "Creators"
+        case .networkAudience: return "Audience"
+        case .cinemaGalaxy: return "Galaxy"
         case .commandCenter: return "Command Center"
         case .analytics: return "Analytics"
         case .executiveDashboard: return "Executive"
@@ -39,6 +49,11 @@ private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
+        case .universeMap: return "globe.americas.fill"
+        case .relationshipGraph: return "point.3.connected.trianglepath.dotted"
+        case .networkCreator: return "person.2.wave.2.fill"
+        case .networkAudience: return "theatermasks.fill"
+        case .cinemaGalaxy: return "sparkles"
         case .commandCenter: return "rectangle.3.group.fill"
         case .analytics: return "chart.xyaxis.line"
         case .executiveDashboard: return "gauge.with.dots.needle.50percent"
@@ -190,7 +205,13 @@ struct HFStreamingRootView: View {
 
     private static var shouldStartInHighFiveOS: Bool {
         let arguments = ProcessInfo.processInfo.arguments
-        return arguments.contains("--hf-spatial-command-center")
+        return arguments.contains("--hf-cinema-network")
+            || arguments.contains("--hf-cinema-network-universe")
+            || arguments.contains("--hf-cinema-network-graph")
+            || arguments.contains("--hf-cinema-network-creators")
+            || arguments.contains("--hf-cinema-network-audience")
+            || arguments.contains("--hf-cinema-galaxy")
+            || arguments.contains("--hf-spatial-command-center")
             || arguments.contains("--hf-command-center-deck")
             || arguments.contains("--hf-command-center-analytics")
             || arguments.contains("--hf-command-center-executive")
@@ -205,6 +226,11 @@ struct HFStreamingRootView: View {
 
     private static var highFiveOSInitialMode: HFHighFiveOSMode {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-cinema-network-graph") { return .relationshipGraph }
+        if arguments.contains("--hf-cinema-network-creators") { return .networkCreator }
+        if arguments.contains("--hf-cinema-network-audience") { return .networkAudience }
+        if arguments.contains("--hf-cinema-galaxy") { return .cinemaGalaxy }
+        if arguments.contains("--hf-cinema-network") || arguments.contains("--hf-cinema-network-universe") { return .universeMap }
         if arguments.contains("--hf-command-center-analytics") { return .analytics }
         if arguments.contains("--hf-command-center-executive") { return .executiveDashboard }
         if arguments.contains("--hf-command-center-control-wall") { return .controlWall }
@@ -586,6 +612,35 @@ private struct HFHighFiveOSView: View {
         ]
     }
 
+    private var universeNodes: [HFCinemaNetworkNode] {
+        [
+            HFCinemaNetworkNode(title: "Movies", detail: featuredMovie.title, accent: HFColors.gold, systemImage: "film.stack.fill"),
+            HFCinemaNetworkNode(title: "Creators", detail: "Studio Pro", accent: HFColors.violet, systemImage: "person.crop.rectangle.stack.fill"),
+            HFCinemaNetworkNode(title: "Rooms", detail: "Watch Room", accent: HFColors.cyanGlow, systemImage: "person.3.sequence.fill"),
+            HFCinemaNetworkNode(title: "Collections", detail: "\(savedCount) saved", accent: HFColors.gold, systemImage: "square.stack.3d.up.fill"),
+            HFCinemaNetworkNode(title: "Campaigns", detail: "Social kit", accent: HFColors.violet, systemImage: "megaphone.fill"),
+            HFCinemaNetworkNode(title: "Launches", detail: "Final review", accent: HFColors.gold, systemImage: "sparkles.tv.fill")
+        ]
+    }
+
+    private var creatorNetworkNodes: [HFCinemaNetworkNode] {
+        [
+            HFCinemaNetworkNode(title: "Projects", detail: "Release workspace", accent: HFColors.gold, systemImage: "folder.fill"),
+            HFCinemaNetworkNode(title: "Collaborators", detail: "Preview roster", accent: HFColors.cyanGlow, systemImage: "person.2.fill"),
+            HFCinemaNetworkNode(title: "Commentary", detail: "Creator surface", accent: HFColors.violet, systemImage: "quote.bubble.fill"),
+            HFCinemaNetworkNode(title: "Releases", detail: "Launch package", accent: HFColors.gold, systemImage: "paperplane.fill")
+        ]
+    }
+
+    private var audienceNetworkNodes: [HFCinemaNetworkNode] {
+        [
+            HFCinemaNetworkNode(title: "Viewing Paths", detail: "Continue journey", accent: HFColors.gold, systemImage: "point.topleft.down.curvedto.point.bottomright.up"),
+            HFCinemaNetworkNode(title: "Collections", detail: "Saved worlds", accent: HFColors.gold, systemImage: "square.stack.3d.up.fill"),
+            HFCinemaNetworkNode(title: "Premieres", detail: "Lobby preview", accent: HFColors.cyanGlow, systemImage: "theatermasks.fill"),
+            HFCinemaNetworkNode(title: "Watch Rooms", detail: "Local room map", accent: HFColors.cyanGlow, systemImage: "person.3.fill")
+        ]
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
@@ -625,7 +680,7 @@ private struct HFHighFiveOSView: View {
                         .foregroundStyle(HFColors.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
-                    Text("Spatial Command Center for Watch, Create, Connect, Launch, Pass, and local platform signals.")
+                    Text("Cinema Network for Watch, Create, Connect, Launch, Pass, Analytics, and local universe signals.")
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -710,6 +765,16 @@ private struct HFHighFiveOSView: View {
     @ViewBuilder
     private var activeModeSurface: some View {
         switch selectedMode {
+        case .universeMap:
+            universeMapSurface
+        case .relationshipGraph:
+            relationshipGraphSurface
+        case .networkCreator:
+            creatorNetworkSurface
+        case .networkAudience:
+            audienceNetworkSurface
+        case .cinemaGalaxy:
+            cinemaGalaxySurface
         case .commandCenter:
             commandCenterSurface
         case .analytics:
@@ -731,6 +796,144 @@ private struct HFHighFiveOSView: View {
         case .health:
             healthSurface
         }
+    }
+
+    private var universeMapSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: 38, strokeColor: HFColors.gold.opacity(0.54)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                        ZStack {
+                            Circle()
+                                .fill(HFColors.gold.opacity(0.18))
+                                .frame(width: 78, height: 78)
+                            Image(systemName: "globe.americas.fill")
+                                .font(.system(size: 34, weight: .black))
+                                .foregroundStyle(HFColors.gold)
+                        }
+
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("Universe Map")
+                                .font(.system(size: 36, weight: .black))
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.70)
+                            Text("A cinematic map of movies, creators, rooms, collections, campaigns, and launches.")
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    cinemaOrbit(nodes: universeNodes)
+
+                    HFSpatialActionCluster {
+                        HFEnergyAction(title: "Open Relationship Graph", systemImage: "point.3.connected.trianglepath.dotted", style: .gold) {
+                            selectedMode = .relationshipGraph
+                        }
+                        HStack(spacing: HFSpacing.sm) {
+                            HFEnergyAction(title: "Creator Network", systemImage: "person.2.wave.2.fill", style: .glass) {
+                                selectedMode = .networkCreator
+                            }
+                            HFEnergyAction(title: "Cinema Galaxy", systemImage: "sparkles", style: .glass) {
+                                selectedMode = .cinemaGalaxy
+                            }
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            relationshipSummaryRail
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.cinema.network.universeMap")
+    }
+
+    private var relationshipGraphSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.50)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Relationship Graph", detail: "Local visual connections across movies, creators, rooms, collections, campaigns, and launches.")
+                    relationshipPath("Movies", "Creators", "Title worlds feed creator projects", HFColors.gold, HFColors.violet)
+                    relationshipPath("Creators", "Rooms", "Commentary becomes room presence", HFColors.violet, HFColors.cyanGlow)
+                    relationshipPath("Rooms", "Campaigns", "Audience energy informs campaign previews", HFColors.cyanGlow, HFColors.violet)
+                    relationshipPath("Campaigns", "Launches", "Creative assets flow into release review", HFColors.violet, HFColors.gold)
+                    relationshipPath("Launches", "Collections", "Release worlds return to the library vault", HFColors.gold, HFColors.gold)
+                }
+                .padding(HFSpacing.lg)
+            }
+            cinemaNetworkGrid(universeNodes)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.cinema.network.relationshipGraph")
+    }
+
+    private var creatorNetworkSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.52)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Creator Network", detail: "Projects, collaborators, commentary, and releases shown as a local creator constellation.")
+                    cinemaOrbit(nodes: creatorNetworkNodes)
+                }
+                .padding(HFSpacing.lg)
+            }
+            creatorConstellationBoard
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.cinema.network.creatorNetwork")
+    }
+
+    private var audienceNetworkSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.52)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Audience Network", detail: "Viewing paths, collections, premieres, and watch rooms as a cinematic audience map.")
+                    cinemaOrbit(nodes: audienceNetworkNodes)
+                }
+                .padding(HFSpacing.lg)
+            }
+            cinemaNetworkGrid(audienceNetworkNodes)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.cinema.network.audienceNetwork")
+    }
+
+    private var cinemaGalaxySurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            HFOpticalGlassSurface(cornerRadius: 38, strokeColor: HFColors.gold.opacity(0.50)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Cinema Galaxy", detail: "A sci-fi command view of HighFive's local cinematic universe.")
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        galaxyCluster("Watch", "Films", HFColors.gold)
+                        galaxyCluster("Create", "Projects", HFColors.violet)
+                        galaxyCluster("Connect", "Rooms", HFColors.cyanGlow)
+                        galaxyCluster("Launch", "Releases", HFColors.gold)
+                        galaxyCluster("Pass", "Members", HFColors.gold)
+                        galaxyCluster("Analytics", "Signals", HFColors.cyanGlow)
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+            relationshipSummaryRail
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.cinema.network.cinemaGalaxy")
+    }
+
+    private var relationshipSummaryRail: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                osSectionHeader(title: "Network Signals", detail: "Read-only local links between story worlds, creator work, rooms, and releases.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Movies", value: featuredMovie.title, detail: "Current story world", accent: HFColors.gold, systemImage: "film.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Creators", value: "Studio Pro", detail: "Project constellation", accent: HFColors.violet, systemImage: "person.crop.rectangle.stack.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Rooms", value: "Watch Room", detail: "Audience map", accent: HFColors.cyanGlow, systemImage: "person.3.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Launches", value: "Review", detail: "Release path", accent: HFColors.gold, systemImage: "paperplane.fill"))
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.cinema.network.signals")
     }
 
     private var commandCenterSurface: some View {
@@ -1264,6 +1467,212 @@ private struct HFHighFiveOSView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
+    private func cinemaOrbit(nodes: [HFCinemaNetworkNode]) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color.black.opacity(0.28))
+                .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(HFColors.cyanGlow.opacity(0.18), lineWidth: 1))
+
+            Circle()
+                .stroke(HFColors.gold.opacity(0.20), lineWidth: 1)
+                .frame(width: 190, height: 190)
+            Circle()
+                .stroke(HFColors.cyanGlow.opacity(0.16), lineWidth: 1)
+                .frame(width: 130, height: 130)
+
+            VStack(spacing: HFSpacing.xs) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 26, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                Text("HighFive")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("Cinema Network")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+            .padding(HFSpacing.sm)
+            .background(Color.black.opacity(0.45))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
+            VStack {
+                HStack {
+                    networkNodeChip(nodes[safe: 0])
+                    Spacer()
+                    networkNodeChip(nodes[safe: 1])
+                }
+                Spacer()
+                HStack {
+                    networkNodeChip(nodes[safe: 2])
+                    Spacer()
+                    networkNodeChip(nodes[safe: 3])
+                }
+                Spacer()
+                HStack {
+                    networkNodeChip(nodes[safe: 4])
+                    Spacer()
+                    networkNodeChip(nodes[safe: 5])
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .frame(minHeight: 340)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Cinema Network orbit map")
+    }
+
+    private func networkNodeChip(_ node: HFCinemaNetworkNode?) -> some View {
+        Group {
+            if let node {
+                VStack(alignment: .leading, spacing: 4) {
+                    Image(systemName: node.systemImage)
+                        .font(.system(size: 15, weight: .black))
+                        .foregroundStyle(node.accent == HFColors.gold ? .black : node.accent)
+                        .frame(width: 34, height: 34)
+                        .background(node.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(node.accent.opacity(0.20)))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    Text(node.title)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.70)
+                    Text(node.detail)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                }
+                .frame(width: 102, height: 86, alignment: .topLeading)
+                .padding(HFSpacing.xs)
+                .background(Color.black.opacity(0.38))
+                .overlay(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous).stroke(node.accent.opacity(0.28), lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            }
+        }
+    }
+
+    private func relationshipPath(_ start: String, _ end: String, _ detail: String, _ startAccent: Color, _ endAccent: Color) -> some View {
+        HStack(spacing: HFSpacing.sm) {
+            Text(start)
+                .font(HFTypography.micro)
+                .foregroundStyle(startAccent)
+                .frame(width: 78, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+            Rectangle()
+                .fill(LinearGradient(colors: [startAccent, endAccent], startPoint: .leading, endPoint: .trailing))
+                .frame(height: 2)
+                .overlay(alignment: .trailing) {
+                    Circle()
+                        .fill(endAccent)
+                        .frame(width: 8, height: 8)
+                }
+            Text(end)
+                .font(HFTypography.micro)
+                .foregroundStyle(endAccent)
+                .frame(width: 82, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+        }
+        .overlay(alignment: .bottomLeading) {
+            Text(detail)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .padding(.leading, 86)
+                .offset(y: 14)
+        }
+        .padding(.bottom, HFSpacing.sm)
+    }
+
+    private func cinemaNetworkGrid(_ nodes: [HFCinemaNetworkNode]) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                osSectionHeader(title: "Connected Objects", detail: "Visual-only local objects in the HighFive cinema universe.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(nodes) { node in
+                        networkObjectCard(node)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+    }
+
+    private func networkObjectCard(_ node: HFCinemaNetworkNode) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Image(systemName: node.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(node.accent == HFColors.gold ? .black : node.accent)
+                .frame(width: 42, height: 42)
+                .background(node.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(node.accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            Text(node.title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(node.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 130, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(node.accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private var creatorConstellationBoard: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                osSectionHeader(title: "Creator Constellation", detail: "Projects, collaborators, commentary, and releases remain local preview objects.")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(creatorNetworkNodes) { node in
+                        networkObjectCard(node)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+    }
+
+    private func galaxyCluster(_ title: String, _ detail: String, _ accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 70, height: 70)
+                Circle()
+                    .stroke(accent.opacity(0.40), lineWidth: 1)
+                    .frame(width: 92, height: 92)
+                Circle()
+                    .fill(accent)
+                    .frame(width: 12, height: 12)
+                    .offset(x: 34, y: -28)
+            }
+            .frame(maxWidth: .infinity)
+            Text(title)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 154, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.30))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
     private func roomStatusCard(_ room: HFOSRoom, value: String, status: String) -> some View {
         Button {
             selectedRoom = room
@@ -1444,6 +1853,20 @@ private struct HFCommandMetric: Identifiable {
     let detail: String
     let accent: Color
     let systemImage: String
+}
+
+private struct HFCinemaNetworkNode: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let accent: Color
+    let systemImage: String
+}
+
+private extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
 }
 
 private enum HFOSRoom: String, CaseIterable, Identifiable {
