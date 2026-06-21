@@ -279,6 +279,37 @@ struct HFCMSStatusCount: Identifiable {
     var id: String { state.rawValue }
 }
 
+struct HFLibraryActivityRecord: Identifiable {
+    let id: String
+    var movie: Movie
+    var status: String
+    var detail: String
+    var progress: Double?
+}
+
+struct HFLibraryCollection: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var movies: [Movie]
+    var systemImage: String
+}
+
+struct HFLibraryNextEpisode: Identifiable {
+    let id: String
+    var series: Movie
+    var title: String
+    var detail: String
+}
+
+struct HFLibraryIntelligenceSignal: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var value: String
+    var systemImage: String
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -1721,6 +1752,106 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.downloadState
     var downloadedMovies: [Movie] {
         allCatalogMovies.filter { isDownloaded($0) }
+    }
+
+    var libraryContinueWatchingMovies: [Movie] {
+        var ordered = allCatalogMovies.filter { movie in
+            guard let progress = movie.progress else { return false }
+            return progress > 0 && progress < 0.95
+        }
+        if let lastPlayerMovieID, let last = movie(id: lastPlayerMovieID), ordered.contains(where: { $0.id == last.id }) {
+            ordered.removeAll { $0.id == last.id }
+            ordered.insert(last, at: 0)
+        }
+        return ordered
+    }
+
+    var libraryCompletedMovies: [Movie] {
+        allCatalogMovies.filter { ($0.progress ?? 0) >= 0.95 }
+    }
+
+    var libraryWatchLaterMovies: [Movie] {
+        savedMovies.filter { $0.progress == nil }
+    }
+
+    var libraryFavoriteMovies: [Movie] {
+        savedMovies.filter { movie in
+            movie.isOriginal || movie.genres.contains("Drama") || movie.genres.contains("Crime")
+        }
+    }
+
+    var libraryLastViewedMovie: Movie {
+        continueWatchingMovie
+    }
+
+    var libraryNextEpisode: HFLibraryNextEpisode? {
+        guard let series = allCatalogMovies.first(where: { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }) else {
+            return nil
+        }
+        let watchedIndex = max(1, Int(((series.progress ?? 0.14) * 7).rounded(.up)))
+        let nextIndex = min(7, watchedIndex + 1)
+        return HFLibraryNextEpisode(
+            id: "\(series.id)-next-\(nextIndex)",
+            series: series,
+            title: "Episode \(nextIndex)",
+            detail: "Next episode in \(series.title)"
+        )
+    }
+
+    var libraryViewingHistory: [HFLibraryActivityRecord] {
+        var records: [HFLibraryActivityRecord] = []
+        records.append(
+            HFLibraryActivityRecord(
+                id: "history-last-\(libraryLastViewedMovie.id)",
+                movie: libraryLastViewedMovie,
+                status: "Last Viewed",
+                detail: "Most recent local playback route",
+                progress: libraryLastViewedMovie.progress
+            )
+        )
+        records += libraryContinueWatchingMovies.map { movie in
+            HFLibraryActivityRecord(
+                id: "history-progress-\(movie.id)",
+                movie: movie,
+                status: "In Progress",
+                detail: "\(Int((movie.progress ?? 0) * 100))% watched locally",
+                progress: movie.progress
+            )
+        }
+        records += libraryCompletedMovies.map { movie in
+            HFLibraryActivityRecord(
+                id: "history-complete-\(movie.id)",
+                movie: movie,
+                status: "Completed",
+                detail: "Completed in local viewing history",
+                progress: movie.progress
+            )
+        }
+        var seen = Set<String>()
+        return records.filter { seen.insert($0.id).inserted }
+    }
+
+    var libraryUserCollections: [HFLibraryCollection] {
+        [
+            HFLibraryCollection(id: "favorites", title: "Favorites", detail: "Pinned from saved original titles", movies: libraryFavoriteMovies, systemImage: "star.fill"),
+            HFLibraryCollection(id: "watch-later", title: "Watch Later", detail: "Saved titles without progress", movies: libraryWatchLaterMovies, systemImage: "bookmark.fill"),
+            HFLibraryCollection(id: "documentaries", title: "Documentaries", detail: "Documentary titles in your local library", movies: allCatalogMovies.filter { $0.genres.contains("Documentary") }, systemImage: "doc.richtext.fill"),
+            HFLibraryCollection(id: "crime", title: "Crime", detail: "Crime stories saved or recommended", movies: allCatalogMovies.filter { $0.genres.contains("Crime") }, systemImage: "eye.fill"),
+            HFLibraryCollection(id: "creator-collections", title: "Creator Collections", detail: "Creator-led titles connected to profiles", movies: creatorProfiles.flatMap(\.filmography).reduce(into: [Movie]()) { result, movie in
+                if !result.contains(where: { $0.id == movie.id }) { result.append(movie) }
+            }, systemImage: "person.crop.rectangle.stack.fill"),
+            HFLibraryCollection(id: "premieres", title: "Premieres", detail: "Premiere and scheduled local titles", movies: allCatalogMovies.filter { $0.isComingSoon || $0.genres.contains("Premiere") }, systemImage: "theatermasks.fill"),
+            HFLibraryCollection(id: "available-offline", title: "Available Offline", detail: "Local offline preview shelf", movies: downloadedMovies, systemImage: "arrow.down.circle.fill")
+        ].filter { !$0.movies.isEmpty }
+    }
+
+    var libraryIntelligenceSignals: [HFLibraryIntelligenceSignal] {
+        [
+            HFLibraryIntelligenceSignal(id: "continue", title: "Continue Watching", detail: "Feeds local recommendations and home rails", value: "\(libraryContinueWatchingMovies.count)", systemImage: "play.circle.fill"),
+            HFLibraryIntelligenceSignal(id: "recommendations", title: "Recommendations", detail: "Based on \(libraryLastViewedMovie.title)", value: "\(relatedMovies(for: libraryLastViewedMovie).count)", systemImage: "sparkle.magnifyingglass"),
+            HFLibraryIntelligenceSignal(id: "collections", title: "Collections", detail: "Favorites, documentaries, crime, premieres, creator collections", value: "\(libraryUserCollections.count)", systemImage: "rectangle.stack.fill"),
+            HFLibraryIntelligenceSignal(id: "offline", title: "Downloads Integration", detail: "Local offline preview state only", value: "\(downloadedMovies.count)", systemImage: "arrow.down.circle.fill")
+        ]
     }
 
     // hf.services.libraryState

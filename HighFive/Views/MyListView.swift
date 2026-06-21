@@ -12,7 +12,7 @@ struct MyListView: View {
     @State private var showsInspector = false
 
     private let forcesEmptyState: Bool
-    private let filters = ["Saved", "Continue Watching", "Downloads"]
+    private let filters = ["Saved", "Continue Watching", "Watch Later", "Favorites", "History", "Offline"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
@@ -20,7 +20,21 @@ struct MyListView: View {
     init(onBrowseDiscover: (() -> Void)? = nil) {
         let arguments = ProcessInfo.processInfo.arguments
         self.onBrowseDiscover = onBrowseDiscover
-        _selectedFilter = State(initialValue: arguments.contains("--hf-start-library-continue") ? "Continue Watching" : "Saved")
+        let initialFilter: String
+        if arguments.contains("--hf-start-library-continue") {
+            initialFilter = "Continue Watching"
+        } else if arguments.contains("--hf-start-library-history") {
+            initialFilter = "History"
+        } else if arguments.contains("--hf-start-library-favorites") {
+            initialFilter = "Favorites"
+        } else if arguments.contains("--hf-start-library-watch-later") {
+            initialFilter = "Watch Later"
+        } else if arguments.contains("--hf-start-library-offline") {
+            initialFilter = "Offline"
+        } else {
+            initialFilter = "Saved"
+        }
+        _selectedFilter = State(initialValue: initialFilter)
         forcesEmptyState = arguments.contains("--hf-start-library-empty")
     }
 
@@ -33,22 +47,28 @@ struct MyListView: View {
     }
 
     private var progressMovies: [Movie] {
-        savedMovies.filter { $0.progress != nil }
+        forcesEmptyState ? [] : streamingStore.libraryContinueWatchingMovies
     }
 
     private var offlineMovies: [Movie] {
-        savedMovies.filter { streamingStore.isDownloaded($0) }
+        forcesEmptyState ? [] : streamingStore.downloadedMovies
     }
 
     private var selectedMovie: Movie? {
-        progressMovies.first ?? savedMovies.first ?? streamingStore.continueWatchingMovie
+        forcesEmptyState ? nil : streamingStore.libraryLastViewedMovie
     }
 
     private var visibleMovies: [Movie] {
         switch selectedFilter {
         case "Continue Watching":
             return progressMovies
-        case "Downloads":
+        case "Watch Later":
+            return streamingStore.libraryWatchLaterMovies
+        case "Favorites":
+            return streamingStore.libraryFavoriteMovies
+        case "History":
+            return streamingStore.libraryViewingHistory.map(\.movie)
+        case "Offline":
             return offlineMovies
         default:
             return savedMovies
@@ -64,7 +84,10 @@ struct MyListView: View {
                 } else {
                     vaultWorld
                     premiumVaultStats
-                    premiumVaultCollections
+                    personalLibrarySystem
+                    libraryActivitySurface
+                    libraryCollectionsSurface
+                    libraryIntelligenceSurface
                     savedForTonightShelf
                     watchShelf
                     additionalSavedTitles
@@ -104,7 +127,7 @@ struct MyListView: View {
     }
 
     private var vaultWorld: some View {
-        VStack(spacing: HFSpacing.md) {
+        VStack(spacing: HFSpacing.sm) {
             if let selectedMovie {
                 vaultObject(for: selectedMovie)
                     .accessibilitySortPriority(3)
@@ -117,12 +140,13 @@ struct MyListView: View {
                             .font(HFTypography.smallAction)
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
-                            .frame(minHeight: 52)
+                            .frame(minHeight: 48)
                             .background(HFColors.goldGradient)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("hf.spatial.library.continueWatching")
+                    .accessibilityIdentifier("hf.library.continueWatching")
                     .accessibilityIdentifier("hf.library.continueStory")
                     .accessibilityIdentifier("hf.route.libraryToMovieDetail")
                 }
@@ -154,20 +178,145 @@ struct MyListView: View {
             vaultStat(title: "Offline", value: "\(offlineMovies.count)", systemImage: "arrow.down.circle.fill", color: HFColors.violet)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.library.system")
     }
 
-    private var premiumVaultCollections: some View {
+    private var personalLibrarySystem: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.text.rectangle.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Personal Library System")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Continue Watching, My List, Watch Later, Favorites, History, and Offline Preview are organized locally for this profile.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    librarySignal(title: "Resume Progress", value: "\(progressMovies.count)", systemImage: "play.circle.fill", color: HFColors.cyanGlow, identifier: "hf.library.resumeProgress")
+                    librarySignal(title: "My List", value: "\(savedMovies.count)", systemImage: "bookmark.fill", color: HFColors.gold, identifier: "hf.library.myList")
+                    librarySignal(title: "Watch Later", value: "\(streamingStore.libraryWatchLaterMovies.count)", systemImage: "clock.fill", color: HFColors.violet, identifier: "hf.library.watchLater")
+                    librarySignal(title: "Favorites", value: "\(streamingStore.libraryFavoriteMovies.count)", systemImage: "star.fill", color: HFColors.gold, identifier: "hf.library.favorites")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.library.personalHub")
+    }
+
+    private var libraryActivitySurface: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HFSectionHeader(title: "Vault Collections", actionTitle: "Saved")
+            HFSectionHeader(title: "Viewing History", actionTitle: "\(streamingStore.libraryViewingHistory.count)")
+
+            if let nextEpisode = streamingStore.libraryNextEpisode {
+                HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+                    HStack(alignment: .center, spacing: HFSpacing.md) {
+                        Image(systemName: "forward.end.fill")
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundStyle(HFColors.cyanGlow)
+                            .frame(width: 46, height: 46)
+                            .background(HFColors.cyanGlow.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                            Text("Next Episode")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.cyanGlow)
+                            Text(nextEpisode.title)
+                                .font(HFTypography.cardTitle)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text(nextEpisode.detail)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(HFSpacing.md)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityIdentifier("hf.library.nextEpisode")
+            }
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: HFSpacing.md) {
-                    vaultCollectionCard(title: "Tonight", detail: "Saved stories for later.", color: HFColors.gold, systemImage: "moon.stars.fill")
-                    vaultCollectionCard(title: "In Progress", detail: "Continue watching paths.", color: HFColors.cyanGlow, systemImage: "play.rectangle.on.rectangle.fill")
-                    vaultCollectionCard(title: "Creator Picks", detail: "Artist-led saved titles.", color: HFColors.violet, systemImage: "wand.and.stars.inverse")
+                    ForEach(streamingStore.libraryViewingHistory.prefix(8)) { record in
+                        NavigationLink(value: record.movie) {
+                            libraryActivityCard(record)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.route.libraryToMovieDetail")
+                    }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .accessibilityIdentifier("hf.library.viewingHistory")
+        .accessibilityIdentifier("hf.library.recentlyWatched")
+    }
+
+    private var libraryCollectionsSurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "User Collections", actionTitle: "\(streamingStore.libraryUserCollections.count)")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.md) {
+                    ForEach(streamingStore.libraryUserCollections) { collection in
+                        vaultCollectionCard(
+                            title: collection.title,
+                            detail: collection.detail,
+                            count: collection.movies.count,
+                            color: collection.id == "available-offline" ? HFColors.cyanGlow : (collection.id == "creator-collections" ? HFColors.violet : HFColors.gold),
+                            systemImage: collection.systemImage
+                        )
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.library.collections")
+        .accessibilityIdentifier("hf.library.userCollections")
+    }
+
+    private var libraryIntelligenceSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                Label("Library Intelligence", systemImage: "sparkle.magnifyingglass")
+                    .font(HFTypography.section)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text("Continue Watching feeds recommendations, collections, and Discovery without leaving local catalog mode.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.libraryIntelligenceSignals) { signal in
+                        librarySignal(
+                            title: signal.title,
+                            value: signal.value,
+                            systemImage: signal.systemImage,
+                            color: signal.id == "offline" ? HFColors.violet : HFColors.cyanGlow,
+                            identifier: signal.id == "offline" ? "hf.library.downloadsIntegration" : "hf.library.intelligence.\(signal.id)"
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.library.intelligence")
+        .accessibilityIdentifier("hf.library.discoveryConnection")
     }
 
     private func vaultStat(title: String, value: String, systemImage: String, color: Color) -> some View {
@@ -192,7 +341,7 @@ struct MyListView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
-    private func vaultCollectionCard(title: String, detail: String, color: Color, systemImage: String) -> some View {
+    private func vaultCollectionCard(title: String, detail: String, count: Int, color: Color, systemImage: String) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .black))
@@ -207,6 +356,10 @@ struct MyListView: View {
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.textSecondary)
                 .lineLimit(2)
+            Text("\(count) titles")
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(color)
+                .lineLimit(1)
         }
         .frame(width: 188, alignment: .leading)
         .padding(HFSpacing.md)
@@ -218,6 +371,56 @@ struct MyListView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 
+    private func librarySignal(title: String, value: String, systemImage: String, color: Color, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(color)
+            Text(value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.70)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func libraryActivityCard(_ record: HFLibraryActivityRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: record.status == "Last Viewed" ? HFColors.gold.opacity(0.34) : HFColors.cyanGlow.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HFPosterCard(movie: record.movie, width: 118, showTitle: false, posterOnly: true)
+                Text(record.status)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(record.status == "Last Viewed" ? HFColors.gold : HFColors.cyanGlow)
+                    .accessibilityIdentifier(record.status == "Last Viewed" ? "hf.library.lastViewed" : "hf.library.inProgress")
+                Text(record.movie.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                if record.status == "Completed" {
+                    Text("Completed")
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                        .accessibilityIdentifier("hf.library.completed")
+                }
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 152, alignment: .topLeading)
+        }
+    }
+
     private func vaultObject(for movie: Movie) -> some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.gold.opacity(0.42)) {
             ZStack(alignment: .bottomLeading) {
@@ -226,7 +429,7 @@ struct MyListView: View {
                 HFDepthContourOverlay(color: HFColors.gold.opacity(0.58))
                     .opacity(0.24)
                 HStack(alignment: .center, spacing: HFSpacing.md) {
-                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 122 : 154, showTitle: false, posterOnly: true)
+                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 112 : 136, showTitle: false, posterOnly: true)
                         .shadow(color: HFColors.amberGlow.opacity(0.24), radius: 22, x: 0, y: 14)
                     VStack(alignment: .leading, spacing: HFSpacing.sm) {
                         Text("LOCAL LIBRARY MODE")
@@ -254,7 +457,7 @@ struct MyListView: View {
                 }
                 .padding(HFSpacing.md)
             }
-            .frame(height: usesFallbackLayout ? 300 : 340)
+            .frame(height: usesFallbackLayout ? 270 : 300)
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -379,6 +582,9 @@ struct MyListView: View {
                     inspectorRow(title: "Saved Locally", detail: "\(snapshot.savedTitles.count) saved title records.", status: "\(snapshot.savedTitles.count)", color: HFColors.gold, identifier: "hf.library.savedLocally")
                     inspectorRow(title: "Progress Saved Locally", detail: "\(snapshot.progressRecords.count) progress records.", status: "\(snapshot.progressRecords.count)", color: HFColors.cyanGlow, identifier: "hf.library.progressSavedLocally")
                     inspectorRow(title: "Offline Preview State", detail: "\(snapshot.offlineStates.count) local offline preview states.", status: "\(snapshot.offlineStates.count)", color: HFColors.cyanGlow, identifier: "hf.library.offlinePreviewState")
+                    inspectorRow(title: "Viewing History", detail: "\(streamingStore.libraryViewingHistory.count) local activity records.", status: "Local", color: HFColors.cyanGlow, identifier: "hf.library.viewingHistory")
+                    inspectorRow(title: "Favorites", detail: "\(streamingStore.libraryFavoriteMovies.count) favorite titles inferred from saved originals.", status: "Local", color: HFColors.gold, identifier: "hf.library.favorites")
+                    inspectorRow(title: "Watch Later", detail: "\(streamingStore.libraryWatchLaterMovies.count) saved titles waiting to start.", status: "Local", color: HFColors.violet, identifier: "hf.library.watchLater")
                     inspectorRow(title: "Cloud Library Not Connected Yet", detail: "Cloud sync requires account and backend readiness.", status: "Not Connected Yet", color: HFColors.gold, identifier: "hf.library.cloudNotConnected")
                     inspectorRow(title: "Sync Status", detail: status.boundary.title, status: "Local", color: HFColors.gold, identifier: "hf.library.syncStatus")
                     inspectorRow(title: "No live cross-device sync", detail: "Backend-mediated library sync only. No live cross-device claim is made.", status: "Local only", color: HFColors.textSecondary, identifier: "hf.library.noLiveCrossDeviceSync")
