@@ -474,6 +474,66 @@ struct HFAuditTrailRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFMarketplaceCatalogRecord: Identifiable {
+    let id: String
+    var title: String
+    var creatorName: String
+    var packageType: String
+    var readiness: String
+    var rightsSummary: String
+    var revenuePreview: String
+    var distributionState: String
+    var systemImage: String
+}
+
+struct HFDistributionTargetRecord: Identifiable {
+    let id: String
+    var title: String
+    var purpose: String
+    var readiness: String
+    var boundary: String
+    var systemImage: String
+}
+
+struct HFRightsPackageRecord: Identifiable {
+    let id: String
+    var title: String
+    var creatorName: String
+    var rightsWindow: String
+    var territoryPreview: String
+    var clearanceState: String
+    var systemImage: String
+}
+
+struct HFReleasePackageRecord: Identifiable {
+    let id: String
+    var title: String
+    var assets: String
+    var publishingState: String
+    var marketplaceState: String
+    var nextStep: String
+    var systemImage: String
+}
+
+struct HFLicensingPreviewRecord: Identifiable {
+    let id: String
+    var title: String
+    var packageScope: String
+    var estimatePreview: String
+    var rightsState: String
+    var planningNote: String
+    var systemImage: String
+}
+
+struct HFDistributionReadinessRecord: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -2957,6 +3017,87 @@ final class HFStreamingStore: ObservableObject {
         ]
     }
 
+    var marketplaceCatalogRecords: [HFMarketplaceCatalogRecord] {
+        let projects = (creatorPublishedProjects + creatorScheduledProjects + creatorReviewProjects).prefix(6)
+        return projects.map { project in
+            let revenue = revenueTitleRecords.first { $0.id == project.id }
+            return HFMarketplaceCatalogRecord(
+                id: "market-\(project.id)",
+                title: project.title,
+                creatorName: project.creator,
+                packageType: project.genre,
+                readiness: project.readyForReview ? "Package Ready" : "Package Review",
+                rightsSummary: marketplaceRightsSummary(for: project),
+                revenuePreview: revenue?.estimatedRevenue ?? "Preview",
+                distributionState: project.releaseState == .published ? "Marketplace Preview" : "\(project.releaseState.rawValue) Preview",
+                systemImage: project.releaseState == .published ? "bag.fill" : "shippingbox.fill"
+            )
+        }
+    }
+
+    var distributionTargetRecords: [HFDistributionTargetRecord] {
+        [
+            HFDistributionTargetRecord(id: "highfive-home", title: "HighFive Home", purpose: "Featured local placement for approved marketplace packages.", readiness: "\(creatorPublishedProjects.count) visible", boundary: "Local catalog only", systemImage: "house.fill"),
+            HFDistributionTargetRecord(id: "creator-profile", title: "Creator Profile", purpose: "Creator-owned title shelf and filmography placement.", readiness: "\(creatorProfiles.count) creators", boundary: "Profile preview", systemImage: "person.crop.rectangle.stack.fill"),
+            HFDistributionTargetRecord(id: "premiere-rail", title: "Premiere Rail", purpose: "Premiere package planning for scheduled and review titles.", readiness: "\(creatorScheduledProjects.count + creatorReviewProjects.count) planned", boundary: "Planning only", systemImage: "sparkles.tv.fill"),
+            HFDistributionTargetRecord(id: "collection-worlds", title: "Collection Worlds", purpose: "Genre and collection placement from CMS relationships.", readiness: "\(cmsCollections.count) collections", boundary: "Local relationships", systemImage: "rectangle.grid.2x2.fill"),
+            HFDistributionTargetRecord(id: "series-shelf", title: "Series Shelf", purpose: "Series and episode package placement.", readiness: "\(seriesRecords.count) series", boundary: "Episode preview", systemImage: "play.square.stack.fill")
+        ]
+    }
+
+    var rightsPackageRecords: [HFRightsPackageRecord] {
+        marketplaceCatalogRecords.map { record in
+            HFRightsPackageRecord(
+                id: "rights-\(record.id)",
+                title: record.title,
+                creatorName: record.creatorName,
+                rightsWindow: record.distributionState.contains("Published") || record.distributionState.contains("Marketplace") ? "Current Preview" : "Planned Preview",
+                territoryPreview: record.packageType == "Western" ? "North America Preview" : "Global Planning Preview",
+                clearanceState: record.rightsSummary,
+                systemImage: "checkmark.shield.fill"
+            )
+        }
+    }
+
+    var releasePackageRecords: [HFReleasePackageRecord] {
+        creatorPublishingQueueRecords.prefix(6).map { record in
+            HFReleasePackageRecord(
+                id: "release-\(record.project.id)",
+                title: record.project.title,
+                assets: "\(readinessStatus(for: record.project.posterStatus)) poster • \(readinessStatus(for: record.project.trailerStatus)) trailer",
+                publishingState: record.project.releaseState.rawValue,
+                marketplaceState: record.project.readyForReview ? "Ready for packaging" : "Packaging review",
+                nextStep: record.nextStep,
+                systemImage: "shippingbox.and.arrow.backward.fill"
+            )
+        }
+    }
+
+    var licensingPreviewRecords: [HFLicensingPreviewRecord] {
+        revenueTitleRecords.prefix(5).map { record in
+            HFLicensingPreviewRecord(
+                id: "licensing-\(record.id)",
+                title: record.movie.title,
+                packageScope: record.movie.genres.prefix(2).joined(separator: " + "),
+                estimatePreview: record.estimatedRevenue,
+                rightsState: record.completionRate >= 70 ? "Strong package" : "Review package",
+                planningNote: "\(record.views) local views • \(record.completionRate)% completion",
+                systemImage: "doc.badge.gearshape.fill"
+            )
+        }
+    }
+
+    var distributionReadinessRecords: [HFDistributionReadinessRecord] {
+        let readyPackages = releasePackageRecords.filter { $0.marketplaceState == "Ready for packaging" }.count
+        return [
+            HFDistributionReadinessRecord(id: "catalog", title: "Marketplace Catalog", value: "\(marketplaceCatalogRecords.count)", detail: "Creator packages visible for local marketplace planning.", status: "Preview", systemImage: "bag.fill"),
+            HFDistributionReadinessRecord(id: "targets", title: "Distribution Targets", value: "\(distributionTargetRecords.count)", detail: "Home, creator profile, premiere, collection, and series targets.", status: "Planning", systemImage: "point.3.connected.trianglepath.dotted"),
+            HFDistributionReadinessRecord(id: "rights", title: "Rights Packages", value: "\(rightsPackageRecords.count)", detail: "Rights windows, territory preview, and clearance state.", status: "Tracked", systemImage: "checkmark.shield.fill"),
+            HFDistributionReadinessRecord(id: "release", title: "Release Packages", value: "\(readyPackages)", detail: "Packages ready for marketplace review.", status: "Ready", systemImage: "shippingbox.fill"),
+            HFDistributionReadinessRecord(id: "licensing", title: "Licensing Preview", value: "\(licensingPreviewRecords.count)", detail: "Planning estimates from local revenue and completion signals.", status: "Estimate", systemImage: "doc.badge.gearshape.fill")
+        ]
+    }
+
     private func contentReviewState(for project: HFCreatorPublishingContent) -> String {
         switch project.releaseState {
         case .published:
@@ -2970,6 +3111,19 @@ final class HFStreamingStore: ObservableObject {
         case .draft:
             return project.readyForReview ? "Pending Review" : "Needs Revision"
         }
+    }
+
+    private func marketplaceRightsSummary(for project: HFCreatorPublishingContent) -> String {
+        if project.releaseState == .archived {
+            return "Archived rights"
+        }
+        if project.readyForReview && project.discoveryEligible {
+            return "Cleared Preview"
+        }
+        if project.readyForReview {
+            return "Rights Review"
+        }
+        return "Needs Package"
     }
 
     private func analyticsRecord(for movie: Movie) -> HFTitleAnalyticsRecord {

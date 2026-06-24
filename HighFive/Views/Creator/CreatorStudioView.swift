@@ -200,6 +200,13 @@ private enum HFCreatorProSpotlight {
     case administrationModeration
     case administrationOperations
     case administrationAudit
+    case marketplaceDashboard
+    case marketplaceCatalog
+    case marketplaceTargets
+    case marketplaceRights
+    case marketplacePackages
+    case marketplaceLicensing
+    case marketplaceReadiness
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -243,6 +250,13 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-admin-moderation") { return .administrationModeration }
         if arguments.contains("--hf-admin-operations") { return .administrationOperations }
         if arguments.contains("--hf-admin-audit") { return .administrationAudit }
+        if arguments.contains("--hf-start-marketplace") { return .marketplaceDashboard }
+        if arguments.contains("--hf-marketplace-catalog") { return .marketplaceCatalog }
+        if arguments.contains("--hf-marketplace-targets") { return .marketplaceTargets }
+        if arguments.contains("--hf-marketplace-rights") { return .marketplaceRights }
+        if arguments.contains("--hf-marketplace-packages") { return .marketplacePackages }
+        if arguments.contains("--hf-marketplace-licensing") { return .marketplaceLicensing }
+        if arguments.contains("--hf-marketplace-readiness") { return .marketplaceReadiness }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2155,6 +2169,20 @@ struct CreatorStudioView: View {
             operationsDashboardSection
         case .administrationAudit:
             administrationAuditTrailSection
+        case .marketplaceDashboard:
+            marketplaceDistributionDashboardSection
+        case .marketplaceCatalog:
+            marketplaceCatalogSection
+        case .marketplaceTargets:
+            distributionTargetsSection
+        case .marketplaceRights:
+            rightsPackagesSection
+        case .marketplacePackages:
+            releasePackagesSection
+        case .marketplaceLicensing:
+            licensingPreviewSection
+        case .marketplaceReadiness:
+            distributionReadinessSection
         }
     }
 
@@ -2167,6 +2195,7 @@ struct CreatorStudioView: View {
             revenueDashboardSection
             notificationsCenterSection
             administrationDashboardSection
+            marketplaceDistributionDashboardSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2204,6 +2233,12 @@ struct CreatorStudioView: View {
             moderationQueueSection
             operationsDashboardSection
             administrationAuditTrailSection
+            marketplaceCatalogSection
+            distributionTargetsSection
+            rightsPackagesSection
+            releasePackagesSection
+            licensingPreviewSection
+            distributionReadinessSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -3190,6 +3225,157 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.admin.auditTrail")
+    }
+
+    private var marketplaceDistributionDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Marketplace & Distribution System",
+            detail: "Local planning layer for marketplace catalog, distribution targets, rights packages, release packages, licensing preview, and readiness.",
+            systemImage: "bag.badge.plus",
+            accent: HFColors.gold,
+            identifier: "hf.marketplace.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Catalog", value: "\(streamingStore.marketplaceCatalogRecords.count)")
+                    creatorProStat(title: "Targets", value: "\(streamingStore.distributionTargetRecords.count)")
+                    creatorProStat(title: "Rights", value: "\(streamingStore.rightsPackageRecords.count)")
+                    creatorProStat(title: "Packages", value: "\(streamingStore.releasePackageRecords.count)")
+                }
+
+                Text("Publishing -> Revenue -> Marketplace -> Distribution")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.marketplace.workflow")
+
+                Text("Marketplace and distribution are preview planning only. No external sales, rights exchange, delivery channel, or money movement is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.marketplace.localOnly")
+            }
+        }
+    }
+
+    private var marketplaceCatalogSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Marketplace Catalog",
+                    detail: "Published, scheduled, and review-ready creator packages are organized for local marketplace planning.",
+                    systemImage: "bag.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.marketplaceCatalogRecords) { record in
+                        marketplaceCatalogRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.marketplace.catalog")
+    }
+
+    private var distributionTargetsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Distribution Targets", actionTitle: "Planning")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.distributionTargetRecords) { record in
+                        distributionTargetCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.marketplace.distributionTargets")
+    }
+
+    private var rightsPackagesSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Rights Packages",
+                    detail: "Rights windows, territory preview, and clearance state stay attached to each local marketplace package.",
+                    systemImage: "checkmark.shield.fill",
+                    accent: HFColors.violet
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.rightsPackageRecords) { record in
+                        rightsPackageCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.marketplace.rightsPackages")
+    }
+
+    private var releasePackagesSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Release Packages",
+                    detail: "Publishing queue items are packaged for marketplace review with poster, trailer, metadata, and next-step state.",
+                    systemImage: "shippingbox.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.releasePackageRecords) { record in
+                        releasePackageRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.marketplace.releasePackages")
+    }
+
+    private var licensingPreviewSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Licensing Preview", actionTitle: "Estimate")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.licensingPreviewRecords) { record in
+                        licensingPreviewCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.marketplace.licensingPreview")
+    }
+
+    private var distributionReadinessSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Distribution Readiness",
+                    detail: "Marketplace, target, rights, release, and licensing readiness are computed from local product state.",
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.distributionReadinessRecords) { record in
+                        distributionReadinessCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.marketplace.distributionReadiness")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -4409,6 +4595,208 @@ struct CreatorStudioView: View {
         default:
             return HFColors.textSecondary
         }
+    }
+
+    private func marketplaceCatalogRow(_ record: HFMarketplaceCatalogRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(marketplaceAccent(for: record.readiness))
+                .frame(width: 38, height: 38)
+                .background(marketplaceAccent(for: record.readiness).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.distributionState)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(marketplaceAccent(for: record.readiness))
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+                Text("\(record.creatorName) • \(record.packageType)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text("\(record.rightsSummary) • \(record.revenuePreview)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.marketplace.catalog.\(record.id)")
+    }
+
+    private func distributionTargetCard(_ record: HFDistributionTargetRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: record.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.cyanGlow)
+                Text(record.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.readiness)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.purpose)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                Text(record.boundary)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 184, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.marketplace.target.\(record.id)")
+    }
+
+    private func rightsPackageCard(_ record: HFRightsPackageRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.violet)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+            Text(record.creatorName)
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+            Text("\(record.rightsWindow) • \(record.territoryPreview)")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+            Text(record.clearanceState)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.violet)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.marketplace.rights.\(record.id)")
+    }
+
+    private func releasePackageRow(_ record: HFReleasePackageRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background(HFColors.gold.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.marketplaceState)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.publishingState) • \(record.assets)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+                Text(record.nextStep)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.marketplace.package.\(record.id)")
+    }
+
+    private func licensingPreviewCard(_ record: HFLicensingPreviewRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: record.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                Text(record.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.estimatePreview)
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.packageScope)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+                Text("\(record.rightsState) • \(record.planningNote)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 188, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.marketplace.licensing.\(record.id)")
+    }
+
+    private func distributionReadinessCard(_ record: HFDistributionReadinessRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(record.value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(2)
+            Text(record.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+            Text(record.status)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.marketplace.readiness.\(record.id)")
+    }
+
+    private func marketplaceAccent(for readiness: String) -> Color {
+        readiness.contains("Ready") ? HFColors.gold : HFColors.cyanGlow
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {

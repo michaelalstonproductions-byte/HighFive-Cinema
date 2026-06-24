@@ -159,6 +159,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRevenueSystem
             || Self.shouldStartInNotificationsActivity
             || Self.shouldStartInPlatformAdministration
+            || Self.shouldStartInMarketplaceDistribution
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -219,6 +220,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRevenueSystem
             || Self.shouldStartInNotificationsActivity
             || Self.shouldStartInPlatformAdministration
+            || Self.shouldStartInMarketplaceDistribution
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -336,6 +338,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRevenueSystem
             || Self.shouldStartInNotificationsActivity
             || Self.shouldStartInPlatformAdministration
+            || Self.shouldStartInMarketplaceDistribution
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -446,6 +449,17 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-admin-moderation")
             || arguments.contains("--hf-admin-operations")
             || arguments.contains("--hf-admin-audit")
+    }
+
+    private static var shouldStartInMarketplaceDistribution: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-marketplace")
+            || arguments.contains("--hf-marketplace-catalog")
+            || arguments.contains("--hf-marketplace-targets")
+            || arguments.contains("--hf-marketplace-rights")
+            || arguments.contains("--hf-marketplace-packages")
+            || arguments.contains("--hf-marketplace-licensing")
+            || arguments.contains("--hf-marketplace-readiness")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {
