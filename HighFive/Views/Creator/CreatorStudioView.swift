@@ -178,6 +178,12 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
         if arguments.contains("--hf-creator-pro-vod-package") { return .vodPackage }
         if arguments.contains("--hf-creator-pro-analytics") { return .analytics }
+        if arguments.contains("--hf-start-analytics") { return .analytics }
+        if arguments.contains("--hf-analytics-viewers") { return .analytics }
+        if arguments.contains("--hf-analytics-content") { return .analytics }
+        if arguments.contains("--hf-analytics-discovery") { return .analytics }
+        if arguments.contains("--hf-analytics-creators") { return .analytics }
+        if arguments.contains("--hf-analytics-intelligence") { return .analytics }
         return .dashboard
     }
 }
@@ -2536,18 +2542,107 @@ struct CreatorStudioView: View {
     }
 
     private var analyticsPreviewSection: some View {
-        creatorProSpotlight(
-            title: "Creator Analytics Preview",
-            detail: "Local preview signals summarize watch interest, saves, and room activity.",
-            systemImage: "chart.bar.xaxis",
-            accent: HFColors.cyanGlow,
-            identifier: "hf.creator.pro.analyticsPreview"
-        ) {
-            HStack(spacing: HFSpacing.xs) {
-                creatorProStat(title: "Saves", value: "\(max(12, streamingStore.savedMovieIDs.count * 6))")
-                creatorProStat(title: "Signals", value: "Local")
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            creatorProSpotlight(
+                title: "Performance Overview",
+                detail: "Local analytics computed from catalog, viewing progress, searches, saves, publishing state, and creator profiles.",
+                systemImage: "chart.bar.xaxis",
+                accent: HFColors.cyanGlow,
+                identifier: "hf.analytics.dashboard"
+            ) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.analyticsViewerMetrics.prefix(4)) { metric in
+                        creatorProStat(title: metric.title, value: metric.value)
+                    }
+                }
+            }
+
+            analyticsMetricGrid
+            topTitleAnalyticsSection
+            discoverySourcesSection
+            creatorAnalyticsSection
+            analyticsIntelligenceSection
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.creator.pro.analyticsPreview")
+    }
+
+    private var analyticsMetricGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+            ForEach(streamingStore.analyticsViewerMetrics) { metric in
+                analyticsMetricCard(metric)
             }
         }
+        .accessibilityIdentifier("hf.analytics.viewer")
+    }
+
+    private var topTitleAnalyticsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Top Titles", actionTitle: "Content")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.analyticsTitleRecords.prefix(6)) { record in
+                        titleAnalyticsCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityIdentifier("hf.analytics.content")
+        .accessibilityIdentifier("hf.analytics.topTitles")
+    }
+
+    private var discoverySourcesSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label("Discovery Sources", systemImage: "sparkle.magnifyingglass")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                ForEach(streamingStore.analyticsDiscoveryRecords) { record in
+                    discoveryAnalyticsRow(record)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityIdentifier("hf.analytics.discovery")
+        .accessibilityIdentifier("hf.analytics.discoverySources")
+    }
+
+    private var creatorAnalyticsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Recent Growth", actionTitle: "Creators")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.analyticsCreatorRecords.prefix(6)) { record in
+                        creatorAnalyticsCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityIdentifier("hf.analytics.creator")
+        .accessibilityIdentifier("hf.analytics.recentGrowth")
+        .accessibilityIdentifier("hf.analytics.audienceEngagement")
+    }
+
+    private var analyticsIntelligenceSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label("Analytics Intelligence", systemImage: "lightbulb.max.fill")
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.analyticsInsights) { insight in
+                        analyticsInsightCard(insight)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityIdentifier("hf.analytics.intelligence")
+        .accessibilityIdentifier("hf.analytics.insights")
     }
 
     private var launchControlPreviewSection: some View {
@@ -2654,6 +2749,180 @@ struct CreatorStudioView: View {
         .padding(HFSpacing.xs)
         .background(Color.black.opacity(0.24))
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func analyticsMetricCard(_ metric: HFAnalyticsMetric) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: metric.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.cyanGlow)
+                Text(metric.value)
+                    .font(.system(size: 26, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                Text(metric.title)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text(metric.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+            }
+            .padding(HFSpacing.sm)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(metric.title), \(metric.value). \(metric.detail)")
+        .accessibilityIdentifier("hf.analytics.viewer.\(metric.id)")
+    }
+
+    private func titleAnalyticsCard(_ record: HFTitleAnalyticsRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFPosterCard(movie: record.movie, width: 112, showTitle: false, posterOnly: true)
+                Text(record.movie.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+
+                HStack(spacing: HFSpacing.xs) {
+                    analyticsMiniPill("\(record.totalViews)", "Views", HFColors.gold)
+                    analyticsMiniPill("\(record.completionRate)%", "Complete", HFColors.cyanGlow)
+                }
+
+                Text("\(record.averageWatchTime) avg • \(record.libraryAdds) adds • \(record.favorites) favorites")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+                Text("\(record.sharesPlaceholder) local share placeholders")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.violet)
+                    .lineLimit(1)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 146, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(record.movie.title), \(record.totalViews) views, \(record.completionRate) percent completion.")
+        .accessibilityIdentifier("hf.analytics.title.\(record.id)")
+    }
+
+    private func discoveryAnalyticsRow(_ record: HFDiscoveryAnalyticsRecord) -> some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 34, height: 34)
+                .background(HFColors.gold.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(record.value)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.analytics.discovery.\(record.id)")
+    }
+
+    private func creatorAnalyticsCard(_ record: HFCreatorAnalyticsRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HStack(spacing: HFSpacing.xs) {
+                    Image(systemName: "person.crop.rectangle.stack.fill")
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundStyle(HFColors.violet)
+                    Text(record.growthTrend)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                }
+                Text(record.creatorName)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+                Text(record.topContent)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                HStack(spacing: HFSpacing.xs) {
+                    analyticsMiniPill("\(record.views)", "Views", HFColors.cyanGlow)
+                    analyticsMiniPill(record.watchTime, "Watch", HFColors.gold)
+                }
+                Text("\(record.publishedTitles) published • \(record.followers) local followers")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 176, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.analytics.creator.\(record.id)")
+    }
+
+    private func analyticsInsightCard(_ insight: HFAnalyticsInsight) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: insight.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.violet)
+            Text(insight.value)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+            Text(insight.title)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+            Text(insight.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.analytics.insight.\(insight.id)")
+    }
+
+    private func analyticsMiniPill(_ value: String, _ title: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+            Text(title)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 5)
+        .padding(.horizontal, 6)
+        .background(color.opacity(0.13))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var creatorInspector: some View {

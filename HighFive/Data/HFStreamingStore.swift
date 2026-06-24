@@ -310,6 +310,52 @@ struct HFLibraryIntelligenceSignal: Identifiable {
     var systemImage: String
 }
 
+struct HFAnalyticsMetric: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFTitleAnalyticsRecord: Identifiable {
+    let id: String
+    var movie: Movie
+    var totalViews: Int
+    var averageWatchTime: String
+    var completionRate: Int
+    var libraryAdds: Int
+    var favorites: Int
+    var sharesPlaceholder: Int
+}
+
+struct HFDiscoveryAnalyticsRecord: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorAnalyticsRecord: Identifiable {
+    let id: String
+    var creatorName: String
+    var publishedTitles: Int
+    var views: Int
+    var watchTime: String
+    var followers: Int
+    var growthTrend: String
+    var topContent: String
+}
+
+struct HFAnalyticsInsight: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var value: String
+    var systemImage: String
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -1852,6 +1898,131 @@ final class HFStreamingStore: ObservableObject {
             HFLibraryIntelligenceSignal(id: "collections", title: "Collections", detail: "Favorites, documentaries, crime, premieres, creator collections", value: "\(libraryUserCollections.count)", systemImage: "rectangle.stack.fill"),
             HFLibraryIntelligenceSignal(id: "offline", title: "Downloads Integration", detail: "Local offline preview state only", value: "\(downloadedMovies.count)", systemImage: "arrow.down.circle.fill")
         ]
+    }
+
+    var analyticsTitleRecords: [HFTitleAnalyticsRecord] {
+        allCatalogMovies
+            .map(analyticsRecord)
+            .sorted { lhs, rhs in
+                if lhs.totalViews == rhs.totalViews {
+                    return lhs.completionRate > rhs.completionRate
+                }
+                return lhs.totalViews > rhs.totalViews
+            }
+    }
+
+    var analyticsViewerMetrics: [HFAnalyticsMetric] {
+        let titleRecords = analyticsTitleRecords
+        let totalViews = titleRecords.reduce(0) { $0 + $1.totalViews }
+        let totalWatchMinutes = titleRecords.reduce(0) { partial, record in
+            partial + analyticsMinutes(from: record.averageWatchTime) * max(1, record.totalViews / 18)
+        }
+        let averageCompletion = titleRecords.isEmpty ? 0 : titleRecords.reduce(0) { $0 + $1.completionRate } / titleRecords.count
+        let progressCount = allCatalogMovies.filter { $0.progress != nil }.count
+        let resumeRate = progressCount == 0 ? 0 : Int((Double(libraryContinueWatchingMovies.count) / Double(progressCount)) * 100)
+        let dropOffCount = libraryContinueWatchingMovies.filter { movie in
+            let progress = movie.progress ?? 0
+            return progress >= 0.25 && progress <= 0.72
+        }.count
+
+        return [
+            HFAnalyticsMetric(id: "views", title: "Views", value: "\(totalViews)", detail: "Local catalog view estimate", systemImage: "play.tv.fill"),
+            HFAnalyticsMetric(id: "unique-viewers", title: "Unique Viewers", value: "\(localProfiles.count)", detail: "Local profile count", systemImage: "person.2.fill"),
+            HFAnalyticsMetric(id: "watch-time", title: "Watch Time", value: "\(max(1, totalWatchMinutes / 60))h", detail: "Computed from local progress", systemImage: "clock.fill"),
+            HFAnalyticsMetric(id: "completion-rate", title: "Completion Rate", value: "\(averageCompletion)%", detail: "Average local title completion", systemImage: "checkmark.circle.fill"),
+            HFAnalyticsMetric(id: "resume-rate", title: "Resume Rate", value: "\(resumeRate)%", detail: "In-progress titles with resume state", systemImage: "arrow.clockwise.circle.fill"),
+            HFAnalyticsMetric(id: "drop-off-points", title: "Drop-off Points", value: "\(dropOffCount)", detail: "Mid-session local drop-off markers", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
+        ]
+    }
+
+    var analyticsDiscoveryRecords: [HFDiscoveryAnalyticsRecord] {
+        [
+            HFDiscoveryAnalyticsRecord(id: "searches", title: "Searches", value: "\(recentSearches.count)", detail: "Recent local search terms", systemImage: "magnifyingglass"),
+            HFDiscoveryAnalyticsRecord(id: "search-clicks", title: "Search Clicks", value: "\(searchMovies(query: recentSearches.first ?? featuredMovie.title, filter: "All").count)", detail: "Matching local result taps proxy", systemImage: "cursorarrow.click.2"),
+            HFDiscoveryAnalyticsRecord(id: "collection-opens", title: "Collection Opens", value: "\(discoveryCollections.count + libraryUserCollections.count)", detail: "Discovery and Library collection surfaces", systemImage: "rectangle.stack.fill"),
+            HFDiscoveryAnalyticsRecord(id: "recommendation-clicks", title: "Recommendation Clicks", value: "\(relatedMovies(for: libraryLastViewedMovie).count)", detail: "Because-you-watched local signal", systemImage: "sparkles"),
+            HFDiscoveryAnalyticsRecord(id: "trending-signals", title: "Trending Signals", value: "\(discoveryCollections.first { $0.id == "trending" }?.movies.count ?? 0)", detail: "Trending rail titles", systemImage: "chart.line.uptrend.xyaxis")
+        ]
+    }
+
+    var analyticsCreatorRecords: [HFCreatorAnalyticsRecord] {
+        creatorProfiles.map { profile in
+            let titleIDs = Set(profile.filmography.map(\.id))
+            let records = analyticsTitleRecords.filter { titleIDs.contains($0.movie.id) }
+            let views = records.reduce(0) { $0 + $1.totalViews }
+            let watchMinutes = records.reduce(0) { $0 + analyticsMinutes(from: $1.averageWatchTime) * max(1, $1.totalViews / 20) }
+            let topContent = records.first?.movie.title ?? profile.featuredProject?.title ?? "Local slate"
+            let followers = 120 + analyticsSeed(profile.id) % 880
+            let growth = "+\(8 + analyticsSeed(profile.creator.name) % 34)%"
+            return HFCreatorAnalyticsRecord(
+                id: profile.id,
+                creatorName: profile.creator.name,
+                publishedTitles: profile.publishedTitles.count,
+                views: views,
+                watchTime: "\(max(1, watchMinutes / 60))h",
+                followers: followers,
+                growthTrend: growth,
+                topContent: topContent
+            )
+        }
+        .sorted { $0.views > $1.views }
+    }
+
+    var analyticsInsights: [HFAnalyticsInsight] {
+        let records = analyticsTitleRecords
+        let mostWatched = records.first
+        let fastestGrowing = records.sorted { lhs, rhs in
+            analyticsSeed(lhs.movie.id + "growth") > analyticsSeed(rhs.movie.id + "growth")
+        }.first
+        let mostSaved = records.sorted { $0.libraryAdds > $1.libraryAdds }.first
+        let highestCompletion = records.sorted { $0.completionRate > $1.completionRate }.first
+
+        return [
+            HFAnalyticsInsight(id: "most-watched", title: "Most Watched This Week", detail: mostWatched?.movie.title ?? "Local catalog", value: "\(mostWatched?.totalViews ?? 0)", systemImage: "play.fill"),
+            HFAnalyticsInsight(id: "fastest-growing", title: "Fastest Growing Title", detail: fastestGrowing?.movie.title ?? "Local catalog", value: "+\(8 + analyticsSeed(fastestGrowing?.movie.id ?? "local") % 38)%", systemImage: "chart.line.uptrend.xyaxis"),
+            HFAnalyticsInsight(id: "most-saved", title: "Most Saved Title", detail: mostSaved?.movie.title ?? "Local catalog", value: "\(mostSaved?.libraryAdds ?? 0)", systemImage: "bookmark.fill"),
+            HFAnalyticsInsight(id: "highest-completion", title: "Highest Completion Rate", detail: highestCompletion?.movie.title ?? "Local catalog", value: "\(highestCompletion?.completionRate ?? 0)%", systemImage: "checkmark.seal.fill")
+        ]
+    }
+
+    private func analyticsRecord(for movie: Movie) -> HFTitleAnalyticsRecord {
+        let seed = analyticsSeed(movie.id)
+        let isCreatorPublished = creatorPublishedMovies.contains { $0.id == movie.id }
+        let localProgress = movie.progress ?? (movie.isComingSoon ? 0 : Double(42 + seed % 45) / 100.0)
+        let completion = movie.isComingSoon ? 0 : min(98, max(12, Int(localProgress * 100)))
+        let runtimeMinutes = analyticsRuntimeMinutes(for: movie)
+        let averageMinutes = movie.isComingSoon ? 0 : max(4, Int(Double(runtimeMinutes) * Double(completion) / 100.0))
+        let recentSearchBoost = recentSearches.contains { query in
+            movie.title.localizedCaseInsensitiveContains(query) || query.localizedCaseInsensitiveContains(movie.title)
+        } ? 30 : 0
+        let viewBase = 42 + seed % 520
+        let viewBoost = (isSaved(movie) ? 54 : 0) + (isDownloaded(movie) ? 22 : 0) + (isCreatorPublished ? 86 : 0) + recentSearchBoost
+        let libraryAdds = isSaved(movie) ? 18 + seed % 46 : seed % 12
+        let favorites = libraryFavoriteMovies.contains { $0.id == movie.id } ? 10 + seed % 26 : seed % 6
+
+        return HFTitleAnalyticsRecord(
+            id: movie.id,
+            movie: movie,
+            totalViews: viewBase + viewBoost,
+            averageWatchTime: "\(averageMinutes)m",
+            completionRate: completion,
+            libraryAdds: libraryAdds,
+            favorites: favorites,
+            sharesPlaceholder: seed % 18
+        )
+    }
+
+    private func analyticsRuntimeMinutes(for movie: Movie) -> Int {
+        let number = movie.duration.split(separator: " ").compactMap { Int($0) }.first
+        return max(12, number ?? (movie.duration.localizedCaseInsensitiveContains("episode") ? 44 : 96))
+    }
+
+    private func analyticsMinutes(from label: String) -> Int {
+        Int(label.filter(\.isNumber)) ?? 0
+    }
+
+    private func analyticsSeed(_ key: String) -> Int {
+        key.unicodeScalars.reduce(0) { $0 + Int($1.value) }
     }
 
     // hf.services.libraryState
