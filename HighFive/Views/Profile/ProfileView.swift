@@ -369,6 +369,7 @@ struct ProfileView: View {
     private var accountPanel: some View {
         let authStatus = streamingStore.accountRuntimeStatus
         let session = streamingStore.currentSessionRuntime
+        let identityStatus = streamingStore.identityAccessRuntimeSnapshot
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
@@ -396,6 +397,34 @@ struct ProfileView: View {
                 .accessibilityIdentifier(authStatus.providerStatus.accessibilityIdentifier)
 
                 VStack(spacing: HFSpacing.xs) {
+                    HFAccountReadinessRow(
+                        title: "Real Identity Access",
+                        detail: identityStatus.detail,
+                        status: identityStatus.statusLabel,
+                        systemImage: "person.badge.shield.checkmark.fill",
+                        identifier: "hf.identity.access.dashboard"
+                    )
+
+                    if let accessSession = identityStatus.activeSession {
+                        HFAccountReadinessRow(
+                            title: "Secure Session",
+                            detail: "\(accessSession.provider) • Expires \(accessSession.expiresAtLabel)",
+                            status: accessSession.role.title,
+                            systemImage: "key.radiowaves.forward.fill",
+                            identifier: "hf.identity.access.session"
+                        )
+                    }
+
+                    ForEach(streamingStore.identityAccessRoleChecks) { roleCheck in
+                        HFAccountReadinessRow(
+                            title: roleCheck.title,
+                            detail: roleCheck.detail,
+                            status: roleCheck.status,
+                            systemImage: roleCheck.systemImage,
+                            identifier: "hf.identity.access.roles.\(roleCheck.id)"
+                        )
+                    }
+
                     HFAccountReadinessRow(
                         title: "Current local profile",
                         detail: selectedProfile.name,
@@ -464,10 +493,10 @@ struct ProfileView: View {
 
                     HFAccountReadinessRow(
                         title: "Delete Account",
-                        detail: authStatus.deletionRequest.detail,
-                        status: authStatus.deletionRequest.statusLabel,
+                        detail: identityStatus.deletionRequestStatus == "Requested" ? identityStatus.detail : authStatus.deletionRequest.detail,
+                        status: identityStatus.deletionRequestStatus,
                         systemImage: "trash.slash.fill",
-                        identifier: "hf.account.deleteRequest"
+                        identifier: "hf.identity.access.deleteRequest"
                     )
 
                     HFAccountReadinessRow(
@@ -481,12 +510,9 @@ struct ProfileView: View {
 
                 HStack(spacing: HFSpacing.sm) {
                     Button {
-                        mockMessage = ProfileMockMessage(
-                            title: "Account Readiness",
-                            body: "Account staging is local-first. Runtime auth config is required before provider validation."
-                        )
+                        streamingStore.signInWithDevelopmentIdentity(role: .creator)
                     } label: {
-                        Text("Review Account Readiness")
+                        Text("Development Sign In")
                             .font(HFTypography.smallAction)
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
@@ -495,14 +521,12 @@ struct ProfileView: View {
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.identity.access.signIn")
 
                     Button {
-                        mockMessage = ProfileMockMessage(
-                            title: "Local Profile",
-                            body: "\(selectedProfile.name) remains the active local viewing profile."
-                        )
+                        streamingStore.refreshIdentityAccessSession()
                     } label: {
-                        Text("Use Local Profile")
+                        Text("Refresh Session")
                             .font(HFTypography.smallAction)
                             .foregroundStyle(HFColors.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -511,6 +535,37 @@ struct ProfileView: View {
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.identity.access.refresh")
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        streamingStore.requestIdentityAccountDeletion()
+                    } label: {
+                        Text("Request Deletion")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(HFColors.surfaceElevated.opacity(0.72))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.identity.access.deleteRequestButton")
+
+                    Button {
+                        streamingStore.signOutIdentitySession()
+                    } label: {
+                        Text("Sign Out")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.identity.access.signOut")
                 }
             }
             .padding(HFSpacing.lg)

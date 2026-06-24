@@ -235,6 +235,11 @@ private enum HFCreatorProSpotlight {
     case productionBackendHealth
     case productionBackendCatalog
     case productionBackendFallback
+    case realIdentityDashboard
+    case realIdentitySignIn
+    case realIdentitySession
+    case realIdentityRoles
+    case realIdentityDeletion
     case contentBackendDashboard
     case contentBackendRepositories
     case contentBackendFetch
@@ -348,6 +353,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-production-backend-health") { return .productionBackendHealth }
         if arguments.contains("--hf-production-backend-catalog") { return .productionBackendCatalog }
         if arguments.contains("--hf-production-backend-fallback") { return .productionBackendFallback }
+        if arguments.contains("--hf-start-real-identity") { return .realIdentityDashboard }
+        if arguments.contains("--hf-identity-signin") { return .realIdentitySignIn }
+        if arguments.contains("--hf-identity-session") { return .realIdentitySession }
+        if arguments.contains("--hf-identity-roles") { return .realIdentityRoles }
+        if arguments.contains("--hf-identity-delete") { return .realIdentityDeletion }
         if arguments.contains("--hf-start-content-backend") { return .contentBackendDashboard }
         if arguments.contains("--hf-content-repositories") { return .contentBackendRepositories }
         if arguments.contains("--hf-content-fetch") { return .contentBackendFetch }
@@ -2388,6 +2398,16 @@ struct CreatorStudioView: View {
             productionBackendCatalogSection
         case .productionBackendFallback:
             productionBackendFallbackSection
+        case .realIdentityDashboard:
+            realIdentityAccessDashboardSection
+        case .realIdentitySignIn:
+            realIdentitySignInSection
+        case .realIdentitySession:
+            realIdentitySessionSection
+        case .realIdentityRoles:
+            realIdentityRolesSection
+        case .realIdentityDeletion:
+            realIdentityDeletionSection
         case .contentBackendDashboard:
             contentBackendFoundationSection
         case .contentBackendRepositories:
@@ -2480,6 +2500,7 @@ struct CreatorStudioView: View {
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
             productionBackendFoundationSection
+            realIdentityAccessDashboardSection
             contentBackendFoundationSection
             creatorProjectRuntimeDashboard
             creatorMediaImportRuntimeDashboard
@@ -4398,6 +4419,235 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.productionBackend.fallback")
+    }
+
+    private var realIdentityAccessDashboardSection: some View {
+        let identity = streamingStore.identityAccessRuntimeSnapshot
+        return creatorProSpotlight(
+            title: "Real Identity & Access",
+            detail: "Secure session storage, development sign-in, Sign in with Apple exchange contract, role authorization, session refresh, sign-out, and account deletion request path.",
+            systemImage: "person.badge.shield.checkmark.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.identity.access.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "State", value: identity.statusLabel)
+                    creatorProStat(title: "Role", value: identity.activeSession?.role.title ?? "Signed Out")
+                    creatorProStat(title: "Checks", value: "\(identity.roleChecks.count)")
+                    creatorProStat(title: "Audit", value: "\(identity.auditEvents.count)")
+                }
+
+                Text("Views -> HFStreamingStore -> Identity Runtime -> Keychain -> Backend Identity Contract")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(identity.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var realIdentitySignInSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Sign In & Local Development Mode",
+                    detail: "Simulator development identity can create viewer, creator, or admin sessions without production credentials. The Apple exchange endpoint is contract-ready for production setup.",
+                    systemImage: "apple.logo",
+                    accent: HFColors.cyanGlow
+                )
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        streamingStore.signInWithDevelopmentIdentity(role: .creator)
+                    } label: {
+                        Text("Creator Sign In")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.identity.access.signIn")
+
+                    Button {
+                        streamingStore.signInWithDevelopmentIdentity(role: .viewer)
+                    } label: {
+                        Text("Viewer Sign In")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.identity.access.viewerSignIn")
+                }
+
+                identitySessionSummary
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.identity.access.signInPanel")
+        .onAppear {
+            streamingStore.signInWithDevelopmentIdentity(role: .creator)
+        }
+    }
+
+    private var realIdentitySessionSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Session Refresh & Restore",
+                    detail: "Sessions are stored through Keychain, refreshed with finite expiration windows, and rejected when expired.",
+                    systemImage: "key.radiowaves.forward.fill",
+                    accent: HFColors.gold
+                )
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        streamingStore.refreshIdentityAccessSession()
+                    } label: {
+                        Text("Refresh Session")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        streamingStore.expireIdentityAccessSessionForQA()
+                    } label: {
+                        Text("Expire For QA")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42)
+                            .background(Color.white.opacity(0.10))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                identitySessionSummary
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.identity.access.session")
+        .onAppear {
+            if streamingStore.identityAccessRuntimeSnapshot.activeSession == nil {
+                streamingStore.signInWithDevelopmentIdentity(role: .creator)
+            }
+            streamingStore.refreshIdentityAccessSession()
+        }
+    }
+
+    private var realIdentityRolesSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Role Authorization",
+                    detail: "Viewer, creator, and admin permissions resolve through the active identity session. Creator workspace mutations are denied for viewer sessions.",
+                    systemImage: "person.2.badge.gearshape.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.identityAccessRoleChecks) { check in
+                        identityRoleCheckRow(check)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.identity.access.roles")
+        .onAppear {
+            if streamingStore.identityAccessRuntimeSnapshot.activeSession == nil {
+                streamingStore.signInWithDevelopmentIdentity(role: .creator)
+            }
+        }
+    }
+
+    private var realIdentityDeletionSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Account Deletion Request",
+                    detail: "The app records a deletion request path without deleting data until production identity-provider confirmation, retention policy, and backend execution are configured.",
+                    systemImage: "trash.slash.fill",
+                    accent: HFColors.gold
+                )
+
+                Button {
+                    streamingStore.requestIdentityAccountDeletion()
+                } label: {
+                    Text("Record Delete Request")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                identitySessionSummary
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.identityAccessAuditEvents) { event in
+                        identityAuditRow(event)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.identity.access.deleteRequest")
+        .onAppear {
+            if streamingStore.identityAccessRuntimeSnapshot.activeSession == nil {
+                streamingStore.signInWithDevelopmentIdentity(role: .creator)
+            }
+            streamingStore.requestIdentityAccountDeletion()
+        }
+    }
+
+    private var identitySessionSummary: some View {
+        let identity = streamingStore.identityAccessRuntimeSnapshot
+        return VStack(spacing: HFSpacing.xs) {
+            identityRoleCheckRow(
+                HFIdentityAccessRoleCheck(
+                    id: "runtime-state",
+                    title: "Runtime State",
+                    detail: identity.detail,
+                    status: identity.statusLabel,
+                    systemImage: "person.badge.key.fill"
+                )
+            )
+            if let session = identity.activeSession {
+                identityRoleCheckRow(
+                    HFIdentityAccessRoleCheck(
+                        id: "session",
+                        title: session.displayName,
+                        detail: "\(session.provider) • \(session.workspaceID) • Expires \(session.expiresAtLabel)",
+                        status: session.role.title,
+                        systemImage: "key.fill"
+                    )
+                )
+            }
+        }
     }
 
     private var creatorDraftWorkspaceDashboard: some View {
@@ -7897,6 +8147,74 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.productionBackend.endpoint.\(row.id)")
+    }
+
+    private func identityRoleCheckRow(_ row: HFIdentityAccessRoleCheck) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: row.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(row.status == "Denied" ? HFColors.violet : HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background((row.status == "Denied" ? HFColors.violet : HFColors.cyanGlow).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(row.title)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    Text(row.status)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(row.status == "Denied" ? HFColors.violet : HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text(row.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.identity.access.row.\(row.id)")
+    }
+
+    private func identityAuditRow(_ event: HFIdentityAccessAuditEvent) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background(HFColors.gold.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(event.action)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    Text(event.createdAtLabel)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text(event.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.identity.access.audit.\(event.id)")
     }
 
     private func contentBackendRelationshipRow(_ record: HFContentRelationshipRecord) -> some View {

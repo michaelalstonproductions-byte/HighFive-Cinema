@@ -164,6 +164,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInProductionBackend
+            || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
@@ -231,6 +232,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInProductionBackend
+            || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
@@ -355,6 +357,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInProductionBackend
+            || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
@@ -407,6 +410,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-production-backend-health")
             || arguments.contains("--hf-production-backend-catalog")
             || arguments.contains("--hf-production-backend-fallback")
+    }
+
+    private static var shouldStartInRealIdentity: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-real-identity")
+            || arguments.contains("--hf-identity-signin")
+            || arguments.contains("--hf-identity-session")
+            || arguments.contains("--hf-identity-roles")
+            || arguments.contains("--hf-identity-delete")
     }
 
     private static var connectInitialMode: HFConnectSpatialMode {

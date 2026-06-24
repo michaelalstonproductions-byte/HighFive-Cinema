@@ -51,6 +51,24 @@ export async function readBoundedJsonBody(request: IncomingMessage, bodyLimitByt
 }
 
 export function errorResponse(error: unknown): JsonResponse {
+  if (error instanceof Error && error.name === "UnauthorizedIdentityAccess") {
+    return {
+      statusCode: 401,
+      body: {
+        error: error.message,
+        detail: "A valid HighFive identity session is required."
+      }
+    };
+  }
+  if (error instanceof Error && error.name === "ForbiddenIdentityAccess") {
+    return {
+      statusCode: 403,
+      body: {
+        error: error.message,
+        detail: "This identity role cannot access the requested creator workspace."
+      }
+    };
+  }
   if (error instanceof ContractError) {
     return { statusCode: error.statusCode, body: errorBody(error) };
   }

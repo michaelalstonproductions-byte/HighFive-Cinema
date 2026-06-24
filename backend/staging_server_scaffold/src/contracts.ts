@@ -61,6 +61,14 @@ export const catalogPath = "/v1/catalog";
 export const contentDetailPath = "/v1/content/";
 export const creatorDetailPath = "/v1/creators/";
 export const collectionDetailPath = "/v1/collections/";
+export const identityDevSignInPath = "/v1/identity/dev/sign-in";
+export const identityAppleExchangePath = "/v1/identity/apple/exchange";
+export const identityRefreshPath = "/v1/identity/session/refresh";
+export const identitySignOutPath = "/v1/identity/sign-out";
+export const identityMePath = "/v1/identity/me";
+export const identityDeleteRequestPath = "/v1/identity/delete-request";
+export const identityAuditPath = "/v1/identity/audit";
+export const creatorWorkspacePath = "/v1/creator/workspace";
 
 export const contractStates = [
   "entitlement_approved",

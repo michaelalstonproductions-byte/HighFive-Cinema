@@ -2852,6 +2852,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var contentSnapshot: HFContentBackendSnapshot
     @Published private(set) var catalogRuntimeSnapshot: HFCatalogRuntimeSnapshot
     @Published private(set) var identitySessionRuntime: HFIdentitySessionRuntimeSnapshot
+    @Published private(set) var identityAccessRuntimeSnapshot: HFIdentityAccessRuntimeSnapshot
     @Published private(set) var productionCatalogRuntimeSnapshot: HFProductionCatalogRuntimeSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
@@ -2867,6 +2868,7 @@ final class HFStreamingStore: ObservableObject {
     private let backendGateway: HFBackendGateway
     private let authConfiguration: HFAuthConfiguration
     private let authService: HFAuthService
+    private let identityKeychainStore: HFIdentityKeychainSessionStore
     private let librarySyncConfiguration: HFLibrarySyncConfiguration
     private let downloadConfiguration: HFDownloadConfiguration
     private let entitlementConfiguration: HFEntitlementConfiguration
@@ -2909,6 +2911,7 @@ final class HFStreamingStore: ObservableObject {
         self.backendGateway = backendGateway ?? HFBackendGatewayFactory.make(configuration: backendConfiguration)
         self.authConfiguration = authConfiguration
         self.authService = resolvedAuthService
+        self.identityKeychainStore = HFIdentityKeychainSessionStore()
         self.librarySyncConfiguration = librarySyncConfiguration
         self.downloadConfiguration = downloadConfiguration
         self.entitlementConfiguration = entitlementConfiguration
@@ -2933,6 +2936,7 @@ final class HFStreamingStore: ObservableObject {
         contentSnapshot = loadedContentSnapshot
         catalogRuntimeSnapshot = .loading(reason: "Initial catalog load")
         identitySessionRuntime = .empty
+        identityAccessRuntimeSnapshot = .signedOut(reason: "No secure identity session restored yet.")
         productionCatalogConfiguration = HFProductionCatalogBackendConfiguration()
         productionCatalogRuntimeSnapshot = .localFallback(snapshot: loadedContentSnapshot, reason: "Production catalog backend disabled. Local content runtime remains active.")
         let profiles = Self.makeLocalProfiles(defaults: defaults)
@@ -2978,6 +2982,7 @@ final class HFStreamingStore: ObservableObject {
         seedLocalReleasePackageIfRequested()
         refreshMediaInspectionPreflight()
         rebuildCatalogRuntime(reason: "Initial local catalog load")
+        restoreIdentityAccessSessionFromKeychain(reason: "Initial secure session restore")
         rebuildIdentitySessionRuntime(reason: "Initial local session load")
         if productionCatalogConfiguration.isRemoteEnabled {
             Task { await self.refreshProductionCatalogRuntime() }
@@ -3488,13 +3493,30 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var activeCreatorProfile: HFCreatorProfile {
-        creatorProfiles.first { profile in
+        if let creatorID = activeIdentityAccessSession?.creatorID,
+           let authenticatedCreator = creatorProfiles.first(where: { $0.creator.id == creatorID }) {
+            return authenticatedCreator
+        }
+        return creatorProfiles.first { profile in
             profile.creator.name.localizedCaseInsensitiveCompare(activeViewingProfile.displayName) == .orderedSame
         } ?? creatorProfiles.first ?? creatorProfile(for: Creator(id: "local-creator", name: activeViewingProfile.displayName, role: "Creator", avatarAssetName: nil, featuredMovieIDs: []))
     }
 
     var currentSessionRuntime: HFIdentitySessionRuntimeSnapshot {
         identitySessionRuntime
+    }
+
+    var activeIdentityAccessSession: HFIdentityAccessSession? {
+        guard let session = identityAccessRuntimeSnapshot.activeSession, !session.isExpired else { return nil }
+        return session
+    }
+
+    var identityAccessRoleChecks: [HFIdentityAccessRoleCheck] {
+        identityAccessRuntimeSnapshot.roleChecks
+    }
+
+    var identityAccessAuditEvents: [HFIdentityAccessAuditEvent] {
+        identityAccessRuntimeSnapshot.auditEvents
     }
 
     var sessionPermissionRecords: [HFSessionPermissionRecord] {
@@ -3509,8 +3531,8 @@ final class HFStreamingStore: ObservableObject {
             HFSessionPermissionRecord(
                 id: "create",
                 title: "Create",
-                detail: activeViewingProfile.role == "Creator" ? "Creator workspace can edit local drafts and review publishing state." : "Creator workspace is available as local preview context.",
-                status: activeViewingProfile.role == "Creator" ? "Owner" : "Preview",
+                detail: activeIdentityAccessSession?.role == .creator || activeIdentityAccessSession?.role == .admin ? "Authenticated creator session can edit local drafts and review publishing state." : "Viewer sessions keep creator mutations locked.",
+                status: activeIdentityAccessSession?.role == .creator || activeIdentityAccessSession?.role == .admin ? "Allowed" : "Denied",
                 systemImage: "wand.and.stars"
             ),
             HFSessionPermissionRecord(
@@ -3543,7 +3565,7 @@ final class HFStreamingStore: ObservableObject {
                 id: "creator",
                 title: "Creator Workspace",
                 detail: "\(creatorPublishingContents.count) projects mapped to \(activeCreatorProfile.creator.name).",
-                status: activeViewingProfile.role == "Creator" ? "Owner" : "Preview",
+                status: activeIdentityAccessSession?.role == .creator || activeIdentityAccessSession?.role == .admin ? "Authenticated" : "Locked",
                 systemImage: "wand.and.stars.inverse"
             ),
             HFWorkspaceSessionRecord(
@@ -4472,28 +4494,141 @@ final class HFStreamingStore: ObservableObject {
         rebuildIdentitySessionRuntime(reason: reason)
     }
 
+    func signInWithDevelopmentIdentity(role: HFIdentityAccessRole = .creator) {
+        let session = HFIdentityAccessSession.development(
+            role: role,
+            profile: activeViewingProfile,
+            creatorID: creatorProfiles.first?.creator.id
+        )
+        identityKeychainStore.save(session)
+        let event = identityAuditEvent(action: "Sign In", detail: "\(role.title) development session created and stored in Keychain.")
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: .localDevelopment,
+            session: session,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: "Not Requested",
+            detail: "Local development identity is active. Production Sign in with Apple requires Apple Developer capability setup."
+        )
+        refreshAuthRuntimeStatus()
+        rebuildIdentitySessionRuntime(reason: "Development identity signed in")
+    }
+
+    func signOutIdentitySession() {
+        identityKeychainStore.delete()
+        let event = identityAuditEvent(action: "Sign Out", detail: "Secure identity session removed from Keychain.")
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: .signedOut,
+            session: nil,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: "Not Requested",
+            detail: "Signed out of the active identity session. Local profile mode remains available."
+        )
+        refreshAuthRuntimeStatus()
+        rebuildIdentitySessionRuntime(reason: "Identity session signed out")
+    }
+
+    func refreshIdentityAccessSession() {
+        guard let session = identityAccessRuntimeSnapshot.activeSession else {
+            restoreIdentityAccessSessionFromKeychain(reason: "No in-memory session; checked Keychain")
+            return
+        }
+        let refreshed = session.refreshed()
+        identityKeychainStore.save(refreshed)
+        let event = identityAuditEvent(action: "Refresh", detail: "Session refreshed until \(refreshed.expiresAtLabel).")
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: refreshed.provider == "Development Identity" ? .localDevelopment : .remoteAuthenticated,
+            session: refreshed,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: identityAccessRuntimeSnapshot.deletionRequestStatus,
+            detail: "Identity session refreshed and restored through secure storage."
+        )
+        rebuildIdentitySessionRuntime(reason: "Identity session refreshed")
+    }
+
+    func requestIdentityAccountDeletion() {
+        guard let session = identityAccessRuntimeSnapshot.activeSession else { return }
+        let event = identityAuditEvent(action: "Deletion Request", detail: "Account deletion request recorded for \(session.displayName).")
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: .deletionRequested,
+            session: session,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: "Requested",
+            detail: "Deletion request is recorded locally. Production fulfillment requires provider confirmation and retention policy execution."
+        )
+        rebuildIdentitySessionRuntime(reason: "Account deletion request recorded")
+    }
+
+    func expireIdentityAccessSessionForQA() {
+        guard let session = identityAccessRuntimeSnapshot.activeSession else { return }
+        let expired = session.expiredForQA()
+        identityKeychainStore.save(expired)
+        restoreIdentityAccessSessionFromKeychain(reason: "QA expired session recovery")
+    }
+
+    private func restoreIdentityAccessSessionFromKeychain(reason: String) {
+        guard let session = identityKeychainStore.load() else {
+            identityAccessRuntimeSnapshot = .signedOut(reason: reason)
+            return
+        }
+        if session.isExpired {
+            let event = identityAuditEvent(action: "Expired", detail: "Expired secure session rejected during restore.")
+            identityKeychainStore.delete()
+            identityAccessRuntimeSnapshot = .snapshot(
+                state: .expired,
+                session: nil,
+                auditEvents: trimmedIdentityEvents(appending: event),
+                deletionRequestStatus: "Not Requested",
+                detail: "Stored session expired and was removed. Sign in again to continue."
+            )
+            return
+        }
+        let event = identityAuditEvent(action: "Restore", detail: "Secure identity session restored from Keychain.")
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: session.provider == "Development Identity" ? .localDevelopment : .remoteAuthenticated,
+            session: session,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: "Not Requested",
+            detail: reason
+        )
+    }
+
     private func rebuildIdentitySessionRuntime(reason: String) {
         let profile = activeViewingProfile
         let creator = activeCreatorProfile.creator
-        let workspaceTitle = profile.role == "Creator" ? "Creator Workspace" : "Watch Workspace"
-        let workspaceScope = profile.role == "Creator" ? "Drafts, publishing, analytics, and local review" : "Streaming, library, and profile-scoped recommendations"
-        let permissionSummary = profile.role == "Creator" ? "Owner permissions for local creator workspaces" : "Viewer permissions with creator preview access"
+        let accessSession = activeIdentityAccessSession
+        let viewerRole = accessSession?.role.title ?? profile.role
+        let workspaceTitle = accessSession?.role.workspaceTitle ?? (profile.role == "Creator" ? "Creator Workspace" : "Watch Workspace")
+        let workspaceScope = accessSession?.role == .creator || accessSession?.role == .admin ? "Drafts, publishing, analytics, and role-gated creator mutations" : "Streaming, library, and profile-scoped recommendations"
+        let permissionSummary = accessSession == nil ? "Local profile fallback with signed-out production identity" : "\(viewerRole) permissions resolved from secure identity session"
         identitySessionRuntime = HFIdentitySessionRuntimeSnapshot(
-            state: .localActive,
-            activeProfileID: profile.id,
-            displayName: profile.displayName,
-            viewerRole: profile.role,
+            state: accessSession == nil ? .localActive : .localActive,
+            activeProfileID: accessSession?.userID ?? profile.id,
+            displayName: accessSession?.displayName ?? profile.displayName,
+            viewerRole: viewerRole,
             avatarSymbol: profile.avatarSymbol,
             creatorName: creator.name,
             creatorRole: creator.role,
-            workspaceID: profile.role == "Creator" ? "creator-workspace" : "watch-workspace",
+            workspaceID: accessSession?.workspaceID ?? (profile.role == "Creator" ? "creator-workspace" : "watch-workspace"),
             workspaceTitle: workspaceTitle,
             workspaceScope: workspaceScope,
             permissionSummary: permissionSummary,
-            sessionMode: "Local Session",
+            sessionMode: accessSession == nil ? "Local Profile Fallback" : identityAccessRuntimeSnapshot.statusLabel,
             reason: reason,
-            updatedAtLabel: "Local session resolved"
+            updatedAtLabel: accessSession == nil ? "Local session resolved" : "Identity session resolved"
         )
+    }
+
+    private func identityAuditEvent(action: String, detail: String) -> HFIdentityAccessAuditEvent {
+        HFIdentityAccessAuditEvent(
+            id: "identity-\(UUID().uuidString.lowercased())",
+            action: action,
+            detail: detail,
+            createdAt: Date()
+        )
+    }
+
+    private func trimmedIdentityEvents(appending event: HFIdentityAccessAuditEvent) -> [HFIdentityAccessAuditEvent] {
+        Array((identityAccessRuntimeSnapshot.auditEvents + [event]).suffix(8))
     }
 
     var profileInitials: String {

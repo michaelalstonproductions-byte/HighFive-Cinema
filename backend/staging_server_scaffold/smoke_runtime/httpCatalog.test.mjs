@@ -7,7 +7,10 @@ test("catalog: GET /ready reports seed catalog readiness", async () => {
   assertJsonResponse(result, 200);
   assert.equal(result.json.status, "ready");
   assert.equal(result.json.seed_data_loaded, true);
-  assert.equal(result.json.auth_enabled, false);
+  assert.equal(result.json.auth_enabled, true);
+  assert.equal(result.json.sign_in_with_apple_contract, true);
+  assert.equal(result.json.development_identity_mode, true);
+  assert.equal(result.json.role_authorization, true);
   assert.equal(result.json.uploads_enabled, false);
   assert.equal(result.json.payments_enabled, false);
 });

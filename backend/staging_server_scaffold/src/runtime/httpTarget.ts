@@ -3,14 +3,33 @@ import {
   catalogPath,
   collectionDetailPath,
   contentDetailPath,
+  creatorWorkspacePath,
   creatorDetailPath,
   entitlementValidationPath,
+  identityAppleExchangePath,
+  identityAuditPath,
+  identityDeleteRequestPath,
+  identityDevSignInPath,
+  identityMePath,
+  identityRefreshPath,
+  identitySignOutPath,
   openAPIPath,
   playbackDescriptorPath,
   readinessPath
 } from "../contracts.js";
 import { openAPISpec } from "../catalog/openapi.js";
 import { catalogSummary, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
+import {
+  createDevelopmentIdentitySession,
+  creatorWorkspaceMutation,
+  currentIdentitySession,
+  exchangeAppleIdentity,
+  identityAuditTrail,
+  identityReadinessSummary,
+  refreshIdentitySession,
+  requestAccountDeletion,
+  signOutIdentitySession
+} from "../routes/identity.js";
 import { createEntitlementRoute } from "../routes/entitlements.js";
 import { createPlaybackRoute } from "../routes/playback.js";
 import { descriptorSignerForRequest, entitlementProviderForRequest } from "./providerFactory.js";
@@ -65,6 +84,88 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, catalogSummary());
+        return;
+      }
+
+      if (path === identityDevSignInPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, createDevelopmentIdentitySession(body));
+        return;
+      }
+
+      if (path === identityAppleExchangePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, exchangeAppleIdentity(body));
+        return;
+      }
+
+      if (path === identityRefreshPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, refreshIdentitySession(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === identitySignOutPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, signOutIdentitySession(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === identityMePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, currentIdentitySession(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === identityDeleteRequestPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, requestAccountDeletion(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === identityAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, identityAuditTrail());
+        return;
+      }
+
+      if (path === creatorWorkspacePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, creatorWorkspaceMutation(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -151,6 +252,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
 
 function readinessBody(config: RuntimeConfig): Record<string, string | number | boolean> {
   const summary = catalogSummary();
+  const identity = identityReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -161,11 +263,18 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     catalog_creators: summary.total_creators,
     catalog_collections: summary.total_collections,
     uploads_enabled: false,
-    auth_enabled: false,
+    auth_enabled: Boolean(identity.auth_enabled),
+    sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
+    development_identity_mode: Boolean(identity.development_identity_mode),
+    role_authorization: Boolean(identity.role_authorization),
     payments_enabled: false
   };
 }
 
 function routeID(path: string, prefix: string): string {
   return decodeURIComponent(path.slice(prefix.length));
+}
+
+function authHeader(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
