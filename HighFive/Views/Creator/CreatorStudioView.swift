@@ -231,6 +231,10 @@ private enum HFCreatorProSpotlight {
     case productionEnvironmentSwitching
     case productionReadinessReports
     case productionDependencyGraph
+    case productionBackendFoundation
+    case productionBackendHealth
+    case productionBackendCatalog
+    case productionBackendFallback
     case contentBackendDashboard
     case contentBackendRepositories
     case contentBackendFetch
@@ -340,6 +344,10 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-production-environments") { return .productionEnvironmentSwitching }
         if arguments.contains("--hf-production-readiness") { return .productionReadinessReports }
         if arguments.contains("--hf-production-dependencies") { return .productionDependencyGraph }
+        if arguments.contains("--hf-start-production-backend") { return .productionBackendFoundation }
+        if arguments.contains("--hf-production-backend-health") { return .productionBackendHealth }
+        if arguments.contains("--hf-production-backend-catalog") { return .productionBackendCatalog }
+        if arguments.contains("--hf-production-backend-fallback") { return .productionBackendFallback }
         if arguments.contains("--hf-start-content-backend") { return .contentBackendDashboard }
         if arguments.contains("--hf-content-repositories") { return .contentBackendRepositories }
         if arguments.contains("--hf-content-fetch") { return .contentBackendFetch }
@@ -2372,6 +2380,14 @@ struct CreatorStudioView: View {
             productionReadinessReportsSection
         case .productionDependencyGraph:
             productionDependencyGraphSection
+        case .productionBackendFoundation:
+            productionBackendFoundationSection
+        case .productionBackendHealth:
+            productionBackendHealthSection
+        case .productionBackendCatalog:
+            productionBackendCatalogSection
+        case .productionBackendFallback:
+            productionBackendFallbackSection
         case .contentBackendDashboard:
             contentBackendFoundationSection
         case .contentBackendRepositories:
@@ -2463,6 +2479,7 @@ struct CreatorStudioView: View {
             rightsLicensingDashboardSection
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
+            productionBackendFoundationSection
             contentBackendFoundationSection
             creatorProjectRuntimeDashboard
             creatorMediaImportRuntimeDashboard
@@ -4289,6 +4306,98 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.contentBackend.relationships")
+    }
+
+    private var productionBackendFoundationSection: some View {
+        creatorProSpotlight(
+            title: "Production Backend Service Foundation",
+            detail: "Read-only catalog service, OpenAPI contract, PostgreSQL-compatible schema, migration fixture, and iOS API client with local fallback.",
+            systemImage: "server.rack",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.productionBackend.foundation"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Titles", value: "\(streamingStore.productionCatalogRuntimeSnapshot.titleCount)")
+                    creatorProStat(title: "Creators", value: "\(streamingStore.productionCatalogRuntimeSnapshot.creatorCount)")
+                    creatorProStat(title: "Series", value: "\(streamingStore.productionCatalogRuntimeSnapshot.seriesCount)")
+                    creatorProStat(title: "Collections", value: "\(streamingStore.productionCatalogRuntimeSnapshot.collectionCount)")
+                }
+
+                Text("Views -> HFStreamingStore -> API Client -> Backend Catalog -> Repository fallback")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("P29A introduces read-only backend service behavior only. Authentication, uploads, payments, media processing, subscriptions, and publishing mutations remain out of scope.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .task {
+            await streamingStore.refreshProductionCatalogRuntime()
+        }
+    }
+
+    private var productionBackendHealthSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Backend Health & Readiness",
+                    detail: "The local service exposes health, readiness, OpenAPI, catalog, detail, creator, and collection endpoints with structured JSON responses.",
+                    systemImage: "heart.text.square.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionCatalogEndpointRows) { row in
+                        productionBackendEndpointRow(row)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBackend.health")
+    }
+
+    private var productionBackendCatalogSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Read-Only Catalog Runtime", actionTitle: streamingStore.productionCatalogRuntimeSnapshot.statusLabel)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.productionCatalogRuntimeStatusRows) { metric in
+                        contentBackendRailCard(metric)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBackend.catalog")
+    }
+
+    private var productionBackendFallbackSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Local Fallback Preserved",
+                    detail: "If the loopback backend is unavailable or the feature flag is absent, Home, Search, Library, Creator Studio, and Movie Detail continue to read from the local repository stack.",
+                    systemImage: "arrow.uturn.backward.circle.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionCatalogRuntimeStatusRows) { metric in
+                        contentBackendMetricRow(metric)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBackend.fallback")
     }
 
     private var creatorDraftWorkspaceDashboard: some View {
@@ -7753,6 +7862,41 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.contentBackend.persistence.\(metric.id)")
+    }
+
+    private func productionBackendEndpointRow(_ row: HFProductionCatalogEndpointRow) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: row.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background(HFColors.cyanGlow.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(row.title)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    Text(row.status)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text(row.path)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.76)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBackend.endpoint.\(row.id)")
     }
 
     private func contentBackendRelationshipRow(_ record: HFContentRelationshipRecord) -> some View {

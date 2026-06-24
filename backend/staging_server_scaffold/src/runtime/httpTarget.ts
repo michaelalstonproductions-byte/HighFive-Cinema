@@ -1,5 +1,16 @@
 import { createServer, type Server } from "node:http";
-import { entitlementValidationPath, playbackDescriptorPath } from "../contracts.js";
+import {
+  catalogPath,
+  collectionDetailPath,
+  contentDetailPath,
+  creatorDetailPath,
+  entitlementValidationPath,
+  openAPIPath,
+  playbackDescriptorPath,
+  readinessPath
+} from "../contracts.js";
+import { openAPISpec } from "../catalog/openapi.js";
+import { catalogSummary, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
 import { createEntitlementRoute } from "../routes/entitlements.js";
 import { createPlaybackRoute } from "../routes/playback.js";
 import { descriptorSignerForRequest, entitlementProviderForRequest } from "./providerFactory.js";
@@ -24,6 +35,66 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, healthBody(config));
+        return;
+      }
+
+      if (path === readinessPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, readinessBody(config));
+        return;
+      }
+
+      if (path === openAPIPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, openAPISpec());
+        return;
+      }
+
+      if (path === catalogPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, catalogSummary());
+        return;
+      }
+
+      if (path.startsWith(contentDetailPath)) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, contentDetail(routeID(path, contentDetailPath)));
+        return;
+      }
+
+      if (path.startsWith(creatorDetailPath)) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, creatorDetail(routeID(path, creatorDetailPath)));
+        return;
+      }
+
+      if (path.startsWith(collectionDetailPath)) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, collectionDetail(routeID(path, collectionDetailPath)));
         return;
       }
 
@@ -70,8 +141,31 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     health_path: "/health",
     entitlement_path: entitlementValidationPath,
     descriptor_path: playbackDescriptorPath,
+    readiness_path: readinessPath,
+    catalog_path: catalogPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
   };
+}
+
+function readinessBody(config: RuntimeConfig): Record<string, string | number | boolean> {
+  const summary = catalogSummary();
+  return {
+    status: "ready",
+    environment: config.backendEnv,
+    database_schema: "postgresql_compatible_v1",
+    migrations_required: true,
+    seed_data_loaded: true,
+    catalog_titles: summary.total_titles,
+    catalog_creators: summary.total_creators,
+    catalog_collections: summary.total_collections,
+    uploads_enabled: false,
+    auth_enabled: false,
+    payments_enabled: false
+  };
+}
+
+function routeID(path: string, prefix: string): string {
+  return decodeURIComponent(path.slice(prefix.length));
 }

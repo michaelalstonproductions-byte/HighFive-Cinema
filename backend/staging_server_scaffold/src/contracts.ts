@@ -55,6 +55,12 @@ export type PlaybackDescriptorResponse = {
 
 export const entitlementValidationPath = "/entitlements/validate";
 export const playbackDescriptorPath = "/playback/descriptor";
+export const readinessPath = "/ready";
+export const openAPIPath = "/openapi.json";
+export const catalogPath = "/v1/catalog";
+export const contentDetailPath = "/v1/content/";
+export const creatorDetailPath = "/v1/creators/";
+export const collectionDetailPath = "/v1/collections/";
 
 export const contractStates = [
   "entitlement_approved",

@@ -163,6 +163,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
+            || Self.shouldStartInProductionBackend
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
@@ -229,6 +230,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
+            || Self.shouldStartInProductionBackend
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
@@ -352,6 +354,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
+            || Self.shouldStartInProductionBackend
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
@@ -396,6 +399,14 @@ struct HFStreamingRootView: View {
 
     private static var shouldStartInBackendStatus: Bool {
         ProcessInfo.processInfo.arguments.contains("--hf-start-backend-status")
+    }
+
+    private static var shouldStartInProductionBackend: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-production-backend")
+            || arguments.contains("--hf-production-backend-health")
+            || arguments.contains("--hf-production-backend-catalog")
+            || arguments.contains("--hf-production-backend-fallback")
     }
 
     private static var connectInitialMode: HFConnectSpatialMode {

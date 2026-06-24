@@ -1,0 +1,7 @@
+{
+  "generated_at": "2026-06-24T00:00:00.000Z",
+  "note": "P29A seed fixture mirrors src/catalog/catalogSeed.ts for local backend smoke validation.",
+  "movies": ["friendly", "paranormall-s1", "behind-the-vision"],
+  "creators": ["maya-hart", "noah-vale"],
+  "collections": ["featured", "highfive-originals", "creator-published", "documentary", "series"]
+}

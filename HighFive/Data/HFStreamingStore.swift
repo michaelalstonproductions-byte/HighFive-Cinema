@@ -2389,6 +2389,445 @@ struct HFBackendRuntimeConfigRow: Identifiable, Codable, Equatable {
     var status: String
 }
 
+enum HFProductionCatalogBackendState: String, Hashable {
+    case disabled = "Local Only"
+    case fetching = "Fetching"
+    case ready = "Backend Ready"
+    case localFallback = "Local Fallback"
+    case failed = "Backend Unavailable"
+}
+
+struct HFProductionCatalogRuntimeSnapshot: Hashable {
+    var state: HFProductionCatalogBackendState
+    var source: String
+    var endpoint: String
+    var titleCount: Int
+    var creatorCount: Int
+    var seriesCount: Int
+    var collectionCount: Int
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.rawValue }
+
+    static func localFallback(snapshot: HFContentBackendSnapshot, reason: String) -> HFProductionCatalogRuntimeSnapshot {
+        HFProductionCatalogRuntimeSnapshot(
+            state: .localFallback,
+            source: "Local Content Snapshot",
+            endpoint: "Local repository fallback",
+            titleCount: snapshot.movies.count,
+            creatorCount: snapshot.creators.count,
+            seriesCount: snapshot.series.count,
+            collectionCount: snapshot.collections.count,
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local fallback active"
+        )
+    }
+}
+
+struct HFProductionCatalogEndpointRow: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var path: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFProductionCatalogBackendConfiguration {
+    static let modeKey = "HF_CINEMA_BACKEND_MODE"
+    static let baseURLKey = "HF_CINEMA_BACKEND_BASE_URL"
+
+    var isRemoteEnabled: Bool
+    var baseURL: URL
+
+    init(arguments: [String] = ProcessInfo.processInfo.arguments, environment: [String: String] = ProcessInfo.processInfo.environment) {
+        let requestedMode = environment[Self.modeKey]?.lowercased()
+        isRemoteEnabled = requestedMode == "remote"
+            || arguments.contains("--hf-production-backend-catalog")
+            || arguments.contains("--hf-start-production-backend")
+
+        let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
+        baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
+    }
+}
+
+enum HFProductionCatalogAPIError: Error, LocalizedError {
+    case invalidURL(String)
+    case invalidResponse
+    case httpStatus(Int)
+    case decodingFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL(let path):
+            return "Invalid catalog URL for \(path)"
+        case .invalidResponse:
+            return "Catalog endpoint returned a non-HTTP response"
+        case .httpStatus(let status):
+            return "Catalog endpoint returned HTTP \(status)"
+        case .decodingFailed(let detail):
+            return "Catalog response could not be decoded: \(detail)"
+        }
+    }
+}
+
+protocol HFProductionCatalogAPIClient {
+    func fetchCatalog() async throws -> HFProductionCatalogResponse
+}
+
+struct HFLocalProductionCatalogAPIClient: HFProductionCatalogAPIClient {
+    var snapshot: HFContentBackendSnapshot
+
+    func fetchCatalog() async throws -> HFProductionCatalogResponse {
+        HFProductionCatalogResponse.local(snapshot: snapshot)
+    }
+}
+
+struct HFRemoteProductionCatalogAPIClient: HFProductionCatalogAPIClient {
+    var baseURL: URL
+    var session: URLSession = .shared
+    var retryCount: Int = 1
+
+    func fetchCatalog() async throws -> HFProductionCatalogResponse {
+        var lastError: Error?
+        for attempt in 0...retryCount {
+            do {
+                let response = try await fetch(path: "/v1/catalog")
+                return response
+            } catch {
+                lastError = error
+                if attempt == retryCount { break }
+            }
+        }
+        throw lastError ?? HFProductionCatalogAPIError.invalidResponse
+    }
+
+    private func fetch(path: String) async throws -> HFProductionCatalogResponse {
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw HFProductionCatalogAPIError.invalidURL(path)
+        }
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw HFProductionCatalogAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw HFProductionCatalogAPIError.httpStatus(httpResponse.statusCode)
+        }
+        do {
+            return try JSONDecoder().decode(HFProductionCatalogResponse.self, from: data)
+        } catch {
+            throw HFProductionCatalogAPIError.decodingFailed(error.localizedDescription)
+        }
+    }
+}
+
+struct HFProductionCatalogResponse: Codable, Hashable {
+    var generatedAt: String
+    var source: String
+    var totalTitles: Int
+    var totalCreators: Int
+    var totalSeries: Int
+    var totalCollections: Int
+    var movies: [HFProductionCatalogMovieDTO]
+    var creators: [HFProductionCatalogCreatorDTO]
+    var series: [HFProductionCatalogSeriesDTO]
+    var collections: [HFProductionCatalogCollectionDTO]
+
+    private enum CodingKeys: String, CodingKey {
+        case generatedAt = "generated_at"
+        case source
+        case totalTitles = "total_titles"
+        case totalCreators = "total_creators"
+        case totalSeries = "total_series"
+        case totalCollections = "total_collections"
+        case movies
+        case creators
+        case series
+        case collections
+    }
+
+    static func local(snapshot: HFContentBackendSnapshot) -> HFProductionCatalogResponse {
+        HFProductionCatalogResponse(
+            generatedAt: snapshot.updatedAtLabel,
+            source: "local_snapshot",
+            totalTitles: snapshot.movies.count,
+            totalCreators: snapshot.creators.count,
+            totalSeries: snapshot.series.count,
+            totalCollections: snapshot.collections.count,
+            movies: snapshot.movies.map(HFProductionCatalogMovieDTO.init(movie:)),
+            creators: snapshot.creators.map(HFProductionCatalogCreatorDTO.init(creator:)),
+            series: snapshot.series.map(HFProductionCatalogSeriesDTO.init(series:)),
+            collections: snapshot.collections.map(HFProductionCatalogCollectionDTO.init(collection:))
+        )
+    }
+}
+
+struct HFProductionCatalogMovieDTO: Codable, Hashable {
+    var id: String
+    var title: String
+    var subtitle: String
+    var synopsis: String
+    var year: String
+    var rating: String
+    var duration: String
+    var genres: [String]
+    var posterAssetName: String?
+    var backdropAssetName: String?
+    var creatorID: String?
+    var creatorName: String
+    var isOriginal: Bool
+    var isComingSoon: Bool
+    var isDownloaded: Bool
+    var progress: Double?
+    var collectionIDs: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case subtitle
+        case synopsis
+        case year
+        case rating
+        case duration
+        case genres
+        case posterAssetName = "poster_asset_name"
+        case backdropAssetName = "backdrop_asset_name"
+        case creatorID = "creator_id"
+        case creatorName = "creator_name"
+        case isOriginal = "is_original"
+        case isComingSoon = "is_coming_soon"
+        case isDownloaded = "is_downloaded"
+        case progress
+        case collectionIDs = "collection_ids"
+    }
+
+    init(movie: Movie) {
+        id = movie.id
+        title = movie.title
+        subtitle = movie.subtitle
+        synopsis = movie.synopsis
+        year = movie.year
+        rating = movie.rating
+        duration = movie.duration
+        genres = movie.genres
+        posterAssetName = movie.posterAssetName
+        backdropAssetName = movie.backdropAssetName
+        creatorID = nil
+        creatorName = movie.creatorName
+        isOriginal = movie.isOriginal
+        isComingSoon = movie.isComingSoon
+        isDownloaded = movie.isDownloaded
+        progress = movie.progress
+        collectionIDs = []
+    }
+
+    var movie: Movie {
+        Movie(
+            id: id,
+            title: title,
+            subtitle: subtitle,
+            synopsis: synopsis,
+            year: year,
+            rating: rating,
+            duration: duration,
+            genres: genres,
+            posterAssetName: posterAssetName,
+            backdropAssetName: backdropAssetName,
+            creatorName: creatorName,
+            isOriginal: isOriginal,
+            isComingSoon: isComingSoon,
+            isDownloaded: isDownloaded,
+            progress: progress
+        )
+    }
+}
+
+struct HFProductionCatalogCreatorDTO: Codable, Hashable {
+    var id: String
+    var name: String
+    var role: String
+    var avatarAssetName: String?
+    var featuredMovieIDs: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case role
+        case avatarAssetName = "avatar_asset_name"
+        case featuredMovieIDs = "featured_movie_ids"
+    }
+
+    init(creator: Creator) {
+        id = creator.id
+        name = creator.name
+        role = creator.role
+        avatarAssetName = creator.avatarAssetName
+        featuredMovieIDs = creator.featuredMovieIDs
+    }
+
+    var creator: Creator {
+        Creator(id: id, name: name, role: role, avatarAssetName: avatarAssetName, featuredMovieIDs: featuredMovieIDs)
+    }
+}
+
+struct HFProductionCatalogEpisodeDTO: Codable, Hashable {
+    var id: String
+    var seriesID: String
+    var seasonNumber: Int
+    var episodeNumber: Int
+    var title: String
+    var synopsis: String
+    var runtime: String
+    var releaseState: String
+    var progress: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case seriesID = "series_id"
+        case seasonNumber = "season_number"
+        case episodeNumber = "episode_number"
+        case title
+        case synopsis
+        case runtime
+        case releaseState = "release_state"
+        case progress
+    }
+
+    init(episode: HFEpisodeRecord) {
+        id = episode.id
+        seriesID = episode.seriesID
+        seasonNumber = episode.seasonNumber
+        episodeNumber = episode.episodeNumber
+        title = episode.title
+        synopsis = episode.synopsis
+        runtime = episode.runtime
+        releaseState = episode.releaseState.rawValue.lowercased()
+        progress = episode.progress
+    }
+
+    var episode: HFEpisodeRecord {
+        HFEpisodeRecord(
+            id: id,
+            seriesID: seriesID,
+            seasonNumber: seasonNumber,
+            episodeNumber: episodeNumber,
+            title: title,
+            synopsis: synopsis,
+            runtime: runtime,
+            artworkStatus: .ready,
+            releaseState: HFCreatorReleaseState(rawValue: releaseState.capitalized) ?? .published,
+            progress: progress
+        )
+    }
+}
+
+struct HFProductionCatalogSeasonDTO: Codable, Hashable {
+    var id: String
+    var seriesID: String
+    var seasonNumber: Int
+    var title: String
+    var episodes: [HFProductionCatalogEpisodeDTO]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case seriesID = "series_id"
+        case seasonNumber = "season_number"
+        case title
+        case episodes
+    }
+
+    init(season: HFSeasonRecord) {
+        id = season.id
+        seriesID = season.seriesID
+        seasonNumber = season.seasonNumber
+        title = season.title
+        episodes = season.episodes.map(HFProductionCatalogEpisodeDTO.init(episode:))
+    }
+
+    var season: HFSeasonRecord {
+        HFSeasonRecord(id: id, seriesID: seriesID, seasonNumber: seasonNumber, title: title, episodes: episodes.map(\.episode))
+    }
+}
+
+struct HFProductionCatalogSeriesDTO: Codable, Hashable {
+    var id: String
+    var title: String
+    var synopsis: String
+    var creatorID: String?
+    var creatorName: String
+    var genre: String
+    var releaseState: String
+    var heroMovieID: String
+    var seasons: [HFProductionCatalogSeasonDTO]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case synopsis
+        case creatorID = "creator_id"
+        case creatorName = "creator_name"
+        case genre
+        case releaseState = "release_state"
+        case heroMovieID = "hero_movie_id"
+        case seasons
+    }
+
+    init(series: HFSeriesRecord) {
+        id = series.id
+        title = series.title
+        synopsis = series.synopsis
+        creatorID = nil
+        creatorName = series.creatorName
+        genre = series.genre
+        releaseState = series.status.rawValue.lowercased()
+        heroMovieID = series.heroMovie.id
+        seasons = series.seasons.map(HFProductionCatalogSeasonDTO.init(season:))
+    }
+
+    func series(using movies: [Movie]) -> HFSeriesRecord? {
+        guard let hero = movies.first(where: { $0.id == heroMovieID }) ?? movies.first(where: { $0.id == id }) else {
+            return nil
+        }
+        return HFSeriesRecord(
+            id: id,
+            title: title,
+            synopsis: synopsis,
+            creatorName: creatorName,
+            genre: genre,
+            status: HFCreatorReleaseState(rawValue: releaseState.capitalized) ?? .published,
+            seasons: seasons.map(\.season),
+            heroMovie: hero
+        )
+    }
+}
+
+struct HFProductionCatalogCollectionDTO: Codable, Hashable {
+    var id: String
+    var title: String
+    var subtitle: String?
+    var movieIDs: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case subtitle
+        case movieIDs = "movie_ids"
+    }
+
+    init(collection: Category) {
+        id = collection.id
+        title = collection.title
+        subtitle = collection.subtitle
+        movieIDs = collection.movies.map(\.id)
+    }
+
+    func collection(using movies: [Movie]) -> Category {
+        Category(id: id, title: title, subtitle: subtitle, movies: movieIDs.compactMap { movieID in movies.first { $0.id == movieID } })
+    }
+}
+
 final class HFStreamingStore: ObservableObject {
     @Published private(set) var savedMovieIDs: Set<String>
     @Published private(set) var downloadedMovieIDs: Set<String>
@@ -2413,6 +2852,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var contentSnapshot: HFContentBackendSnapshot
     @Published private(set) var catalogRuntimeSnapshot: HFCatalogRuntimeSnapshot
     @Published private(set) var identitySessionRuntime: HFIdentitySessionRuntimeSnapshot
+    @Published private(set) var productionCatalogRuntimeSnapshot: HFProductionCatalogRuntimeSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -2436,6 +2876,7 @@ final class HFStreamingStore: ObservableObject {
     private let remotePlaybackDescriptorGateway: HFRemotePlaybackDescriptorGateway
     private let entitlementPlaybackAdapter: HFBackendEntitlementPlaybackAdapter
     private let contentStorage: HFContentStorageLayer
+    private let productionCatalogConfiguration: HFProductionCatalogBackendConfiguration
     private var catalogRuntimePageCache: [String: HFCatalogRuntimePage] = [:]
     private var catalogRuntimeGeneration = 0
 
@@ -2492,6 +2933,8 @@ final class HFStreamingStore: ObservableObject {
         contentSnapshot = loadedContentSnapshot
         catalogRuntimeSnapshot = .loading(reason: "Initial catalog load")
         identitySessionRuntime = .empty
+        productionCatalogConfiguration = HFProductionCatalogBackendConfiguration()
+        productionCatalogRuntimeSnapshot = .localFallback(snapshot: loadedContentSnapshot, reason: "Production catalog backend disabled. Local content runtime remains active.")
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -2536,6 +2979,9 @@ final class HFStreamingStore: ObservableObject {
         refreshMediaInspectionPreflight()
         rebuildCatalogRuntime(reason: "Initial local catalog load")
         rebuildIdentitySessionRuntime(reason: "Initial local session load")
+        if productionCatalogConfiguration.isRemoteEnabled {
+            Task { await self.refreshProductionCatalogRuntime() }
+        }
     }
 
     var backendStatus: HFBackendServiceStatus {
@@ -2829,6 +3275,103 @@ final class HFStreamingStore: ObservableObject {
             backendRuntimeStatus = backendService.currentStatus(for: .stagingReachable)
         } catch {
             backendRuntimeStatus = backendService.currentStatus(for: .stagingUnavailable)
+        }
+    }
+
+    var productionCatalogRuntimeStatusRows: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(
+                id: "production-catalog-state",
+                title: "Catalog Backend",
+                value: productionCatalogRuntimeSnapshot.statusLabel,
+                detail: productionCatalogRuntimeSnapshot.detail,
+                systemImage: productionCatalogRuntimeSnapshot.state == .ready ? "network" : "externaldrive.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "production-catalog-titles",
+                title: "Titles",
+                value: "\(productionCatalogRuntimeSnapshot.titleCount)",
+                detail: "\(productionCatalogRuntimeSnapshot.creatorCount) creators, \(productionCatalogRuntimeSnapshot.seriesCount) series, \(productionCatalogRuntimeSnapshot.collectionCount) collections.",
+                systemImage: "film.stack.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "production-catalog-source",
+                title: "Source",
+                value: productionCatalogRuntimeSnapshot.source,
+                detail: productionCatalogRuntimeSnapshot.endpoint,
+                systemImage: "rectangle.connected.to.line.below"
+            ),
+            HFContentRepositoryMetric(
+                id: "production-catalog-fallback",
+                title: "Local Fallback",
+                value: productionCatalogRuntimeSnapshot.state == .ready ? "Available" : "Active",
+                detail: productionCatalogRuntimeSnapshot.lastError ?? "Local-only mode remains available when the backend flag is absent or the loopback service is unavailable.",
+                systemImage: "arrow.uturn.backward.circle.fill"
+            )
+        ]
+    }
+
+    var productionCatalogEndpointRows: [HFProductionCatalogEndpointRow] {
+        [
+            HFProductionCatalogEndpointRow(id: "health", title: "Health", path: "/health", status: "GET", systemImage: "heart.text.square.fill"),
+            HFProductionCatalogEndpointRow(id: "ready", title: "Readiness", path: "/ready", status: "GET", systemImage: "checkmark.seal.fill"),
+            HFProductionCatalogEndpointRow(id: "catalog", title: "Catalog", path: "/v1/catalog", status: "GET", systemImage: "film.stack.fill"),
+            HFProductionCatalogEndpointRow(id: "content", title: "Content Detail", path: "/v1/content/:id", status: "GET", systemImage: "play.rectangle.fill"),
+            HFProductionCatalogEndpointRow(id: "creator", title: "Creator Detail", path: "/v1/creators/:id", status: "GET", systemImage: "person.crop.rectangle.stack.fill"),
+            HFProductionCatalogEndpointRow(id: "collection", title: "Collection Detail", path: "/v1/collections/:id", status: "GET", systemImage: "rectangle.grid.2x2.fill")
+        ]
+    }
+
+    func refreshProductionCatalogRuntime() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            productionCatalogRuntimeSnapshot = .localFallback(
+                snapshot: contentSnapshot,
+                reason: "Production catalog backend disabled. Set HF_CINEMA_BACKEND_MODE=remote or use --hf-production-backend-catalog to test loopback fetch."
+            )
+            return
+        }
+
+        productionCatalogRuntimeSnapshot = HFProductionCatalogRuntimeSnapshot(
+            state: .fetching,
+            source: "Loopback Backend",
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            titleCount: productionCatalogRuntimeSnapshot.titleCount,
+            creatorCount: productionCatalogRuntimeSnapshot.creatorCount,
+            seriesCount: productionCatalogRuntimeSnapshot.seriesCount,
+            collectionCount: productionCatalogRuntimeSnapshot.collectionCount,
+            detail: "Fetching read-only catalog from the configured P29A backend foundation.",
+            lastError: nil,
+            updatedAtLabel: "Fetching"
+        )
+
+        do {
+            let response = try await HFRemoteProductionCatalogAPIClient(baseURL: productionCatalogConfiguration.baseURL).fetchCatalog()
+            productionCatalogRuntimeSnapshot = HFProductionCatalogRuntimeSnapshot(
+                state: .ready,
+                source: response.source,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                titleCount: response.totalTitles,
+                creatorCount: response.totalCreators,
+                seriesCount: response.totalSeries,
+                collectionCount: response.totalCollections,
+                detail: "Read-only catalog fetched through URLSession and decoded into local DTOs. Local repository fallback remains intact.",
+                lastError: nil,
+                updatedAtLabel: response.generatedAt
+            )
+        } catch {
+            let fallback = try? await HFLocalProductionCatalogAPIClient(snapshot: contentSnapshot).fetchCatalog()
+            productionCatalogRuntimeSnapshot = HFProductionCatalogRuntimeSnapshot(
+                state: .localFallback,
+                source: fallback?.source ?? "Local Content Snapshot",
+                endpoint: "Local repository fallback",
+                titleCount: fallback?.totalTitles ?? contentSnapshot.movies.count,
+                creatorCount: fallback?.totalCreators ?? contentSnapshot.creators.count,
+                seriesCount: fallback?.totalSeries ?? contentSnapshot.series.count,
+                collectionCount: fallback?.totalCollections ?? contentSnapshot.collections.count,
+                detail: "Loopback catalog fetch failed; local content runtime remains functional.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Fallback after backend request"
+            )
         }
     }
 

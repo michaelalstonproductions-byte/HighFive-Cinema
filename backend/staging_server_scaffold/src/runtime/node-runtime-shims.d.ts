@@ -5,6 +5,10 @@ declare const process: {
   exitCode?: number;
 };
 
+interface ImportMeta {
+  dirname: string;
+}
+
 declare class Buffer extends Uint8Array {
   static isBuffer(value: unknown): value is Buffer;
   static from(value: string | ArrayBuffer | Uint8Array): Buffer;
@@ -48,4 +52,11 @@ declare module "node:events" {
 
 declare module "node:fs" {
   export function writeFileSync(path: string, data: string): void;
+  export function readFileSync(path: string, encoding: "utf8"): string;
+  export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
+}
+
+declare module "node:path" {
+  export function dirname(path: string): string;
+  export function resolve(...paths: string[]): string;
 }
