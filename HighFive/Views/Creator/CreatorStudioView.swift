@@ -234,6 +234,11 @@ private enum HFCreatorProSpotlight {
     case contentBackendFetch
     case contentBackendPersistence
     case contentBackendRelationships
+    case draftWorkspace
+    case draftEditor
+    case draftValidation
+    case draftCompare
+    case draftHistory
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -311,6 +316,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-content-fetch") { return .contentBackendFetch }
         if arguments.contains("--hf-content-persistence") { return .contentBackendPersistence }
         if arguments.contains("--hf-content-relationships") { return .contentBackendRelationships }
+        if arguments.contains("--hf-start-draft-workspace") { return .draftWorkspace }
+        if arguments.contains("--hf-draft-editor") { return .draftEditor }
+        if arguments.contains("--hf-draft-validation") { return .draftValidation }
+        if arguments.contains("--hf-draft-compare") { return .draftCompare }
+        if arguments.contains("--hf-draft-history") { return .draftHistory }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -363,6 +373,17 @@ struct CreatorStudioView: View {
     @State private var isInspectorPresented = false
     @State private var isSocialInspectorPresented = false
     @State private var isVODInspectorPresented = false
+    @State private var selectedDraftID: String?
+    @State private var draftTitle = ""
+    @State private var draftDescription = ""
+    @State private var draftGenre = ""
+    @State private var draftTags = ""
+    @State private var draftRuntime = ""
+    @State private var draftPosterStatus: HFCreatorPublishingAssetStatus = .placeholder
+    @State private var draftTrailerStatus: HFCreatorPublishingAssetStatus = .placeholder
+    @State private var draftMetadataStatus: HFCreatorPublishingAssetStatus = .ready
+    @State private var draftArtworkStatus: HFCreatorPublishingAssetStatus = .placeholder
+    @State private var draftWorkspaceNotice = "Loaded from repository snapshot"
     private let proSpotlight: HFCreatorProSpotlight
     private let launchProSpotlight: HFLaunchProSpotlight
 
@@ -2291,6 +2312,16 @@ struct CreatorStudioView: View {
             contentBackendPersistenceSection
         case .contentBackendRelationships:
             contentBackendRelationshipsSection
+        case .draftWorkspace:
+            creatorDraftWorkspaceDashboard
+        case .draftEditor:
+            creatorDraftEditorSection
+        case .draftValidation:
+            creatorDraftValidationSection
+        case .draftCompare:
+            creatorDraftCompareSection
+        case .draftHistory:
+            creatorDraftHistorySection
         }
     }
 
@@ -2308,6 +2339,7 @@ struct CreatorStudioView: View {
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
             contentBackendFoundationSection
+            creatorDraftWorkspaceDashboard
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2374,6 +2406,10 @@ struct CreatorStudioView: View {
             contentBackendFetchSection
             contentBackendPersistenceSection
             contentBackendRelationshipsSection
+            creatorDraftEditorSection
+            creatorDraftValidationSection
+            creatorDraftCompareSection
+            creatorDraftHistorySection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -4099,6 +4135,205 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.contentBackend.relationships")
+    }
+
+    private var creatorDraftWorkspaceDashboard: some View {
+        let draft = activeWorkspaceDraft
+
+        return creatorProSpotlight(
+            title: "Creator Draft Workspace",
+            detail: "Edit durable local drafts through PublishingRepository, validate readiness, compare against the saved snapshot, and review revision context.",
+            systemImage: "doc.text.magnifyingglass",
+            accent: HFColors.gold,
+            identifier: "hf.draftWorkspace.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text(draft.title)
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+                        Text("\(draft.genre) • \(draft.runtime)")
+                            .font(HFTypography.micro.weight(.bold))
+                            .foregroundStyle(HFColors.gold)
+                            .lineLimit(1)
+                        Text(draft.updatedAtLabel)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Text(draft.releaseState.rawValue)
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .padding(.vertical, HFSpacing.xxs)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Validation", value: "\(streamingStore.creatorDraftValidationItems(for: editorDraftPreview).filter(\.isComplete).count)/5")
+                    creatorProStat(title: "Compare", value: "\(draftCompareRecords.filter { $0.state == "Edited" }.count)")
+                    creatorProStat(title: "History", value: "\(streamingStore.creatorDraftHistoryRecords(for: draft).count)")
+                }
+
+                Text(draftWorkspaceNotice)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: HFSpacing.xs) {
+                    Button {
+                        saveDraftWorkspace()
+                    } label: {
+                        HFCreatorStudioAction(title: "Save Draft", systemImage: "externaldrive.fill", isPrimary: true)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.draftWorkspace.save")
+
+                    Button {
+                        createNewWorkspaceDraft()
+                    } label: {
+                        HFCreatorStudioAction(title: "New Draft", systemImage: "doc.badge.plus")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.draftWorkspace.create")
+                }
+            }
+        }
+        .onAppear {
+            hydrateDraftWorkspaceIfNeeded()
+        }
+    }
+
+    private var creatorDraftEditorSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.3)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Draft Editor",
+                    detail: "Metadata, tags, runtime, poster state, trailer state, and artwork state save through the content snapshot.",
+                    systemImage: "square.and.pencil",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.sm) {
+                    draftTextField(title: "Title", text: $draftTitle, identifier: "hf.draftWorkspace.title")
+                    draftTextField(title: "Genre", text: $draftGenre, identifier: "hf.draftWorkspace.genre")
+                    draftTextField(title: "Runtime", text: $draftRuntime, identifier: "hf.draftWorkspace.runtime")
+                    draftTextField(title: "Tags", text: $draftTags, identifier: "hf.draftWorkspace.tags")
+                    draftTextField(title: "Description", text: $draftDescription, identifier: "hf.draftWorkspace.description", lineLimit: 4)
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    draftAssetStatusControl(title: "Poster", selection: $draftPosterStatus, identifier: "hf.draftWorkspace.artwork")
+                    draftAssetStatusControl(title: "Trailer", selection: $draftTrailerStatus, identifier: "hf.draftWorkspace.trailerState")
+                    draftAssetStatusControl(title: "Metadata", selection: $draftMetadataStatus, identifier: "hf.draftWorkspace.metadata")
+                    draftAssetStatusControl(title: "Artwork", selection: $draftArtworkStatus, identifier: "hf.draftWorkspace.assetPackage")
+                }
+
+                Button {
+                    saveDraftWorkspace()
+                } label: {
+                    HFCreatorStudioAction(title: "Save To Repository", systemImage: "externaldrive.fill", isPrimary: true)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.draftWorkspace.repository")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.draftWorkspace.editor")
+        .onAppear {
+            hydrateDraftWorkspaceIfNeeded()
+        }
+    }
+
+    private var creatorDraftValidationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Draft Validation",
+                    detail: "Readiness is computed from the current editor state before the draft moves into local review.",
+                    systemImage: "checklist.checked",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorDraftValidationItems(for: editorDraftPreview)) { item in
+                        draftValidationRow(item)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.draftWorkspace.validation")
+        .onAppear {
+            hydrateDraftWorkspaceIfNeeded()
+        }
+    }
+
+    private var creatorDraftCompareSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Draft Compare",
+                    detail: "Editor values are compared to the saved PublishingRepository draft before saving.",
+                    systemImage: "rectangle.split.2x1.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(draftCompareRecords) { record in
+                        draftCompareRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.draftWorkspace.compare")
+        .onAppear {
+            hydrateDraftWorkspaceIfNeeded()
+        }
+    }
+
+    private var creatorDraftHistorySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Draft History",
+                    detail: "Revision context is derived from the persisted draft snapshot and current validation state.",
+                    systemImage: "clock.arrow.circlepath",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorDraftHistoryRecords(for: activeWorkspaceDraft)) { record in
+                        draftHistoryRow(record)
+                    }
+                }
+
+                Button {
+                    archiveDraftWorkspace()
+                } label: {
+                    HFCreatorStudioAction(title: "Archive Draft", systemImage: "archivebox.fill")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.draftWorkspace.archive")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.draftWorkspace.history")
+        .onAppear {
+            hydrateDraftWorkspaceIfNeeded()
+        }
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -6298,6 +6533,275 @@ struct CreatorStudioView: View {
         default:
             return HFColors.cyanGlow
         }
+    }
+
+    private var activeWorkspaceDraft: HFCreatorPublishingContent {
+        if let selectedDraftID, let draft = streamingStore.loadCreatorDraft(id: selectedDraftID) {
+            return draft
+        }
+        return streamingStore.creatorDraftProjects.first
+            ?? streamingStore.creatorPrimaryReadinessProject
+    }
+
+    private var draftTagList: [String] {
+        draftTags
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    private var editorDraftPreview: HFCreatorPublishingContent {
+        var draft = activeWorkspaceDraft
+        if !draftTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            draft.title = draftTitle
+        }
+        if !draftDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            draft.description = draftDescription
+        }
+        if !draftGenre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            draft.genre = draftGenre
+        }
+        if !draftRuntime.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            draft.runtime = draftRuntime
+        }
+        draft.tags = draftTagList
+        draft.posterStatus = draftPosterStatus
+        draft.trailerStatus = draftTrailerStatus
+        draft.metadataStatus = draftMetadataStatus
+        draft.artworkStatus = draftArtworkStatus
+        return draft
+    }
+
+    private var draftCompareRecords: [HFCreatorDraftCompareRecord] {
+        streamingStore.creatorDraftCompareRecords(
+            for: activeWorkspaceDraft,
+            title: draftTitle,
+            description: draftDescription,
+            genre: draftGenre,
+            tags: draftTagList,
+            runtime: draftRuntime,
+            posterStatus: draftPosterStatus,
+            trailerStatus: draftTrailerStatus,
+            metadataStatus: draftMetadataStatus,
+            artworkStatus: draftArtworkStatus
+        )
+    }
+
+    private func hydrateDraftWorkspaceIfNeeded() {
+        guard selectedDraftID == nil || draftTitle.isEmpty else { return }
+        hydrateDraftWorkspace(from: activeWorkspaceDraft)
+    }
+
+    private func hydrateDraftWorkspace(from draft: HFCreatorPublishingContent) {
+        selectedDraftID = draft.id
+        draftTitle = draft.title
+        draftDescription = draft.description
+        draftGenre = draft.genre
+        draftTags = draft.tags.joined(separator: ", ")
+        draftRuntime = draft.runtime
+        draftPosterStatus = draft.posterStatus
+        draftTrailerStatus = draft.trailerStatus
+        draftMetadataStatus = draft.metadataStatus
+        draftArtworkStatus = draft.artworkStatus
+        draftWorkspaceNotice = "Loaded \(draft.title) from repository snapshot"
+    }
+
+    private func saveDraftWorkspace() {
+        if let selectedDraftID, streamingStore.loadCreatorDraft(id: selectedDraftID) != nil {
+            streamingStore.updateCreatorDraft(
+                id: selectedDraftID,
+                title: draftTitle,
+                description: draftDescription,
+                creator: streamingStore.activeViewingProfile.displayName,
+                genre: draftGenre,
+                tags: draftTagList,
+                runtime: draftRuntime,
+                posterStatus: draftPosterStatus,
+                trailerStatus: draftTrailerStatus,
+                metadataStatus: draftMetadataStatus,
+                artworkStatus: draftArtworkStatus
+            )
+            if let saved = streamingStore.loadCreatorDraft(id: selectedDraftID) {
+                hydrateDraftWorkspace(from: saved)
+            }
+        } else {
+            let created = streamingStore.createCreatorDraft(
+                title: draftTitle,
+                description: draftDescription,
+                creator: streamingStore.activeViewingProfile.displayName,
+                genre: draftGenre,
+                tags: draftTagList,
+                runtime: draftRuntime
+            )
+            hydrateDraftWorkspace(from: created)
+        }
+        didSaveLocalDraft = true
+        draftWorkspaceNotice = "Draft saved to content snapshot"
+    }
+
+    private func createNewWorkspaceDraft() {
+        let created = streamingStore.createCreatorDraft(
+            title: "Untitled Creator Draft",
+            description: "New creator draft staged in the local content repository.",
+            creator: streamingStore.activeViewingProfile.displayName,
+            genre: "Drama",
+            tags: ["Draft", "Creator"],
+            runtime: "Draft"
+        )
+        hydrateDraftWorkspace(from: created)
+        draftWorkspaceNotice = "New draft created in content snapshot"
+    }
+
+    private func archiveDraftWorkspace() {
+        guard let selectedDraftID else { return }
+        streamingStore.archiveCreatorDraft(id: selectedDraftID)
+        if let nextDraft = streamingStore.creatorDraftProjects.first {
+            hydrateDraftWorkspace(from: nextDraft)
+        } else {
+            createNewWorkspaceDraft()
+        }
+        draftWorkspaceNotice = "Draft archived locally"
+    }
+
+    private func draftTextField(title: String, text: Binding<String>, identifier: String, lineLimit: Int = 1) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            Text(title)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+            TextField(title, text: text, axis: lineLimit > 1 ? .vertical : .horizontal)
+                .font(HFTypography.caption.weight(.semibold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(lineLimit)
+                .textInputAutocapitalization(.words)
+                .padding(HFSpacing.sm)
+                .background(Color.black.opacity(0.28))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                .accessibilityIdentifier(identifier)
+        }
+    }
+
+    private func draftAssetStatusControl(title: String, selection: Binding<HFCreatorPublishingAssetStatus>, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(title)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.textSecondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.xs) {
+                    ForEach(HFCreatorPublishingAssetStatus.allCases, id: \.self) { status in
+                        Button {
+                            selection.wrappedValue = status
+                        } label: {
+                            HFCreatorStudioPill(title: status.rawValue, isActive: selection.wrappedValue == status)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func draftValidationRow(_ item: HFCreatorDraftValidationItem) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(item.isComplete ? HFColors.gold : HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background((item.isComplete ? HFColors.gold : HFColors.cyanGlow).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text(item.status)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(item.isComplete ? HFColors.gold : HFColors.cyanGlow)
+                    .lineLimit(1)
+                Text(item.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.draftWorkspace.validation.\(item.id)")
+    }
+
+    private func draftCompareRow(_ record: HFCreatorDraftCompareRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(record.state == "Edited" ? HFColors.violet : HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background((record.state == "Edited" ? HFColors.violet : HFColors.gold).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.field)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer(minLength: 0)
+                    Text(record.state)
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(record.state == "Edited" ? HFColors.violet : HFColors.gold)
+                }
+                Text("Saved: \(record.savedValue)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text("Editor: \(record.editorValue)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.draftWorkspace.compare.\(record.id)")
+    }
+
+    private func draftHistoryRow(_ record: HFCreatorDraftHistoryRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background(HFColors.gold.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text(record.status)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.draftWorkspace.history.\(record.id)")
     }
 
     private func integrationAccent(for category: String) -> Color {

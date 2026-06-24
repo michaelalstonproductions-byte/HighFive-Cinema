@@ -164,6 +164,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInContentBackend
+            || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -229,6 +230,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInContentBackend
+            || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -351,6 +353,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInContentBackend
+            || Self.shouldStartInDraftWorkspace
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -515,6 +518,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-content-fetch")
             || arguments.contains("--hf-content-persistence")
             || arguments.contains("--hf-content-relationships")
+    }
+
+    private static var shouldStartInDraftWorkspace: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-draft-workspace")
+            || arguments.contains("--hf-draft-editor")
+            || arguments.contains("--hf-draft-validation")
+            || arguments.contains("--hf-draft-compare")
+            || arguments.contains("--hf-draft-history")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

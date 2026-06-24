@@ -148,7 +148,7 @@ enum HFCreatorReleaseState: String, CaseIterable, Codable, Equatable {
     case archived = "Archived"
 }
 
-enum HFCreatorPublishingAssetStatus: String, Codable, Equatable {
+enum HFCreatorPublishingAssetStatus: String, CaseIterable, Codable, Equatable {
     case missing = "Missing"
     case placeholder = "Placeholder"
     case ready = "Ready"
@@ -199,6 +199,32 @@ struct HFCreatorPublishingContent: Identifiable, Codable, Equatable {
             progress: releaseState == .published ? nil : 0.12
         )
     }
+}
+
+struct HFCreatorDraftValidationItem: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var isComplete: Bool
+    var systemImage: String
+}
+
+struct HFCreatorDraftCompareRecord: Identifiable {
+    let id: String
+    var field: String
+    var savedValue: String
+    var editorValue: String
+    var state: String
+    var systemImage: String
+}
+
+struct HFCreatorDraftHistoryRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
 }
 
 struct HFCreatorProfile: Identifiable {
@@ -4251,14 +4277,43 @@ final class HFStreamingStore: ObservableObject {
         title: String? = nil,
         description: String? = nil,
         posterAssetName: String? = nil,
+        creator: String? = nil,
+        genre: String? = nil,
+        tags: [String]? = nil,
+        runtime: String? = nil,
+        posterStatus: HFCreatorPublishingAssetStatus? = nil,
         trailerStatus: HFCreatorPublishingAssetStatus? = nil,
         metadataStatus: HFCreatorPublishingAssetStatus? = nil,
         artworkStatus: HFCreatorPublishingAssetStatus? = nil
     ) {
         guard let index = creatorPublishingContents.firstIndex(where: { $0.id == id }) else { return }
-        if let title { creatorPublishingContents[index].title = title }
-        if let description { creatorPublishingContents[index].description = description }
+        if let title {
+            let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { creatorPublishingContents[index].title = trimmed }
+        }
+        if let description {
+            let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
+            creatorPublishingContents[index].description = trimmed.isEmpty ? creatorPublishingContents[index].description : trimmed
+        }
         if let posterAssetName { creatorPublishingContents[index].posterAssetName = posterAssetName }
+        if let creator {
+            let trimmed = creator.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { creatorPublishingContents[index].creator = trimmed }
+        }
+        if let genre {
+            let trimmed = genre.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { creatorPublishingContents[index].genre = trimmed }
+        }
+        if let tags {
+            creatorPublishingContents[index].tags = tags
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        }
+        if let runtime {
+            let trimmed = runtime.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty { creatorPublishingContents[index].runtime = trimmed }
+        }
+        if let posterStatus { creatorPublishingContents[index].posterStatus = posterStatus }
         if let trailerStatus { creatorPublishingContents[index].trailerStatus = trailerStatus }
         if let metadataStatus { creatorPublishingContents[index].metadataStatus = metadataStatus }
         if let artworkStatus { creatorPublishingContents[index].artworkStatus = artworkStatus }
@@ -4268,6 +4323,67 @@ final class HFStreamingStore: ObservableObject {
 
     func loadCreatorDraft(id: String) -> HFCreatorPublishingContent? {
         publishingRepository.fetchDrafts().first { $0.id == id }
+    }
+
+    func creatorDraftValidationItems(for draft: HFCreatorPublishingContent) -> [HFCreatorDraftValidationItem] {
+        let hasTitle = !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasDescription = draft.description.trimmingCharacters(in: .whitespacesAndNewlines).count >= 24
+        let hasGenre = !draft.genre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasTags = !draft.tags.isEmpty
+        let hasRuntime = !draft.runtime.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        return [
+            HFCreatorDraftValidationItem(id: "metadata", title: "Draft Metadata", detail: "Title, synopsis, genre, tags, and runtime are stored in the content snapshot.", status: hasTitle && hasDescription && hasGenre && hasTags && hasRuntime ? "Ready" : "Needs detail", isComplete: hasTitle && hasDescription && hasGenre && hasTags && hasRuntime, systemImage: "text.justify.left"),
+            HFCreatorDraftValidationItem(id: "poster", title: "Draft Artwork", detail: "Poster status is tracked without file selection or media writes.", status: draft.posterStatus.rawValue, isComplete: draft.posterStatus == .ready || draft.posterStatus == .needsReview, systemImage: "photo.fill.on.rectangle.fill"),
+            HFCreatorDraftValidationItem(id: "trailer", title: "Draft Trailer State", detail: "Trailer readiness is a local state only.", status: draft.trailerStatus.rawValue, isComplete: draft.trailerStatus == .ready || draft.trailerStatus == .needsReview, systemImage: "film.stack.fill"),
+            HFCreatorDraftValidationItem(id: "artwork", title: "Artwork Package", detail: "Artwork package status stays attached to the draft record.", status: draft.artworkStatus.rawValue, isComplete: draft.artworkStatus == .ready || draft.artworkStatus == .needsReview, systemImage: "rectangle.stack.fill"),
+            HFCreatorDraftValidationItem(id: "review", title: "Ready For Review", detail: "A draft becomes review-ready when core metadata and asset states are complete.", status: draft.readyForReview ? "Ready" : "Draft", isComplete: draft.readyForReview, systemImage: "checkmark.seal.fill")
+        ]
+    }
+
+    func creatorDraftCompareRecords(
+        for draft: HFCreatorPublishingContent,
+        title: String,
+        description: String,
+        genre: String,
+        tags: [String],
+        runtime: String,
+        posterStatus: HFCreatorPublishingAssetStatus,
+        trailerStatus: HFCreatorPublishingAssetStatus,
+        metadataStatus: HFCreatorPublishingAssetStatus,
+        artworkStatus: HFCreatorPublishingAssetStatus
+    ) -> [HFCreatorDraftCompareRecord] {
+        func record(id: String, field: String, saved: String, editor: String, systemImage: String) -> HFCreatorDraftCompareRecord {
+            let isChanged = saved.trimmingCharacters(in: .whitespacesAndNewlines) != editor.trimmingCharacters(in: .whitespacesAndNewlines)
+            return HFCreatorDraftCompareRecord(
+                id: id,
+                field: field,
+                savedValue: saved.isEmpty ? "Empty" : saved,
+                editorValue: editor.isEmpty ? "Empty" : editor,
+                state: isChanged ? "Edited" : "Saved",
+                systemImage: systemImage
+            )
+        }
+
+        return [
+            record(id: "title", field: "Title", saved: draft.title, editor: title, systemImage: "textformat"),
+            record(id: "description", field: "Description", saved: draft.description, editor: description, systemImage: "text.alignleft"),
+            record(id: "genre", field: "Genre", saved: draft.genre, editor: genre, systemImage: "tag.fill"),
+            record(id: "tags", field: "Tags", saved: draft.tags.joined(separator: ", "), editor: tags.joined(separator: ", "), systemImage: "number"),
+            record(id: "runtime", field: "Runtime", saved: draft.runtime, editor: runtime, systemImage: "clock.fill"),
+            record(id: "poster", field: "Poster", saved: draft.posterStatus.rawValue, editor: posterStatus.rawValue, systemImage: "photo.fill.on.rectangle.fill"),
+            record(id: "trailer", field: "Trailer", saved: draft.trailerStatus.rawValue, editor: trailerStatus.rawValue, systemImage: "film.stack.fill"),
+            record(id: "metadata", field: "Metadata", saved: draft.metadataStatus.rawValue, editor: metadataStatus.rawValue, systemImage: "list.bullet.rectangle.fill"),
+            record(id: "artwork", field: "Artwork", saved: draft.artworkStatus.rawValue, editor: artworkStatus.rawValue, systemImage: "rectangle.stack.fill")
+        ]
+    }
+
+    func creatorDraftHistoryRecords(for draft: HFCreatorPublishingContent) -> [HFCreatorDraftHistoryRecord] {
+        [
+            HFCreatorDraftHistoryRecord(id: "created", title: "Draft Created", detail: "\(draft.title) entered the creator library as a local draft.", status: "Snapshot", systemImage: "doc.badge.plus"),
+            HFCreatorDraftHistoryRecord(id: "updated", title: "Last Saved", detail: draft.updatedAtLabel, status: "Stored", systemImage: "externaldrive.fill"),
+            HFCreatorDraftHistoryRecord(id: "readiness", title: "Validation", detail: draft.readyForReview ? "All review gates are satisfied." : "Draft remains editable before review.", status: draft.readyForReview ? "Ready" : "Draft", systemImage: "checkmark.seal.fill")
+        ]
     }
 
     func archiveCreatorDraft(id: String) {
