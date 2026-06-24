@@ -193,6 +193,13 @@ private enum HFCreatorProSpotlight {
     case notificationSeries
     case notificationCollaboration
     case notificationRevenue
+    case administrationDashboard
+    case administrationReview
+    case administrationCreators
+    case administrationHealth
+    case administrationModeration
+    case administrationOperations
+    case administrationAudit
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -229,6 +236,13 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-notifications-series") { return .notificationSeries }
         if arguments.contains("--hf-notifications-collaboration") { return .notificationCollaboration }
         if arguments.contains("--hf-notifications-revenue") { return .notificationRevenue }
+        if arguments.contains("--hf-start-admin") { return .administrationDashboard }
+        if arguments.contains("--hf-admin-review") { return .administrationReview }
+        if arguments.contains("--hf-admin-creators") { return .administrationCreators }
+        if arguments.contains("--hf-admin-health") { return .administrationHealth }
+        if arguments.contains("--hf-admin-moderation") { return .administrationModeration }
+        if arguments.contains("--hf-admin-operations") { return .administrationOperations }
+        if arguments.contains("--hf-admin-audit") { return .administrationAudit }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2127,6 +2141,20 @@ struct CreatorStudioView: View {
             notificationCategorySection("Collaboration")
         case .notificationRevenue:
             notificationCategorySection("Revenue")
+        case .administrationDashboard:
+            administrationDashboardSection
+        case .administrationReview:
+            contentReviewCenterSection
+        case .administrationCreators:
+            creatorAdministrationSection
+        case .administrationHealth:
+            platformHealthSection
+        case .administrationModeration:
+            moderationQueueSection
+        case .administrationOperations:
+            operationsDashboardSection
+        case .administrationAudit:
+            administrationAuditTrailSection
         }
     }
 
@@ -2138,6 +2166,7 @@ struct CreatorStudioView: View {
             creatorPublishingSystemDashboard
             revenueDashboardSection
             notificationsCenterSection
+            administrationDashboardSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2169,6 +2198,12 @@ struct CreatorStudioView: View {
             notificationCategorySection("Publishing")
             notificationCategorySection("Series")
             notificationCategorySection("Revenue")
+            contentReviewCenterSection
+            creatorAdministrationSection
+            platformHealthSection
+            moderationQueueSection
+            operationsDashboardSection
+            administrationAuditTrailSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -2998,6 +3033,163 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.notifications.\(category.lowercased())")
+    }
+
+    private var administrationDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Platform Administration System",
+            detail: "Local governance layer for content review, creator administration, platform health, moderation queue, operations, and audit trail.",
+            systemImage: "shield.checkered",
+            accent: HFColors.gold,
+            identifier: "hf.admin.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Review", value: "\(streamingStore.contentReviewRecords.count)")
+                    creatorProStat(title: "Creators", value: "\(streamingStore.creatorAdministrationRecords.count)")
+                    creatorProStat(title: "Health", value: "\(streamingStore.platformHealthRecords.count)")
+                    creatorProStat(title: "Audit", value: "\(streamingStore.administrationAuditTrailRecords.count)")
+                }
+
+                Text("Govern -> Review -> Moderate -> Operate -> Audit")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.admin.workflow")
+
+                Text("Administration is local preview only. No external review system, enforcement system, account action, or hosted workflow is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.admin.localOnly")
+            }
+        }
+    }
+
+    private var contentReviewCenterSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Content Review Center",
+                    detail: "Pending review, approved, needs revision, and archived content are surfaced from the local publishing lifecycle.",
+                    systemImage: "doc.text.magnifyingglass",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.contentReviewRecords) { record in
+                        contentReviewRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.admin.reviewCenter")
+    }
+
+    private var creatorAdministrationSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Creator Administration", actionTitle: "Local")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.creatorAdministrationRecords) { record in
+                        creatorAdministrationCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.admin.creatorAdministration")
+    }
+
+    private var platformHealthSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Platform Health",
+                    detail: "Catalog, discovery, series, analytics, revenue, and notification health are computed from local state.",
+                    systemImage: "checkmark.seal.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.platformHealthRecords) { record in
+                        platformHealthCard(record, identifierPrefix: "hf.admin.health")
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.admin.platformHealth")
+    }
+
+    private var moderationQueueSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Moderation Queue",
+                    detail: "Flagged content, review queue, policy status, and content audit stay read-only and local.",
+                    systemImage: "flag.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.moderationQueueRecords) { record in
+                        moderationQueueRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.admin.moderationQueue")
+    }
+
+    private var operationsDashboardSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Operations Dashboard",
+                    detail: "Publishing, discovery, library, series, revenue, and notifications are visible in one local operating board.",
+                    systemImage: "rectangle.3.group.fill",
+                    accent: HFColors.gold
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.operationsDashboardRecords) { record in
+                        platformHealthCard(record, identifierPrefix: "hf.admin.operations")
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.admin.operationsDashboard")
+    }
+
+    private var administrationAuditTrailSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Audit Trail",
+                    detail: "Publishing, discovery, series, revenue, and administration events remain inspectable as local records.",
+                    systemImage: "list.clipboard.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.administrationAuditTrailRecords) { record in
+                        auditTrailRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.admin.auditTrail")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -4020,6 +4212,199 @@ struct CreatorStudioView: View {
         case "Discovery", "Series", "Analytics":
             return HFColors.cyanGlow
         case "Collaboration":
+            return HFColors.violet
+        default:
+            return HFColors.textSecondary
+        }
+    }
+
+    private func contentReviewRow(_ record: HFContentReviewRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(adminAccent(for: record.reviewState))
+                .frame(width: 38, height: 38)
+                .background(adminAccent(for: record.reviewState).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.reviewState)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(adminAccent(for: record.reviewState))
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+                Text("\(record.creatorName) • \(record.status)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.admin.review.\(record.id)")
+    }
+
+    private func creatorAdministrationCard(_ record: HFCreatorAdministrationRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: "person.crop.rectangle.stack.fill")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.violet)
+                Text(record.creatorName)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.verificationPreview)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                HStack(spacing: HFSpacing.xs) {
+                    analyticsMiniPill("\(record.titleCount)", "Titles", HFColors.cyanGlow)
+                    analyticsMiniPill(record.creatorStatus, "Creator", HFColors.gold)
+                }
+                Text("\(record.publishingStatus) • \(record.profileStatus)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 184, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.admin.creator.\(record.id)")
+    }
+
+    private func platformHealthCard(_ record: HFPlatformHealthRecord, identifierPrefix: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(record.value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(2)
+            Text(record.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+            Text(record.status)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("\(identifierPrefix).\(record.id)")
+    }
+
+    private func moderationQueueRow(_ record: HFModerationQueueRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.violet)
+                .frame(width: 38, height: 38)
+                .background(HFColors.violet.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.category)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(HFColors.violet)
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.policyStatus) • \(record.reviewState)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(2)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.admin.moderation.\(record.id)")
+    }
+
+    private func auditTrailRow(_ record: HFAuditTrailRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(notificationAccent(for: record.category))
+                .frame(width: 38, height: 38)
+                .background(notificationAccent(for: record.category).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.category)
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(notificationAccent(for: record.category))
+                        .lineLimit(1)
+                    Text(record.timeLabel)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(HFColors.textMuted)
+                        .lineLimit(1)
+                }
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text(record.result)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.admin.audit.\(record.id)")
+    }
+
+    private func adminAccent(for state: String) -> Color {
+        switch state {
+        case "Approved", "Approved Preview":
+            return HFColors.gold
+        case "Pending Review":
+            return HFColors.cyanGlow
+        case "Needs Revision":
             return HFColors.violet
         default:
             return HFColors.textSecondary

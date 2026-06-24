@@ -158,6 +158,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInSeriesEpisodes
             || Self.shouldStartInRevenueSystem
             || Self.shouldStartInNotificationsActivity
+            || Self.shouldStartInPlatformAdministration
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -217,6 +218,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInSeriesEpisodes
             || Self.shouldStartInRevenueSystem
             || Self.shouldStartInNotificationsActivity
+            || Self.shouldStartInPlatformAdministration
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -333,6 +335,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInSeriesEpisodes
             || Self.shouldStartInRevenueSystem
             || Self.shouldStartInNotificationsActivity
+            || Self.shouldStartInPlatformAdministration
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -432,6 +435,17 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-notifications-series")
             || arguments.contains("--hf-notifications-collaboration")
             || arguments.contains("--hf-notifications-revenue")
+    }
+
+    private static var shouldStartInPlatformAdministration: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-admin")
+            || arguments.contains("--hf-admin-review")
+            || arguments.contains("--hf-admin-creators")
+            || arguments.contains("--hf-admin-health")
+            || arguments.contains("--hf-admin-moderation")
+            || arguments.contains("--hf-admin-operations")
+            || arguments.contains("--hf-admin-audit")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

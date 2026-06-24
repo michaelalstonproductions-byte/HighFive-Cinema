@@ -425,6 +425,55 @@ struct HFActivityCenterRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFContentReviewRecord: Identifiable {
+    let id: String
+    var title: String
+    var creatorName: String
+    var status: String
+    var detail: String
+    var reviewState: String
+    var systemImage: String
+}
+
+struct HFCreatorAdministrationRecord: Identifiable {
+    let id: String
+    var creatorName: String
+    var creatorStatus: String
+    var publishingStatus: String
+    var profileStatus: String
+    var verificationPreview: String
+    var titleCount: Int
+}
+
+struct HFPlatformHealthRecord: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFModerationQueueRecord: Identifiable {
+    let id: String
+    var title: String
+    var category: String
+    var policyStatus: String
+    var reviewState: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFAuditTrailRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var category: String
+    var timeLabel: String
+    var result: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -2834,6 +2883,93 @@ final class HFStreamingStore: ObservableObject {
             HFActivityCenterRecord(id: "collaboration", title: "Collaboration Activity", detail: "Team roles, task board movement, notes, and timeline updates", value: "\(creatorCollaborationTasks.count)", status: "Tasks", systemImage: "person.3.fill"),
             HFActivityCenterRecord(id: "revenue", title: "Revenue Activity", detail: "Estimated title revenue, creator summaries, and payout previews", value: "\(revenueTitleRecords.count)", status: "Estimate", systemImage: "dollarsign.circle.fill")
         ]
+    }
+
+    var contentReviewRecords: [HFContentReviewRecord] {
+        creatorPublishingContents.map { project in
+            HFContentReviewRecord(
+                id: "review-\(project.id)",
+                title: project.title,
+                creatorName: project.creator,
+                status: project.releaseState.rawValue,
+                detail: "\(project.genre) • \(project.runtime) • metadata \(project.metadataStatus.rawValue)",
+                reviewState: contentReviewState(for: project),
+                systemImage: project.releaseState == .published ? "checkmark.seal.fill" : "doc.text.magnifyingglass"
+            )
+        }
+    }
+
+    var creatorAdministrationRecords: [HFCreatorAdministrationRecord] {
+        creatorProfiles.map { profile in
+            let projects = creatorPublishingContents.filter { $0.creator == profile.creator.name }
+            let publishedCount = projects.filter { $0.releaseState == .published }.count
+            let readyCount = projects.filter(\.readyForReview).count
+            return HFCreatorAdministrationRecord(
+                id: profile.id,
+                creatorName: profile.creator.name,
+                creatorStatus: publishedCount > 0 ? "Active" : "Local",
+                publishingStatus: "\(readyCount) ready",
+                profileStatus: profile.bio.isEmpty ? "Needs Bio" : "Profile Ready",
+                verificationPreview: publishedCount > 0 ? "Verified Preview" : "Review Preview",
+                titleCount: projects.count
+            )
+        }
+    }
+
+    var platformHealthRecords: [HFPlatformHealthRecord] {
+        [
+            HFPlatformHealthRecord(id: "catalog", title: "Catalog Health", value: "\(cmsContentRecords.count)", detail: "Movies, series, episodes, trailers, collections, and creators indexed locally", status: "Ready", systemImage: "rectangle.stack.fill"),
+            HFPlatformHealthRecord(id: "discovery", title: "Discovery Health", value: "\(discoveryCollections.count)", detail: "Featured, trending, creator published, and recommendation rails", status: "Local", systemImage: "sparkle.magnifyingglass"),
+            HFPlatformHealthRecord(id: "series", title: "Series Health", value: "\(episodeRecords.count)", detail: "Episode records and next-episode recommendations available", status: "Ready", systemImage: "play.square.stack.fill"),
+            HFPlatformHealthRecord(id: "analytics", title: "Analytics Health", value: "\(analyticsTitleRecords.count)", detail: "Title, discovery, creator, episode, and revenue analytics available", status: "Computed", systemImage: "chart.bar.xaxis"),
+            HFPlatformHealthRecord(id: "revenue", title: "Revenue Health", value: "\(revenueTitleRecords.count)", detail: "Revenue estimates and payout previews derived locally", status: "Preview", systemImage: "dollarsign.circle.fill"),
+            HFPlatformHealthRecord(id: "notifications", title: "Notifications Health", value: "\(productNotificationRecords.count)", detail: "Local notification and activity center records", status: "Local", systemImage: "bell.badge.fill")
+        ]
+    }
+
+    var moderationQueueRecords: [HFModerationQueueRecord] {
+        [
+            HFModerationQueueRecord(id: "flagged-copy", title: creatorPrimaryReadinessProject.title, category: "Flagged Content", policyStatus: "Needs copy review", reviewState: "Pending Review", detail: "Synopsis and poster text are staged for local policy review.", systemImage: "flag.fill"),
+            HFModerationQueueRecord(id: "review-ready", title: creatorReadyForReviewProjects.first?.title ?? featuredMovie.title, category: "Review Queue", policyStatus: "Ready for local review", reviewState: "Approved Preview", detail: "Metadata, poster, trailer, and artwork readiness can be checked locally.", systemImage: "checkmark.seal.fill"),
+            HFModerationQueueRecord(id: "policy-boundary", title: "Policy Status", category: "Policy Status", policyStatus: "Local policy preview", reviewState: "Preview", detail: "No external moderation service or automated enforcement is active.", systemImage: "lock.shield.fill"),
+            HFModerationQueueRecord(id: "content-audit", title: "Content Audit", category: "Content Audit", policyStatus: "\(creatorPublishingAuditRecords.count) audit rows", reviewState: "Audit Trail", detail: "Publishing, discovery, series, revenue, and notification records remain inspectable.", systemImage: "list.clipboard.fill")
+        ]
+    }
+
+    var operationsDashboardRecords: [HFPlatformHealthRecord] {
+        [
+            HFPlatformHealthRecord(id: "publishing", title: "Publishing", value: "\(creatorPublishingQueueRecords.count)", detail: "Queue, readiness, review, and audit records", status: "Review", systemImage: "paperplane.circle.fill"),
+            HFPlatformHealthRecord(id: "discovery", title: "Discovery", value: "\(discoveryCollections.count)", detail: "Collections and recommendation surfaces", status: "Local", systemImage: "sparkles"),
+            HFPlatformHealthRecord(id: "library", title: "Library", value: "\(libraryUserCollections.count)", detail: "Continue Watching, My List, favorites, and collections", status: "Active", systemImage: "bookmark.fill"),
+            HFPlatformHealthRecord(id: "series", title: "Series", value: "\(seriesRecords.count)", detail: "Series detail pages and episode paths", status: "Ready", systemImage: "play.square.stack.fill"),
+            HFPlatformHealthRecord(id: "revenue", title: "Revenue", value: "\(revenueInsights.count)", detail: "Revenue insights and creator payout previews", status: "Estimate", systemImage: "dollarsign.circle.fill"),
+            HFPlatformHealthRecord(id: "notifications", title: "Notifications", value: "\(productNotificationRecords.count)", detail: "Local notifications and activity records", status: "Local", systemImage: "bell.badge.fill")
+        ]
+    }
+
+    var administrationAuditTrailRecords: [HFAuditTrailRecord] {
+        [
+            HFAuditTrailRecord(id: "audit-publishing", title: "Publishing event", detail: "\(creatorPublishingQueueRecords.first?.project.title ?? featuredMovie.title) entered local review.", category: "Publishing", timeLabel: "Now", result: "Logged", systemImage: "paperplane.circle.fill"),
+            HFAuditTrailRecord(id: "audit-discovery", title: "Discovery event", detail: "\(creatorPublishedProjects.count) published titles are discovery eligible.", category: "Discovery", timeLabel: "Today", result: "Visible", systemImage: "sparkle.magnifyingglass"),
+            HFAuditTrailRecord(id: "audit-series", title: "Series event", detail: "\(primarySeriesRecord.title) has \(primarySeriesRecord.episodeCount) local episode records.", category: "Series", timeLabel: "Today", result: "Indexed", systemImage: "play.square.stack.fill"),
+            HFAuditTrailRecord(id: "audit-revenue", title: "Revenue event", detail: "\(revenueInsights.first?.title ?? "Revenue insight") is available for local review.", category: "Revenue", timeLabel: "Yesterday", result: "Preview", systemImage: "dollarsign.circle.fill"),
+            HFAuditTrailRecord(id: "audit-admin", title: "Administration event", detail: "Content review, creator administration, moderation, operations, and health boards are local-only.", category: "Administration", timeLabel: "Yesterday", result: "Safe", systemImage: "shield.lefthalf.filled")
+        ]
+    }
+
+    private func contentReviewState(for project: HFCreatorPublishingContent) -> String {
+        switch project.releaseState {
+        case .published:
+            return "Approved"
+        case .review:
+            return project.readyForReview ? "Pending Review" : "Needs Revision"
+        case .scheduled:
+            return "Approved Preview"
+        case .archived:
+            return "Archived"
+        case .draft:
+            return project.readyForReview ? "Pending Review" : "Needs Revision"
+        }
     }
 
     private func analyticsRecord(for movie: Movie) -> HFTitleAnalyticsRecord {
