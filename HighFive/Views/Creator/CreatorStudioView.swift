@@ -166,6 +166,11 @@ private enum HFCreatorProSpotlight {
     case socialAssets
     case vodPackage
     case analytics
+    case publishingDashboard
+    case publishingQueue
+    case publishingReadiness
+    case publishingAudit
+    case publishingCalendar
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -173,6 +178,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-cms-content-types") { return .cms }
         if arguments.contains("--hf-cms-collections") { return .cms }
         if arguments.contains("--hf-cms-relationships") { return .cms }
+        if arguments.contains("--hf-start-publishing") { return .publishingDashboard }
+        if arguments.contains("--hf-publishing-queue") { return .publishingQueue }
+        if arguments.contains("--hf-publishing-readiness") { return .publishingReadiness }
+        if arguments.contains("--hf-publishing-audit") { return .publishingAudit }
+        if arguments.contains("--hf-publishing-calendar") { return .publishingCalendar }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2017,6 +2027,16 @@ struct CreatorStudioView: View {
             vodPackageStatusSection
         case .analytics:
             analyticsPreviewSection
+        case .publishingDashboard:
+            creatorPublishingSystemDashboard
+        case .publishingQueue:
+            publishingQueueSection
+        case .publishingReadiness:
+            publishingReadinessSection
+        case .publishingAudit:
+            publishingAuditSection
+        case .publishingCalendar:
+            publishingCalendarSection
         }
     }
 
@@ -2024,6 +2044,7 @@ struct CreatorStudioView: View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             contentManagementSystemSection
             creatorPublishingPipelineSection
+            creatorPublishingSystemDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                 contentTypesSection
@@ -2038,6 +2059,10 @@ struct CreatorStudioView: View {
                 launchControlPreviewSection
             }
 
+            publishingQueueSection
+            publishingReadinessSection
+            publishingCalendarSection
+            publishingAuditSection
             creatorPublishingLibrarySection
             commentaryGatewaySection
         }
@@ -2230,6 +2255,146 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.creator.pipeline.creatorLibrary")
     }
 
+    private var creatorPublishingSystemDashboard: some View {
+        creatorProSpotlight(
+            title: "Creator Publishing Dashboard",
+            detail: "Analytics flows into publishing readiness, queue priority, schedule preview, and audit gates. Local lifecycle only.",
+            systemImage: "paperplane.circle.fill",
+            accent: HFColors.gold,
+            identifier: "hf.publishing.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Queue", value: "\(streamingStore.creatorPublishingQueueRecords.count)")
+                    creatorProStat(title: "Ready", value: "\(streamingStore.creatorReadyForReviewProjects.count)")
+                    creatorProStat(title: "Planned", value: "\(streamingStore.creatorScheduledProjects.count)")
+                    creatorProStat(title: "Visible", value: "\(streamingStore.creatorPublishedProjects.count)")
+                }
+
+                Text("Analytics -> Publishing Readiness -> Publishing Queue -> Publishing Audit")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.publishing.analyticsFlow")
+
+                Text("No publish API, upload, provider account, payment, background job, or external service is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.publishing.localOnly")
+            }
+        }
+    }
+
+    private var publishingQueueSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Publishing Queue",
+                    detail: "Prioritized local project lifecycle from draft to review, planned release, visible catalog, and archive retention.",
+                    systemImage: "list.bullet.rectangle.portrait.fill",
+                    accent: HFColors.gold
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.sm) {
+                        ForEach(streamingStore.creatorPublishingQueueRecords) { record in
+                            publishingQueueCard(record)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishing.queue")
+    }
+
+    private var publishingReadinessSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Publishing Readiness",
+                    detail: "Local readiness consolidates metadata, poster, trailer, artwork, review gate, and discovery connection.",
+                    systemImage: "checkmark.seal.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 146), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.creatorPublishingReadinessItems) { item in
+                        publishingReadinessCard(item)
+                    }
+                }
+
+                publishingChecklistPanel
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishing.readiness")
+    }
+
+    private var publishingChecklistPanel: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Label("Publishing Checklist", systemImage: "checklist")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+
+            ForEach(streamingStore.creatorPublishingChecklistItems) { item in
+                publishingChecklistRow(item)
+            }
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityIdentifier("hf.publishing.checklist")
+    }
+
+    private var publishingCalendarSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Publishing Calendar",
+                    detail: "Local calendar preview only. No system calendar integration, notifications, scheduling jobs, or external event creation.",
+                    systemImage: "calendar.badge.clock",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorPublishingScheduleItems) { item in
+                        publishingCalendarRow(item)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishing.calendar")
+    }
+
+    private var publishingAuditSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Publishing Audit",
+                    detail: "Read-only local safety gate for discovery eligibility, review readiness, and no-live-publishing boundaries.",
+                    systemImage: "doc.text.magnifyingglass",
+                    accent: HFColors.gold
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.creatorPublishingAuditRecords) { record in
+                        publishingAuditCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishing.audit")
+    }
+
     private var creatorPublishingPipelineSection: some View {
         let project = creatorPrimaryPublishingProject
 
@@ -2412,6 +2577,172 @@ struct CreatorStudioView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) status \(status).")
         .accessibilityIdentifier(identifier)
+    }
+
+    private func publishingQueueCard(_ record: HFCreatorPublishingQueueRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Text(record.priority)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(record.priority == "High" ? HFColors.gold : HFColors.cyanGlow)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                    .background((record.priority == "High" ? HFColors.gold : HFColors.cyanGlow).opacity(0.14))
+                    .clipShape(Capsule())
+                Spacer(minLength: 0)
+                Text(record.stage)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Text(record.project.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.70)
+
+            Text(record.nextStep)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+
+            Spacer(minLength: 0)
+
+            Text(record.owner)
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(HFColors.violet)
+                .lineLimit(1)
+        }
+        .frame(width: 176, height: 144, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(record.project.title). \(record.stage). Next step \(record.nextStep).")
+        .accessibilityIdentifier("hf.publishing.queue.\(record.project.id)")
+    }
+
+    private func publishingReadinessCard(_ item: HFCreatorPublishingReadinessItem) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(item.status)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+            Text(item.title)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+            Text(item.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.publishing.readiness.\(item.id)")
+    }
+
+    private func publishingChecklistRow(_ item: HFCreatorPublishingChecklistItem) -> some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: item.status == "Ready" || item.status == "Safe" || item.status == "Linked" ? "checkmark.circle.fill" : "circle.dotted")
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(item.status == "Missing" ? HFColors.violet : HFColors.gold)
+                .frame(width: 28, height: 28)
+                .background(Color.white.opacity(0.055))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(item.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(item.status)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.publishing.checklist.\(item.id)")
+    }
+
+    private func publishingCalendarRow(_ item: HFCreatorPublishingScheduleItem) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            VStack(spacing: 2) {
+                Text(item.window.prefix(3).uppercased())
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundStyle(HFColors.violet)
+                Text(item.status)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.60)
+            }
+            .frame(width: 54, height: 48)
+            .background(HFColors.violet.opacity(0.13))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(item.window) • \(item.detail)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.publishing.calendar.\(item.id)")
+    }
+
+    private func publishingAuditCard(_ record: HFCreatorPublishingAuditRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.gold)
+            Text(record.result)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(record.title)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+            Text(record.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.publishing.audit.\(record.id)")
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {

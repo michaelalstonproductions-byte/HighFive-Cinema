@@ -356,6 +356,46 @@ struct HFAnalyticsInsight: Identifiable {
     var systemImage: String
 }
 
+struct HFCreatorPublishingQueueRecord: Identifiable {
+    let id: String
+    var project: HFCreatorPublishingContent
+    var priority: String
+    var stage: String
+    var nextStep: String
+    var owner: String
+}
+
+struct HFCreatorPublishingReadinessItem: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFCreatorPublishingScheduleItem: Identifiable {
+    let id: String
+    var title: String
+    var window: String
+    var status: String
+    var detail: String
+}
+
+struct HFCreatorPublishingAuditRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var result: String
+    var systemImage: String
+}
+
+struct HFCreatorPublishingChecklistItem: Identifiable {
+    let id: String
+    var title: String
+    var status: String
+    var detail: String
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -1062,6 +1102,147 @@ final class HFStreamingStore: ObservableObject {
 
     var creatorReadyForReviewProjects: [HFCreatorPublishingContent] {
         creatorPublishingContents.filter(\.readyForReview)
+    }
+
+    var creatorPublishingQueueRecords: [HFCreatorPublishingQueueRecord] {
+        let order: [HFCreatorReleaseState: Int] = [.review: 0, .draft: 1, .scheduled: 2, .published: 3, .archived: 4]
+        return creatorPublishingContents
+            .sorted { lhs, rhs in
+                let left = order[lhs.releaseState] ?? 9
+                let right = order[rhs.releaseState] ?? 9
+                if left == right { return lhs.title < rhs.title }
+                return left < right
+            }
+            .map { project in
+                HFCreatorPublishingQueueRecord(
+                    id: "queue-\(project.id)",
+                    project: project,
+                    priority: publishingPriority(for: project),
+                    stage: project.releaseState.rawValue,
+                    nextStep: publishingNextStep(for: project),
+                    owner: project.creator
+                )
+            }
+    }
+
+    var creatorPublishingReadinessItems: [HFCreatorPublishingReadinessItem] {
+        let activeProjects = creatorPublishingContents.filter { $0.releaseState != .archived }
+        let readyProjects = activeProjects.filter(\.readyForReview).count
+        let assetReady = activeProjects.filter { project in
+            [project.posterStatus, project.trailerStatus, project.metadataStatus, project.artworkStatus].allSatisfy { $0 == .ready }
+        }.count
+
+        return [
+            HFCreatorPublishingReadinessItem(id: "metadata", title: "Metadata readiness", detail: "\(activeProjects.filter { $0.metadataStatus == .ready }.count) of \(activeProjects.count) active records have metadata ready.", status: "\(activeProjects.filter { $0.metadataStatus == .ready }.count)/\(activeProjects.count)", systemImage: "text.justify.left"),
+            HFCreatorPublishingReadinessItem(id: "poster", title: "Poster readiness", detail: "\(activeProjects.filter { $0.posterStatus == .ready }.count) poster records are ready or staged.", status: "\(activeProjects.filter { $0.posterStatus == .ready }.count)/\(activeProjects.count)", systemImage: "photo.fill.on.rectangle.fill"),
+            HFCreatorPublishingReadinessItem(id: "trailer", title: "Trailer readiness", detail: "\(activeProjects.filter { $0.trailerStatus == .ready }.count) trailer records have local preview status.", status: "\(activeProjects.filter { $0.trailerStatus == .ready }.count)/\(activeProjects.count)", systemImage: "film.stack.fill"),
+            HFCreatorPublishingReadinessItem(id: "assets", title: "Artwork readiness", detail: "\(assetReady) active packages have all asset statuses ready.", status: "\(assetReady)/\(activeProjects.count)", systemImage: "rectangle.stack.fill"),
+            HFCreatorPublishingReadinessItem(id: "review", title: "Ready for review", detail: "\(readyProjects) packages can move into local review.", status: "\(readyProjects)", systemImage: "checkmark.seal.fill"),
+            HFCreatorPublishingReadinessItem(id: "discovery", title: "Discovery connection", detail: "\(creatorPublishedProjects.count) published packages appear in local discovery.", status: "\(creatorPublishedProjects.count)", systemImage: "sparkle.magnifyingglass")
+        ]
+    }
+
+    var creatorPublishingScheduleItems: [HFCreatorPublishingScheduleItem] {
+        creatorPublishingContents.enumerated().map { index, project in
+            HFCreatorPublishingScheduleItem(
+                id: "schedule-\(project.id)",
+                title: project.title,
+                window: publishingWindow(for: project, index: index),
+                status: project.releaseState == .published ? "Visible" : project.releaseState == .archived ? "Archived" : "Planned",
+                detail: project.releaseState == .published ? "Already appears in local discovery." : "Local publishing calendar preview only."
+            )
+        }
+    }
+
+    var creatorPublishingAuditRecords: [HFCreatorPublishingAuditRecord] {
+        [
+            HFCreatorPublishingAuditRecord(id: "no-upload", title: "No upload action", detail: "Publishing remains a local lifecycle preview with no media transfer.", result: "Safe", systemImage: "lock.shield.fill"),
+            HFCreatorPublishingAuditRecord(id: "no-provider", title: "No provider endpoint", detail: "No distributor, storefront, or publishing API is connected.", result: "Local", systemImage: "network.slash"),
+            HFCreatorPublishingAuditRecord(id: "no-payment", title: "No payment path", detail: "No purchase, subscription, payout, or payment processor is active.", result: "Safe", systemImage: "creditcard.trianglebadge.exclamationmark"),
+            HFCreatorPublishingAuditRecord(id: "discovery-gate", title: "Discovery gate", detail: "Only Published records enter local Home, Search, Discovery, Collections, and Creator Profile surfaces.", result: "\(creatorPublishedProjects.count) visible", systemImage: "checkmark.seal.fill"),
+            HFCreatorPublishingAuditRecord(id: "review-gate", title: "Review gate", detail: "\(creatorReadyForReviewProjects.count) projects satisfy local readiness checks.", result: "\(creatorReadyForReviewProjects.count) ready", systemImage: "doc.text.magnifyingglass")
+        ]
+    }
+
+    var creatorPublishingChecklistItems: [HFCreatorPublishingChecklistItem] {
+        [
+            HFCreatorPublishingChecklistItem(id: "metadata", title: "Metadata", status: readinessStatus(for: creatorPrimaryReadinessProject.metadataStatus), detail: "Title, description, creator, genre, tags, runtime, and release state."),
+            HFCreatorPublishingChecklistItem(id: "poster", title: "Poster", status: readinessStatus(for: creatorPrimaryReadinessProject.posterStatus), detail: "Poster asset or safe placeholder assigned locally."),
+            HFCreatorPublishingChecklistItem(id: "trailer", title: "Trailer", status: readinessStatus(for: creatorPrimaryReadinessProject.trailerStatus), detail: "Trailer preview state remains local-only."),
+            HFCreatorPublishingChecklistItem(id: "artwork", title: "Artwork", status: readinessStatus(for: creatorPrimaryReadinessProject.artworkStatus), detail: "Artwork package status for local review."),
+            HFCreatorPublishingChecklistItem(id: "analytics", title: "Analytics", status: analyticsTitleRecords.contains { $0.id == creatorPrimaryReadinessProject.id } ? "Linked" : "Preview", detail: "P6 analytics can inform publishing decisions."),
+            HFCreatorPublishingChecklistItem(id: "audit", title: "Audit", status: "Safe", detail: "No upload, provider, network, payment, or external publish behavior.")
+        ]
+    }
+
+    var creatorPrimaryReadinessProject: HFCreatorPublishingContent {
+        creatorReviewProjects.first
+            ?? creatorDraftProjects.first
+            ?? creatorScheduledProjects.first
+            ?? creatorPublishedProjects.first
+            ?? creatorPublishingContents[0]
+    }
+
+    private func publishingPriority(for project: HFCreatorPublishingContent) -> String {
+        switch project.releaseState {
+        case .review:
+            return project.readyForReview ? "High" : "Review"
+        case .draft:
+            return "Build"
+        case .scheduled:
+            return "Planned"
+        case .published:
+            return "Monitor"
+        case .archived:
+            return "Archive"
+        }
+    }
+
+    private func publishingNextStep(for project: HFCreatorPublishingContent) -> String {
+        if project.metadataStatus != .ready { return "Complete metadata" }
+        if project.posterStatus != .ready { return "Finalize poster" }
+        if project.trailerStatus != .ready { return "Stage trailer preview" }
+        if project.artworkStatus != .ready { return "Review artwork" }
+        switch project.releaseState {
+        case .draft:
+            return "Move to local review"
+        case .review:
+            return "Review readiness"
+        case .scheduled:
+            return "Confirm planned window"
+        case .published:
+            return "Measure performance"
+        case .archived:
+            return "Retain audit"
+        }
+    }
+
+    private func publishingWindow(for project: HFCreatorPublishingContent, index: Int) -> String {
+        switch project.releaseState {
+        case .draft:
+            return "Draft window"
+        case .review:
+            return "Review this week"
+        case .scheduled:
+            return "Planned T+\(index + 2)"
+        case .published:
+            return "Now visible"
+        case .archived:
+            return "Retained"
+        }
+    }
+
+    private func readinessStatus(for status: HFCreatorPublishingAssetStatus) -> String {
+        switch status {
+        case .ready:
+            return "Ready"
+        case .needsReview:
+            return "Review"
+        case .placeholder:
+            return "Placeholder"
+        case .missing:
+            return "Missing"
+        }
     }
 
     var creatorPublishedMovies: [Movie] {
