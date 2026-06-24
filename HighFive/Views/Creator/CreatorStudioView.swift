@@ -239,6 +239,12 @@ private enum HFCreatorProSpotlight {
     case draftValidation
     case draftCompare
     case draftHistory
+    case uploadWorkflow
+    case uploadSelection
+    case uploadValidation
+    case uploadManifest
+    case uploadQueue
+    case uploadPreflight
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -321,6 +327,12 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-draft-validation") { return .draftValidation }
         if arguments.contains("--hf-draft-compare") { return .draftCompare }
         if arguments.contains("--hf-draft-history") { return .draftHistory }
+        if arguments.contains("--hf-start-creator-upload") { return .uploadWorkflow }
+        if arguments.contains("--hf-upload-selection") { return .uploadSelection }
+        if arguments.contains("--hf-upload-validation") { return .uploadValidation }
+        if arguments.contains("--hf-upload-manifest") { return .uploadManifest }
+        if arguments.contains("--hf-upload-queue") { return .uploadQueue }
+        if arguments.contains("--hf-upload-preflight") { return .uploadPreflight }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2331,6 +2343,18 @@ struct CreatorStudioView: View {
             creatorDraftCompareSection
         case .draftHistory:
             creatorDraftHistorySection
+        case .uploadWorkflow:
+            creatorUploadWorkflowDashboard
+        case .uploadSelection:
+            creatorUploadAssetSelectionSection
+        case .uploadValidation:
+            creatorUploadValidationSection
+        case .uploadManifest:
+            creatorUploadManifestSection
+        case .uploadQueue:
+            creatorUploadQueueSection
+        case .uploadPreflight:
+            creatorUploadPreflightSection
         }
     }
 
@@ -2349,6 +2373,7 @@ struct CreatorStudioView: View {
             productionBridgeDashboardSection
             contentBackendFoundationSection
             creatorMediaAssetRuntimeSection
+            creatorUploadWorkflowDashboard
             creatorDraftWorkspaceDashboard
             creatorCollaborationDashboard
 
@@ -2419,6 +2444,11 @@ struct CreatorStudioView: View {
             creatorDraftEditorSection
             creatorDraftValidationSection
             creatorMediaAssetRuntimeSection
+            creatorUploadAssetSelectionSection
+            creatorUploadValidationSection
+            creatorUploadManifestSection
+            creatorUploadQueueSection
+            creatorUploadPreflightSection
             creatorDraftCompareSection
             creatorDraftHistorySection
             creatorCollaborationTeamSection
@@ -4304,6 +4334,179 @@ struct CreatorStudioView: View {
         }
     }
 
+    private var creatorUploadWorkflowDashboard: some View {
+        let snapshot = streamingStore.creatorUploadWorkflowSnapshot
+
+        return creatorProSpotlight(
+            title: "Creator Upload Pipeline",
+            detail: "Local preparation workflow for asset selection, validation, package manifest, queue preview, and preflight checks. No transfer service is connected.",
+            systemImage: "tray.and.arrow.up.fill",
+            accent: HFColors.gold,
+            identifier: "hf.upload.workflow.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Projects", value: "\(snapshot.projectCount)")
+                    creatorProStat(title: "Selected", value: "\(snapshot.selectedAssets)")
+                    creatorProStat(title: "Manifest", value: "\(snapshot.manifestItems)")
+                    creatorProStat(title: "Preflight", value: snapshot.readinessLabel)
+                }
+
+                Text("Media Runtime -> Publishing Repository -> Content Snapshot -> Local Queue")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.upload.workflow.path")
+
+                Text("This is preparation only. It creates no media transfer, cloud object, account session, payment, or background job.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.upload.workflow.localOnly")
+            }
+        }
+    }
+
+    private var creatorUploadAssetSelectionSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Asset Selection",
+                    detail: "Poster, trailer, artwork, and metadata records are selected from the existing media asset runtime.",
+                    systemImage: "checklist.checked",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorUploadAssetSelectionRecords.prefix(8)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: "\(record.projectTitle) \(record.assetKind.rawValue)",
+                            detail: "\(record.source). \(record.detail)",
+                            status: record.selectionState,
+                            systemImage: record.systemImage,
+                            accent: uploadAccent(for: record.selectionState)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.upload.assetSelection")
+    }
+
+    private var creatorUploadValidationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Asset Validation",
+                    detail: "Validation checks runtime metadata readiness before a local package manifest can be reviewed.",
+                    systemImage: "checkmark.shield.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorUploadValidationRecords.prefix(8)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.title,
+                            detail: record.detail,
+                            status: record.status,
+                            systemImage: record.systemImage,
+                            accent: record.isBlocking ? HFColors.redAccent : HFColors.gold
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.upload.validation")
+    }
+
+    private var creatorUploadManifestSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Package Manifest",
+                    detail: "In-memory manifest preview groups each project with its local registry records and readiness state.",
+                    systemImage: "doc.badge.gearshape.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorUploadPackageManifestRecords) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "\(record.manifestID). \(record.detail)",
+                            status: "\(record.assetCount) assets - \(record.packageState)",
+                            systemImage: record.systemImage,
+                            accent: record.packageState == "Manifest Ready" ? HFColors.gold : HFColors.cyanGlow
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.upload.manifest")
+    }
+
+    private var creatorUploadQueueSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Publish Queue Preview",
+                    detail: "Prepared packages line up behind publishing readiness without submitting or transferring anything.",
+                    systemImage: "tray.full.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorUploadPublishQueueRecords) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "\(record.nextStep). \(record.detail)",
+                            status: "\(record.queueState) - \(record.readiness)",
+                            systemImage: record.systemImage,
+                            accent: uploadAccent(for: record.queueState)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.upload.publishQueue")
+    }
+
+    private var creatorUploadPreflightSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Preflight Checks",
+                    detail: "Local checks confirm package readiness and preserve the no-service boundary before any future production work.",
+                    systemImage: "list.clipboard.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorUploadPreflightRecords) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.title,
+                            detail: record.detail,
+                            status: record.result,
+                            systemImage: record.systemImage,
+                            accent: record.isPassed ? HFColors.gold : HFColors.redAccent
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.upload.preflight")
+    }
+
     private var creatorDraftValidationSection: some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -5806,6 +6009,16 @@ struct CreatorStudioView: View {
 
     private func marketplaceAccent(for readiness: String) -> Color {
         readiness.contains("Ready") ? HFColors.gold : HFColors.cyanGlow
+    }
+
+    private func uploadAccent(for state: String) -> Color {
+        if state.contains("Blocked") || state.contains("Excluded") {
+            return HFColors.redAccent
+        }
+        if state.contains("Prepared") || state.contains("Selected") || state.contains("Ready") {
+            return HFColors.gold
+        }
+        return HFColors.cyanGlow
     }
 
     private func rightsLedgerRow(_ record: HFRightsLedgerRecord) -> some View {

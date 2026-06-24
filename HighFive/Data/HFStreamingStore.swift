@@ -336,6 +336,69 @@ struct HFCreatorMediaAssetRuntimeSnapshot: Hashable {
     }
 }
 
+struct HFCreatorUploadWorkflowSnapshot: Hashable {
+    var projectCount: Int
+    var selectedAssets: Int
+    var validAssets: Int
+    var manifestItems: Int
+    var queueItems: Int
+    var preflightPassed: Int
+    var blockers: Int
+    var updatedAtLabel: String
+
+    var readinessLabel: String {
+        "\(preflightPassed)/\(queueItems) Clear"
+    }
+}
+
+struct HFCreatorUploadSelectionRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var assetKind: HFCreatorMediaAssetKind
+    var selectionState: String
+    var source: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorUploadValidationRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var isBlocking: Bool
+    var systemImage: String
+}
+
+struct HFCreatorUploadManifestRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var manifestID: String
+    var assetCount: Int
+    var packageState: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorUploadQueueRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var queueState: String
+    var readiness: String
+    var nextStep: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorUploadPreflightRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var result: String
+    var isPassed: Bool
+    var systemImage: String
+}
+
 struct HFCreatorDraftValidationItem: Identifiable {
     let id: String
     var title: String
@@ -2310,6 +2373,108 @@ final class HFStreamingStore: ObservableObject {
         mediaAssetRecords(for: project)
     }
 
+    var creatorUploadWorkflowSnapshot: HFCreatorUploadWorkflowSnapshot {
+        let selection = creatorUploadAssetSelectionRecords
+        let validation = creatorUploadValidationRecords
+        let queue = creatorUploadPublishQueueRecords
+        let preflight = creatorUploadPreflightRecords
+
+        return HFCreatorUploadWorkflowSnapshot(
+            projectCount: creatorPublishingContents.filter { $0.releaseState != .archived }.count,
+            selectedAssets: selection.filter { $0.selectionState != "Excluded" }.count,
+            validAssets: validation.filter { !$0.isBlocking }.count,
+            manifestItems: creatorUploadPackageManifestRecords.reduce(0) { $0 + $1.assetCount },
+            queueItems: queue.count,
+            preflightPassed: preflight.filter(\.isPassed).count,
+            blockers: validation.filter(\.isBlocking).count + preflight.filter { !$0.isPassed }.count,
+            updatedAtLabel: "Upload preparation workflow resolved locally"
+        )
+    }
+
+    var creatorUploadAssetSelectionRecords: [HFCreatorUploadSelectionRecord] {
+        creatorPublishingContents
+            .filter { $0.releaseState != .archived }
+            .flatMap { project in
+                mediaAssetRecords(for: project).map { record in
+                    HFCreatorUploadSelectionRecord(
+                        id: "selection-\(record.id)",
+                        projectTitle: record.projectTitle,
+                        assetKind: record.kind,
+                        selectionState: uploadSelectionState(for: record),
+                        source: uploadSelectionSource(for: record),
+                        detail: uploadSelectionDetail(for: record),
+                        systemImage: record.systemImage
+                    )
+                }
+            }
+    }
+
+    var creatorUploadValidationRecords: [HFCreatorUploadValidationRecord] {
+        creatorMediaAssetRecords.map { record in
+            let isBlocking = record.status == .missing
+            return HFCreatorUploadValidationRecord(
+                id: "validation-\(record.id)",
+                title: "\(record.projectTitle) \(record.kind.rawValue)",
+                detail: uploadValidationDetail(for: record),
+                status: isBlocking ? "Blocked" : record.readiness,
+                isBlocking: isBlocking,
+                systemImage: record.systemImage
+            )
+        }
+    }
+
+    var creatorUploadPackageManifestRecords: [HFCreatorUploadManifestRecord] {
+        creatorPublishingContents
+            .filter { $0.releaseState != .archived }
+            .map { project in
+                let assets = mediaAssetRecords(for: project)
+                let blockers = assets.filter { $0.status == .missing }.count
+                let packageState = blockers == 0 ? "Manifest Ready" : "Needs Asset Metadata"
+                return HFCreatorUploadManifestRecord(
+                    id: "manifest-\(project.id)",
+                    projectTitle: project.title,
+                    manifestID: "local-manifest-\(project.id)",
+                    assetCount: assets.count,
+                    packageState: packageState,
+                    detail: "Manifest references \(assets.count) local registry records. No media bytes, file paths, or transfer destinations are included.",
+                    systemImage: blockers == 0 ? "doc.badge.gearshape.fill" : "doc.badge.ellipsis"
+                )
+            }
+    }
+
+    var creatorUploadPublishQueueRecords: [HFCreatorUploadQueueRecord] {
+        creatorPublishingQueueRecords.map { record in
+            let assets = mediaAssetRecords(for: record.project)
+            let blockers = assets.filter { $0.status == .missing }.count
+            let needsReview = assets.filter { $0.status == .needsReview || $0.status == .placeholder }.count
+            let queueState = blockers > 0 ? "Blocked" : needsReview > 0 ? "Preflight Review" : "Prepared"
+            return HFCreatorUploadQueueRecord(
+                id: "upload-queue-\(record.project.id)",
+                projectTitle: record.project.title,
+                queueState: queueState,
+                readiness: record.project.readyForReview ? "Review Ready" : "Draft",
+                nextStep: blockers > 0 ? "Complete missing registry metadata" : "Review local package manifest",
+                detail: "Queue preview is local-only and does not send, submit, or transfer content.",
+                systemImage: blockers > 0 ? "exclamationmark.triangle.fill" : "tray.and.arrow.up.fill"
+            )
+        }
+    }
+
+    var creatorUploadPreflightRecords: [HFCreatorUploadPreflightRecord] {
+        let snapshot = mediaAssetRuntimeSnapshot
+        let missing = snapshot.missingAssets
+        let placeholders = snapshot.placeholderAssets
+        let manifests = creatorUploadPackageManifestRecords
+
+        return [
+            HFCreatorUploadPreflightRecord(id: "asset-registry", title: "Asset Registry", detail: "\(snapshot.totalAssets) poster, trailer, artwork, and metadata records resolved through the media runtime.", result: missing == 0 ? "Clear" : "\(missing) Missing", isPassed: missing == 0, systemImage: "rectangle.stack.fill"),
+            HFCreatorUploadPreflightRecord(id: "manifest", title: "Package Manifest", detail: "\(manifests.count) in-memory manifests prepared from publishing records.", result: manifests.isEmpty ? "Empty" : "Prepared", isPassed: !manifests.isEmpty, systemImage: "doc.text.magnifyingglass"),
+            HFCreatorUploadPreflightRecord(id: "review", title: "Review Gate", detail: "\(creatorReadyForReviewProjects.count) projects satisfy local publishing review checks.", result: creatorReadyForReviewProjects.isEmpty ? "Needs Review" : "Ready", isPassed: !creatorReadyForReviewProjects.isEmpty, systemImage: "checkmark.seal.fill"),
+            HFCreatorUploadPreflightRecord(id: "placeholder", title: "Placeholder Audit", detail: "\(placeholders) placeholder records remain visible before future upload work.", result: placeholders == 0 ? "Clear" : "Review", isPassed: true, systemImage: "photo.on.rectangle.angled"),
+            HFCreatorUploadPreflightRecord(id: "network-boundary", title: "Transfer Boundary", detail: "No network session, file picker, cloud storage, or media transfer is active.", result: "Local Only", isPassed: true, systemImage: "lock.shield.fill")
+        ]
+    }
+
     private func mediaAssetRecord(
         project: HFCreatorPublishingContent,
         kind: HFCreatorMediaAssetKind,
@@ -2356,6 +2521,58 @@ final class HFStreamingStore: ObservableObject {
             return "Metadata readiness tracks title, description, creator, genre, tags, and runtime."
         case .artwork:
             return "Artwork package state is tracked for local publishing readiness only."
+        }
+    }
+
+    private func uploadSelectionState(for record: HFCreatorMediaAssetRecord) -> String {
+        switch record.status {
+        case .ready:
+            return "Selected"
+        case .needsReview:
+            return "Selected for Review"
+        case .placeholder:
+            return "Placeholder"
+        case .missing:
+            return "Excluded"
+        }
+    }
+
+    private func uploadSelectionSource(for record: HFCreatorMediaAssetRecord) -> String {
+        switch record.kind {
+        case .poster:
+            return "Poster Registry"
+        case .trailer:
+            return "Trailer Registry"
+        case .artwork:
+            return "Artwork Registry"
+        case .metadata:
+            return "Metadata Registry"
+        }
+    }
+
+    private func uploadSelectionDetail(for record: HFCreatorMediaAssetRecord) -> String {
+        switch record.status {
+        case .ready:
+            return "\(record.kind.rawValue) is selected from local readiness metadata."
+        case .needsReview:
+            return "\(record.kind.rawValue) is included for creator review before any future transfer."
+        case .placeholder:
+            return "\(record.kind.rawValue) remains a visible placeholder in the local package."
+        case .missing:
+            return "\(record.kind.rawValue) is excluded until registry metadata exists."
+        }
+    }
+
+    private func uploadValidationDetail(for record: HFCreatorMediaAssetRecord) -> String {
+        switch record.status {
+        case .ready:
+            return "Ready for local package manifest."
+        case .needsReview:
+            return "Available for manifest review before future production upload work."
+        case .placeholder:
+            return "Allowed as placeholder metadata, but flagged for creator review."
+        case .missing:
+            return "Missing metadata blocks local preflight."
         }
     }
 
