@@ -177,6 +177,11 @@ private enum HFCreatorProSpotlight {
     case collaborationNotes
     case collaborationActivity
     case collaborationTimeline
+    case seriesDashboard
+    case seriesDetail
+    case seriesEpisodes
+    case seriesNextEpisode
+    case seriesAnalytics
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -195,6 +200,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-collaboration-notes") { return .collaborationNotes }
         if arguments.contains("--hf-collaboration-activity") { return .collaborationActivity }
         if arguments.contains("--hf-collaboration-timeline") { return .collaborationTimeline }
+        if arguments.contains("--hf-start-series") { return .seriesDashboard }
+        if arguments.contains("--hf-series-detail") { return .seriesDetail }
+        if arguments.contains("--hf-series-episodes") { return .seriesEpisodes }
+        if arguments.contains("--hf-series-next-episode") { return .seriesNextEpisode }
+        if arguments.contains("--hf-series-analytics") { return .seriesAnalytics }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2061,12 +2071,23 @@ struct CreatorStudioView: View {
             creatorCollaborationActivitySection
         case .collaborationTimeline:
             creatorCollaborationTimelineSection
+        case .seriesDashboard:
+            seriesEpisodesDashboard
+        case .seriesDetail:
+            seriesDetailSection
+        case .seriesEpisodes:
+            episodeManagementSection
+        case .seriesNextEpisode:
+            nextEpisodeEngineSection
+        case .seriesAnalytics:
+            episodeAnalyticsSection
         }
     }
 
     private var creatorStudioProSurface: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             contentManagementSystemSection
+            seriesEpisodesDashboard
             creatorPublishingPipelineSection
             creatorPublishingSystemDashboard
             creatorCollaborationDashboard
@@ -2088,6 +2109,10 @@ struct CreatorStudioView: View {
             publishingReadinessSection
             publishingCalendarSection
             publishingAuditSection
+            seriesDetailSection
+            episodeManagementSection
+            nextEpisodeEngineSection
+            episodeAnalyticsSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -2578,6 +2603,157 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.collaboration.timeline")
+    }
+
+    private var seriesEpisodesDashboard: some View {
+        creatorProSpotlight(
+            title: "Series & Episodes System",
+            detail: "Local episodic backbone for series, seasons, episodes, next-episode recommendations, creator profiles, discovery, library, and analytics.",
+            systemImage: "play.square.stack.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.series.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Series", value: "\(streamingStore.seriesRecords.count)")
+                    creatorProStat(title: "Episodes", value: "\(streamingStore.episodeRecords.count)")
+                    creatorProStat(title: "Next", value: "\(streamingStore.nextEpisodeRecommendations.count)")
+                    creatorProStat(title: "Analytics", value: "\(streamingStore.episodeAnalyticsRecords.count)")
+                }
+
+                Text("Series -> Seasons -> Episodes -> Next Episode -> Analytics")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.series.relationshipFlow")
+
+                Text("Episodic data is local catalog structure only. No provider feed, remote catalog mutation, or background processing is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.series.localOnly")
+            }
+        }
+    }
+
+    private var seriesDetailSection: some View {
+        let primary = streamingStore.primarySeriesRecord
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Series Detail Page",
+                    detail: "Series hero, season selector, episode list, continue watching, related series, and creator connection share one local model.",
+                    systemImage: "rectangle.stack.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text(primary.title)
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.72)
+                    Text("\(primary.creatorName) • \(primary.genre) • \(primary.seasons.count) season • \(primary.episodeCount) episodes • \(primary.status.rawValue)")
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.74)
+                    Text(primary.synopsis)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("hf.series.detail.hero")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 146), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.seriesRecords) { series in
+                        seriesSummaryCard(series)
+                    }
+                }
+                .accessibilityIdentifier("hf.series.detail.relatedSeries")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.series.detail")
+    }
+
+    private var episodeManagementSection: some View {
+        let primary = streamingStore.primarySeriesRecord
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Episode Management",
+                    detail: "Episode number, season number, runtime, synopsis, artwork status, and release state are managed locally in CMS.",
+                    systemImage: "list.number",
+                    accent: HFColors.gold
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.xs) {
+                        ForEach(primary.seasons) { season in
+                            seasonSelectorPill(season)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .accessibilityIdentifier("hf.series.seasonSelector")
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(primary.seasons.flatMap(\.episodes)) { episode in
+                        episodeManagementRow(episode, seriesTitle: primary.title)
+                    }
+                }
+                .accessibilityIdentifier("hf.series.episodeList")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.series.episodes")
+    }
+
+    private var nextEpisodeEngineSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Next Episode Engine",
+                    detail: "Continue Watching now resolves the next local episode from episode progress, season order, and series structure.",
+                    systemImage: "forward.frame.fill",
+                    accent: HFColors.violet
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 168), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.nextEpisodeRecommendations) { recommendation in
+                        nextEpisodeRecommendationCard(recommendation)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.series.nextEpisode")
+    }
+
+    private var episodeAnalyticsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Episode Analytics",
+                    detail: "Per-episode views, completion, drop-off point, and watch time are computed from local catalog signals.",
+                    systemImage: "chart.line.uptrend.xyaxis",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.episodeAnalyticsRecords.prefix(8)) { record in
+                        episodeAnalyticsCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.series.analytics")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -3195,6 +3371,170 @@ struct CreatorStudioView: View {
         default:
             return HFColors.textSecondary
         }
+    }
+
+    private func seriesSummaryCard(_ series: HFSeriesRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: "play.square.stack.fill")
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .accessibilityHidden(true)
+
+            Text(series.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+
+            Text("\(series.seasons.count) season • \(series.episodeCount) episodes")
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(series.creatorName)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+
+            Text(series.status.rawValue)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(series.status == .published ? HFColors.gold : HFColors.violet)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.series.card.\(series.id)")
+    }
+
+    private func seasonSelectorPill(_ season: HFSeasonRecord) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("S\(season.seasonNumber)")
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+            Text("\(season.episodes.count) episodes")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+        }
+        .padding(.vertical, HFSpacing.xs)
+        .padding(.horizontal, HFSpacing.sm)
+        .background(HFColors.gold.opacity(0.12))
+        .overlay(
+            Capsule()
+                .stroke(HFColors.gold.opacity(0.26), lineWidth: 1)
+        )
+        .clipShape(Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.series.season.\(season.id)")
+    }
+
+    private func episodeManagementRow(_ episode: HFEpisodeRecord, seriesTitle: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            VStack(spacing: 2) {
+                Text("S\(episode.seasonNumber)")
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                Text("E\(episode.episodeNumber)")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+            }
+            .frame(width: 54, height: 52)
+            .background(HFColors.gold.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(episode.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text("\(seriesTitle) • \(episode.runtime) • \(episode.releaseState.rawValue)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+                Text(episode.synopsis)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.series.episode.\(episode.id)")
+    }
+
+    private func nextEpisodeRecommendationCard(_ recommendation: HFNextEpisodeRecommendation) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(recommendation.progressLabel)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.violet)
+                .lineLimit(1)
+
+            Text(recommendation.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+
+            Text(recommendation.seriesTitle)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+
+            Text(recommendation.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.series.nextEpisode.\(recommendation.id)")
+    }
+
+    private func episodeAnalyticsCard(_ record: HFEpisodeAnalyticsRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text("\(record.views)")
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+
+            Text(record.episodeTitle)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+
+            Text(record.seriesTitle)
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+
+            HStack(spacing: HFSpacing.xs) {
+                analyticsMiniPill("\(record.completionRate)%", "Complete", HFColors.cyanGlow)
+                analyticsMiniPill(record.watchTime, "Watch", HFColors.gold)
+            }
+
+            Text("Drop-off: \(record.dropOffPoint)")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.series.analytics.\(record.id)")
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {

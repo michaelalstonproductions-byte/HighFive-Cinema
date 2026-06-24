@@ -155,6 +155,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-audit")
             || arguments.contains("--hf-publishing-calendar")
             || Self.shouldStartInCreatorCollaboration
+            || Self.shouldStartInSeriesEpisodes
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -211,6 +212,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-audit")
             || arguments.contains("--hf-publishing-calendar")
             || Self.shouldStartInCreatorCollaboration
+            || Self.shouldStartInSeriesEpisodes
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -324,6 +326,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-audit")
             || arguments.contains("--hf-publishing-calendar")
             || Self.shouldStartInCreatorCollaboration
+            || Self.shouldStartInSeriesEpisodes
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -393,6 +396,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-collaboration-notes")
             || arguments.contains("--hf-collaboration-activity")
             || arguments.contains("--hf-collaboration-timeline")
+    }
+
+    private static var shouldStartInSeriesEpisodes: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-series")
+            || arguments.contains("--hf-series-detail")
+            || arguments.contains("--hf-series-episodes")
+            || arguments.contains("--hf-series-next-episode")
+            || arguments.contains("--hf-series-analytics")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

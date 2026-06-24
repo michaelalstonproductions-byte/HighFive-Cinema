@@ -451,6 +451,62 @@ struct HFCreatorCollaborationTimelineRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFEpisodeRecord: Identifiable {
+    let id: String
+    var seriesID: String
+    var seasonNumber: Int
+    var episodeNumber: Int
+    var title: String
+    var synopsis: String
+    var runtime: String
+    var artworkStatus: HFCreatorPublishingAssetStatus
+    var releaseState: HFCreatorReleaseState
+    var progress: Double?
+}
+
+struct HFSeasonRecord: Identifiable {
+    let id: String
+    var seriesID: String
+    var seasonNumber: Int
+    var title: String
+    var episodes: [HFEpisodeRecord]
+}
+
+struct HFSeriesRecord: Identifiable {
+    let id: String
+    var title: String
+    var synopsis: String
+    var creatorName: String
+    var genre: String
+    var status: HFCreatorReleaseState
+    var seasons: [HFSeasonRecord]
+    var heroMovie: Movie
+
+    var episodeCount: Int {
+        seasons.reduce(0) { $0 + $1.episodes.count }
+    }
+}
+
+struct HFNextEpisodeRecommendation: Identifiable {
+    let id: String
+    var seriesTitle: String
+    var seasonNumber: Int
+    var episodeNumber: Int
+    var title: String
+    var detail: String
+    var progressLabel: String
+}
+
+struct HFEpisodeAnalyticsRecord: Identifiable {
+    let id: String
+    var seriesTitle: String
+    var episodeTitle: String
+    var views: Int
+    var completionRate: Int
+    var dropOffPoint: String
+    var watchTime: String
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -1426,6 +1482,181 @@ final class HFStreamingStore: ObservableObject {
         }
     }
 
+    private func makeSeriesRecord(
+        movieID: String,
+        seasonCount: Int,
+        episodesPerSeason: [Int],
+        status: HFCreatorReleaseState,
+        baseProgress: Double?,
+        episodeTitles: [String]
+    ) -> HFSeriesRecord {
+        let hero = movie(id: movieID) ?? featuredMovie
+        var titleIndex = 0
+        let totalEpisodes = max(1, episodesPerSeason.reduce(0, +))
+        let seasons = (1...seasonCount).map { seasonNumber in
+            let episodeCount = episodesPerSeason.indices.contains(seasonNumber - 1) ? episodesPerSeason[seasonNumber - 1] : 6
+            let episodes = (1...episodeCount).map { episodeNumber in
+                let title = episodeTitles.indices.contains(titleIndex) ? episodeTitles[titleIndex] : "Episode \(episodeNumber)"
+                let absoluteIndex = titleIndex
+                titleIndex += 1
+                return HFEpisodeRecord(
+                    id: "\(movieID)-s\(seasonNumber)-e\(episodeNumber)",
+                    seriesID: movieID,
+                    seasonNumber: seasonNumber,
+                    episodeNumber: episodeNumber,
+                    title: title,
+                    synopsis: "\(hero.title) episode \(episodeNumber) expands the local series arc for creator, CMS, library, discovery, and analytics surfaces.",
+                    runtime: "\(34 + (absoluteIndex * 3) % 18)m",
+                    artworkStatus: hero.posterAssetName == nil ? .placeholder : .ready,
+                    releaseState: status,
+                    progress: episodeProgress(baseProgress: baseProgress, episodeIndex: absoluteIndex, totalEpisodes: totalEpisodes)
+                )
+            }
+            return HFSeasonRecord(
+                id: "\(movieID)-s\(seasonNumber)",
+                seriesID: movieID,
+                seasonNumber: seasonNumber,
+                title: "Season \(seasonNumber)",
+                episodes: episodes
+            )
+        }
+        return HFSeriesRecord(
+            id: movieID,
+            title: hero.title,
+            synopsis: hero.synopsis,
+            creatorName: hero.creatorName,
+            genre: hero.genres.first ?? "Series",
+            status: status,
+            seasons: seasons,
+            heroMovie: hero
+        )
+    }
+
+    private func episodeProgress(baseProgress: Double?, episodeIndex: Int, totalEpisodes: Int) -> Double? {
+        guard let baseProgress else { return nil }
+        let completed = Int((baseProgress * Double(totalEpisodes)).rounded(.down))
+        if episodeIndex < completed { return 1.0 }
+        if episodeIndex == completed {
+            let fractional = (baseProgress * Double(totalEpisodes)) - Double(completed)
+            return min(0.94, max(0.12, fractional))
+        }
+        return nil
+    }
+
+    var seriesRecords: [HFSeriesRecord] {
+        [
+            makeSeriesRecord(
+                movieID: "paranormall-s1",
+                seasonCount: 1,
+                episodesPerSeason: [7],
+                status: .published,
+                baseProgress: 0.28,
+                episodeTitles: [
+                    "Cold Open",
+                    "The House That Answered",
+                    "Basement Signal",
+                    "Witness Marks",
+                    "The Long Hall",
+                    "Static Room",
+                    "Nothing Normal"
+                ]
+            ),
+            makeSeriesRecord(
+                movieID: "black-turnip",
+                seasonCount: 1,
+                episodesPerSeason: [6],
+                status: .scheduled,
+                baseProgress: nil,
+                episodeTitles: [
+                    "Seed Memory",
+                    "The Ledger",
+                    "Smoke House",
+                    "Root Work",
+                    "Inheritance",
+                    "Harvest"
+                ]
+            ),
+            makeSeriesRecord(
+                movieID: "old-satan",
+                seasonCount: 1,
+                episodesPerSeason: [5],
+                status: .review,
+                baseProgress: nil,
+                episodeTitles: [
+                    "The Return",
+                    "Ash Road",
+                    "Small Church",
+                    "Bargain",
+                    "Old Fire"
+                ]
+            )
+        ]
+    }
+
+    var episodeRecords: [HFEpisodeRecord] {
+        seriesRecords.flatMap { series in
+            series.seasons.flatMap(\.episodes)
+        }
+    }
+
+    var primarySeriesRecord: HFSeriesRecord {
+        seriesRecords.first ?? makeSeriesRecord(
+            movieID: featuredMovie.id,
+            seasonCount: 1,
+            episodesPerSeason: [1],
+            status: .published,
+            baseProgress: featuredMovie.progress,
+            episodeTitles: ["Pilot"]
+        )
+    }
+
+    var nextEpisodeRecommendations: [HFNextEpisodeRecommendation] {
+        seriesRecords.compactMap { series in
+            let episodes = series.seasons.flatMap(\.episodes)
+            guard !episodes.isEmpty else { return nil }
+            let next = episodes.first { ($0.progress ?? 0) < 0.95 } ?? episodes.last!
+            let watched = episodes.filter { ($0.progress ?? 0) >= 0.95 }.count
+            return HFNextEpisodeRecommendation(
+                id: "next-\(next.id)",
+                seriesTitle: series.title,
+                seasonNumber: next.seasonNumber,
+                episodeNumber: next.episodeNumber,
+                title: next.title,
+                detail: "Season \(next.seasonNumber), Episode \(next.episodeNumber) in \(series.title)",
+                progressLabel: "\(watched)/\(episodes.count) complete"
+            )
+        }
+    }
+
+    var episodeAnalyticsRecords: [HFEpisodeAnalyticsRecord] {
+        episodeRecords.map { episode in
+            let seed = analyticsSeed(episode.id)
+            let progress = episode.progress ?? Double((seed % 44) + 18) / 100
+            return HFEpisodeAnalyticsRecord(
+                id: "episode-analytics-\(episode.id)",
+                seriesTitle: seriesRecords.first { $0.id == episode.seriesID }?.title ?? "Series",
+                episodeTitle: episode.title,
+                views: 160 + seed % 1_140,
+                completionRate: min(96, max(22, Int(progress * 100) + seed % 18)),
+                dropOffPoint: "Act \(2 + seed % 3)",
+                watchTime: "\(18 + seed % 34)m"
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.views == rhs.views { return lhs.completionRate > rhs.completionRate }
+            return lhs.views > rhs.views
+        }
+    }
+
+    var seriesDiscoveryCategory: Category {
+        Category(
+            id: "series-episodes",
+            title: "Series & Episodes",
+            subtitle: "Season-based worlds, limited series, and creator episodic paths",
+            movies: seriesRecords.map(\.heroMovie)
+        )
+    }
+
     var creatorPublishedMovies: [Movie] {
         creatorPublishedProjects.map(\.movie)
     }
@@ -1550,10 +1781,21 @@ final class HFStreamingStore: ObservableObject {
             HFCMSRelationshipRecord(
                 id: "episode-\(episode.id)",
                 source: episode.title,
-                target: episode.seriesID ?? "Series",
+                target: seriesRecords.first { $0.id == episode.seriesID }?.title ?? episode.seriesID ?? "Series",
                 relationship: "Episode -> Series",
                 detail: "Series structure for scalable catalog browsing"
             )
+        }
+        let seriesSeasons = seriesRecords.flatMap { series in
+            series.seasons.map { season in
+                HFCMSRelationshipRecord(
+                    id: "season-\(season.id)",
+                    source: season.title,
+                    target: series.title,
+                    relationship: "Season -> Series",
+                    detail: "\(season.episodes.count) local episode records"
+                )
+            }
         }
         let related = allCatalogMovies.flatMap { movie in
             relatedMovies(for: movie).prefix(2).map { related in
@@ -1567,7 +1809,7 @@ final class HFStreamingStore: ObservableObject {
             }
         }
         var seen = Set<String>()
-        return (movieCreator + movieCollections + seriesEpisodes + related).filter { seen.insert($0.id).inserted }
+        return (movieCreator + movieCollections + seriesSeasons + seriesEpisodes + related).filter { seen.insert($0.id).inserted }
     }
 
     var creatorProfiles: [HFCreatorProfile] {
@@ -2193,16 +2435,15 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var libraryNextEpisode: HFLibraryNextEpisode? {
-        guard let series = allCatalogMovies.first(where: { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }) else {
+        guard let next = nextEpisodeRecommendations.first,
+              let series = seriesRecords.first(where: { $0.title == next.seriesTitle }) else {
             return nil
         }
-        let watchedIndex = max(1, Int(((series.progress ?? 0.14) * 7).rounded(.up)))
-        let nextIndex = min(7, watchedIndex + 1)
         return HFLibraryNextEpisode(
-            id: "\(series.id)-next-\(nextIndex)",
-            series: series,
-            title: "Episode \(nextIndex)",
-            detail: "Next episode in \(series.title)"
+            id: next.id,
+            series: series.heroMovie,
+            title: "S\(next.seasonNumber) E\(next.episodeNumber): \(next.title)",
+            detail: "\(next.detail) • \(next.progressLabel)"
         )
     }
 
@@ -2248,6 +2489,7 @@ final class HFStreamingStore: ObservableObject {
             HFLibraryCollection(id: "creator-collections", title: "Creator Collections", detail: "Creator-led titles connected to profiles", movies: creatorProfiles.flatMap(\.filmography).reduce(into: [Movie]()) { result, movie in
                 if !result.contains(where: { $0.id == movie.id }) { result.append(movie) }
             }, systemImage: "person.crop.rectangle.stack.fill"),
+            HFLibraryCollection(id: "series", title: "Series", detail: "Season and episode paths from your local library", movies: seriesRecords.map(\.heroMovie), systemImage: "play.square.stack.fill"),
             HFLibraryCollection(id: "premieres", title: "Premieres", detail: "Premiere and scheduled local titles", movies: allCatalogMovies.filter { $0.isComingSoon || $0.genres.contains("Premiere") }, systemImage: "theatermasks.fill"),
             HFLibraryCollection(id: "available-offline", title: "Available Offline", detail: "Local offline preview shelf", movies: downloadedMovies, systemImage: "arrow.down.circle.fill")
         ].filter { !$0.movies.isEmpty }
@@ -2257,6 +2499,7 @@ final class HFStreamingStore: ObservableObject {
         [
             HFLibraryIntelligenceSignal(id: "continue", title: "Continue Watching", detail: "Feeds local recommendations and home rails", value: "\(libraryContinueWatchingMovies.count)", systemImage: "play.circle.fill"),
             HFLibraryIntelligenceSignal(id: "recommendations", title: "Recommendations", detail: "Based on \(libraryLastViewedMovie.title)", value: "\(relatedMovies(for: libraryLastViewedMovie).count)", systemImage: "sparkle.magnifyingglass"),
+            HFLibraryIntelligenceSignal(id: "next-episode", title: "Next Episode", detail: nextEpisodeRecommendations.first?.detail ?? "No series progress yet", value: "\(nextEpisodeRecommendations.count)", systemImage: "play.square.stack.fill"),
             HFLibraryIntelligenceSignal(id: "collections", title: "Collections", detail: "Favorites, documentaries, crime, premieres, creator collections", value: "\(libraryUserCollections.count)", systemImage: "rectangle.stack.fill"),
             HFLibraryIntelligenceSignal(id: "offline", title: "Downloads Integration", detail: "Local offline preview state only", value: "\(downloadedMovies.count)", systemImage: "arrow.down.circle.fill")
         ]
@@ -2293,6 +2536,7 @@ final class HFStreamingStore: ObservableObject {
             HFAnalyticsMetric(id: "watch-time", title: "Watch Time", value: "\(max(1, totalWatchMinutes / 60))h", detail: "Computed from local progress", systemImage: "clock.fill"),
             HFAnalyticsMetric(id: "completion-rate", title: "Completion Rate", value: "\(averageCompletion)%", detail: "Average local title completion", systemImage: "checkmark.circle.fill"),
             HFAnalyticsMetric(id: "resume-rate", title: "Resume Rate", value: "\(resumeRate)%", detail: "In-progress titles with resume state", systemImage: "arrow.clockwise.circle.fill"),
+            HFAnalyticsMetric(id: "episodes", title: "Episodes", value: "\(episodeRecords.count)", detail: "Local episode records across \(seriesRecords.count) series", systemImage: "play.square.stack.fill"),
             HFAnalyticsMetric(id: "drop-off-points", title: "Drop-off Points", value: "\(dropOffCount)", detail: "Mid-session local drop-off markers", systemImage: "point.topleft.down.curvedto.point.bottomright.up")
         ]
     }
@@ -2456,6 +2700,7 @@ final class HFStreamingStore: ObservableObject {
             Category(id: "trending", title: "Trending", subtitle: "Local momentum from the HighFive catalog", movies: moviesByIDs(["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"])),
             Category(id: "new-releases", title: "New Releases", subtitle: "Fresh and recently staged local catalog titles", movies: newThisWeekCatalog),
             Category(id: "highfive-originals", title: "HighFive Originals", subtitle: "Original films, series, creator cuts, and local premieres", movies: originalsCatalog.filter { !$0.isComingSoon }),
+            seriesDiscoveryCategory,
             Category(id: "creator-published", title: "Creator Published", subtitle: "Titles promoted from the Creator Publishing Pipeline", movies: creatorPublishedMovies),
             Category(id: "award-winners", title: "Award Winners", subtitle: "Prestige-style local programming for editorial rails", movies: moviesByIDs(["friendly", "artist-development", "behind-vision", "black-turnip", "sunshine"])),
             Category(id: "premieres", title: "Premieres", subtitle: "Premiere-ready and coming-soon worlds", movies: allCatalogMovies.filter { $0.isComingSoon || $0.genres.contains("Premiere") })
@@ -2550,24 +2795,24 @@ final class HFStreamingStore: ObservableObject {
     }
 
     private var cmsEpisodeRecords: [HFCMSContentRecord] {
-        guard let series = movie(id: "paranormall-s1") else { return [] }
-        return (1...7).map { episode in
-            HFCMSContentRecord(
-                id: "paranormall-s1-e\(episode)",
-                title: "Paranormall Episode \(episode)",
+        episodeRecords.map { episode in
+            let series = seriesRecords.first { $0.id == episode.seriesID } ?? primarySeriesRecord
+            return HFCMSContentRecord(
+                id: "cms-episode-\(episode.id)",
+                title: episode.title,
                 type: .episode,
-                description: "Episode \(episode) metadata placeholder attached to Paranormall Season 1.",
+                description: episode.synopsis,
                 creatorName: series.creatorName,
-                genre: "Horror",
-                tags: ["Episode", "Series", "Mystery"],
-                runtime: "Episode",
-                rating: series.rating,
-                artworkStatus: .ready,
+                genre: series.genre,
+                tags: ["Episode", "Series", "Season \(episode.seasonNumber)", "Episode \(episode.episodeNumber)"],
+                runtime: episode.runtime,
+                rating: series.heroMovie.rating,
+                artworkStatus: episode.artworkStatus,
                 trailerStatus: .placeholder,
-                releaseState: .published,
-                collectionIDs: cmsCollectionIDs(for: series),
-                seriesID: series.id,
-                relatedTitleIDs: relatedMovies(for: series).map(\.id)
+                releaseState: episode.releaseState,
+                collectionIDs: cmsCollectionIDs(for: series.heroMovie),
+                seriesID: episode.seriesID,
+                relatedTitleIDs: relatedMovies(for: series.heroMovie).map(\.id)
             )
         }
     }
