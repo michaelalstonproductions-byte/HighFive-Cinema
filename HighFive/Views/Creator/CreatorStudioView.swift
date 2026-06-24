@@ -245,6 +245,12 @@ private enum HFCreatorProSpotlight {
     case uploadManifest
     case uploadQueue
     case uploadPreflight
+    case projectRuntime
+    case projectManifest
+    case projectAssets
+    case projectValidation
+    case projectReleasePackage
+    case projectTimeline
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -333,6 +339,12 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-upload-manifest") { return .uploadManifest }
         if arguments.contains("--hf-upload-queue") { return .uploadQueue }
         if arguments.contains("--hf-upload-preflight") { return .uploadPreflight }
+        if arguments.contains("--hf-start-project-runtime") { return .projectRuntime }
+        if arguments.contains("--hf-project-manifest") { return .projectManifest }
+        if arguments.contains("--hf-project-assets") { return .projectAssets }
+        if arguments.contains("--hf-project-validation") { return .projectValidation }
+        if arguments.contains("--hf-project-release-package") { return .projectReleasePackage }
+        if arguments.contains("--hf-project-timeline") { return .projectTimeline }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2355,6 +2367,18 @@ struct CreatorStudioView: View {
             creatorUploadQueueSection
         case .uploadPreflight:
             creatorUploadPreflightSection
+        case .projectRuntime:
+            creatorProjectRuntimeDashboard
+        case .projectManifest:
+            creatorProjectManifestSection
+        case .projectAssets:
+            creatorProjectAssetManifestSection
+        case .projectValidation:
+            creatorProjectValidationSection
+        case .projectReleasePackage:
+            creatorProjectReleasePackageSection
+        case .projectTimeline:
+            creatorProjectTimelineSection
         }
     }
 
@@ -2372,6 +2396,7 @@ struct CreatorStudioView: View {
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
             contentBackendFoundationSection
+            creatorProjectRuntimeDashboard
             creatorMediaAssetRuntimeSection
             creatorUploadWorkflowDashboard
             creatorDraftWorkspaceDashboard
@@ -2441,6 +2466,11 @@ struct CreatorStudioView: View {
             contentBackendFetchSection
             contentBackendPersistenceSection
             contentBackendRelationshipsSection
+            creatorProjectManifestSection
+            creatorProjectAssetManifestSection
+            creatorProjectValidationSection
+            creatorProjectReleasePackageSection
+            creatorProjectTimelineSection
             creatorDraftEditorSection
             creatorDraftValidationSection
             creatorMediaAssetRuntimeSection
@@ -4334,6 +4364,179 @@ struct CreatorStudioView: View {
         }
     }
 
+    private var creatorProjectRuntimeDashboard: some View {
+        let snapshot = streamingStore.creatorProjectRuntimeSnapshot
+
+        return creatorProSpotlight(
+            title: "Creator Project Runtime",
+            detail: "Canonical project orchestration for project info, assets, metadata, validation, release package, and timeline state.",
+            systemImage: "square.stack.3d.up.fill",
+            accent: HFColors.gold,
+            identifier: "hf.projectRuntime.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Projects", value: "\(snapshot.projectCount)")
+                    creatorProStat(title: "Manifests", value: "\(snapshot.manifestCount)")
+                    creatorProStat(title: "Packages", value: "\(snapshot.releasePackages)")
+                    creatorProStat(title: "Validation", value: snapshot.readinessLabel)
+                }
+
+                Text("Project Runtime -> Media Asset Runtime -> Identity Runtime -> Catalog Runtime")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.projectRuntime.path")
+
+                Text("Runtime state is derived locally from the repository snapshot. No import, export, upload, cloud storage, or transfer path is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.projectRuntime.localOnly")
+            }
+        }
+    }
+
+    private var creatorProjectManifestSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Project Manifest",
+                    detail: "Each creator project receives canonical project, creator, content, version, created, modified, and status fields.",
+                    systemImage: "doc.text.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorProjectManifestRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.title,
+                            detail: "\(record.projectID) / \(record.creatorID) / \(record.contentID). \(record.detail)",
+                            status: "\(record.version) - \(record.status)",
+                            systemImage: record.systemImage,
+                            accent: projectRuntimeAccent(for: record.status)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.projectRuntime.manifest")
+    }
+
+    private var creatorProjectAssetManifestSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Asset Manifest",
+                    detail: "Poster, trailer, artwork, metadata, and thumbnail readiness are unified from the Media Asset Runtime.",
+                    systemImage: "rectangle.stack.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorProjectAssetManifestRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "Poster \(record.posterState). Trailer \(record.trailerState). Artwork \(record.artworkState). Metadata \(record.metadataState).",
+                            status: record.thumbnailState,
+                            systemImage: record.systemImage,
+                            accent: record.thumbnailState.contains("Ready") ? HFColors.gold : HFColors.cyanGlow
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.projectRuntime.assetManifest")
+    }
+
+    private var creatorProjectValidationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Project Validation Engine",
+                    detail: "One validation pass resolves metadata, poster, trailer, artwork, publishing, and release readiness.",
+                    systemImage: "checklist.checked",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorProjectValidationRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "Metadata \(gateLabel(record.metadataComplete)), poster \(gateLabel(record.posterReady)), trailer \(gateLabel(record.trailerReady)), artwork \(gateLabel(record.artworkReady)), publishing \(gateLabel(record.publishingReady)).",
+                            status: record.status,
+                            systemImage: record.systemImage,
+                            accent: record.releaseReady ? HFColors.gold : HFColors.cyanGlow
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.projectRuntime.validation")
+    }
+
+    private var creatorProjectReleasePackageSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Release Package",
+                    detail: "Release manifest, publishing summary, asset summary, runtime summary, and creator summary are prepared without export.",
+                    systemImage: "shippingbox.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorProjectReleasePackageRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "\(record.releaseManifest). \(record.assetSummary). \(record.runtimeSummary). \(record.creatorSummary).",
+                            status: record.status,
+                            systemImage: record.systemImage,
+                            accent: record.status.contains("Ready") ? HFColors.gold : HFColors.cyanGlow
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.projectRuntime.releasePackage")
+    }
+
+    private var creatorProjectTimelineSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Project Timeline",
+                    detail: "Created, edited, validated, ready, published, and archived milestones are derived from project lifecycle state.",
+                    systemImage: "timeline.selection",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorProjectTimelineRecords.prefix(10)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: "\(record.projectTitle) - \(record.event)",
+                            detail: record.detail,
+                            status: record.status,
+                            systemImage: record.systemImage,
+                            accent: projectRuntimeAccent(for: record.status)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.projectRuntime.timeline")
+    }
+
     private var creatorUploadWorkflowDashboard: some View {
         let snapshot = streamingStore.creatorUploadWorkflowSnapshot
 
@@ -6019,6 +6222,20 @@ struct CreatorStudioView: View {
             return HFColors.gold
         }
         return HFColors.cyanGlow
+    }
+
+    private func projectRuntimeAccent(for state: String) -> Color {
+        if state.contains("Archived") || state.contains("Blocked") {
+            return HFColors.redAccent
+        }
+        if state.contains("Ready") || state.contains("Published") || state.contains("Visible") || state.contains("Logged") {
+            return HFColors.gold
+        }
+        return HFColors.cyanGlow
+    }
+
+    private func gateLabel(_ value: Bool) -> String {
+        value ? "ready" : "pending"
     }
 
     private func rightsLedgerRow(_ record: HFRightsLedgerRecord) -> some View {

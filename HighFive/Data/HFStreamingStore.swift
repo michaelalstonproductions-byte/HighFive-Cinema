@@ -399,6 +399,81 @@ struct HFCreatorUploadPreflightRecord: Identifiable, Hashable {
     var systemImage: String
 }
 
+struct HFCreatorProjectRuntimeSnapshot: Hashable {
+    var projectCount: Int
+    var manifestCount: Int
+    var assetManifestCount: Int
+    var validationPassed: Int
+    var releasePackages: Int
+    var timelineEvents: Int
+    var updatedAtLabel: String
+
+    var readinessLabel: String {
+        "\(validationPassed)/\(projectCount) Valid"
+    }
+}
+
+struct HFCreatorProjectManifestRecord: Identifiable, Hashable {
+    let id: String
+    var projectID: String
+    var creatorID: String
+    var contentID: String
+    var version: String
+    var created: String
+    var modified: String
+    var status: String
+    var title: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorProjectAssetManifestRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var posterState: String
+    var trailerState: String
+    var artworkState: String
+    var metadataState: String
+    var thumbnailState: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorProjectValidationRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var metadataComplete: Bool
+    var posterReady: Bool
+    var trailerReady: Bool
+    var artworkReady: Bool
+    var publishingReady: Bool
+    var releaseReady: Bool
+    var status: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorProjectReleasePackageRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var releaseManifest: String
+    var publishingSummary: String
+    var assetSummary: String
+    var runtimeSummary: String
+    var creatorSummary: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFCreatorProjectTimelineRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var event: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 struct HFCreatorDraftValidationItem: Identifiable {
     let id: String
     var title: String
@@ -2475,6 +2550,120 @@ final class HFStreamingStore: ObservableObject {
         ]
     }
 
+    var creatorProjectRuntimeSnapshot: HFCreatorProjectRuntimeSnapshot {
+        let validations = creatorProjectValidationRecords
+
+        return HFCreatorProjectRuntimeSnapshot(
+            projectCount: creatorPublishingContents.count,
+            manifestCount: creatorProjectManifestRecords.count,
+            assetManifestCount: creatorProjectAssetManifestRecords.count,
+            validationPassed: validations.filter(\.releaseReady).count,
+            releasePackages: creatorProjectReleasePackageRecords.count,
+            timelineEvents: creatorProjectTimelineRecords.count,
+            updatedAtLabel: "Creator project runtime resolved from local repository state"
+        )
+    }
+
+    var creatorProjectManifestRecords: [HFCreatorProjectManifestRecord] {
+        creatorPublishingContents.map { project in
+            HFCreatorProjectManifestRecord(
+                id: "project-manifest-\(project.id)",
+                projectID: project.id,
+                creatorID: creatorID(for: project.creator),
+                contentID: project.movie.id,
+                version: projectVersion(for: project),
+                created: "Repository snapshot",
+                modified: project.updatedAtLabel,
+                status: project.releaseState.rawValue,
+                title: project.title,
+                detail: "Canonical manifest links project, creator, content, version, status, assets, validation, and release package state.",
+                systemImage: "doc.text.fill"
+            )
+        }
+    }
+
+    var creatorProjectAssetManifestRecords: [HFCreatorProjectAssetManifestRecord] {
+        creatorPublishingContents.map { project in
+            let assets = Dictionary(uniqueKeysWithValues: mediaAssetRecords(for: project).map { ($0.kind, $0) })
+            return HFCreatorProjectAssetManifestRecord(
+                id: "project-assets-\(project.id)",
+                projectTitle: project.title,
+                posterState: assets[.poster]?.readiness ?? "Missing",
+                trailerState: assets[.trailer]?.readiness ?? "Missing",
+                artworkState: assets[.artwork]?.readiness ?? "Missing",
+                metadataState: assets[.metadata]?.readiness ?? "Missing",
+                thumbnailState: project.posterStatus == .ready ? "Poster Thumbnail Ready" : "Thumbnail Placeholder",
+                detail: "Asset manifest references poster, trailer, artwork, metadata, and thumbnail readiness from the media asset runtime.",
+                systemImage: "rectangle.stack.fill"
+            )
+        }
+    }
+
+    var creatorProjectValidationRecords: [HFCreatorProjectValidationRecord] {
+        creatorPublishingContents.map { project in
+            let metadataComplete = !project.title.isEmpty
+                && project.description.trimmingCharacters(in: .whitespacesAndNewlines).count >= 24
+                && !project.creator.isEmpty
+                && !project.genre.isEmpty
+                && !project.tags.isEmpty
+                && !project.runtime.isEmpty
+                && project.metadataStatus == .ready
+            let posterReady = project.posterStatus == .ready || project.posterStatus == .needsReview
+            let trailerReady = project.trailerStatus == .ready || project.trailerStatus == .needsReview
+            let artworkReady = project.artworkStatus == .ready || project.artworkStatus == .needsReview
+            let publishingReady = project.readyForReview
+            let releaseReady = metadataComplete && posterReady && trailerReady && artworkReady && publishingReady && project.releaseState != .archived
+            let completeCount = [metadataComplete, posterReady, trailerReady, artworkReady, publishingReady, releaseReady].filter { $0 }.count
+
+            return HFCreatorProjectValidationRecord(
+                id: "project-validation-\(project.id)",
+                projectTitle: project.title,
+                metadataComplete: metadataComplete,
+                posterReady: posterReady,
+                trailerReady: trailerReady,
+                artworkReady: artworkReady,
+                publishingReady: publishingReady,
+                releaseReady: releaseReady,
+                status: releaseReady ? "Release Ready" : "\(completeCount)/6 Gates",
+                detail: "One validation pass covers metadata, poster, trailer, artwork, publishing, and release readiness.",
+                systemImage: releaseReady ? "checkmark.seal.fill" : "list.clipboard.fill"
+            )
+        }
+    }
+
+    var creatorProjectReleasePackageRecords: [HFCreatorProjectReleasePackageRecord] {
+        creatorPublishingContents.map { project in
+            let assets = mediaAssetRecords(for: project)
+            let readyAssets = assets.filter { $0.status == .ready || $0.status == .needsReview }.count
+            let validation = creatorProjectValidationRecords.first { $0.id == "project-validation-\(project.id)" }
+
+            return HFCreatorProjectReleasePackageRecord(
+                id: "project-release-\(project.id)",
+                projectTitle: project.title,
+                releaseManifest: "release-\(project.id)-\(projectVersion(for: project))",
+                publishingSummary: "\(project.releaseState.rawValue) - \(project.readyForReview ? "review-ready" : "draft-ready")",
+                assetSummary: "\(readyAssets)/\(assets.count) registry records ready",
+                runtimeSummary: "Media Runtime -> Project Runtime -> Publishing",
+                creatorSummary: "\(project.creator) / \(creatorID(for: project.creator))",
+                status: validation?.releaseReady == true ? "Package Ready" : "Package Review",
+                systemImage: validation?.releaseReady == true ? "shippingbox.fill" : "shippingbox"
+            )
+        }
+    }
+
+    var creatorProjectTimelineRecords: [HFCreatorProjectTimelineRecord] {
+        creatorPublishingContents.flatMap { project in
+            [
+                HFCreatorProjectTimelineRecord(id: "timeline-\(project.id)-created", projectTitle: project.title, event: "Created", detail: "\(project.title) entered the local content snapshot.", status: "Logged", systemImage: "doc.badge.plus"),
+                HFCreatorProjectTimelineRecord(id: "timeline-\(project.id)-edited", projectTitle: project.title, event: "Edited", detail: project.updatedAtLabel, status: "Local", systemImage: "pencil"),
+                HFCreatorProjectTimelineRecord(id: "timeline-\(project.id)-validated", projectTitle: project.title, event: "Validated", detail: creatorProjectValidationRecords.first { $0.id == "project-validation-\(project.id)" }?.status ?? "Pending", status: "Runtime", systemImage: "checklist.checked"),
+                HFCreatorProjectTimelineRecord(id: "timeline-\(project.id)-ready", projectTitle: project.title, event: "Ready", detail: project.readyForReview ? "Project can enter local review." : "Project remains in preparation.", status: project.readyForReview ? "Ready" : "Draft", systemImage: "checkmark.seal.fill"),
+                HFCreatorProjectTimelineRecord(id: "timeline-\(project.id)-published", projectTitle: project.title, event: "Published", detail: project.discoveryEligible ? "Visible in local discovery." : "Not visible in discovery.", status: project.discoveryEligible ? "Visible" : "Not Published", systemImage: "sparkle.magnifyingglass"),
+                HFCreatorProjectTimelineRecord(id: "timeline-\(project.id)-archived", projectTitle: project.title, event: "Archived", detail: project.releaseState == .archived ? "Archived in the creator library." : "Archive event not reached.", status: project.releaseState == .archived ? "Archived" : "Open", systemImage: "archivebox.fill")
+            ]
+        }
+    }
+
     private func mediaAssetRecord(
         project: HFCreatorPublishingContent,
         kind: HFCreatorMediaAssetKind,
@@ -2573,6 +2762,30 @@ final class HFStreamingStore: ObservableObject {
             return "Allowed as placeholder metadata, but flagged for creator review."
         case .missing:
             return "Missing metadata blocks local preflight."
+        }
+    }
+
+    private func creatorID(for creatorName: String) -> String {
+        let slug = creatorName
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber || $0 == " " }
+            .split(separator: " ")
+            .joined(separator: "-")
+        return slug.isEmpty ? "creator-local" : "creator-\(slug)"
+    }
+
+    private func projectVersion(for project: HFCreatorPublishingContent) -> String {
+        switch project.releaseState {
+        case .draft:
+            return "v0.1"
+        case .review:
+            return "v0.8"
+        case .scheduled:
+            return "v0.9"
+        case .published:
+            return "v1.0"
+        case .archived:
+            return "archived"
         }
     }
 
