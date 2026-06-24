@@ -1153,6 +1153,219 @@ struct LibraryRepository {
     }
 }
 
+struct HFContentQueryEngine {
+    private let catalogRepository: CatalogRepository
+    private let creatorRepository: CreatorRepository
+    private let publishingRepository: PublishingRepository
+    private let libraryRepository: LibraryRepository
+
+    init(
+        catalogRepository: CatalogRepository,
+        creatorRepository: CreatorRepository,
+        publishingRepository: PublishingRepository,
+        libraryRepository: LibraryRepository
+    ) {
+        self.catalogRepository = catalogRepository
+        self.creatorRepository = creatorRepository
+        self.publishingRepository = publishingRepository
+        self.libraryRepository = libraryRepository
+    }
+
+    func fetchCatalog() -> [Movie] {
+        uniqueMovies(catalogRepository.fetchCatalog() + publishingRepository.fetchPublishedTitles())
+    }
+
+    func fetchTitle(id: String) -> Movie? {
+        catalogRepository.fetchMovie(id: id)
+            ?? publishingRepository.fetchPublishedTitles().first { $0.id == id }
+    }
+
+    func searchTitles(query: String, filter: String = "All") -> [Movie] {
+        let base = titles(matching: filter)
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return Array(base.prefix(8)) }
+
+        return base
+            .map { movie in (movie, titleSearchScore(for: movie, term: term)) }
+            .filter { $0.1 > 0 }
+            .sorted { lhs, rhs in
+                if lhs.1 == rhs.1 { return lhs.0.title < rhs.0.title }
+                return lhs.1 > rhs.1
+            }
+            .map(\.0)
+    }
+
+    func searchCreators(query: String) -> [Creator] {
+        let creators = creatorRepository.fetchCreators()
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return creators }
+
+        return creators
+            .map { creator in (creator, creatorSearchScore(for: creator, term: term)) }
+            .filter { $0.1 > 0 }
+            .sorted { lhs, rhs in
+                if lhs.1 == rhs.1 { return lhs.0.name < rhs.0.name }
+                return lhs.1 > rhs.1
+            }
+            .map(\.0)
+    }
+
+    func titlesByCreator(_ creator: Creator) -> [Movie] {
+        uniqueMovies(
+            creatorRepository.fetchTitles(for: creator)
+                + publishingRepository.fetchProjects()
+                .filter { $0.creator == creator.name }
+                .map(\.movie)
+        )
+    }
+
+    func titlesByGenre(_ genre: String) -> [Movie] {
+        fetchCatalog().filter { movie in
+            movie.genres.contains { $0.localizedCaseInsensitiveCompare(genre) == .orderedSame }
+        }
+    }
+
+    func titlesByTag(_ tag: String) -> [Movie] {
+        fetchCatalog().filter { movie in
+            tags(for: movie).contains { $0.localizedCaseInsensitiveContains(tag) }
+        }
+    }
+
+    func lookupCollection(id: String) -> Category? {
+        catalogRepository.fetchCollections().first { $0.id == id }
+    }
+
+    func fetchCollections() -> [Category] {
+        catalogRepository.fetchCollections()
+    }
+
+    func lookupSeries(id: String) -> HFSeriesRecord? {
+        catalogRepository.fetchSeries().first { $0.id == id }
+    }
+
+    func fetchSeries() -> [HFSeriesRecord] {
+        catalogRepository.fetchSeries()
+    }
+
+    func lookupEpisode(id: String) -> HFEpisodeRecord? {
+        fetchEpisodes().first { $0.id == id }
+    }
+
+    func fetchEpisodes() -> [HFEpisodeRecord] {
+        catalogRepository.fetchSeries().flatMap { series in
+            series.seasons.flatMap(\.episodes)
+        }
+    }
+
+    func relatedContent(for movie: Movie, limit: Int = 8) -> [Movie] {
+        let genreMatches = fetchCatalog().filter { candidate in
+            candidate.id != movie.id &&
+                !Set(candidate.genres).isDisjoint(with: Set(movie.genres))
+        }
+        let creatorMatches = fetchCatalog().filter { $0.id != movie.id && $0.creatorName == movie.creatorName }
+        let tagMatches = fetchCatalog().filter { candidate in
+            candidate.id != movie.id &&
+                !Set(tags(for: candidate)).isDisjoint(with: Set(tags(for: movie)))
+        }
+        return Array(uniqueMovies(genreMatches + creatorMatches + tagMatches + recentlyPublished()).prefix(limit))
+    }
+
+    func recentlyPublished(limit: Int = 10) -> [Movie] {
+        let published = publishingRepository.fetchPublishedTitles()
+        let catalog = fetchCatalog().filter { !$0.isComingSoon }
+        return Array(uniqueMovies(published + catalog.reversed()).prefix(limit))
+    }
+
+    func creatorPublishedTitles() -> [Movie] {
+        publishingRepository.fetchPublishedTitles()
+    }
+
+    func libraryAwareRecommendations(anchor movie: Movie? = nil, limit: Int = 10) -> [Movie] {
+        let selected = movie
+            ?? libraryRepository.fetchContinueWatching().first
+            ?? libraryRepository.fetchSavedTitles().first
+            ?? fetchCatalog().first
+
+        guard let selected else { return Array(fetchCatalog().prefix(limit)) }
+        let recommended = relatedContent(for: selected, limit: limit)
+        let savedAdjacency = libraryRepository.fetchSavedTitles().filter { $0.id != selected.id }
+        let recent = recentlyPublished(limit: limit)
+        return Array(uniqueMovies(recommended + savedAdjacency + recent).prefix(limit))
+    }
+
+    private func titles(matching filter: String) -> [Movie] {
+        switch filter {
+        case "Movies":
+            return fetchCatalog().filter { !$0.duration.localizedCaseInsensitiveContains("episode") }
+        case "Series":
+            return fetchCatalog().filter { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }
+        case "Originals":
+            return fetchCatalog().filter(\.isOriginal)
+        case "Creator Published":
+            return creatorPublishedTitles()
+        case "Downloaded":
+            return libraryRepository.fetchOfflineTitles()
+        default:
+            return fetchCatalog()
+        }
+    }
+
+    private func titleSearchScore(for movie: Movie, term: String) -> Int {
+        let fields: [(String, Int)] = [
+            (movie.title, 120),
+            (movie.subtitle, 55),
+            (movie.creatorName, 70),
+            (movie.genres.joined(separator: " "), 60),
+            (tags(for: movie).joined(separator: " "), 65),
+            (collectionNames(for: movie).joined(separator: " "), 50),
+            (movie.synopsis, 28),
+            (movie.duration, 12),
+            (movie.year, 8)
+        ]
+        return score(fields: fields, term: term)
+    }
+
+    private func creatorSearchScore(for creator: Creator, term: String) -> Int {
+        let titles = titlesByCreator(creator)
+        let fields: [(String, Int)] = [
+            (creator.name, 140),
+            (creator.role, 70),
+            (titles.map(\.title).joined(separator: " "), 92),
+            (titles.flatMap(\.genres).joined(separator: " "), 58)
+        ]
+        return score(fields: fields, term: term)
+    }
+
+    private func score(fields: [(String, Int)], term: String) -> Int {
+        let normalized = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return 0 }
+        return fields.reduce(0) { partial, field in
+            if field.0.localizedCaseInsensitiveCompare(normalized) == .orderedSame {
+                return partial + field.1 + 40
+            }
+            if field.0.localizedCaseInsensitiveContains(normalized) {
+                return partial + field.1
+            }
+            return partial
+        }
+    }
+
+    private func tags(for movie: Movie) -> [String] {
+        publishingRepository.fetchProjects().first { $0.id == movie.id }?.tags ?? []
+    }
+
+    private func collectionNames(for movie: Movie) -> [String] {
+        catalogRepository.fetchCollections()
+            .filter { category in category.movies.contains { $0.id == movie.id } }
+            .flatMap { [$0.title, $0.subtitle ?? ""] }
+    }
+
+    private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
+        var seen = Set<String>()
+        return movies.filter { seen.insert($0.id).inserted }
+    }
+}
+
 struct HFBackendRuntimeConfigRow: Identifiable, Codable, Equatable {
     let id: String
     var title: String
@@ -1745,20 +1958,33 @@ final class HFStreamingStore: ObservableObject {
         PublishingRepository(snapshot: contentSnapshot)
     }
 
+    private var rawCatalogMovies: [Movie] {
+        var seen = Set<String>()
+        return (catalogRepository.fetchCatalog() + publishingRepository.fetchPublishedTitles()).filter { movie in
+            seen.insert(movie.id).inserted
+        }
+    }
+
     private var libraryRepository: LibraryRepository {
         LibraryRepository(
-            movies: allCatalogMovies,
+            movies: rawCatalogMovies,
             savedIDs: savedMovieIDs,
             downloadedIDs: downloadedMovieIDs,
             lastViewedID: lastPlayerMovieID
         )
     }
 
+    private var contentQueryEngine: HFContentQueryEngine {
+        HFContentQueryEngine(
+            catalogRepository: catalogRepository,
+            creatorRepository: creatorRepository,
+            publishingRepository: publishingRepository,
+            libraryRepository: libraryRepository
+        )
+    }
+
     var allCatalogMovies: [Movie] {
-        var seen = Set<String>()
-        return (catalogRepository.fetchCatalog() + publishingRepository.fetchPublishedTitles()).filter { movie in
-            seen.insert(movie.id).inserted
-        }
+        contentQueryEngine.fetchCatalog()
     }
 
     var persistedCollections: [Category] {
@@ -1767,6 +1993,70 @@ final class HFStreamingStore: ObservableObject {
 
     var persistedCreators: [Creator] {
         creatorRepository.fetchCreators()
+    }
+
+    func queryCatalog() -> [Movie] {
+        contentQueryEngine.fetchCatalog()
+    }
+
+    func queryTitle(id: String) -> Movie? {
+        contentQueryEngine.fetchTitle(id: id)
+    }
+
+    func queryTitles(search query: String, filter: String = "All") -> [Movie] {
+        contentQueryEngine.searchTitles(query: query, filter: filter)
+    }
+
+    func queryCreators(search query: String) -> [Creator] {
+        contentQueryEngine.searchCreators(query: query)
+    }
+
+    func queryTitles(genre: String) -> [Movie] {
+        contentQueryEngine.titlesByGenre(genre)
+    }
+
+    func queryTitles(tag: String) -> [Movie] {
+        contentQueryEngine.titlesByTag(tag)
+    }
+
+    func queryCollection(id: String) -> Category? {
+        contentQueryEngine.lookupCollection(id: id)
+    }
+
+    func queryCollections() -> [Category] {
+        contentQueryEngine.fetchCollections()
+    }
+
+    func querySeries(id: String) -> HFSeriesRecord? {
+        contentQueryEngine.lookupSeries(id: id)
+    }
+
+    func querySeries() -> [HFSeriesRecord] {
+        contentQueryEngine.fetchSeries()
+    }
+
+    func queryEpisode(id: String) -> HFEpisodeRecord? {
+        contentQueryEngine.lookupEpisode(id: id)
+    }
+
+    func queryEpisodes() -> [HFEpisodeRecord] {
+        contentQueryEngine.fetchEpisodes()
+    }
+
+    func queryRelatedContent(for movie: Movie, limit: Int = 8) -> [Movie] {
+        contentQueryEngine.relatedContent(for: movie, limit: limit)
+    }
+
+    func queryRecentlyPublished(limit: Int = 10) -> [Movie] {
+        contentQueryEngine.recentlyPublished(limit: limit)
+    }
+
+    func queryCreatorPublishedTitles() -> [Movie] {
+        contentQueryEngine.creatorPublishedTitles()
+    }
+
+    func queryLibraryRecommendations(anchor movie: Movie? = nil, limit: Int = 10) -> [Movie] {
+        contentQueryEngine.libraryAwareRecommendations(anchor: movie, limit: limit)
     }
 
     var contentBackendRepositoryMetrics: [HFContentRepositoryMetric] {
@@ -1815,7 +2105,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var originalsCatalog: [Movie] {
-        allCatalogMovies.filter(\.isOriginal)
+        queryCatalog().filter(\.isOriginal)
     }
 
     var creatorDraftProjects: [HFCreatorPublishingContent] {
@@ -2171,7 +2461,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var seriesRecords: [HFSeriesRecord] {
-        let storedSeries = catalogRepository.fetchSeries()
+        let storedSeries = querySeries()
         guard storedSeries.isEmpty else { return storedSeries }
         return [
             makeSeriesRecord(
@@ -2223,9 +2513,9 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var episodeRecords: [HFEpisodeRecord] {
-        seriesRecords.flatMap { series in
-            series.seasons.flatMap(\.episodes)
-        }
+        let storedEpisodes = queryEpisodes()
+        guard storedEpisodes.isEmpty else { return storedEpisodes }
+        return seriesRecords.flatMap { series in series.seasons.flatMap(\.episodes) }
     }
 
     var primarySeriesRecord: HFSeriesRecord {
@@ -2287,7 +2577,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var creatorPublishedMovies: [Movie] {
-        creatorPublishedProjects.map(\.movie)
+        queryCreatorPublishedTitles()
     }
 
     var cmsContentRecords: [HFCMSContentRecord] {
@@ -3844,7 +4134,7 @@ final class HFStreamingStore: ObservableObject {
 
     // hf.services.libraryState
     func movie(id: String) -> Movie? {
-        catalogRepository.fetchMovie(id: id) ?? publishingRepository.fetchPublishedTitles().first { $0.id == id }
+        queryTitle(id: id)
     }
 
     func movie(for id: String) -> Movie? {
@@ -3852,14 +4142,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func relatedMovies(for movie: Movie) -> [Movie] {
-        let genreMatches = allCatalogMovies.filter { candidate in
-            candidate.id != movie.id &&
-            !Set(candidate.genres).isDisjoint(with: Set(movie.genres))
-        }
-        let creatorMatches = allCatalogMovies.filter { $0.id != movie.id && $0.creatorName == movie.creatorName }
-        let fallback = premiumHomeCatalogRails.first { $0.id == "recommended" }?.movies ?? []
-        var seen = Set<String>()
-        return (genreMatches + creatorMatches + fallback).filter { seen.insert($0.id).inserted }.prefix(8).map { $0 }
+        queryRelatedContent(for: movie, limit: 8)
     }
 
     func creatorProfile(for creator: Creator) -> HFCreatorProfile {
@@ -3867,9 +4150,7 @@ final class HFStreamingStore: ObservableObject {
         let published = publishingRecords.filter { $0.releaseState == .published }.map(\.movie)
         let scheduled = publishingRecords.filter { $0.releaseState == .scheduled }.map(\.movie)
         let archived = publishingRecords.filter { $0.releaseState == .archived }.map(\.movie)
-        let catalogTitles = allCatalogMovies.filter { movie in
-            movie.creatorName == creator.name || creator.featuredMovieIDs.contains(movie.id)
-        }
+        let catalogTitles = contentQueryEngine.titlesByCreator(creator)
         let filmography = uniqueMovies(catalogTitles + published + scheduled + archived)
         let featured = creator.featuredMovieIDs.compactMap(movie(id:)).first ?? filmography.first
         let latest = published.first ?? filmography.first
@@ -3893,9 +4174,10 @@ final class HFStreamingStore: ObservableObject {
         guard !term.isEmpty else {
             return Array(creatorProfiles.prefix(6))
         }
+        let matchingCreatorIDs = Set(queryCreators(search: term).map(\.id))
         return creatorProfiles
             .map { profile in (profile, creatorSearchScore(for: profile, term: term)) }
-            .filter { $0.1 > 0 }
+            .filter { $0.1 > 0 || matchingCreatorIDs.contains($0.0.creator.id) }
             .sorted { lhs, rhs in
                 if lhs.1 == rhs.1 {
                     return lhs.0.creator.name < rhs.0.creator.name
@@ -3909,22 +4191,22 @@ final class HFStreamingStore: ObservableObject {
         compactCategories([
             Category(id: "featured", title: "Featured", subtitle: "High-signal local picks for the first watch decision", movies: [featuredMovie]),
             Category(id: "trending", title: "Trending", subtitle: "Local momentum from the HighFive catalog", movies: moviesByIDs(["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"])),
-            Category(id: "new-releases", title: "New Releases", subtitle: "Fresh and recently staged local catalog titles", movies: newThisWeekCatalog),
+            Category(id: "new-releases", title: "New Releases", subtitle: "Fresh and recently staged local catalog titles", movies: queryRecentlyPublished(limit: 10)),
             Category(id: "highfive-originals", title: "HighFive Originals", subtitle: "Original films, series, creator cuts, and local premieres", movies: originalsCatalog.filter { !$0.isComingSoon }),
             seriesDiscoveryCategory,
-            Category(id: "creator-published", title: "Creator Published", subtitle: "Titles promoted from the Creator Publishing Pipeline", movies: creatorPublishedMovies),
+            Category(id: "creator-published", title: "Creator Published", subtitle: "Titles promoted from the Creator Publishing Pipeline", movies: queryCreatorPublishedTitles()),
             Category(id: "award-winners", title: "Award Winners", subtitle: "Prestige-style local programming for editorial rails", movies: moviesByIDs(["friendly", "artist-development", "behind-vision", "black-turnip", "sunshine"])),
-            Category(id: "premieres", title: "Premieres", subtitle: "Premiere-ready and coming-soon worlds", movies: allCatalogMovies.filter { $0.isComingSoon || $0.genres.contains("Premiere") })
+            Category(id: "premieres", title: "Premieres", subtitle: "Premiere-ready and coming-soon worlds", movies: queryTitles(genre: "Premiere") + queryCatalog().filter(\.isComingSoon))
         ])
     }
 
     func recommendationCollections(anchor movie: Movie? = nil) -> [Category] {
         let selected = movie ?? continueWatchingMovie
         return compactCategories([
-            Category(id: "because-you-watched", title: "Because You Watched \(selected.title)", subtitle: "Genre, tone, and creator-adjacent local picks", movies: relatedMovies(for: selected)),
-            Category(id: "similar-titles", title: "Similar Titles", subtitle: selected.genres.prefix(2).joined(separator: " + "), movies: similarTitles(to: selected)),
+            Category(id: "because-you-watched", title: "Because You Watched \(selected.title)", subtitle: "Genre, tone, and creator-adjacent local picks", movies: queryLibraryRecommendations(anchor: selected, limit: 10)),
+            Category(id: "similar-titles", title: "Similar Titles", subtitle: selected.genres.prefix(2).joined(separator: " + "), movies: queryRelatedContent(for: selected, limit: 10)),
             Category(id: "same-creator", title: "From \(selected.creatorName)", subtitle: "More local titles from the same creator", movies: fromSameCreator(as: selected)),
-            Category(id: "continue-watching", title: "Continue Watching", subtitle: "Resume local progress", movies: allCatalogMovies.filter { $0.progress != nil })
+            Category(id: "continue-watching", title: "Continue Watching", subtitle: "Resume local progress", movies: libraryRepository.fetchContinueWatching())
         ])
     }
 
@@ -3935,7 +4217,7 @@ final class HFStreamingStore: ObservableObject {
             collectionCategory(id: "western", title: "Western", genre: "Western"),
             collectionCategory(id: "crime", title: "Crime", genre: "Crime"),
             collectionCategory(id: "drama", title: "Drama", genre: "Drama"),
-            Category(id: "premiere-collection", title: "Premieres", subtitle: "Scheduled and coming-soon local titles", movies: allCatalogMovies.filter { movie in
+            Category(id: "premiere-collection", title: "Premieres", subtitle: "Scheduled and coming-soon local titles", movies: queryCatalog().filter { movie in
                 movie.isComingSoon || searchableTags(for: movie).contains { $0.localizedCaseInsensitiveContains("Premiere") }
             }),
             Category(id: "creator-collections", title: "Creator Collections", subtitle: "Creator-led discovery paths", movies: creatorCollectionMovies)
@@ -3943,37 +4225,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func searchMovies(query: String, filter: String) -> [Movie] {
-        let base: [Movie]
-        switch filter {
-        case "Movies":
-            base = allCatalogMovies.filter { !$0.duration.localizedCaseInsensitiveContains("episode") }
-        case "Series":
-            base = allCatalogMovies.filter { $0.duration.localizedCaseInsensitiveContains("episode") || $0.genres.contains("Series") }
-        case "Originals":
-            base = originalsCatalog
-        case "Creator Published":
-            base = creatorPublishedMovies
-        case "Downloaded":
-            base = downloadedMovies
-        default:
-            base = allCatalogMovies
-        }
-
-        let searchTerm = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !searchTerm.isEmpty else {
-            return Array(base.prefix(8))
-        }
-
-        return base
-            .map { movie in (movie, searchScore(for: movie, term: searchTerm)) }
-            .filter { $0.1 > 0 }
-            .sorted { lhs, rhs in
-                if lhs.1 == rhs.1 {
-                    return lhs.0.title < rhs.0.title
-                }
-                return lhs.1 > rhs.1
-            }
-            .map(\.0)
+        queryTitles(search: query, filter: filter)
     }
 
     func catalogRails(filter: String = "All") -> [Category] {
@@ -3991,7 +4243,7 @@ final class HFStreamingStore: ObservableObject {
         case "Drama", "Thriller", "Mystery", "Documentary", "Horror", "Western", "Crime":
             return [collectionCategory(id: filter.lowercased(), title: "\(filter) Picks", genre: filter)]
         case "Coming Soon":
-            return [Category(id: "coming-soon", title: "Coming Soon", subtitle: "Scripted originals in development", movies: allCatalogMovies.filter { $0.isComingSoon })]
+            return [Category(id: "coming-soon", title: "Coming Soon", subtitle: "Scripted originals in development", movies: queryCatalog().filter { $0.isComingSoon })]
         default:
             return rails
         }
@@ -4134,24 +4386,16 @@ final class HFStreamingStore: ObservableObject {
             id: id,
             title: title,
             subtitle: "\(genre) collection from the local catalog",
-            movies: allCatalogMovies.filter { movie in
-                movie.genres.contains { $0.localizedCaseInsensitiveCompare(genre) == .orderedSame }
-            }
+            movies: queryTitles(genre: genre)
         )
     }
 
     private func similarTitles(to movie: Movie) -> [Movie] {
-        let anchorGenres = Set(movie.genres)
-        return allCatalogMovies
-            .filter { candidate in
-                candidate.id != movie.id && !anchorGenres.isDisjoint(with: Set(candidate.genres))
-            }
-            .prefix(10)
-            .map { $0 }
+        queryRelatedContent(for: movie, limit: 10)
     }
 
     private func fromSameCreator(as movie: Movie) -> [Movie] {
-        allCatalogMovies
+        queryCatalog()
             .filter { $0.id != movie.id && $0.creatorName == movie.creatorName }
             .prefix(10)
             .map { $0 }

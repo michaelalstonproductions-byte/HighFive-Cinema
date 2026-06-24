@@ -511,7 +511,7 @@ struct MyListView: View {
             HFSectionHeader(title: "Continue the Story", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(HFMockData.recommended.movies) { movie in
+                    ForEach(streamingStore.queryLibraryRecommendations(anchor: selectedMovie, limit: 10)) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
                         }
