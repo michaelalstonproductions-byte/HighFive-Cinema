@@ -154,6 +154,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-readiness")
             || arguments.contains("--hf-publishing-audit")
             || arguments.contains("--hf-publishing-calendar")
+            || Self.shouldStartInCreatorCollaboration
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -209,6 +210,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-readiness")
             || arguments.contains("--hf-publishing-audit")
             || arguments.contains("--hf-publishing-calendar")
+            || Self.shouldStartInCreatorCollaboration
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -321,6 +323,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-readiness")
             || arguments.contains("--hf-publishing-audit")
             || arguments.contains("--hf-publishing-calendar")
+            || Self.shouldStartInCreatorCollaboration
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -380,6 +383,16 @@ struct HFStreamingRootView: View {
         if arguments.contains("--hf-start-instagram-connect") { return .instagramConnect }
         if Self.shouldStartInVODPackage { return .vodPackage }
         return .dashboard
+    }
+
+    private static var shouldStartInCreatorCollaboration: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-collaboration")
+            || arguments.contains("--hf-collaboration-team")
+            || arguments.contains("--hf-collaboration-tasks")
+            || arguments.contains("--hf-collaboration-notes")
+            || arguments.contains("--hf-collaboration-activity")
+            || arguments.contains("--hf-collaboration-timeline")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

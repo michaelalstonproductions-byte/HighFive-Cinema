@@ -396,6 +396,61 @@ struct HFCreatorPublishingChecklistItem: Identifiable {
     var detail: String
 }
 
+struct HFCreatorCollaboratorRecord: Identifiable {
+    let id: String
+    var name: String
+    var role: String
+    var permissionScope: String
+    var focus: String
+    var systemImage: String
+}
+
+struct HFCreatorProjectTeamRecord: Identifiable {
+    let id: String
+    var project: HFCreatorPublishingContent
+    var owner: String
+    var collaborators: [HFCreatorCollaboratorRecord]
+    var status: String
+    var permissionSummary: String
+}
+
+struct HFCreatorCollaborationTaskRecord: Identifiable {
+    let id: String
+    var title: String
+    var projectTitle: String
+    var assigneeRole: String
+    var status: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorCollaborationNoteRecord: Identifiable {
+    let id: String
+    var title: String
+    var projectTitle: String
+    var authorRole: String
+    var detail: String
+    var noteType: String
+}
+
+struct HFCreatorCollaborationActivityRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var actorRole: String
+    var timeLabel: String
+    var systemImage: String
+}
+
+struct HFCreatorCollaborationTimelineRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var stage: String
+    var status: String
+    var systemImage: String
+}
+
 enum HFExportDeliveryProviderStatus {
     case localAdapterActive
     case remoteProviderNotConnected
@@ -1183,6 +1238,110 @@ final class HFStreamingStore: ObservableObject {
             ?? creatorPublishingContents[0]
     }
 
+    var creatorCollaborationRoster: [HFCreatorCollaboratorRecord] {
+        [
+            HFCreatorCollaboratorRecord(id: "owner", name: activeViewingProfile.displayName, role: "Owner", permissionScope: "All local project surfaces", focus: "Project direction, publishing readiness, and final local review", systemImage: activeViewingProfile.avatarSymbol),
+            HFCreatorCollaboratorRecord(id: "director", name: "Mara Chen", role: "Director", permissionScope: "Creative notes", focus: "Scene intent, commentary, and creator profile context", systemImage: "megaphone.fill"),
+            HFCreatorCollaboratorRecord(id: "producer", name: "Ari Stone", role: "Producer", permissionScope: "Schedule preview", focus: "Readiness, launch handoff, and review gates", systemImage: "checkmark.seal.fill"),
+            HFCreatorCollaboratorRecord(id: "writer", name: "Nia Bell", role: "Writer", permissionScope: "Metadata notes", focus: "Synopsis, tags, captions, and story positioning", systemImage: "text.book.closed.fill"),
+            HFCreatorCollaboratorRecord(id: "editor", name: "Theo Park", role: "Editor", permissionScope: "Trailer notes", focus: "Trailer preview, pacing notes, and completion checks", systemImage: "film.stack.fill"),
+            HFCreatorCollaboratorRecord(id: "composer", name: "June Vale", role: "Composer", permissionScope: "Audio notes", focus: "Theme direction, cue notes, and tone references", systemImage: "music.note.list"),
+            HFCreatorCollaboratorRecord(id: "marketing", name: "Sol Rivera", role: "Marketing", permissionScope: "Campaign notes", focus: "Poster, social kit, discovery copy, and launch story", systemImage: "sparkles")
+        ]
+    }
+
+    var creatorProjectTeamRecords: [HFCreatorProjectTeamRecord] {
+        creatorPublishingContents.enumerated().map { index, project in
+            let team = collaborationTeam(for: index)
+            return HFCreatorProjectTeamRecord(
+                id: "team-\(project.id)",
+                project: project,
+                owner: project.creator,
+                collaborators: team,
+                status: project.releaseState == .published ? "Active" : "Local Review",
+                permissionSummary: "\(team.count) local roles • owner-reviewed changes only"
+            )
+        }
+    }
+
+    var creatorCollaborationTasks: [HFCreatorCollaborationTaskRecord] {
+        creatorPublishingContents.enumerated().flatMap { index, project in
+            [
+                HFCreatorCollaborationTaskRecord(
+                    id: "task-\(project.id)-metadata",
+                    title: "Lock metadata package",
+                    projectTitle: project.title,
+                    assigneeRole: "Writer",
+                    status: collaborationTaskStatus(for: project.metadataStatus, fallback: "To Do"),
+                    detail: "Review title, synopsis, genre, tags, runtime, and creator attribution.",
+                    systemImage: "text.justify.left"
+                ),
+                HFCreatorCollaborationTaskRecord(
+                    id: "task-\(project.id)-trailer",
+                    title: "Review trailer preview",
+                    projectTitle: project.title,
+                    assigneeRole: index.isMultiple(of: 2) ? "Editor" : "Director",
+                    status: collaborationTaskStatus(for: project.trailerStatus, fallback: "In Progress"),
+                    detail: "Check local trailer status before publishing readiness.",
+                    systemImage: "film.stack.fill"
+                ),
+                HFCreatorCollaborationTaskRecord(
+                    id: "task-\(project.id)-launch",
+                    title: "Prepare launch notes",
+                    projectTitle: project.title,
+                    assigneeRole: "Producer",
+                    status: project.releaseState == .published ? "Complete" : project.releaseState == .scheduled ? "Review" : "In Progress",
+                    detail: "Connect publishing queue, launch preview, and audit state.",
+                    systemImage: "paperplane.circle.fill"
+                ),
+                HFCreatorCollaborationTaskRecord(
+                    id: "task-\(project.id)-handoff",
+                    title: "Confirm team handoff",
+                    projectTitle: project.title,
+                    assigneeRole: "Owner",
+                    status: project.releaseState == .published || project.releaseState == .archived ? "Complete" : "To Do",
+                    detail: "Owner checks collaborator roles and local review scope before the next production pass.",
+                    systemImage: "person.crop.circle.badge.checkmark"
+                )
+            ]
+        }
+    }
+
+    var creatorCollaborationNotes: [HFCreatorCollaborationNoteRecord] {
+        let primary = creatorPrimaryReadinessProject
+        return [
+            HFCreatorCollaborationNoteRecord(id: "project-notes", title: "Project Notes", projectTitle: primary.title, authorRole: "Director", detail: "Tone, story promise, and creator commentary context are ready for local team review.", noteType: "Project"),
+            HFCreatorCollaborationNoteRecord(id: "publishing-notes", title: "Publishing Notes", projectTitle: primary.title, authorRole: "Producer", detail: "Publishing readiness depends on metadata, poster, trailer, artwork, and local audit checks.", noteType: "Publishing"),
+            HFCreatorCollaborationNoteRecord(id: "launch-notes", title: "Launch Notes", projectTitle: primary.title, authorRole: "Marketing", detail: "Discovery copy, social asset kit, and launch center preview stay local-only.", noteType: "Launch"),
+            HFCreatorCollaborationNoteRecord(id: "review-notes", title: "Review Notes", projectTitle: primary.title, authorRole: "Owner", detail: "Owner review remains a local decision. No external approval workflow is active.", noteType: "Review")
+        ]
+    }
+
+    var creatorCollaborationActivity: [HFCreatorCollaborationActivityRecord] {
+        [
+            HFCreatorCollaborationActivityRecord(id: "activity-readiness", title: "Readiness updated", detail: "\(creatorReadyForReviewProjects.count) creator projects satisfy local review checks.", actorRole: "Producer", timeLabel: "Today", systemImage: "checkmark.seal.fill"),
+            HFCreatorCollaborationActivityRecord(id: "activity-analytics", title: "Analytics reviewed", detail: "\(analyticsInsights.first?.title ?? "Local insight") is informing the next publishing pass.", actorRole: "Owner", timeLabel: "Today", systemImage: "chart.bar.xaxis"),
+            HFCreatorCollaborationActivityRecord(id: "activity-social", title: "Social kit noted", detail: "Campaign copy and poster direction are staged for local team review.", actorRole: "Marketing", timeLabel: "Yesterday", systemImage: "bubble.left.and.bubble.right.fill"),
+            HFCreatorCollaborationActivityRecord(id: "activity-trailer", title: "Trailer note added", detail: "Editor note attached to the local trailer preview state.", actorRole: "Editor", timeLabel: "Yesterday", systemImage: "film.stack.fill")
+        ]
+    }
+
+    var creatorCollaborationTimeline: [HFCreatorCollaborationTimelineRecord] {
+        [
+            HFCreatorCollaborationTimelineRecord(id: "timeline-create", title: "Create", detail: "Owner and director shape the local project package.", stage: "Project", status: "Active", systemImage: "wand.and.stars"),
+            HFCreatorCollaborationTimelineRecord(id: "timeline-manage", title: "Manage", detail: "Producer tracks CMS, assets, and project team state.", stage: "Content", status: "Active", systemImage: "rectangle.stack.fill"),
+            HFCreatorCollaborationTimelineRecord(id: "timeline-analyze", title: "Analyze", detail: "P6 analytics inform priority, readiness, and title positioning.", stage: "Analytics", status: "Linked", systemImage: "chart.line.uptrend.xyaxis"),
+            HFCreatorCollaborationTimelineRecord(id: "timeline-publish", title: "Publish", detail: "P7 publishing queue remains local, audited, and discovery-gated.", stage: "Publishing", status: "Local", systemImage: "paperplane.circle.fill"),
+            HFCreatorCollaborationTimelineRecord(id: "timeline-improve", title: "Improve", detail: "Team notes and activity feed drive the next creator revision.", stage: "Collaboration", status: "Preview", systemImage: "person.3.fill")
+        ]
+    }
+
+    var creatorCollaborationTaskStatusCounts: [(status: String, count: Int)] {
+        ["To Do", "In Progress", "Review", "Complete"].map { status in
+            (status, creatorCollaborationTasks.filter { $0.status == status }.count)
+        }
+    }
+
     private func publishingPriority(for project: HFCreatorPublishingContent) -> String {
         switch project.releaseState {
         case .review:
@@ -1242,6 +1401,28 @@ final class HFStreamingStore: ObservableObject {
             return "Placeholder"
         case .missing:
             return "Missing"
+        }
+    }
+
+    private func collaborationTeam(for index: Int) -> [HFCreatorCollaboratorRecord] {
+        let roster = creatorCollaborationRoster
+        let rotatingRoles = Array(roster.dropFirst())
+        let first = rotatingRoles[index % rotatingRoles.count]
+        let second = rotatingRoles[(index + 2) % rotatingRoles.count]
+        let third = rotatingRoles[(index + 4) % rotatingRoles.count]
+        return [roster[0], first, second, third]
+    }
+
+    private func collaborationTaskStatus(for status: HFCreatorPublishingAssetStatus, fallback: String) -> String {
+        switch status {
+        case .ready:
+            return "Complete"
+        case .needsReview:
+            return "Review"
+        case .placeholder:
+            return "In Progress"
+        case .missing:
+            return fallback
         }
     }
 

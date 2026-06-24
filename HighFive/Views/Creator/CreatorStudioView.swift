@@ -171,6 +171,12 @@ private enum HFCreatorProSpotlight {
     case publishingReadiness
     case publishingAudit
     case publishingCalendar
+    case collaborationDashboard
+    case collaborationTeam
+    case collaborationTasks
+    case collaborationNotes
+    case collaborationActivity
+    case collaborationTimeline
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -183,6 +189,12 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-publishing-readiness") { return .publishingReadiness }
         if arguments.contains("--hf-publishing-audit") { return .publishingAudit }
         if arguments.contains("--hf-publishing-calendar") { return .publishingCalendar }
+        if arguments.contains("--hf-start-collaboration") { return .collaborationDashboard }
+        if arguments.contains("--hf-collaboration-team") { return .collaborationTeam }
+        if arguments.contains("--hf-collaboration-tasks") { return .collaborationTasks }
+        if arguments.contains("--hf-collaboration-notes") { return .collaborationNotes }
+        if arguments.contains("--hf-collaboration-activity") { return .collaborationActivity }
+        if arguments.contains("--hf-collaboration-timeline") { return .collaborationTimeline }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2037,6 +2049,18 @@ struct CreatorStudioView: View {
             publishingAuditSection
         case .publishingCalendar:
             publishingCalendarSection
+        case .collaborationDashboard:
+            creatorCollaborationDashboard
+        case .collaborationTeam:
+            creatorCollaborationTeamSection
+        case .collaborationTasks:
+            creatorCollaborationTaskBoardSection
+        case .collaborationNotes:
+            creatorCollaborationNotesSection
+        case .collaborationActivity:
+            creatorCollaborationActivitySection
+        case .collaborationTimeline:
+            creatorCollaborationTimelineSection
         }
     }
 
@@ -2045,6 +2069,7 @@ struct CreatorStudioView: View {
             contentManagementSystemSection
             creatorPublishingPipelineSection
             creatorPublishingSystemDashboard
+            creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                 contentTypesSection
@@ -2063,6 +2088,11 @@ struct CreatorStudioView: View {
             publishingReadinessSection
             publishingCalendarSection
             publishingAuditSection
+            creatorCollaborationTeamSection
+            creatorCollaborationTaskBoardSection
+            creatorCollaborationNotesSection
+            creatorCollaborationActivitySection
+            creatorCollaborationTimelineSection
             creatorPublishingLibrarySection
             commentaryGatewaySection
         }
@@ -2393,6 +2423,161 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.publishing.audit")
+    }
+
+    private var creatorCollaborationDashboard: some View {
+        creatorProSpotlight(
+            title: "Creator Collaboration Dashboard",
+            detail: "Local team operating layer for owner review, collaborators, project tasks, notes, activity, and timeline context.",
+            systemImage: "person.3.sequence.fill",
+            accent: HFColors.violet,
+            identifier: "hf.collaboration.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Team", value: "\(streamingStore.creatorCollaborationRoster.count)")
+                    creatorProStat(title: "Projects", value: "\(streamingStore.creatorProjectTeamRecords.count)")
+                    creatorProStat(title: "Tasks", value: "\(streamingStore.creatorCollaborationTasks.count)")
+                    creatorProStat(title: "Notes", value: "\(streamingStore.creatorCollaborationNotes.count)")
+                }
+
+                Text("Create -> Manage -> Analyze -> Publish -> Collaborate")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.collaboration.workflow")
+
+                Text("Team state is local preview only. No accounts, external approvals, messaging, or transfer behavior is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.collaboration.localOnly")
+            }
+        }
+    }
+
+    private var creatorCollaborationTeamSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Project Teams",
+                    detail: "Each local creator project has an owner, collaborators, roles, and a review scope for safe team planning.",
+                    systemImage: "person.3.fill",
+                    accent: HFColors.violet
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.sm) {
+                        ForEach(streamingStore.creatorProjectTeamRecords) { record in
+                            collaborationTeamCard(record)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.creatorCollaborationRoster) { collaborator in
+                        collaboratorRoleCard(collaborator)
+                    }
+                }
+                .accessibilityIdentifier("hf.collaboration.collaborators")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.collaboration.team")
+    }
+
+    private var creatorCollaborationTaskBoardSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Task Board",
+                    detail: "Local production tasks move through To Do, In Progress, Review, and Complete without external workflow services.",
+                    systemImage: "rectangle.3.group.fill",
+                    accent: HFColors.gold
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: HFSpacing.sm) {
+                        collaborationTaskColumn(status: "To Do")
+                        collaborationTaskColumn(status: "In Progress")
+                        collaborationTaskColumn(status: "Review")
+                        collaborationTaskColumn(status: "Complete")
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.collaboration.taskBoard")
+    }
+
+    private var creatorCollaborationNotesSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Notes System",
+                    detail: "Project notes, publishing notes, launch notes, and review notes stay attached to local creator workflow context.",
+                    systemImage: "note.text",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.creatorCollaborationNotes) { note in
+                        collaborationNoteCard(note)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.collaboration.notes")
+    }
+
+    private var creatorCollaborationActivitySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Team Activity",
+                    detail: "Recent local updates show what changed across readiness, analytics, social assets, and trailer review.",
+                    systemImage: "clock.badge.checkmark.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorCollaborationActivity) { activity in
+                        collaborationActivityRow(activity)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.collaboration.activity")
+    }
+
+    private var creatorCollaborationTimelineSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Project Timeline",
+                    detail: "A local production timeline connects create, manage, analyze, publish, and collaboration loops.",
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorCollaborationTimeline) { milestone in
+                        collaborationTimelineRow(milestone)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.collaboration.timeline")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -2743,6 +2928,273 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.publishing.audit.\(record.id)")
+    }
+
+    private func collaborationTeamCard(_ record: HFCreatorProjectTeamRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Text(record.status)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.violet)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                    .background(HFColors.violet.opacity(0.14))
+                    .clipShape(Capsule())
+                Spacer(minLength: 0)
+                Image(systemName: "person.3.fill")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+            }
+
+            Text(record.project.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.70)
+
+            Text("Owner: \(record.owner)")
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+
+            Text(record.permissionSummary)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+
+            Spacer(minLength: 0)
+
+            Text(record.collaborators.map(\.role).joined(separator: " • "))
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(width: 196, height: 176, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.violet.opacity(0.25), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(record.project.title). Owner \(record.owner). \(record.permissionSummary).")
+        .accessibilityIdentifier("hf.collaboration.team.\(record.project.id)")
+    }
+
+    private func collaboratorRoleCard(_ collaborator: HFCreatorCollaboratorRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: collaborator.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(collaborator.role == "Owner" ? HFColors.gold : HFColors.violet)
+                .accessibilityHidden(true)
+            Text(collaborator.role)
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(collaborator.name)
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+            Text(collaborator.permissionScope)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(2)
+            Text(collaborator.focus)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.collaboration.collaborator.\(collaborator.id)")
+    }
+
+    private func collaborationTaskColumn(status: String) -> some View {
+        let tasks = streamingStore.creatorCollaborationTasks.filter { $0.status == status }
+        return VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Text(status)
+                    .font(HFTypography.caption.weight(.black))
+                    .foregroundStyle(collaborationStatusColor(status))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                Spacer(minLength: 0)
+                Text("\(tasks.count)")
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 7)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+            }
+
+            ForEach(tasks.prefix(4)) { task in
+                collaborationTaskCard(task)
+            }
+        }
+        .frame(width: 190, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.22))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(collaborationStatusColor(status).opacity(0.24), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.collaboration.taskBoard.\(status.replacingOccurrences(of: " ", with: "-").lowercased())")
+    }
+
+    private func collaborationTaskCard(_ task: HFCreatorCollaborationTaskRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: task.systemImage)
+                    .font(.system(size: 13, weight: .black))
+                    .foregroundStyle(collaborationStatusColor(task.status))
+                    .accessibilityHidden(true)
+                Text(task.assigneeRole)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Text(task.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+
+            Text(task.projectTitle)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(task.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.collaboration.task.\(task.id)")
+    }
+
+    private func collaborationNoteCard(_ note: HFCreatorCollaborationNoteRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(note.noteType)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(1)
+            Text(note.title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+            Text("\(note.authorRole) • \(note.projectTitle)")
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+            Text(note.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(4)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.collaboration.note.\(note.id)")
+    }
+
+    private func collaborationActivityRow(_ activity: HFCreatorCollaborationActivityRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: activity.systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 34, height: 34)
+                .background(HFColors.gold.opacity(0.13))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(activity.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text("\(activity.actorRole) • \(activity.timeLabel)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                Text(activity.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.collaboration.activity.\(activity.id)")
+    }
+
+    private func collaborationTimelineRow(_ milestone: HFCreatorCollaborationTimelineRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            VStack(spacing: HFSpacing.xxs) {
+                Image(systemName: milestone.systemImage)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(HFColors.violet)
+                Text(milestone.status)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.60)
+            }
+            .frame(width: 58, height: 52)
+            .background(HFColors.violet.opacity(0.13))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(milestone.title) • \(milestone.stage)")
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text(milestone.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.collaboration.timeline.\(milestone.id)")
+    }
+
+    private func collaborationStatusColor(_ status: String) -> Color {
+        switch status {
+        case "Complete":
+            return HFColors.gold
+        case "Review":
+            return HFColors.cyanGlow
+        case "In Progress":
+            return HFColors.violet
+        default:
+            return HFColors.textSecondary
+        }
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {
