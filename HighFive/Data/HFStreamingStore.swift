@@ -474,6 +474,89 @@ struct HFCreatorProjectTimelineRecord: Identifiable, Hashable {
     var systemImage: String
 }
 
+struct HFCreatorMediaImportRuntimeSnapshot: Hashable {
+    var sessionCount: Int
+    var queueCount: Int
+    var registeredAssets: Int
+    var manifestUpdates: Int
+    var linkedProjects: Int
+    var preflightPassed: Int
+    var updatedAtLabel: String
+
+    var readinessLabel: String {
+        "\(preflightPassed)/5 Clear"
+    }
+}
+
+struct HFCreatorMediaImportSessionRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var sessionState: String
+    var intakeScope: String
+    var assetCount: Int
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorMediaImportQueueRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var assetTitle: String
+    var queueState: String
+    var source: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorMediaImportValidationRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var isPassed: Bool
+    var systemImage: String
+}
+
+struct HFCreatorMediaRegistrationRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var registry: String
+    var registrationState: String
+    var linkedManifest: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorManifestUpdateRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var manifestID: String
+    var updateState: String
+    var assetSummary: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorProjectLinkRecord: Identifiable, Hashable {
+    let id: String
+    var projectTitle: String
+    var projectID: String
+    var contentID: String
+    var linkedAssets: Int
+    var status: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorMediaImportPreflightRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var result: String
+    var isPassed: Bool
+    var systemImage: String
+}
+
 struct HFCreatorDraftValidationItem: Identifiable {
     let id: String
     var title: String
@@ -2664,6 +2747,132 @@ final class HFStreamingStore: ObservableObject {
         }
     }
 
+    var creatorMediaImportRuntimeSnapshot: HFCreatorMediaImportRuntimeSnapshot {
+        let preflight = creatorMediaImportPreflightRecords
+
+        return HFCreatorMediaImportRuntimeSnapshot(
+            sessionCount: creatorMediaImportSessionRecords.count,
+            queueCount: creatorMediaImportQueueRecords.count,
+            registeredAssets: creatorMediaRegistrationRecords.count,
+            manifestUpdates: creatorManifestUpdateRecords.count,
+            linkedProjects: creatorProjectLinkRecords.count,
+            preflightPassed: preflight.filter(\.isPassed).count,
+            updatedAtLabel: "Media import runtime resolved as registration metadata only"
+        )
+    }
+
+    var creatorMediaImportSessionRecords: [HFCreatorMediaImportSessionRecord] {
+        creatorPublishingContents
+            .filter { $0.releaseState != .archived }
+            .map { project in
+                let assets = mediaAssetRecords(for: project)
+                return HFCreatorMediaImportSessionRecord(
+                    id: "import-session-\(project.id)",
+                    projectTitle: project.title,
+                    sessionState: project.readyForReview ? "Registration Ready" : "Draft Intake",
+                    intakeScope: "Poster, trailer, artwork, metadata, thumbnail",
+                    assetCount: assets.count + 1,
+                    detail: "Session maps existing registry metadata to the project runtime. No picker, copy, write, or transfer is active.",
+                    systemImage: "tray.and.arrow.down.fill"
+                )
+            }
+    }
+
+    var creatorMediaImportQueueRecords: [HFCreatorMediaImportQueueRecord] {
+        creatorPublishingContents
+            .filter { $0.releaseState != .archived }
+            .flatMap { project in
+                mediaAssetRecords(for: project).map { record in
+                    HFCreatorMediaImportQueueRecord(
+                        id: "import-queue-\(record.id)",
+                        projectTitle: project.title,
+                        assetTitle: record.kind.rawValue,
+                        queueState: mediaImportQueueState(for: record),
+                        source: record.registry,
+                        detail: "Queued as local registration metadata only. No media file is selected, copied, or written.",
+                        systemImage: record.systemImage
+                    )
+                }
+            }
+    }
+
+    var creatorMediaImportValidationRecords: [HFCreatorMediaImportValidationRecord] {
+        creatorMediaImportQueueRecords.map { record in
+            let isPassed = record.queueState != "Blocked"
+            return HFCreatorMediaImportValidationRecord(
+                id: "import-validation-\(record.id)",
+                title: "\(record.projectTitle) \(record.assetTitle)",
+                detail: isPassed ? "Registry state can be linked to the project manifest." : "Registry metadata must exist before local registration.",
+                status: isPassed ? "Validated" : "Blocked",
+                isPassed: isPassed,
+                systemImage: record.systemImage
+            )
+        }
+    }
+
+    var creatorMediaRegistrationRecords: [HFCreatorMediaRegistrationRecord] {
+        creatorMediaImportQueueRecords
+            .filter { $0.queueState != "Blocked" }
+            .map { record in
+                HFCreatorMediaRegistrationRecord(
+                    id: "media-registration-\(record.id)",
+                    projectTitle: record.projectTitle,
+                    registry: record.source,
+                    registrationState: record.queueState == "Ready" ? "Registered" : "Registered for Review",
+                    linkedManifest: "project-manifest-\(slugID(record.projectTitle))",
+                    detail: "Registration connects asset metadata to the creator project runtime without touching local files.",
+                    systemImage: record.systemImage
+                )
+            }
+    }
+
+    var creatorManifestUpdateRecords: [HFCreatorManifestUpdateRecord] {
+        creatorProjectManifestRecords.map { manifest in
+            let registrations = creatorMediaRegistrationRecords.filter { $0.projectTitle == manifest.title }
+            return HFCreatorManifestUpdateRecord(
+                id: "manifest-update-\(manifest.projectID)",
+                projectTitle: manifest.title,
+                manifestID: manifest.id,
+                updateState: registrations.isEmpty ? "Waiting" : "Preview Updated",
+                assetSummary: "\(registrations.count) registered local media records",
+                detail: "Manifest update is a preview derived from project and media runtime state. No exported package is created.",
+                systemImage: registrations.isEmpty ? "doc.badge.ellipsis" : "doc.badge.gearshape.fill"
+            )
+        }
+    }
+
+    var creatorProjectLinkRecords: [HFCreatorProjectLinkRecord] {
+        creatorProjectManifestRecords.map { manifest in
+            let registrations = creatorMediaRegistrationRecords.filter { $0.projectTitle == manifest.title }
+            return HFCreatorProjectLinkRecord(
+                id: "project-link-\(manifest.projectID)",
+                projectTitle: manifest.title,
+                projectID: manifest.projectID,
+                contentID: manifest.contentID,
+                linkedAssets: registrations.count,
+                status: registrations.isEmpty ? "Unlinked" : "Linked",
+                detail: "Project link connects local registration records to the canonical creator project manifest.",
+                systemImage: registrations.isEmpty ? "link.badge.plus" : "link.circle.fill"
+            )
+        }
+    }
+
+    var creatorMediaImportPreflightRecords: [HFCreatorMediaImportPreflightRecord] {
+        let sessions = creatorMediaImportSessionRecords
+        let queue = creatorMediaImportQueueRecords
+        let validations = creatorMediaImportValidationRecords
+        let registrations = creatorMediaRegistrationRecords
+        let links = creatorProjectLinkRecords
+
+        return [
+            HFCreatorMediaImportPreflightRecord(id: "sessions", title: "Import Sessions", detail: "\(sessions.count) local registration sessions prepared from active projects.", result: sessions.isEmpty ? "Empty" : "Prepared", isPassed: !sessions.isEmpty, systemImage: "tray.and.arrow.down.fill"),
+            HFCreatorMediaImportPreflightRecord(id: "queue", title: "Import Queue", detail: "\(queue.count) asset registration records are queued from media runtime state.", result: queue.isEmpty ? "Empty" : "Queued", isPassed: !queue.isEmpty, systemImage: "list.bullet.rectangle.fill"),
+            HFCreatorMediaImportPreflightRecord(id: "validation", title: "Asset Validation", detail: "\(validations.filter(\.isPassed).count)/\(validations.count) local registration records pass validation.", result: validations.contains { !$0.isPassed } ? "Review" : "Clear", isPassed: !validations.isEmpty, systemImage: "checkmark.shield.fill"),
+            HFCreatorMediaImportPreflightRecord(id: "registration", title: "Media Registration", detail: "\(registrations.count) metadata records can link to project manifests.", result: registrations.isEmpty ? "Waiting" : "Registered", isPassed: !registrations.isEmpty, systemImage: "rectangle.stack.badge.plus"),
+            HFCreatorMediaImportPreflightRecord(id: "boundary", title: "Local Boundary", detail: "No file picker, file copy, file write, network request, cloud storage, or transcode path is active.", result: "Safe", isPassed: links.contains { $0.status == "Linked" }, systemImage: "lock.shield.fill")
+        ]
+    }
+
     private func mediaAssetRecord(
         project: HFCreatorPublishingContent,
         kind: HFCreatorMediaAssetKind,
@@ -2787,6 +2996,28 @@ final class HFStreamingStore: ObservableObject {
         case .archived:
             return "archived"
         }
+    }
+
+    private func mediaImportQueueState(for record: HFCreatorMediaAssetRecord) -> String {
+        switch record.status {
+        case .ready:
+            return "Ready"
+        case .needsReview:
+            return "Review"
+        case .placeholder:
+            return "Placeholder"
+        case .missing:
+            return "Blocked"
+        }
+    }
+
+    private func slugID(_ value: String) -> String {
+        let slug = value
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber || $0 == " " }
+            .split(separator: " ")
+            .joined(separator: "-")
+        return slug.isEmpty ? "local" : slug
     }
 
     func refreshIdentitySessionRuntime(reason: String = "Session refreshed") {

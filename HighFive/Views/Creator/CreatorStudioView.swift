@@ -251,6 +251,13 @@ private enum HFCreatorProSpotlight {
     case projectValidation
     case projectReleasePackage
     case projectTimeline
+    case mediaImportRuntime
+    case mediaImportQueue
+    case mediaImportValidation
+    case mediaRegistration
+    case manifestUpdates
+    case projectLinking
+    case mediaImportPreflight
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -345,6 +352,13 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-project-validation") { return .projectValidation }
         if arguments.contains("--hf-project-release-package") { return .projectReleasePackage }
         if arguments.contains("--hf-project-timeline") { return .projectTimeline }
+        if arguments.contains("--hf-start-media-import") { return .mediaImportRuntime }
+        if arguments.contains("--hf-media-import-queue") { return .mediaImportQueue }
+        if arguments.contains("--hf-media-import-validation") { return .mediaImportValidation }
+        if arguments.contains("--hf-media-registration") { return .mediaRegistration }
+        if arguments.contains("--hf-media-manifest-updates") { return .manifestUpdates }
+        if arguments.contains("--hf-media-project-linking") { return .projectLinking }
+        if arguments.contains("--hf-media-import-preflight") { return .mediaImportPreflight }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2379,6 +2393,20 @@ struct CreatorStudioView: View {
             creatorProjectReleasePackageSection
         case .projectTimeline:
             creatorProjectTimelineSection
+        case .mediaImportRuntime:
+            creatorMediaImportRuntimeDashboard
+        case .mediaImportQueue:
+            creatorMediaImportQueueSection
+        case .mediaImportValidation:
+            creatorMediaImportValidationSection
+        case .mediaRegistration:
+            creatorMediaRegistrationSection
+        case .manifestUpdates:
+            creatorManifestUpdateSection
+        case .projectLinking:
+            creatorProjectLinkingSection
+        case .mediaImportPreflight:
+            creatorMediaImportPreflightSection
         }
     }
 
@@ -2397,6 +2425,7 @@ struct CreatorStudioView: View {
             productionBridgeDashboardSection
             contentBackendFoundationSection
             creatorProjectRuntimeDashboard
+            creatorMediaImportRuntimeDashboard
             creatorMediaAssetRuntimeSection
             creatorUploadWorkflowDashboard
             creatorDraftWorkspaceDashboard
@@ -2471,6 +2500,12 @@ struct CreatorStudioView: View {
             creatorProjectValidationSection
             creatorProjectReleasePackageSection
             creatorProjectTimelineSection
+            creatorMediaImportQueueSection
+            creatorMediaImportValidationSection
+            creatorMediaRegistrationSection
+            creatorManifestUpdateSection
+            creatorProjectLinkingSection
+            creatorMediaImportPreflightSection
             creatorDraftEditorSection
             creatorDraftValidationSection
             creatorMediaAssetRuntimeSection
@@ -4537,6 +4572,207 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.projectRuntime.timeline")
     }
 
+    private var creatorMediaImportRuntimeDashboard: some View {
+        let snapshot = streamingStore.creatorMediaImportRuntimeSnapshot
+
+        return creatorProSpotlight(
+            title: "Local Media Import Runtime",
+            detail: "Registration-first media intake for sessions, queue state, validation, manifest updates, project linking, and preflight checks.",
+            systemImage: "tray.and.arrow.down.fill",
+            accent: HFColors.gold,
+            identifier: "hf.mediaImport.runtime"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Sessions", value: "\(snapshot.sessionCount)")
+                    creatorProStat(title: "Queued", value: "\(snapshot.queueCount)")
+                    creatorProStat(title: "Registered", value: "\(snapshot.registeredAssets)")
+                    creatorProStat(title: "Preflight", value: snapshot.readinessLabel)
+                }
+
+                Text("Creator Project Runtime -> Media Import Runtime -> Media Asset Runtime")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.mediaImport.path")
+
+                Text("This registers local media intent only. No file picker, file copy, file write, cloud storage, network request, or transcode path is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.mediaImport.localOnly")
+            }
+        }
+    }
+
+    private var creatorMediaImportQueueSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Import Queue",
+                    detail: "Queue records are generated from project asset manifests and existing media registry states.",
+                    systemImage: "list.bullet.rectangle.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorMediaImportQueueRecords.prefix(8)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: "\(record.projectTitle) \(record.assetTitle)",
+                            detail: "\(record.source). \(record.detail)",
+                            status: record.queueState,
+                            systemImage: record.systemImage,
+                            accent: mediaImportAccent(for: record.queueState)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaImport.queue")
+    }
+
+    private var creatorMediaImportValidationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Asset Validation",
+                    detail: "Registration validation confirms media records can link to project manifests without touching files.",
+                    systemImage: "checkmark.shield.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorMediaImportValidationRecords.prefix(8)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.title,
+                            detail: record.detail,
+                            status: record.status,
+                            systemImage: record.systemImage,
+                            accent: record.isPassed ? HFColors.gold : HFColors.redAccent
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaImport.validation")
+    }
+
+    private var creatorMediaRegistrationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Media Registration",
+                    detail: "Registration connects local media metadata to canonical project manifests before real import exists.",
+                    systemImage: "rectangle.stack.badge.plus",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorMediaRegistrationRecords.prefix(8)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "\(record.registry). \(record.linkedManifest). \(record.detail)",
+                            status: record.registrationState,
+                            systemImage: record.systemImage,
+                            accent: mediaImportAccent(for: record.registrationState)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaImport.registration")
+    }
+
+    private var creatorManifestUpdateSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Manifest Update Preview",
+                    detail: "Project manifests show how registered media metadata would update package state later.",
+                    systemImage: "doc.badge.gearshape.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorManifestUpdateRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "\(record.manifestID). \(record.assetSummary). \(record.detail)",
+                            status: record.updateState,
+                            systemImage: record.systemImage,
+                            accent: mediaImportAccent(for: record.updateState)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaImport.manifestUpdates")
+    }
+
+    private var creatorProjectLinkingSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Project Linking",
+                    detail: "Registration records are linked to project IDs and content IDs inside the local runtime graph.",
+                    systemImage: "link.circle.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorProjectLinkRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.projectTitle,
+                            detail: "\(record.projectID) -> \(record.contentID). \(record.detail)",
+                            status: "\(record.linkedAssets) assets - \(record.status)",
+                            systemImage: record.systemImage,
+                            accent: mediaImportAccent(for: record.status)
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaImport.projectLinking")
+    }
+
+    private var creatorMediaImportPreflightSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Import Preflight",
+                    detail: "Preflight confirms the registration workflow remains local, linked, and free of transfer behavior.",
+                    systemImage: "list.clipboard.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorMediaImportPreflightRecords) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.title,
+                            detail: record.detail,
+                            status: record.result,
+                            systemImage: record.systemImage,
+                            accent: record.isPassed ? HFColors.gold : HFColors.redAccent
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaImport.preflight")
+    }
+
     private var creatorUploadWorkflowDashboard: some View {
         let snapshot = streamingStore.creatorUploadWorkflowSnapshot
 
@@ -6229,6 +6465,16 @@ struct CreatorStudioView: View {
             return HFColors.redAccent
         }
         if state.contains("Ready") || state.contains("Published") || state.contains("Visible") || state.contains("Logged") {
+            return HFColors.gold
+        }
+        return HFColors.cyanGlow
+    }
+
+    private func mediaImportAccent(for state: String) -> Color {
+        if state.contains("Blocked") || state.contains("Unlinked") {
+            return HFColors.redAccent
+        }
+        if state.contains("Ready") || state.contains("Registered") || state.contains("Linked") || state.contains("Updated") {
             return HFColors.gold
         }
         return HFColors.cyanGlow
