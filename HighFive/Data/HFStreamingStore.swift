@@ -534,6 +534,74 @@ struct HFDistributionReadinessRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFRightsLedgerRecord: Identifiable {
+    let id: String
+    var title: String
+    var creatorName: String
+    var ledgerState: String
+    var rightsWindow: String
+    var territory: String
+    var clearance: String
+    var systemImage: String
+}
+
+struct HFRightsWindowRecord: Identifiable {
+    let id: String
+    var title: String
+    var window: String
+    var packageScope: String
+    var status: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFTerritoryTrackingRecord: Identifiable {
+    let id: String
+    var title: String
+    var region: String
+    var availabilityPreview: String
+    var packageCount: Int
+    var status: String
+    var systemImage: String
+}
+
+struct HFClearanceTrackingRecord: Identifiable {
+    let id: String
+    var title: String
+    var area: String
+    var state: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFLicensingPackageRecord: Identifiable {
+    let id: String
+    var title: String
+    var scope: String
+    var estimatePreview: String
+    var readiness: String
+    var nextStep: String
+    var systemImage: String
+}
+
+struct HFRightsReadinessRecord: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFDealPreparationRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var readiness: String
+    var source: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -3095,6 +3163,85 @@ final class HFStreamingStore: ObservableObject {
             HFDistributionReadinessRecord(id: "rights", title: "Rights Packages", value: "\(rightsPackageRecords.count)", detail: "Rights windows, territory preview, and clearance state.", status: "Tracked", systemImage: "checkmark.shield.fill"),
             HFDistributionReadinessRecord(id: "release", title: "Release Packages", value: "\(readyPackages)", detail: "Packages ready for marketplace review.", status: "Ready", systemImage: "shippingbox.fill"),
             HFDistributionReadinessRecord(id: "licensing", title: "Licensing Preview", value: "\(licensingPreviewRecords.count)", detail: "Planning estimates from local revenue and completion signals.", status: "Estimate", systemImage: "doc.badge.gearshape.fill")
+        ]
+    }
+
+    var rightsLedgerRecords: [HFRightsLedgerRecord] {
+        rightsPackageRecords.map { record in
+            HFRightsLedgerRecord(
+                id: "ledger-\(record.id)",
+                title: record.title,
+                creatorName: record.creatorName,
+                ledgerState: record.clearanceState,
+                rightsWindow: record.rightsWindow,
+                territory: record.territoryPreview,
+                clearance: record.clearanceState.contains("Cleared") ? "Clearance tracked" : "Clearance review",
+                systemImage: "books.vertical.fill"
+            )
+        }
+    }
+
+    var rightsWindowRecords: [HFRightsWindowRecord] {
+        rightsPackageRecords.enumerated().map { index, record in
+            HFRightsWindowRecord(
+                id: "window-\(record.id)",
+                title: record.title,
+                window: index == 0 ? "Current Window" : "Planning Window",
+                packageScope: record.territoryPreview,
+                status: record.rightsWindow,
+                detail: "\(record.creatorName) rights timing remains a local planning record.",
+                systemImage: "calendar.badge.clock"
+            )
+        }
+    }
+
+    var territoryTrackingRecords: [HFTerritoryTrackingRecord] {
+        [
+            HFTerritoryTrackingRecord(id: "north-america", title: "North America", region: "US + Canada Preview", availabilityPreview: "\(rightsPackageRecords.filter { $0.territoryPreview.contains("North America") || $0.territoryPreview.contains("Global") }.count) packages", packageCount: rightsPackageRecords.count, status: "Tracked", systemImage: "map.fill"),
+            HFTerritoryTrackingRecord(id: "global", title: "Global Planning", region: "Worldwide Preview", availabilityPreview: "\(rightsPackageRecords.filter { $0.territoryPreview.contains("Global") }.count) packages", packageCount: rightsPackageRecords.count, status: "Planning", systemImage: "globe.americas.fill"),
+            HFTerritoryTrackingRecord(id: "festival", title: "Premiere Territory", region: "Premiere Preview", availabilityPreview: "\(creatorScheduledProjects.count + creatorReviewProjects.count) planned", packageCount: creatorScheduledProjects.count + creatorReviewProjects.count, status: "Preview", systemImage: "sparkles.tv.fill")
+        ]
+    }
+
+    var clearanceTrackingRecords: [HFClearanceTrackingRecord] {
+        [
+            HFClearanceTrackingRecord(id: "metadata", title: "Metadata Clearance", area: "Title + Synopsis", state: "\(creatorPublishingReadinessItems.first { $0.id == "metadata" }?.status ?? "Preview")", detail: "Metadata readiness is reused for local rights review.", systemImage: "text.justify.left"),
+            HFClearanceTrackingRecord(id: "poster", title: "Poster Clearance", area: "Artwork", state: "\(creatorPublishingReadinessItems.first { $0.id == "poster" }?.status ?? "Preview")", detail: "Poster status stays tied to publishing readiness.", systemImage: "photo.fill.on.rectangle.fill"),
+            HFClearanceTrackingRecord(id: "trailer", title: "Trailer Clearance", area: "Preview Media", state: "\(creatorPublishingReadinessItems.first { $0.id == "trailer" }?.status ?? "Preview")", detail: "Trailer state is a local package signal only.", systemImage: "film.stack.fill"),
+            HFClearanceTrackingRecord(id: "rights", title: "Rights Clearance", area: "Package Rights", state: "\(rightsLedgerRecords.count) tracked", detail: "Ledger rows track windows, territory, and clearance state.", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var licensingPackageRecords: [HFLicensingPackageRecord] {
+        licensingPreviewRecords.map { record in
+            HFLicensingPackageRecord(
+                id: "package-\(record.id)",
+                title: record.title,
+                scope: record.packageScope,
+                estimatePreview: record.estimatePreview,
+                readiness: record.rightsState,
+                nextStep: record.rightsState.contains("Strong") ? "Prepare planning packet" : "Review rights packet",
+                systemImage: "doc.richtext.fill"
+            )
+        }
+    }
+
+    var rightsReadinessRecords: [HFRightsReadinessRecord] {
+        [
+            HFRightsReadinessRecord(id: "ledger", title: "Rights Ledger", value: "\(rightsLedgerRecords.count)", detail: "Title, creator, window, territory, and clearance rows.", status: "Tracked", systemImage: "books.vertical.fill"),
+            HFRightsReadinessRecord(id: "windows", title: "Rights Windows", value: "\(rightsWindowRecords.count)", detail: "Current and planned window records.", status: "Planning", systemImage: "calendar.badge.clock"),
+            HFRightsReadinessRecord(id: "territories", title: "Territories", value: "\(territoryTrackingRecords.count)", detail: "Region availability preview and package counts.", status: "Preview", systemImage: "map.fill"),
+            HFRightsReadinessRecord(id: "clearance", title: "Clearance", value: "\(clearanceTrackingRecords.count)", detail: "Metadata, poster, trailer, and package clearance signals.", status: "Review", systemImage: "checkmark.shield.fill"),
+            HFRightsReadinessRecord(id: "licensing", title: "Licensing Packages", value: "\(licensingPackageRecords.count)", detail: "Scope, estimate, readiness, and next-step planning.", status: "Prepared", systemImage: "doc.richtext.fill")
+        ]
+    }
+
+    var dealPreparationRecords: [HFDealPreparationRecord] {
+        [
+            HFDealPreparationRecord(id: "publishing", title: "Publishing Package", detail: "\(releasePackageRecords.count) release packages can inform rights preparation.", readiness: "Local", source: "Publishing", systemImage: "shippingbox.fill"),
+            HFDealPreparationRecord(id: "revenue", title: "Revenue Context", detail: "\(licensingPackageRecords.count) licensing estimates are derived from local revenue signals.", readiness: "Estimate", source: "Revenue", systemImage: "dollarsign.circle.fill"),
+            HFDealPreparationRecord(id: "marketplace", title: "Marketplace Context", detail: "\(marketplaceCatalogRecords.count) catalog packages are visible for preparation.", readiness: "Preview", source: "Marketplace", systemImage: "bag.fill"),
+            HFDealPreparationRecord(id: "distribution", title: "Distribution Context", detail: "\(distributionTargetRecords.count) target surfaces define planning context.", readiness: "Planning", source: "Distribution", systemImage: "point.3.connected.trianglepath.dotted")
         ]
     }
 

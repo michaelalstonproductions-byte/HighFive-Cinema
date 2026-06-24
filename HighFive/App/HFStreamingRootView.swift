@@ -160,6 +160,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInNotificationsActivity
             || Self.shouldStartInPlatformAdministration
             || Self.shouldStartInMarketplaceDistribution
+            || Self.shouldStartInRightsLicensingOperations
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -221,6 +222,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInNotificationsActivity
             || Self.shouldStartInPlatformAdministration
             || Self.shouldStartInMarketplaceDistribution
+            || Self.shouldStartInRightsLicensingOperations
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -339,6 +341,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInNotificationsActivity
             || Self.shouldStartInPlatformAdministration
             || Self.shouldStartInMarketplaceDistribution
+            || Self.shouldStartInRightsLicensingOperations
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -460,6 +463,18 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-marketplace-packages")
             || arguments.contains("--hf-marketplace-licensing")
             || arguments.contains("--hf-marketplace-readiness")
+    }
+
+    private static var shouldStartInRightsLicensingOperations: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-rights")
+            || arguments.contains("--hf-rights-ledger")
+            || arguments.contains("--hf-rights-windows")
+            || arguments.contains("--hf-rights-territories")
+            || arguments.contains("--hf-rights-clearance")
+            || arguments.contains("--hf-licensing-packages")
+            || arguments.contains("--hf-licensing-readiness")
+            || arguments.contains("--hf-deal-preparation")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {
