@@ -815,7 +815,7 @@ struct HFCreatorCollaborationTimelineRecord: Identifiable {
     var systemImage: String
 }
 
-struct HFEpisodeRecord: Identifiable {
+struct HFEpisodeRecord: Identifiable, Codable, Equatable {
     let id: String
     var seriesID: String
     var seasonNumber: Int
@@ -828,7 +828,7 @@ struct HFEpisodeRecord: Identifiable {
     var progress: Double?
 }
 
-struct HFSeasonRecord: Identifiable {
+struct HFSeasonRecord: Identifiable, Codable, Equatable {
     let id: String
     var seriesID: String
     var seasonNumber: Int
@@ -836,7 +836,7 @@ struct HFSeasonRecord: Identifiable {
     var episodes: [HFEpisodeRecord]
 }
 
-struct HFSeriesRecord: Identifiable {
+struct HFSeriesRecord: Identifiable, Codable, Equatable {
     let id: String
     var title: String
     var synopsis: String
@@ -964,6 +964,169 @@ struct HFPaymentReadinessRow: Identifiable, Codable, Equatable {
     var systemImage: String
 }
 
+struct HFContentBackendSnapshot: Codable, Equatable {
+    var movies: [Movie]
+    var creators: [Creator]
+    var series: [HFSeriesRecord]
+    var collections: [Category]
+    var publishingProjects: [HFCreatorPublishingContent]
+    var updatedAtLabel: String
+
+    var titleCount: Int { movies.count }
+    var creatorCount: Int { creators.count }
+    var episodeCount: Int { series.reduce(0) { $0 + $1.episodeCount } }
+    var collectionCount: Int { collections.count }
+    var draftCount: Int { publishingProjects.filter { $0.releaseState == .draft }.count }
+}
+
+struct HFContentRepositoryMetric: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFContentRelationshipRecord: Identifiable {
+    let id: String
+    var title: String
+    var source: String
+    var target: String
+    var state: String
+    var systemImage: String
+}
+
+private struct HFContentStorageLayer {
+    private let defaults: UserDefaults
+    private let snapshotKey = "hf.contentBackend.snapshot.v1"
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    func loadSnapshot(seed: HFContentBackendSnapshot) -> HFContentBackendSnapshot {
+        guard let data = defaults.data(forKey: snapshotKey),
+              let decoded = try? JSONDecoder().decode(HFContentBackendSnapshot.self, from: data) else {
+            saveSnapshot(seed)
+            return seed
+        }
+        return decoded
+    }
+
+    func saveSnapshot(_ snapshot: HFContentBackendSnapshot) {
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        defaults.set(data, forKey: snapshotKey)
+    }
+}
+
+struct CatalogRepository {
+    private let snapshot: HFContentBackendSnapshot
+
+    init(snapshot: HFContentBackendSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func fetchCatalog() -> [Movie] {
+        snapshot.movies
+    }
+
+    func fetchMovie(id: String) -> Movie? {
+        snapshot.movies.first { $0.id == id }
+    }
+
+    func fetchSeries() -> [HFSeriesRecord] {
+        snapshot.series
+    }
+
+    func fetchCollections() -> [Category] {
+        snapshot.collections
+    }
+}
+
+struct CreatorRepository {
+    private let snapshot: HFContentBackendSnapshot
+
+    init(snapshot: HFContentBackendSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func fetchCreators() -> [Creator] {
+        snapshot.creators
+    }
+
+    func fetchCreator(id: String) -> Creator? {
+        snapshot.creators.first { $0.id == id }
+    }
+
+    func fetchCreator(named name: String) -> Creator? {
+        snapshot.creators.first { $0.name == name }
+    }
+
+    func fetchTitles(for creator: Creator) -> [Movie] {
+        snapshot.movies.filter { $0.creatorName == creator.name || creator.featuredMovieIDs.contains($0.id) }
+    }
+}
+
+struct PublishingRepository {
+    private let snapshot: HFContentBackendSnapshot
+
+    init(snapshot: HFContentBackendSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func fetchProjects() -> [HFCreatorPublishingContent] {
+        snapshot.publishingProjects
+    }
+
+    func fetchDrafts() -> [HFCreatorPublishingContent] {
+        snapshot.publishingProjects.filter { $0.releaseState == .draft }
+    }
+
+    func fetchPublishedTitles() -> [Movie] {
+        snapshot.publishingProjects
+            .filter(\.discoveryEligible)
+            .map(\.movie)
+    }
+}
+
+struct LibraryRepository {
+    private let movies: [Movie]
+    private let savedIDs: Set<String>
+    private let downloadedIDs: Set<String>
+    private let lastViewedID: String?
+
+    init(movies: [Movie], savedIDs: Set<String>, downloadedIDs: Set<String>, lastViewedID: String?) {
+        self.movies = movies
+        self.savedIDs = savedIDs
+        self.downloadedIDs = downloadedIDs
+        self.lastViewedID = lastViewedID
+    }
+
+    func fetchSavedTitles() -> [Movie] {
+        movies.filter { savedIDs.contains($0.id) }
+    }
+
+    func fetchOfflineTitles() -> [Movie] {
+        movies.filter { downloadedIDs.contains($0.id) || $0.isDownloaded }
+    }
+
+    func fetchContinueWatching() -> [Movie] {
+        var ordered = movies.filter { movie in
+            guard let progress = movie.progress else { return false }
+            return progress > 0 && progress < 0.95
+        }
+        if let lastViewedID, let last = movies.first(where: { $0.id == lastViewedID }), ordered.contains(where: { $0.id == last.id }) {
+            ordered.removeAll { $0.id == last.id }
+            ordered.insert(last, at: 0)
+        }
+        return ordered
+    }
+
+    func fetchCompletedTitles() -> [Movie] {
+        movies.filter { ($0.progress ?? 0) >= 0.95 }
+    }
+}
+
 struct HFBackendRuntimeConfigRow: Identifiable, Codable, Equatable {
     let id: String
     var title: String
@@ -991,6 +1154,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var activeStagingPlaybackDescriptor: HFPlaybackDescriptor?
     @Published private(set) var lastPlaybackDescriptorAuditContext: HFBackendRequestAuditContext?
     @Published private(set) var creatorPublishingContents: [HFCreatorPublishingContent]
+    @Published private(set) var contentSnapshot: HFContentBackendSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -1013,6 +1177,7 @@ final class HFStreamingStore: ObservableObject {
     private let localPreviewPlaybackResolver: HFLocalPreviewPlaybackResolver
     private let remotePlaybackDescriptorGateway: HFRemotePlaybackDescriptorGateway
     private let entitlementPlaybackAdapter: HFBackendEntitlementPlaybackAdapter
+    private let contentStorage: HFContentStorageLayer
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -1059,6 +1224,12 @@ final class HFStreamingStore: ObservableObject {
         )
         backendRuntimeStatus = resolvedBackendService.currentStatus()
         let defaults = UserDefaults.standard
+        let seedProjects = Self.makeCreatorPublishingContents()
+        let seedSnapshot = Self.makeInitialContentSnapshot(projects: seedProjects)
+        let resolvedContentStorage = HFContentStorageLayer(defaults: defaults)
+        let loadedContentSnapshot = resolvedContentStorage.loadSnapshot(seed: seedSnapshot)
+        contentStorage = resolvedContentStorage
+        contentSnapshot = loadedContentSnapshot
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -1085,7 +1256,7 @@ final class HFStreamingStore: ObservableObject {
             "Draft: Invite viewers to choose who they would watch The Friendly with.",
             "Preview: Share a behind-the-scenes note before premiere week."
         ]
-        creatorPublishingContents = Self.makeCreatorPublishingContents()
+        creatorPublishingContents = loadedContentSnapshot.publishingProjects
         let savedLaunchStates = defaults.array(forKey: launchChecklistKey) as? [Bool]
         launchChecklistStates = savedLaunchStates?.count == launchChecklistItems.count ? savedLaunchStates ?? [] : Array(repeating: false, count: launchChecklistItems.count)
         generatedDeliverySummary = ""
@@ -1536,11 +1707,77 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.catalogReadiness
     // hf.services.catalogIdentity
     // hf.services.movieLookup
+    private var catalogRepository: CatalogRepository {
+        CatalogRepository(snapshot: contentSnapshot)
+    }
+
+    private var creatorRepository: CreatorRepository {
+        CreatorRepository(snapshot: contentSnapshot)
+    }
+
+    private var publishingRepository: PublishingRepository {
+        PublishingRepository(snapshot: contentSnapshot)
+    }
+
+    private var libraryRepository: LibraryRepository {
+        LibraryRepository(
+            movies: allCatalogMovies,
+            savedIDs: savedMovieIDs,
+            downloadedIDs: downloadedMovieIDs,
+            lastViewedID: lastPlayerMovieID
+        )
+    }
+
     var allCatalogMovies: [Movie] {
         var seen = Set<String>()
-        return (HFMockData.movies + creatorPublishedMovies).filter { movie in
+        return (catalogRepository.fetchCatalog() + publishingRepository.fetchPublishedTitles()).filter { movie in
             seen.insert(movie.id).inserted
         }
+    }
+
+    var persistedCollections: [Category] {
+        catalogRepository.fetchCollections()
+    }
+
+    var persistedCreators: [Creator] {
+        creatorRepository.fetchCreators()
+    }
+
+    var contentBackendRepositoryMetrics: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(id: "catalog", title: "CatalogRepository", value: "\(catalogRepository.fetchCatalog().count)", detail: "Movies, series, episodes, and collections fetch through the content snapshot.", systemImage: "rectangle.stack.fill"),
+            HFContentRepositoryMetric(id: "creator", title: "CreatorRepository", value: "\(creatorRepository.fetchCreators().count)", detail: "Creator profiles and title relationships fetch from canonical creators.", systemImage: "person.crop.rectangle.stack.fill"),
+            HFContentRepositoryMetric(id: "publishing", title: "PublishingRepository", value: "\(publishingRepository.fetchProjects().count)", detail: "Draft, review, scheduled, published, and archived projects persist together.", systemImage: "square.stack.3d.up.fill"),
+            HFContentRepositoryMetric(id: "library", title: "LibraryRepository", value: "\(libraryRepository.fetchSavedTitles().count)", detail: "Saved, offline, continue-watching, and completed shelves resolve through catalog IDs.", systemImage: "bookmark.fill")
+        ]
+    }
+
+    var contentBackendRelationshipRecords: [HFContentRelationshipRecord] {
+        [
+            HFContentRelationshipRecord(id: "movie-creator", title: "Movie -> Creator", source: "\(allCatalogMovies.count) titles", target: "\(persistedCreators.count) creators", state: "Mapped", systemImage: "person.crop.rectangle.stack.fill"),
+            HFContentRelationshipRecord(id: "series-episodes", title: "Series -> Seasons -> Episodes", source: "\(seriesRecords.count) series", target: "\(episodeRecords.count) episodes", state: "Mapped", systemImage: "play.square.stack.fill"),
+            HFContentRelationshipRecord(id: "collection-titles", title: "Collection -> Titles", source: "\(persistedCollections.count) collections", target: "\(persistedCollections.flatMap(\.movies).count) title links", state: "Fetched", systemImage: "rectangle.grid.2x2.fill"),
+            HFContentRelationshipRecord(id: "creator-projects", title: "Creator -> Projects", source: "\(persistedCreators.count) creators", target: "\(creatorPublishingContents.count) projects", state: "Persisted", systemImage: "wand.and.stars"),
+            HFContentRelationshipRecord(id: "library-catalog", title: "Library -> Catalog", source: "\(libraryViewingHistory.count) activity rows", target: "\(allCatalogMovies.count) catalog titles", state: "Resolved", systemImage: "bookmark.square.fill")
+        ]
+    }
+
+    var contentBackendPersistenceMetrics: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(id: "snapshot", title: "Content Snapshot", value: "\(contentSnapshot.titleCount)", detail: "Movies, creators, series, collections, and publishing projects load from one persisted snapshot.", systemImage: "externaldrive.fill"),
+            HFContentRepositoryMetric(id: "episodes", title: "Episode Storage", value: "\(contentSnapshot.episodeCount)", detail: "Series, seasons, and episodes are encoded as canonical content records.", systemImage: "play.square.stack.fill"),
+            HFContentRepositoryMetric(id: "drafts", title: "Draft Persistence", value: "\(contentSnapshot.draftCount)", detail: "Creator drafts can be created, updated, loaded, and archived locally.", systemImage: "pencil.and.outline"),
+            HFContentRepositoryMetric(id: "updated", title: "Snapshot State", value: "Stored", detail: contentSnapshot.updatedAtLabel, systemImage: "checkmark.seal.fill")
+        ]
+    }
+
+    var contentBackendFetchMetrics: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(id: "fetch-catalog", title: "Fetch Catalog", value: "\(catalogRepository.fetchCatalog().count)", detail: "Read-only title retrieval through CatalogRepository.", systemImage: "film.stack.fill"),
+            HFContentRepositoryMetric(id: "fetch-creators", title: "Fetch Creators", value: "\(creatorRepository.fetchCreators().count)", detail: "Read-only creator retrieval through CreatorRepository.", systemImage: "person.2.fill"),
+            HFContentRepositoryMetric(id: "fetch-series", title: "Fetch Series", value: "\(catalogRepository.fetchSeries().count)", detail: "Read-only episodic retrieval through CatalogRepository.", systemImage: "rectangle.stack.fill"),
+            HFContentRepositoryMetric(id: "fetch-collections", title: "Fetch Collections", value: "\(catalogRepository.fetchCollections().count)", detail: "Read-only collection retrieval through CatalogRepository.", systemImage: "rectangle.grid.2x2.fill")
+        ]
     }
 
     var movieCatalogStatus: String {
@@ -1908,7 +2145,9 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var seriesRecords: [HFSeriesRecord] {
-        [
+        let storedSeries = catalogRepository.fetchSeries()
+        guard storedSeries.isEmpty else { return storedSeries }
+        return [
             makeSeriesRecord(
                 movieID: "paranormall-s1",
                 seasonCount: 1,
@@ -2179,9 +2418,10 @@ final class HFStreamingStore: ObservableObject {
     var creatorProfiles: [HFCreatorProfile] {
         let publishingCreators = creatorPublishingContents.map(\.creator)
         let catalogCreators = allCatalogMovies.map(\.creatorName)
+        let storedCreators = creatorRepository.fetchCreators()
         var seen = Set<String>()
-        let creators = (HFMockData.creators + (publishingCreators + catalogCreators).compactMap { name -> Creator? in
-            guard seen.insert(name).inserted, !HFMockData.creators.contains(where: { $0.name == name }) else { return nil }
+        let creators = (storedCreators + (publishingCreators + catalogCreators).compactMap { name -> Creator? in
+            guard seen.insert(name).inserted, !storedCreators.contains(where: { $0.name == name }) else { return nil }
             return Creator(
                 id: name.lowercased().replacingOccurrences(of: " ", with: "-"),
                 name: name,
@@ -2760,28 +3000,20 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var savedMovies: [Movie] {
-        allCatalogMovies.filter { isSaved($0) }
+        libraryRepository.fetchSavedTitles()
     }
 
     // hf.services.downloadState
     var downloadedMovies: [Movie] {
-        allCatalogMovies.filter { isDownloaded($0) }
+        libraryRepository.fetchOfflineTitles()
     }
 
     var libraryContinueWatchingMovies: [Movie] {
-        var ordered = allCatalogMovies.filter { movie in
-            guard let progress = movie.progress else { return false }
-            return progress > 0 && progress < 0.95
-        }
-        if let lastPlayerMovieID, let last = movie(id: lastPlayerMovieID), ordered.contains(where: { $0.id == last.id }) {
-            ordered.removeAll { $0.id == last.id }
-            ordered.insert(last, at: 0)
-        }
-        return ordered
+        libraryRepository.fetchContinueWatching()
     }
 
     var libraryCompletedMovies: [Movie] {
-        allCatalogMovies.filter { ($0.progress ?? 0) >= 0.95 }
+        libraryRepository.fetchCompletedTitles()
     }
 
     var libraryWatchLaterMovies: [Movie] {
@@ -3586,7 +3818,7 @@ final class HFStreamingStore: ObservableObject {
 
     // hf.services.libraryState
     func movie(id: String) -> Movie? {
-        allCatalogMovies.first { $0.id == id }
+        catalogRepository.fetchMovie(id: id) ?? publishingRepository.fetchPublishedTitles().first { $0.id == id }
     }
 
     func movie(for id: String) -> Movie? {
@@ -3980,6 +4212,75 @@ final class HFStreamingStore: ObservableObject {
     func clearRecentSearches() {
         recentSearches.removeAll()
         UserDefaults.standard.set(recentSearches, forKey: recentSearchesKey)
+    }
+
+    @discardableResult
+    func createCreatorDraft(
+        title: String,
+        description: String,
+        creator: String,
+        genre: String,
+        tags: [String] = [],
+        runtime: String = "Draft"
+    ) -> HFCreatorPublishingContent {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedTitle = trimmedTitle.isEmpty ? "Untitled Creator Draft" : trimmedTitle
+        let draft = HFCreatorPublishingContent(
+            id: "draft-\(resolvedTitle.lowercased().filter { $0.isLetter || $0.isNumber }.prefix(24))-\(creatorPublishingContents.count + 1)",
+            title: resolvedTitle,
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Creator draft stored in the local content repository." : description,
+            posterAssetName: nil,
+            trailerStatus: .placeholder,
+            creator: creator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? activeViewingProfile.displayName : creator,
+            genre: genre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Drama" : genre,
+            tags: tags,
+            runtime: runtime,
+            releaseState: .draft,
+            posterStatus: .placeholder,
+            metadataStatus: .ready,
+            artworkStatus: .placeholder,
+            updatedAtLabel: "Draft persisted locally"
+        )
+        creatorPublishingContents.insert(draft, at: 0)
+        persistCreatorPublishingContents()
+        return draft
+    }
+
+    func updateCreatorDraft(
+        id: String,
+        title: String? = nil,
+        description: String? = nil,
+        posterAssetName: String? = nil,
+        trailerStatus: HFCreatorPublishingAssetStatus? = nil,
+        metadataStatus: HFCreatorPublishingAssetStatus? = nil,
+        artworkStatus: HFCreatorPublishingAssetStatus? = nil
+    ) {
+        guard let index = creatorPublishingContents.firstIndex(where: { $0.id == id }) else { return }
+        if let title { creatorPublishingContents[index].title = title }
+        if let description { creatorPublishingContents[index].description = description }
+        if let posterAssetName { creatorPublishingContents[index].posterAssetName = posterAssetName }
+        if let trailerStatus { creatorPublishingContents[index].trailerStatus = trailerStatus }
+        if let metadataStatus { creatorPublishingContents[index].metadataStatus = metadataStatus }
+        if let artworkStatus { creatorPublishingContents[index].artworkStatus = artworkStatus }
+        creatorPublishingContents[index].updatedAtLabel = "Draft updated locally"
+        persistCreatorPublishingContents()
+    }
+
+    func loadCreatorDraft(id: String) -> HFCreatorPublishingContent? {
+        publishingRepository.fetchDrafts().first { $0.id == id }
+    }
+
+    func archiveCreatorDraft(id: String) {
+        guard let index = creatorPublishingContents.firstIndex(where: { $0.id == id }) else { return }
+        creatorPublishingContents[index].releaseState = .archived
+        creatorPublishingContents[index].updatedAtLabel = "Archived locally"
+        persistCreatorPublishingContents()
+    }
+
+    private func persistCreatorPublishingContents() {
+        contentSnapshot.publishingProjects = creatorPublishingContents
+        contentSnapshot.updatedAtLabel = "Creator drafts persisted locally"
+        contentStorage.saveSnapshot(contentSnapshot)
     }
 
     // Communication Service
@@ -4655,6 +4956,133 @@ final class HFStreamingStore: ObservableObject {
             return Set(fallback)
         }
         return fallbackIDs
+    }
+
+    private static func makeInitialContentSnapshot(projects: [HFCreatorPublishingContent]) -> HFContentBackendSnapshot {
+        let baseMovies = HFMockData.movies
+        return HFContentBackendSnapshot(
+            movies: baseMovies,
+            creators: HFMockData.creators,
+            series: makeInitialSeriesRecords(movies: baseMovies),
+            collections: HFMockData.categories,
+            publishingProjects: projects,
+            updatedAtLabel: "Seeded local content backend"
+        )
+    }
+
+    private static func makeInitialSeriesRecords(movies: [Movie]) -> [HFSeriesRecord] {
+        [
+            makeSeedSeriesRecord(
+                movieID: "paranormall-s1",
+                movies: movies,
+                seasonCount: 1,
+                episodesPerSeason: [7],
+                status: .published,
+                baseProgress: 0.28,
+                episodeTitles: [
+                    "Cold Open",
+                    "The House That Answered",
+                    "Basement Signal",
+                    "Witness Marks",
+                    "The Long Hall",
+                    "Static Room",
+                    "Nothing Normal"
+                ]
+            ),
+            makeSeedSeriesRecord(
+                movieID: "black-turnip",
+                movies: movies,
+                seasonCount: 1,
+                episodesPerSeason: [6],
+                status: .scheduled,
+                baseProgress: nil,
+                episodeTitles: [
+                    "Seed Memory",
+                    "The Ledger",
+                    "Smoke House",
+                    "Root Work",
+                    "Inheritance",
+                    "Harvest"
+                ]
+            ),
+            makeSeedSeriesRecord(
+                movieID: "old-satan",
+                movies: movies,
+                seasonCount: 1,
+                episodesPerSeason: [5],
+                status: .review,
+                baseProgress: nil,
+                episodeTitles: [
+                    "The Return",
+                    "Ash Road",
+                    "Small Church",
+                    "Bargain",
+                    "Old Fire"
+                ]
+            )
+        ]
+    }
+
+    private static func makeSeedSeriesRecord(
+        movieID: String,
+        movies: [Movie],
+        seasonCount: Int,
+        episodesPerSeason: [Int],
+        status: HFCreatorReleaseState,
+        baseProgress: Double?,
+        episodeTitles: [String]
+    ) -> HFSeriesRecord {
+        let hero = movies.first { $0.id == movieID } ?? movies[0]
+        var titleIndex = 0
+        let totalEpisodes = max(1, episodesPerSeason.reduce(0, +))
+        let seasons = (1...seasonCount).map { seasonNumber in
+            let episodeCount = episodesPerSeason.indices.contains(seasonNumber - 1) ? episodesPerSeason[seasonNumber - 1] : 6
+            let episodes = (1...episodeCount).map { episodeNumber in
+                let title = episodeTitles.indices.contains(titleIndex) ? episodeTitles[titleIndex] : "Episode \(episodeNumber)"
+                let absoluteIndex = titleIndex
+                titleIndex += 1
+                return HFEpisodeRecord(
+                    id: "\(movieID)-s\(seasonNumber)-e\(episodeNumber)",
+                    seriesID: movieID,
+                    seasonNumber: seasonNumber,
+                    episodeNumber: episodeNumber,
+                    title: title,
+                    synopsis: "\(hero.title) episode \(episodeNumber) expands the local series arc for creator, CMS, library, discovery, and analytics surfaces.",
+                    runtime: "\(34 + (absoluteIndex * 3) % 18)m",
+                    artworkStatus: hero.posterAssetName == nil ? .placeholder : .ready,
+                    releaseState: status,
+                    progress: seedEpisodeProgress(baseProgress: baseProgress, episodeIndex: absoluteIndex, totalEpisodes: totalEpisodes)
+                )
+            }
+            return HFSeasonRecord(
+                id: "\(movieID)-s\(seasonNumber)",
+                seriesID: movieID,
+                seasonNumber: seasonNumber,
+                title: "Season \(seasonNumber)",
+                episodes: episodes
+            )
+        }
+        return HFSeriesRecord(
+            id: movieID,
+            title: hero.title,
+            synopsis: hero.synopsis,
+            creatorName: hero.creatorName,
+            genre: hero.genres.first ?? "Series",
+            status: status,
+            seasons: seasons,
+            heroMovie: hero
+        )
+    }
+
+    private static func seedEpisodeProgress(baseProgress: Double?, episodeIndex: Int, totalEpisodes: Int) -> Double? {
+        guard let baseProgress else { return nil }
+        let completed = Int((baseProgress * Double(totalEpisodes)).rounded(.down))
+        if episodeIndex < completed { return 1.0 }
+        if episodeIndex == completed {
+            let fractional = (baseProgress * Double(totalEpisodes)) - Double(completed)
+            return min(0.94, max(0.12, fractional))
+        }
+        return nil
     }
 
     private static func makeCreatorPublishingContents() -> [HFCreatorPublishingContent] {

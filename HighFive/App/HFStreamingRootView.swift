@@ -163,6 +163,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
+            || Self.shouldStartInContentBackend
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -227,6 +228,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
+            || Self.shouldStartInContentBackend
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -348,6 +350,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
+            || Self.shouldStartInContentBackend
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -503,6 +506,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-production-environments")
             || arguments.contains("--hf-production-readiness")
             || arguments.contains("--hf-production-dependencies")
+    }
+
+    private static var shouldStartInContentBackend: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-content-backend")
+            || arguments.contains("--hf-content-repositories")
+            || arguments.contains("--hf-content-fetch")
+            || arguments.contains("--hf-content-persistence")
+            || arguments.contains("--hf-content-relationships")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

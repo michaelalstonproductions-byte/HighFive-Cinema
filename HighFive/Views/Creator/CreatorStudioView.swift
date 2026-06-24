@@ -229,6 +229,11 @@ private enum HFCreatorProSpotlight {
     case productionEnvironmentSwitching
     case productionReadinessReports
     case productionDependencyGraph
+    case contentBackendDashboard
+    case contentBackendRepositories
+    case contentBackendFetch
+    case contentBackendPersistence
+    case contentBackendRelationships
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -301,6 +306,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-production-environments") { return .productionEnvironmentSwitching }
         if arguments.contains("--hf-production-readiness") { return .productionReadinessReports }
         if arguments.contains("--hf-production-dependencies") { return .productionDependencyGraph }
+        if arguments.contains("--hf-start-content-backend") { return .contentBackendDashboard }
+        if arguments.contains("--hf-content-repositories") { return .contentBackendRepositories }
+        if arguments.contains("--hf-content-fetch") { return .contentBackendFetch }
+        if arguments.contains("--hf-content-persistence") { return .contentBackendPersistence }
+        if arguments.contains("--hf-content-relationships") { return .contentBackendRelationships }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2271,6 +2281,16 @@ struct CreatorStudioView: View {
             productionReadinessReportsSection
         case .productionDependencyGraph:
             productionDependencyGraphSection
+        case .contentBackendDashboard:
+            contentBackendFoundationSection
+        case .contentBackendRepositories:
+            contentBackendRepositoriesSection
+        case .contentBackendFetch:
+            contentBackendFetchSection
+        case .contentBackendPersistence:
+            contentBackendPersistenceSection
+        case .contentBackendRelationships:
+            contentBackendRelationshipsSection
         }
     }
 
@@ -2287,6 +2307,7 @@ struct CreatorStudioView: View {
             rightsLicensingDashboardSection
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
+            contentBackendFoundationSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2349,6 +2370,10 @@ struct CreatorStudioView: View {
             productionEnvironmentSwitchingSection
             productionReadinessReportsSection
             productionDependencyGraphSection
+            contentBackendRepositoriesSection
+            contentBackendFetchSection
+            contentBackendPersistenceSection
+            contentBackendRelationshipsSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -3961,6 +3986,119 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.productionBridge.dependencyGraph")
+    }
+
+    private var contentBackendFoundationSection: some View {
+        creatorProSpotlight(
+            title: "Real Content Backend Foundation",
+            detail: "Canonical content models, local snapshot storage, repository fetches, relationships, and creator draft persistence.",
+            systemImage: "externaldrive.fill",
+            accent: HFColors.gold,
+            identifier: "hf.contentBackend.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Movies", value: "\(streamingStore.contentSnapshot.titleCount)")
+                    creatorProStat(title: "Creators", value: "\(streamingStore.contentSnapshot.creatorCount)")
+                    creatorProStat(title: "Episodes", value: "\(streamingStore.contentSnapshot.episodeCount)")
+                    creatorProStat(title: "Drafts", value: "\(streamingStore.contentSnapshot.draftCount)")
+                }
+
+                Text("UI -> Repository -> Local Content Storage")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.contentBackend.repositoryPath")
+
+                Text("P17A stores canonical content locally and exposes repository fetch APIs without media ingest, money movement, sign-in, streaming infrastructure, or external calls.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.contentBackend.boundary")
+            }
+        }
+    }
+
+    private var contentBackendRepositoriesSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Repository Layer",
+                    detail: "CatalogRepository, CreatorRepository, PublishingRepository, and LibraryRepository sit between UI and storage.",
+                    systemImage: "square.stack.3d.up.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.contentBackendRepositoryMetrics) { metric in
+                        contentBackendMetricCard(metric)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.contentBackend.repositories")
+    }
+
+    private var contentBackendFetchSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Read-Only Fetch", actionTitle: "Repository")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.contentBackendFetchMetrics) { metric in
+                        contentBackendRailCard(metric)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.contentBackend.readOnlyFetch")
+    }
+
+    private var contentBackendPersistenceSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Content Persistence",
+                    detail: "The content snapshot stores movies, creators, series, collections, and creator publishing projects locally.",
+                    systemImage: "externaldrive.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.contentBackendPersistenceMetrics) { metric in
+                        contentBackendMetricRow(metric)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.contentBackend.persistence")
+    }
+
+    private var contentBackendRelationshipsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Content Relationships",
+                    detail: "Movies, creators, series, collections, publishing projects, and library activity resolve through canonical IDs.",
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.contentBackendRelationshipRecords) { record in
+                        contentBackendRelationshipRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.contentBackend.relationships")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -6026,6 +6164,140 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.productionBridge.dependency.\(record.id)")
+    }
+
+    private func contentBackendMetricCard(_ metric: HFContentRepositoryMetric) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: metric.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(contentBackendAccent(for: metric.id))
+            Text(metric.value)
+                .font(.system(size: 25, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(metric.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(2)
+                .minimumScaleFactor(0.74)
+            Text(metric.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.contentBackend.repository.\(metric.id)")
+    }
+
+    private func contentBackendRailCard(_ metric: HFContentRepositoryMetric) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: contentBackendAccent(for: metric.id).opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: metric.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(contentBackendAccent(for: metric.id))
+                Text(metric.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(metric.value)
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(metric.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 176, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.contentBackend.fetch.\(metric.id)")
+    }
+
+    private func contentBackendMetricRow(_ metric: HFContentRepositoryMetric) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: metric.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(contentBackendAccent(for: metric.id))
+                .frame(width: 38, height: 38)
+                .background(contentBackendAccent(for: metric.id).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(metric.title)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                    Text(metric.value)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text(metric.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.contentBackend.persistence.\(metric.id)")
+    }
+
+    private func contentBackendRelationshipRow(_ record: HFContentRelationshipRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(contentBackendAccent(for: record.id))
+                .frame(width: 38, height: 38)
+                .background(contentBackendAccent(for: record.id).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.source) -> \(record.target)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+                Text(record.state)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.contentBackend.relationship.\(record.id)")
+    }
+
+    private func contentBackendAccent(for id: String) -> Color {
+        switch id {
+        case let value where value.contains("creator") || value.contains("relationship"):
+            return HFColors.violet
+        case let value where value.contains("library") || value.contains("draft") || value.contains("snapshot"):
+            return HFColors.gold
+        default:
+            return HFColors.cyanGlow
+        }
     }
 
     private func integrationAccent(for category: String) -> Color {
