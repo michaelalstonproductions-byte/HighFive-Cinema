@@ -1,6 +1,8 @@
 import Foundation
 import Combine
 import CryptoKit
+import AVFoundation
+import ImageIO
 import SQLite3
 
 struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
@@ -559,13 +561,21 @@ struct HFCreatorMediaImportPreflightRecord: Identifiable, Hashable {
     var systemImage: String
 }
 
-enum HFCreatorLocalImportStatus: String, Codable, Equatable {
+enum HFCreatorLocalImportStatus: String, Codable, Equatable, Hashable {
     case queued = "Queued"
     case importing = "Importing"
     case imported = "Imported"
     case duplicate = "Duplicate"
     case cancelled = "Cancelled"
     case failed = "Failed"
+    case quarantined = "Quarantined"
+}
+
+enum HFCreatorMediaInspectionState: String, Codable, Equatable, Hashable {
+    case accepted = "Accepted"
+    case warning = "Warning"
+    case blocked = "Blocked"
+    case quarantined = "Quarantined"
 }
 
 struct HFCreatorImportedMediaAsset: Identifiable, Codable, Equatable, Hashable {
@@ -592,6 +602,39 @@ struct HFCreatorLocalImportResult: Equatable {
     var asset: HFCreatorImportedMediaAsset
     var isDuplicate: Bool
     var message: String
+}
+
+struct HFCreatorMediaInspectionRecord: Identifiable, Codable, Equatable, Hashable {
+    let id: String
+    var assetID: String
+    var projectID: String
+    var projectTitle: String
+    var kind: HFCreatorMediaAssetKind
+    var originalFilename: String
+    var fileSizeBytes: Int
+    var durationLabel: String
+    var dimensionsLabel: String
+    var aspectRatioLabel: String
+    var frameRateLabel: String
+    var videoCodec: String
+    var audioCodec: String
+    var audioChannelCount: Int
+    var hasVideoTrack: Bool
+    var hasAudioTrack: Bool
+    var posterDimensionsLabel: String
+    var state: HFCreatorMediaInspectionState
+    var warning: String
+    var blockingIssue: String
+    var inspectedAtLabel: String
+    var isQuarantined: Bool
+
+    var fileSizeLabel: String {
+        ByteCountFormatter.string(fromByteCount: Int64(fileSizeBytes), countStyle: .file)
+    }
+
+    var summary: String {
+        "\(fileSizeLabel). \(dimensionsLabel). \(durationLabel). \(videoCodec) / \(audioCodec)."
+    }
 }
 
 struct HFCreatorDraftValidationItem: Identifiable {
@@ -1390,6 +1433,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
     var collections: [Category]
     var publishingProjects: [HFCreatorPublishingContent]
     var importedMediaAssets: [HFCreatorImportedMediaAsset]
+    var mediaInspectionRecords: [HFCreatorMediaInspectionRecord]
     var updatedAtLabel: String
 
     var titleCount: Int { movies.count }
@@ -1405,6 +1449,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         collections: [Category],
         publishingProjects: [HFCreatorPublishingContent],
         importedMediaAssets: [HFCreatorImportedMediaAsset] = [],
+        mediaInspectionRecords: [HFCreatorMediaInspectionRecord] = [],
         updatedAtLabel: String
     ) {
         self.movies = movies
@@ -1413,6 +1458,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         self.collections = collections
         self.publishingProjects = publishingProjects
         self.importedMediaAssets = importedMediaAssets
+        self.mediaInspectionRecords = mediaInspectionRecords
         self.updatedAtLabel = updatedAtLabel
     }
 
@@ -1423,6 +1469,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         case collections
         case publishingProjects
         case importedMediaAssets
+        case mediaInspectionRecords
         case updatedAtLabel
     }
 
@@ -1434,6 +1481,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         collections = try container.decode([Category].self, forKey: .collections)
         publishingProjects = try container.decode([HFCreatorPublishingContent].self, forKey: .publishingProjects)
         importedMediaAssets = try container.decodeIfPresent([HFCreatorImportedMediaAsset].self, forKey: .importedMediaAssets) ?? []
+        mediaInspectionRecords = try container.decodeIfPresent([HFCreatorMediaInspectionRecord].self, forKey: .mediaInspectionRecords) ?? []
         updatedAtLabel = try container.decode(String.self, forKey: .updatedAtLabel)
     }
 }
@@ -1676,6 +1724,7 @@ private struct HFContentStorageLayer {
         try snapshot.series.flatMap(\.seasons).flatMap(\.episodes).forEach { try append(type: "episode", id: $0.id, value: $0) }
         try snapshot.collections.forEach { try append(type: "collection", id: $0.id, value: $0) }
         try snapshot.importedMediaAssets.forEach { try append(type: "imported_media_asset", id: $0.id, value: $0) }
+        try snapshot.mediaInspectionRecords.forEach { try append(type: "media_inspection_record", id: $0.id, value: $0) }
         try snapshot.publishingProjects.forEach { project in
             try append(type: "publishing_project", id: project.id, value: project)
             if project.releaseState == .draft {
@@ -2403,6 +2452,8 @@ final class HFStreamingStore: ObservableObject {
             detail: "Staging backend not configured. Local Preview fallback active."
         )
         seedLocalMediaImportIfRequested()
+        seedMediaInspectionIfRequested()
+        refreshMediaInspectionPreflight()
         rebuildCatalogRuntime(reason: "Initial local catalog load")
         rebuildIdentitySessionRuntime(reason: "Initial local session load")
     }
@@ -2917,6 +2968,26 @@ final class HFStreamingStore: ObservableObject {
         importedMediaAssets.filter { $0.status == .imported || $0.status == .duplicate }.count
     }
 
+    var mediaInspectionRecords: [HFCreatorMediaInspectionRecord] {
+        contentSnapshot.mediaInspectionRecords
+    }
+
+    var mediaInspectionPreflightRecords: [HFCreatorMediaInspectionRecord] {
+        mediaInspectionRecords.sorted { lhs, rhs in
+            if lhs.isQuarantined != rhs.isQuarantined {
+                return lhs.isQuarantined && !rhs.isQuarantined
+            }
+            return lhs.projectTitle < rhs.projectTitle
+        }
+    }
+
+    var mediaInspectionReadinessLabel: String {
+        let records = mediaInspectionRecords
+        guard !records.isEmpty else { return "0/0 Inspected" }
+        let accepted = records.filter { !$0.isQuarantined && $0.state != .blocked }.count
+        return "\(accepted)/\(records.count) Accepted"
+    }
+
     var posterAssetRegistry: [HFCreatorMediaAssetRecord] {
         creatorMediaAssetRecords.filter { $0.kind == .poster }
     }
@@ -3009,9 +3080,45 @@ final class HFStreamingStore: ObservableObject {
         )
         contentSnapshot.importedMediaAssets.append(record)
         markProjectAssetReady(projectID: projectID, kind: kind)
+        inspectImportedMediaAsset(id: record.id)
         contentSnapshot.updatedAtLabel = "Local media import persisted"
         persistContentSnapshot(reason: "Local media import persisted")
         return HFCreatorLocalImportResult(asset: record, isDuplicate: false, message: "Imported \(safeFilename) into the app sandbox.")
+    }
+
+    @discardableResult
+    func inspectImportedMediaAsset(id: String) -> HFCreatorMediaInspectionRecord? {
+        guard let assetIndex = contentSnapshot.importedMediaAssets.firstIndex(where: { $0.id == id }) else { return nil }
+        let asset = contentSnapshot.importedMediaAssets[assetIndex]
+        let fileURL = mediaRootDirectory().appendingPathComponent(asset.storedRelativePath, isDirectory: false)
+        let record = makeMediaInspectionRecord(for: asset, fileURL: fileURL)
+
+        if let recordIndex = contentSnapshot.mediaInspectionRecords.firstIndex(where: { $0.assetID == asset.id }) {
+            contentSnapshot.mediaInspectionRecords[recordIndex] = record
+        } else {
+            contentSnapshot.mediaInspectionRecords.append(record)
+        }
+
+        if record.isQuarantined {
+            contentSnapshot.importedMediaAssets[assetIndex].status = .quarantined
+            contentSnapshot.importedMediaAssets[assetIndex].history.append("Inspection quarantined asset at \(timestampLabel()): \(record.blockingIssue)")
+            markProjectAssetNeedsReview(projectID: asset.projectID, kind: asset.kind)
+        } else if contentSnapshot.importedMediaAssets[assetIndex].status == .quarantined {
+            contentSnapshot.importedMediaAssets[assetIndex].status = .imported
+            contentSnapshot.importedMediaAssets[assetIndex].history.append("Inspection accepted asset at \(timestampLabel())")
+            markProjectAssetReady(projectID: asset.projectID, kind: asset.kind)
+        }
+
+        contentSnapshot.updatedAtLabel = "Media inspection updated"
+        persistContentSnapshot(reason: "Media inspection updated")
+        return record
+    }
+
+    func refreshMediaInspectionPreflight() {
+        let inspectableStatuses: Set<HFCreatorLocalImportStatus> = [.imported, .duplicate, .quarantined, .failed]
+        contentSnapshot.importedMediaAssets
+            .filter { inspectableStatuses.contains($0.status) }
+            .forEach { _ = inspectImportedMediaAsset(id: $0.id) }
     }
 
     func importLocalMediaFile(
@@ -3055,6 +3162,7 @@ final class HFStreamingStore: ObservableObject {
             contentSnapshot.importedMediaAssets[index].progress = 1
             contentSnapshot.importedMediaAssets[index].history.append("Retry verified sandbox file at \(timestampLabel())")
             markProjectAssetReady(projectID: contentSnapshot.importedMediaAssets[index].projectID, kind: contentSnapshot.importedMediaAssets[index].kind)
+            inspectImportedMediaAsset(id: id)
         } else {
             contentSnapshot.importedMediaAssets[index].status = .failed
             contentSnapshot.importedMediaAssets[index].history.append("Retry failed because sandbox file is missing at \(timestampLabel())")
@@ -3071,13 +3179,13 @@ final class HFStreamingStore: ObservableObject {
         guard shouldSeed, let projectID = primaryImportProjectID() else {
             return
         }
-        let fixture = Data("HighFive local media import fixture".utf8)
+        let fixture = Self.mediaInspectionFixturePNGData()
         let result = try? importLocalMediaData(
             projectID: projectID,
             kind: .poster,
-            filename: "highfive-import-fixture.poster",
+            filename: "highfive-import-fixture.png",
             data: fixture,
-            contentType: "public.data"
+            contentType: "public.png"
         )
         if arguments.contains("--hf-media-import-cancel-seed"),
            let assetID = result?.asset.id ?? contentSnapshot.importedMediaAssets.last?.id {
@@ -3087,6 +3195,21 @@ final class HFStreamingStore: ObservableObject {
            let assetID = result?.asset.id ?? contentSnapshot.importedMediaAssets.last?.id {
             retryImportedMediaAsset(id: assetID)
         }
+    }
+
+    private func seedMediaInspectionIfRequested() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("--hf-media-inspection-invalid-seed"),
+              let projectID = primaryImportProjectID() else {
+            return
+        }
+        _ = try? importLocalMediaData(
+            projectID: projectID,
+            kind: .trailer,
+            filename: "invalid-trailer-preflight.mov",
+            data: Data("not a playable movie".utf8),
+            contentType: "com.apple.quicktime-movie"
+        )
     }
 
     var creatorUploadWorkflowSnapshot: HFCreatorUploadWorkflowSnapshot {
@@ -6553,6 +6676,213 @@ final class HFStreamingStore: ObservableObject {
         contentSnapshot.publishingProjects = creatorPublishingContents
     }
 
+    private func markProjectAssetNeedsReview(projectID: String, kind: HFCreatorMediaAssetKind) {
+        guard let index = creatorPublishingContents.firstIndex(where: { $0.id == projectID }) else { return }
+        switch kind {
+        case .poster:
+            creatorPublishingContents[index].posterStatus = .needsReview
+        case .trailer:
+            creatorPublishingContents[index].trailerStatus = .needsReview
+        case .artwork:
+            creatorPublishingContents[index].artworkStatus = .needsReview
+        case .metadata:
+            creatorPublishingContents[index].metadataStatus = .needsReview
+        }
+        creatorPublishingContents[index].updatedAtLabel = "Media inspection requires review"
+        contentSnapshot.publishingProjects = creatorPublishingContents
+    }
+
+    private func makeMediaInspectionRecord(
+        for asset: HFCreatorImportedMediaAsset,
+        fileURL: URL
+    ) -> HFCreatorMediaInspectionRecord {
+        let attributes = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)) ?? [:]
+        let fileSize = (attributes[.size] as? NSNumber)?.intValue ?? asset.byteCount
+        var durationLabel = "No duration"
+        var dimensionsLabel = "No dimensions"
+        var aspectRatioLabel = "Unknown aspect"
+        var frameRateLabel = "No frame rate"
+        var videoCodec = "No video codec"
+        var audioCodec = "No audio codec"
+        var audioChannelCount = 0
+        var hasVideoTrack = false
+        var hasAudioTrack = false
+        var posterDimensionsLabel = "No poster dimensions"
+        var warning = ""
+        var blockingIssue = ""
+
+        let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
+        if !fileExists {
+            blockingIssue = "Copied sandbox file is missing. Re-import this asset."
+        } else if isImageInspectionTarget(asset) {
+            if let dimensions = imageDimensions(for: fileURL) {
+                dimensionsLabel = "\(Int(dimensions.width)) x \(Int(dimensions.height))"
+                posterDimensionsLabel = dimensionsLabel
+                aspectRatioLabel = aspectRatioDescription(width: dimensions.width, height: dimensions.height)
+                if dimensions.width < 1 || dimensions.height < 1 {
+                    blockingIssue = "Image dimensions could not be read. Select a valid poster or artwork image."
+                } else if asset.kind == .poster {
+                    let ratio = dimensions.width / max(dimensions.height, 1)
+                    if ratio < 0.50 || ratio > 0.85 {
+                        warning = "Poster is readable, but the aspect ratio is outside the preferred vertical poster range."
+                    }
+                }
+            } else {
+                blockingIssue = "Image metadata could not be decoded. Select a readable PNG, JPEG, or HEIC image."
+            }
+        } else if isVideoInspectionTarget(asset) {
+            let video = inspectVideoAsset(fileURL)
+            durationLabel = video.durationLabel
+            dimensionsLabel = video.dimensionsLabel
+            aspectRatioLabel = video.aspectRatioLabel
+            frameRateLabel = video.frameRateLabel
+            videoCodec = video.videoCodec
+            audioCodec = video.audioCodec
+            audioChannelCount = video.audioChannelCount
+            hasVideoTrack = video.hasVideoTrack
+            hasAudioTrack = video.hasAudioTrack
+            if !video.hasVideoTrack {
+                blockingIssue = "No video track was found. Select a playable trailer or source video."
+            } else if video.durationSeconds <= 0 {
+                blockingIssue = "Video duration is unavailable. Re-import a readable media file."
+            } else if !video.hasAudioTrack {
+                warning = "Video is readable but no audio track was found."
+            }
+        } else if fileSize <= 0 {
+            blockingIssue = "Metadata file is empty. Re-import a non-empty local file."
+        } else {
+            warning = "Metadata file is registered. No AV tracks are expected for this asset kind."
+        }
+
+        let state: HFCreatorMediaInspectionState
+        if !blockingIssue.isEmpty {
+            state = .quarantined
+        } else if !warning.isEmpty {
+            state = .warning
+        } else {
+            state = .accepted
+        }
+
+        return HFCreatorMediaInspectionRecord(
+            id: "inspection-\(asset.id)",
+            assetID: asset.id,
+            projectID: asset.projectID,
+            projectTitle: asset.projectTitle,
+            kind: asset.kind,
+            originalFilename: asset.originalFilename,
+            fileSizeBytes: fileSize,
+            durationLabel: durationLabel,
+            dimensionsLabel: dimensionsLabel,
+            aspectRatioLabel: aspectRatioLabel,
+            frameRateLabel: frameRateLabel,
+            videoCodec: videoCodec,
+            audioCodec: audioCodec,
+            audioChannelCount: audioChannelCount,
+            hasVideoTrack: hasVideoTrack,
+            hasAudioTrack: hasAudioTrack,
+            posterDimensionsLabel: posterDimensionsLabel,
+            state: state,
+            warning: warning,
+            blockingIssue: blockingIssue,
+            inspectedAtLabel: timestampLabel(),
+            isQuarantined: state == .quarantined || state == .blocked
+        )
+    }
+
+    private func isImageInspectionTarget(_ asset: HFCreatorImportedMediaAsset) -> Bool {
+        let extensionHint = URL(fileURLWithPath: asset.originalFilename).pathExtension.lowercased()
+        return asset.kind == .poster
+            || asset.kind == .artwork
+            || asset.contentType.contains("image")
+            || ["png", "jpg", "jpeg", "heic"].contains(extensionHint)
+    }
+
+    private func isVideoInspectionTarget(_ asset: HFCreatorImportedMediaAsset) -> Bool {
+        let extensionHint = URL(fileURLWithPath: asset.originalFilename).pathExtension.lowercased()
+        return asset.kind == .trailer
+            || asset.contentType.contains("movie")
+            || asset.contentType.contains("video")
+            || ["mov", "mp4", "m4v"].contains(extensionHint)
+    }
+
+    private func imageDimensions(for url: URL) -> CGSize? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat else {
+            return nil
+        }
+        return CGSize(width: width, height: height)
+    }
+
+    private func inspectVideoAsset(_ url: URL) -> (
+        durationSeconds: Double,
+        durationLabel: String,
+        dimensionsLabel: String,
+        aspectRatioLabel: String,
+        frameRateLabel: String,
+        videoCodec: String,
+        audioCodec: String,
+        audioChannelCount: Int,
+        hasVideoTrack: Bool,
+        hasAudioTrack: Bool
+    ) {
+        let avAsset = AVURLAsset(url: url)
+        let durationSeconds = CMTimeGetSeconds(avAsset.duration)
+        let videoTrack = avAsset.tracks(withMediaType: .video).first
+        let audioTrack = avAsset.tracks(withMediaType: .audio).first
+        let transformedSize = videoTrack.map { $0.naturalSize.applying($0.preferredTransform) } ?? .zero
+        let width = abs(transformedSize.width)
+        let height = abs(transformedSize.height)
+        let frameRate = videoTrack?.nominalFrameRate ?? 0
+        let channelCount = audioTrack.flatMap { track in
+            track.formatDescriptions
+                .map { ($0 as! CMFormatDescription) }
+                .compactMap { CMAudioFormatDescriptionGetStreamBasicDescription($0)?.pointee.mChannelsPerFrame }
+                .map(Int.init)
+                .first
+        } ?? 0
+
+        return (
+            durationSeconds: durationSeconds.isFinite ? durationSeconds : 0,
+            durationLabel: durationSeconds.isFinite && durationSeconds > 0 ? String(format: "%.1fs", durationSeconds) : "No duration",
+            dimensionsLabel: width > 0 && height > 0 ? "\(Int(width)) x \(Int(height))" : "No dimensions",
+            aspectRatioLabel: aspectRatioDescription(width: width, height: height),
+            frameRateLabel: frameRate > 0 ? String(format: "%.1f fps", frameRate) : "No frame rate",
+            videoCodec: codecLabel(for: firstFormatDescription(from: videoTrack)),
+            audioCodec: codecLabel(for: firstFormatDescription(from: audioTrack)),
+            audioChannelCount: channelCount,
+            hasVideoTrack: videoTrack != nil,
+            hasAudioTrack: audioTrack != nil
+        )
+    }
+
+    private func aspectRatioDescription(width: CGFloat, height: CGFloat) -> String {
+        guard width > 0, height > 0 else { return "Unknown aspect" }
+        return String(format: "%.2f:1", width / height)
+    }
+
+    private func firstFormatDescription(from track: AVAssetTrack?) -> CMFormatDescription? {
+        guard let formatDescription = track?.formatDescriptions.first else { return nil }
+        return (formatDescription as! CMFormatDescription)
+    }
+
+    private func codecLabel(for formatDescription: CMFormatDescription?) -> String {
+        guard let formatDescription else { return "Unavailable" }
+        return fourCharacterCodeLabel(CMFormatDescriptionGetMediaSubType(formatDescription))
+    }
+
+    private func fourCharacterCodeLabel(_ code: FourCharCode) -> String {
+        let bytes = [
+            UInt8((code >> 24) & 0xff),
+            UInt8((code >> 16) & 0xff),
+            UInt8((code >> 8) & 0xff),
+            UInt8(code & 0xff)
+        ]
+        let label = String(bytes: bytes, encoding: .macOSRoman) ?? "\(code)"
+        return label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "\(code)" : label
+    }
+
     private func mediaRootDirectory() -> URL {
         let baseURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
@@ -7286,6 +7616,11 @@ final class HFStreamingStore: ObservableObject {
             publishingProjects: projects,
             updatedAtLabel: "Seeded local content backend"
         )
+    }
+
+    private static func mediaInspectionFixturePNGData() -> Data {
+        Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")
+            ?? Data("HighFive PNG fixture".utf8)
     }
 
     private static func makeInitialSeriesRecords(movies: [Movie]) -> [HFSeriesRecord] {

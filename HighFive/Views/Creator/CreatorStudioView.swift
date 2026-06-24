@@ -260,6 +260,9 @@ private enum HFCreatorProSpotlight {
     case manifestUpdates
     case projectLinking
     case mediaImportPreflight
+    case mediaInspectionPreflight
+    case mediaInspectionReport
+    case mediaInspectionQuarantine
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -361,6 +364,9 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-media-manifest-updates") { return .manifestUpdates }
         if arguments.contains("--hf-media-project-linking") { return .projectLinking }
         if arguments.contains("--hf-media-import-preflight") { return .mediaImportPreflight }
+        if arguments.contains("--hf-media-inspection-preflight") { return .mediaInspectionPreflight }
+        if arguments.contains("--hf-media-inspection-report") { return .mediaInspectionReport }
+        if arguments.contains("--hf-media-quarantine") { return .mediaInspectionQuarantine }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2414,6 +2420,12 @@ struct CreatorStudioView: View {
             creatorProjectLinkingSection
         case .mediaImportPreflight:
             creatorMediaImportPreflightSection
+        case .mediaInspectionPreflight:
+            creatorMediaInspectionPreflightSection
+        case .mediaInspectionReport:
+            creatorMediaInspectionReportSection
+        case .mediaInspectionQuarantine:
+            creatorMediaInspectionQuarantineSection
         }
     }
 
@@ -2433,6 +2445,7 @@ struct CreatorStudioView: View {
             contentBackendFoundationSection
             creatorProjectRuntimeDashboard
             creatorMediaImportRuntimeDashboard
+            creatorMediaInspectionPreflightSection
             creatorMediaAssetRuntimeSection
             creatorUploadWorkflowDashboard
             creatorDraftWorkspaceDashboard
@@ -2513,6 +2526,8 @@ struct CreatorStudioView: View {
             creatorManifestUpdateSection
             creatorProjectLinkingSection
             creatorMediaImportPreflightSection
+            creatorMediaInspectionReportSection
+            creatorMediaInspectionQuarantineSection
             creatorDraftEditorSection
             creatorDraftValidationSection
             creatorMediaAssetRuntimeSection
@@ -4865,6 +4880,121 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.mediaImport.preflight")
     }
 
+    private var creatorMediaInspectionPreflightSection: some View {
+        let records = streamingStore.mediaInspectionPreflightRecords
+        let accepted = records.filter { !$0.isQuarantined && $0.state != .blocked }.count
+        let warnings = records.filter { $0.state == .warning }.count
+        let quarantined = records.filter(\.isQuarantined).count
+
+        return creatorProSpotlight(
+            title: "Media Inspection Preflight",
+            detail: "Imported local files are inspected with AVFoundation and ImageIO before packaging. Invalid files are quarantined locally.",
+            systemImage: "waveform.badge.magnifyingglass",
+            accent: quarantined > 0 ? HFColors.redAccent : HFColors.gold,
+            identifier: "hf.mediaInspection.preflight"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Inspected", value: "\(records.count)")
+                    creatorProStat(title: "Accepted", value: "\(accepted)")
+                    creatorProStat(title: "Warnings", value: "\(warnings)")
+                    creatorProStat(title: "Quarantine", value: "\(quarantined)")
+                }
+
+                Button {
+                    streamingStore.refreshMediaInspectionPreflight()
+                } label: {
+                    Label("Run Local Preflight", systemImage: "checklist.checked")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("hf.mediaInspection.runPreflight")
+
+                Text("Readiness: \(streamingStore.mediaInspectionReadinessLabel). No transcode, upload, cloud storage, or network inspection is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var creatorMediaInspectionReportSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Technical Inspection Report",
+                    detail: "Reports persist file size, duration, dimensions, aspect ratio, frame rate, codecs, audio channels, and track presence for imported local media.",
+                    systemImage: "doc.text.magnifyingglass",
+                    accent: HFColors.cyanGlow
+                )
+
+                if streamingStore.mediaInspectionPreflightRecords.isEmpty {
+                    HFCreatorStudioReadinessRow(
+                        title: "No Imported Media",
+                        detail: "Import a poster, artwork, trailer, or source file to create a technical inspection record.",
+                        status: "Waiting",
+                        systemImage: "tray.and.arrow.down.fill",
+                        accent: HFColors.cyanGlow
+                    )
+                } else {
+                    VStack(spacing: HFSpacing.xs) {
+                        ForEach(streamingStore.mediaInspectionPreflightRecords.prefix(8)) { record in
+                            HFCreatorStudioReadinessRow(
+                                title: "\(record.projectTitle) - \(record.kind.rawValue)",
+                                detail: "\(record.originalFilename). \(record.summary) \(record.warning.isEmpty ? record.blockingIssue : record.warning)",
+                                status: record.state.rawValue,
+                                systemImage: mediaInspectionSystemImage(for: record),
+                                accent: mediaInspectionAccent(for: record.state)
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaInspection.report")
+    }
+
+    private var creatorMediaInspectionQuarantineSection: some View {
+        let quarantined = streamingStore.mediaInspectionPreflightRecords.filter(\.isQuarantined)
+
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.redAccent.opacity(0.35)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Asset Quarantine",
+                    detail: "Blocking inspection failures stay local and require a new import before the project can use that asset.",
+                    systemImage: "lock.trianglebadge.exclamationmark.fill",
+                    accent: quarantined.isEmpty ? HFColors.gold : HFColors.redAccent
+                )
+
+                if quarantined.isEmpty {
+                    HFCreatorStudioReadinessRow(
+                        title: "No Quarantined Assets",
+                        detail: "All inspected imported assets are usable or carry warnings only.",
+                        status: "Clear",
+                        systemImage: "checkmark.shield.fill",
+                        accent: HFColors.gold
+                    )
+                } else {
+                    VStack(spacing: HFSpacing.xs) {
+                        ForEach(quarantined.prefix(6)) { record in
+                            HFCreatorStudioReadinessRow(
+                                title: "\(record.projectTitle) - \(record.originalFilename)",
+                                detail: record.blockingIssue.isEmpty ? "Re-import a readable local media file." : record.blockingIssue,
+                                status: "Quarantined",
+                                systemImage: "exclamationmark.triangle.fill",
+                                accent: HFColors.redAccent
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.mediaInspection.quarantine")
+    }
+
     private var creatorUploadWorkflowDashboard: some View {
         let snapshot = streamingStore.creatorUploadWorkflowSnapshot
 
@@ -6570,6 +6700,31 @@ struct CreatorStudioView: View {
             return HFColors.gold
         }
         return HFColors.cyanGlow
+    }
+
+    private func mediaInspectionAccent(for state: HFCreatorMediaInspectionState) -> Color {
+        switch state {
+        case .accepted:
+            return HFColors.gold
+        case .warning:
+            return HFColors.cyanGlow
+        case .blocked, .quarantined:
+            return HFColors.redAccent
+        }
+    }
+
+    private func mediaInspectionSystemImage(for record: HFCreatorMediaInspectionRecord) -> String {
+        if record.isQuarantined { return "exclamationmark.triangle.fill" }
+        switch record.kind {
+        case .poster:
+            return "photo.fill.on.rectangle.fill"
+        case .trailer:
+            return "film.stack.fill"
+        case .artwork:
+            return "rectangle.stack.fill"
+        case .metadata:
+            return "doc.text.fill"
+        }
     }
 
     private func resolvedImportProjectID() -> String? {
