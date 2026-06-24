@@ -1,4 +1,6 @@
 import SwiftUI
+import PhotosUI
+import UniformTypeIdentifiers
 
 enum HFCreatorStudioFocus: String, CaseIterable, Identifiable {
     case dashboard = "Dashboard"
@@ -422,6 +424,11 @@ struct CreatorStudioView: View {
     @State private var draftMetadataStatus: HFCreatorPublishingAssetStatus = .ready
     @State private var draftArtworkStatus: HFCreatorPublishingAssetStatus = .placeholder
     @State private var draftWorkspaceNotice = "Loaded from repository snapshot"
+    @State private var selectedImportProjectID: String?
+    @State private var selectedImportKind: HFCreatorMediaAssetKind = .poster
+    @State private var selectedPhotoImportItem: PhotosPickerItem?
+    @State private var isFileImporterPresented = false
+    @State private var mediaImportNotice = "Choose a project and select local media."
     private let proSpotlight: HFCreatorProSpotlight
     private let launchProSpotlight: HFLaunchProSpotlight
 
@@ -4574,10 +4581,11 @@ struct CreatorStudioView: View {
 
     private var creatorMediaImportRuntimeDashboard: some View {
         let snapshot = streamingStore.creatorMediaImportRuntimeSnapshot
+        let projects = streamingStore.creatorPublishingContents.filter { $0.releaseState != .archived }
 
         return creatorProSpotlight(
             title: "Local Media Import Runtime",
-            detail: "Registration-first media intake for sessions, queue state, validation, manifest updates, project linking, and preflight checks.",
+            detail: "Import selected poster, trailer, artwork, or source files into the app sandbox, then link them to creator project manifests.",
             systemImage: "tray.and.arrow.down.fill",
             accent: HFColors.gold,
             identifier: "hf.mediaImport.runtime"
@@ -4590,18 +4598,102 @@ struct CreatorStudioView: View {
                     creatorProStat(title: "Preflight", value: snapshot.readinessLabel)
                 }
 
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Import Target")
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+
+                    Picker("Project", selection: $selectedImportProjectID) {
+                        ForEach(projects) { project in
+                            Text(project.title).tag(Optional(project.id))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("hf.mediaImport.projectPicker")
+
+                    Picker("Asset Kind", selection: $selectedImportKind) {
+                        ForEach(HFCreatorMediaAssetKind.allCases) { kind in
+                            Text(kind.rawValue).tag(kind)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("hf.mediaImport.kindPicker")
+
+                    HStack(spacing: HFSpacing.xs) {
+                        PhotosPicker(
+                            selection: $selectedPhotoImportItem,
+                            matching: .any(of: [.images, .videos])
+                        ) {
+                            Label("Photos", systemImage: "photo.on.rectangle.angled")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(HFColors.gold)
+                        .accessibilityIdentifier("hf.mediaImport.photosPicker")
+
+                        Button {
+                            isFileImporterPresented = true
+                        } label: {
+                            Label("Files", systemImage: "folder.badge.plus")
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("hf.mediaImport.fileImporter")
+                    }
+
+                    HStack(spacing: HFSpacing.xs) {
+                        Button {
+                            cancelLatestImport()
+                        } label: {
+                            Label("Cancel Last", systemImage: "xmark.circle")
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("hf.mediaImport.cancel")
+
+                        Button {
+                            retryLatestImport()
+                        } label: {
+                            Label("Retry Last", systemImage: "arrow.clockwise.circle")
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("hf.mediaImport.retry")
+                    }
+
+                    Text(mediaImportNotice)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("hf.mediaImport.notice")
+                }
+                .padding(HFSpacing.sm)
+                .background(HFColors.surface.opacity(0.72), in: RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+
                 Text("Creator Project Runtime -> Media Import Runtime -> Media Asset Runtime")
                     .font(HFTypography.micro.weight(.bold))
                     .foregroundStyle(HFColors.cyanGlow)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("hf.mediaImport.path")
 
-                Text("This registers local media intent only. No file picker, file copy, file write, cloud storage, network request, or transcode path is active.")
+                Text("Files are copied only into Application Support after explicit user selection. No upload, cloud storage, network request, or transcode path is active.")
                     .font(HFTypography.micro)
                     .foregroundStyle(HFColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("hf.mediaImport.localOnly")
             }
+        }
+        .onAppear {
+            if selectedImportProjectID == nil {
+                selectedImportProjectID = streamingStore.primaryImportProjectID()
+            }
+        }
+        .onChange(of: selectedPhotoImportItem) { _, item in
+            guard let item else { return }
+            Task { await importPhotoPickerItem(item) }
+        }
+        .fileImporter(
+            isPresented: $isFileImporterPresented,
+            allowedContentTypes: [.image, .movie, .mpeg4Movie, .video, .png, .jpeg],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImport(result)
         }
     }
 
@@ -6474,10 +6566,85 @@ struct CreatorStudioView: View {
         if state.contains("Blocked") || state.contains("Unlinked") {
             return HFColors.redAccent
         }
-        if state.contains("Ready") || state.contains("Registered") || state.contains("Linked") || state.contains("Updated") {
+        if state.contains("Ready") || state.contains("Registered") || state.contains("Linked") || state.contains("Updated") || state.contains("Imported") {
             return HFColors.gold
         }
         return HFColors.cyanGlow
+    }
+
+    private func resolvedImportProjectID() -> String? {
+        if let selectedImportProjectID,
+           streamingStore.creatorPublishingContents.contains(where: { $0.id == selectedImportProjectID && $0.releaseState != .archived }) {
+            return selectedImportProjectID
+        }
+        return streamingStore.primaryImportProjectID()
+    }
+
+    @MainActor
+    private func importPhotoPickerItem(_ item: PhotosPickerItem) async {
+        guard let projectID = resolvedImportProjectID() else {
+            mediaImportNotice = "No active creator project is available for import."
+            return
+        }
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                mediaImportNotice = "Photos selection did not provide readable media data."
+                return
+            }
+            let contentType = item.supportedContentTypes.first?.identifier ?? "public.data"
+            let extensionHint = item.supportedContentTypes.first?.preferredFilenameExtension ?? "media"
+            let result = try streamingStore.importLocalMediaData(
+                projectID: projectID,
+                kind: selectedImportKind,
+                filename: "\(selectedImportKind.rawValue.lowercased())-photos-import.\(extensionHint)",
+                data: data,
+                contentType: contentType
+            )
+            mediaImportNotice = result.message
+            selectedPhotoImportItem = nil
+        } catch {
+            mediaImportNotice = "Photos import failed: \(error.localizedDescription)"
+            selectedPhotoImportItem = nil
+        }
+    }
+
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        guard let projectID = resolvedImportProjectID() else {
+            mediaImportNotice = "No active creator project is available for file import."
+            return
+        }
+        do {
+            guard let url = try result.get().first else {
+                mediaImportNotice = "File import cancelled."
+                return
+            }
+            let importResult = try streamingStore.importLocalMediaFile(
+                projectID: projectID,
+                kind: selectedImportKind,
+                fileURL: url
+            )
+            mediaImportNotice = importResult.message
+        } catch {
+            mediaImportNotice = "File import failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func cancelLatestImport() {
+        guard let asset = streamingStore.importedMediaAssets.last else {
+            mediaImportNotice = "No imported asset is available to cancel."
+            return
+        }
+        streamingStore.cancelImportedMediaAsset(id: asset.id)
+        mediaImportNotice = "Cancelled \(asset.originalFilename) and removed its sandbox file."
+    }
+
+    private func retryLatestImport() {
+        guard let asset = streamingStore.importedMediaAssets.last else {
+            mediaImportNotice = "No imported asset is available to retry."
+            return
+        }
+        streamingStore.retryImportedMediaAsset(id: asset.id)
+        mediaImportNotice = "Retried \(asset.originalFilename)."
     }
 
     private func gateLabel(_ value: Bool) -> String {

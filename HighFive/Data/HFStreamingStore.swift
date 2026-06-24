@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import CryptoKit
 import SQLite3
 
 struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
@@ -270,7 +271,7 @@ struct HFCreatorPublishingContent: Identifiable, Codable, Equatable {
     }
 }
 
-enum HFCreatorMediaAssetKind: String, CaseIterable, Identifiable {
+enum HFCreatorMediaAssetKind: String, CaseIterable, Identifiable, Codable {
     case poster = "Poster"
     case trailer = "Trailer"
     case artwork = "Artwork"
@@ -556,6 +557,41 @@ struct HFCreatorMediaImportPreflightRecord: Identifiable, Hashable {
     var result: String
     var isPassed: Bool
     var systemImage: String
+}
+
+enum HFCreatorLocalImportStatus: String, Codable, Equatable {
+    case queued = "Queued"
+    case importing = "Importing"
+    case imported = "Imported"
+    case duplicate = "Duplicate"
+    case cancelled = "Cancelled"
+    case failed = "Failed"
+}
+
+struct HFCreatorImportedMediaAsset: Identifiable, Codable, Equatable, Hashable {
+    let id: String
+    var projectID: String
+    var projectTitle: String
+    var kind: HFCreatorMediaAssetKind
+    var originalFilename: String
+    var storedRelativePath: String
+    var contentType: String
+    var byteCount: Int
+    var checksum: String
+    var status: HFCreatorLocalImportStatus
+    var progress: Double
+    var importedAtLabel: String
+    var history: [String]
+
+    var displaySize: String {
+        ByteCountFormatter.string(fromByteCount: Int64(byteCount), countStyle: .file)
+    }
+}
+
+struct HFCreatorLocalImportResult: Equatable {
+    var asset: HFCreatorImportedMediaAsset
+    var isDuplicate: Bool
+    var message: String
 }
 
 struct HFCreatorDraftValidationItem: Identifiable {
@@ -1353,6 +1389,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
     var series: [HFSeriesRecord]
     var collections: [Category]
     var publishingProjects: [HFCreatorPublishingContent]
+    var importedMediaAssets: [HFCreatorImportedMediaAsset]
     var updatedAtLabel: String
 
     var titleCount: Int { movies.count }
@@ -1360,6 +1397,45 @@ struct HFContentBackendSnapshot: Codable, Equatable {
     var episodeCount: Int { series.reduce(0) { $0 + $1.episodeCount } }
     var collectionCount: Int { collections.count }
     var draftCount: Int { publishingProjects.filter { $0.releaseState == .draft }.count }
+
+    init(
+        movies: [Movie],
+        creators: [Creator],
+        series: [HFSeriesRecord],
+        collections: [Category],
+        publishingProjects: [HFCreatorPublishingContent],
+        importedMediaAssets: [HFCreatorImportedMediaAsset] = [],
+        updatedAtLabel: String
+    ) {
+        self.movies = movies
+        self.creators = creators
+        self.series = series
+        self.collections = collections
+        self.publishingProjects = publishingProjects
+        self.importedMediaAssets = importedMediaAssets
+        self.updatedAtLabel = updatedAtLabel
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case movies
+        case creators
+        case series
+        case collections
+        case publishingProjects
+        case importedMediaAssets
+        case updatedAtLabel
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        movies = try container.decode([Movie].self, forKey: .movies)
+        creators = try container.decode([Creator].self, forKey: .creators)
+        series = try container.decode([HFSeriesRecord].self, forKey: .series)
+        collections = try container.decode([Category].self, forKey: .collections)
+        publishingProjects = try container.decode([HFCreatorPublishingContent].self, forKey: .publishingProjects)
+        importedMediaAssets = try container.decodeIfPresent([HFCreatorImportedMediaAsset].self, forKey: .importedMediaAssets) ?? []
+        updatedAtLabel = try container.decode(String.self, forKey: .updatedAtLabel)
+    }
 }
 
 struct HFContentDatabaseHealth: Equatable {
@@ -1599,6 +1675,7 @@ private struct HFContentStorageLayer {
         try snapshot.series.flatMap(\.seasons).forEach { try append(type: "season", id: $0.id, value: $0) }
         try snapshot.series.flatMap(\.seasons).flatMap(\.episodes).forEach { try append(type: "episode", id: $0.id, value: $0) }
         try snapshot.collections.forEach { try append(type: "collection", id: $0.id, value: $0) }
+        try snapshot.importedMediaAssets.forEach { try append(type: "imported_media_asset", id: $0.id, value: $0) }
         try snapshot.publishingProjects.forEach { project in
             try append(type: "publishing_project", id: project.id, value: project)
             if project.releaseState == .draft {
@@ -2325,6 +2402,7 @@ final class HFStreamingStore: ObservableObject {
             movieID: continueWatchingMovie.id,
             detail: "Staging backend not configured. Local Preview fallback active."
         )
+        seedLocalMediaImportIfRequested()
         rebuildCatalogRuntime(reason: "Initial local catalog load")
         rebuildIdentitySessionRuntime(reason: "Initial local session load")
     }
@@ -2831,6 +2909,14 @@ final class HFStreamingStore: ObservableObject {
         creatorPublishingContents.flatMap { mediaAssetRecords(for: $0) }
     }
 
+    var importedMediaAssets: [HFCreatorImportedMediaAsset] {
+        contentSnapshot.importedMediaAssets
+    }
+
+    var importedMediaAssetCount: Int {
+        importedMediaAssets.filter { $0.status == .imported || $0.status == .duplicate }.count
+    }
+
     var posterAssetRegistry: [HFCreatorMediaAssetRecord] {
         creatorMediaAssetRecords.filter { $0.kind == .poster }
     }
@@ -2854,6 +2940,153 @@ final class HFStreamingStore: ObservableObject {
 
     func mediaAssetReadinessRecords(for project: HFCreatorPublishingContent) -> [HFCreatorMediaAssetRecord] {
         mediaAssetRecords(for: project)
+    }
+
+    func primaryImportProjectID() -> String? {
+        creatorPublishingContents.first { $0.releaseState != .archived }?.id
+    }
+
+    func importLocalMediaData(
+        projectID: String,
+        kind: HFCreatorMediaAssetKind,
+        filename: String,
+        data: Data,
+        contentType: String
+    ) throws -> HFCreatorLocalImportResult {
+        guard let project = creatorPublishingContents.first(where: { $0.id == projectID }) else {
+            throw NSError(domain: "HFLocalMediaImport", code: 1, userInfo: [NSLocalizedDescriptionKey: "Project not found"])
+        }
+        guard !data.isEmpty else {
+            throw NSError(domain: "HFLocalMediaImport", code: 2, userInfo: [NSLocalizedDescriptionKey: "Selected media is empty"])
+        }
+
+        let checksum = sha256Hex(for: data)
+        if let duplicateIndex = contentSnapshot.importedMediaAssets.firstIndex(where: { $0.projectID == projectID && $0.kind == kind && $0.checksum == checksum }) {
+            let existingAsset = contentSnapshot.importedMediaAssets[duplicateIndex]
+            let existingURL = mediaRootDirectory().appendingPathComponent(existingAsset.storedRelativePath, isDirectory: false)
+            if FileManager.default.fileExists(atPath: existingURL.path), existingAsset.status != .cancelled, existingAsset.status != .failed {
+                contentSnapshot.importedMediaAssets[duplicateIndex].status = .duplicate
+                contentSnapshot.importedMediaAssets[duplicateIndex].progress = 1.0
+                contentSnapshot.importedMediaAssets[duplicateIndex].history.append("Duplicate detected at \(timestampLabel())")
+                contentSnapshot.updatedAtLabel = "Duplicate local media import detected"
+                persistContentSnapshot(reason: "Duplicate local media import detected")
+                return HFCreatorLocalImportResult(
+                    asset: contentSnapshot.importedMediaAssets[duplicateIndex],
+                    isDuplicate: true,
+                    message: "Duplicate local media was detected and no second file was copied."
+                )
+            } else {
+                contentSnapshot.importedMediaAssets.remove(at: duplicateIndex)
+            }
+        }
+
+        let safeFilename = sanitizedFilename(filename)
+        let extensionSuffix = URL(fileURLWithPath: safeFilename).pathExtension
+        let assetID = "asset-\(projectID)-\(kind.id.lowercased())-\(checksum.prefix(12))"
+        let destinationDirectory = try mediaDirectory(for: projectID)
+        let destinationName = extensionSuffix.isEmpty ? assetID : "\(assetID).\(extensionSuffix)"
+        let destinationURL = destinationDirectory.appendingPathComponent(destinationName, isDirectory: false)
+        try data.write(to: destinationURL, options: .atomic)
+
+        let record = HFCreatorImportedMediaAsset(
+            id: assetID,
+            projectID: projectID,
+            projectTitle: project.title,
+            kind: kind,
+            originalFilename: safeFilename,
+            storedRelativePath: "Media/\(projectID)/\(destinationName)",
+            contentType: contentType,
+            byteCount: data.count,
+            checksum: checksum,
+            status: .imported,
+            progress: 1.0,
+            importedAtLabel: timestampLabel(),
+            history: [
+                "Import session created",
+                "Copied into Application Support media directory",
+                "Checksum \(checksum.prefix(12)) recorded"
+            ]
+        )
+        contentSnapshot.importedMediaAssets.append(record)
+        markProjectAssetReady(projectID: projectID, kind: kind)
+        contentSnapshot.updatedAtLabel = "Local media import persisted"
+        persistContentSnapshot(reason: "Local media import persisted")
+        return HFCreatorLocalImportResult(asset: record, isDuplicate: false, message: "Imported \(safeFilename) into the app sandbox.")
+    }
+
+    func importLocalMediaFile(
+        projectID: String,
+        kind: HFCreatorMediaAssetKind,
+        fileURL: URL
+    ) throws -> HFCreatorLocalImportResult {
+        let hasAccess = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if hasAccess {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
+        }
+        let data = try Data(contentsOf: fileURL)
+        let contentType = contentTypeIdentifier(for: fileURL)
+        return try importLocalMediaData(
+            projectID: projectID,
+            kind: kind,
+            filename: fileURL.lastPathComponent,
+            data: data,
+            contentType: contentType
+        )
+    }
+
+    func cancelImportedMediaAsset(id: String) {
+        guard let index = contentSnapshot.importedMediaAssets.firstIndex(where: { $0.id == id }) else { return }
+        let relativePath = contentSnapshot.importedMediaAssets[index].storedRelativePath
+        try? FileManager.default.removeItem(at: mediaRootDirectory().appendingPathComponent(relativePath, isDirectory: false))
+        contentSnapshot.importedMediaAssets[index].status = .cancelled
+        contentSnapshot.importedMediaAssets[index].progress = 0
+        contentSnapshot.importedMediaAssets[index].history.append("Cancelled at \(timestampLabel()); copied file removed")
+        contentSnapshot.updatedAtLabel = "Local media import cancelled"
+        persistContentSnapshot(reason: "Local media import cancelled")
+    }
+
+    func retryImportedMediaAsset(id: String) {
+        guard let index = contentSnapshot.importedMediaAssets.firstIndex(where: { $0.id == id }) else { return }
+        let fileURL = mediaRootDirectory().appendingPathComponent(contentSnapshot.importedMediaAssets[index].storedRelativePath, isDirectory: false)
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            contentSnapshot.importedMediaAssets[index].status = .imported
+            contentSnapshot.importedMediaAssets[index].progress = 1
+            contentSnapshot.importedMediaAssets[index].history.append("Retry verified sandbox file at \(timestampLabel())")
+            markProjectAssetReady(projectID: contentSnapshot.importedMediaAssets[index].projectID, kind: contentSnapshot.importedMediaAssets[index].kind)
+        } else {
+            contentSnapshot.importedMediaAssets[index].status = .failed
+            contentSnapshot.importedMediaAssets[index].history.append("Retry failed because sandbox file is missing at \(timestampLabel())")
+        }
+        contentSnapshot.updatedAtLabel = "Local media import retried"
+        persistContentSnapshot(reason: "Local media import retried")
+    }
+
+    private func seedLocalMediaImportIfRequested() {
+        let arguments = ProcessInfo.processInfo.arguments
+        let shouldSeed = arguments.contains("--hf-media-import-seed")
+            || arguments.contains("--hf-media-import-cancel-seed")
+            || arguments.contains("--hf-media-import-retry-seed")
+        guard shouldSeed, let projectID = primaryImportProjectID() else {
+            return
+        }
+        let fixture = Data("HighFive local media import fixture".utf8)
+        let result = try? importLocalMediaData(
+            projectID: projectID,
+            kind: .poster,
+            filename: "highfive-import-fixture.poster",
+            data: fixture,
+            contentType: "public.data"
+        )
+        if arguments.contains("--hf-media-import-cancel-seed"),
+           let assetID = result?.asset.id ?? contentSnapshot.importedMediaAssets.last?.id {
+            cancelImportedMediaAsset(id: assetID)
+        }
+        if arguments.contains("--hf-media-import-retry-seed"),
+           let assetID = result?.asset.id ?? contentSnapshot.importedMediaAssets.last?.id {
+            retryImportedMediaAsset(id: assetID)
+        }
     }
 
     var creatorUploadWorkflowSnapshot: HFCreatorUploadWorkflowSnapshot {
@@ -3078,11 +3311,11 @@ final class HFStreamingStore: ObservableObject {
         return HFCreatorMediaImportRuntimeSnapshot(
             sessionCount: creatorMediaImportSessionRecords.count,
             queueCount: creatorMediaImportQueueRecords.count,
-            registeredAssets: creatorMediaRegistrationRecords.count,
+            registeredAssets: max(importedMediaAssetCount, creatorMediaRegistrationRecords.count),
             manifestUpdates: creatorManifestUpdateRecords.count,
             linkedProjects: creatorProjectLinkRecords.count,
             preflightPassed: preflight.filter(\.isPassed).count,
-            updatedAtLabel: "Media import runtime resolved as registration metadata only"
+            updatedAtLabel: "Media import runtime copies selected files into app sandbox storage"
         )
     }
 
@@ -3094,10 +3327,10 @@ final class HFStreamingStore: ObservableObject {
                 return HFCreatorMediaImportSessionRecord(
                     id: "import-session-\(project.id)",
                     projectTitle: project.title,
-                    sessionState: project.readyForReview ? "Registration Ready" : "Draft Intake",
+                    sessionState: importedMediaAssets.contains { $0.projectID == project.id && $0.status == .imported } ? "Imported" : "Ready for Selection",
                     intakeScope: "Poster, trailer, artwork, metadata, thumbnail",
                     assetCount: assets.count + 1,
-                    detail: "Session maps existing registry metadata to the project runtime. No picker, copy, write, or transfer is active.",
+                    detail: "Session accepts explicit PhotosPicker or fileImporter selections and copies approved files into the app sandbox.",
                     systemImage: "tray.and.arrow.down.fill"
                 )
             }
@@ -3114,7 +3347,7 @@ final class HFStreamingStore: ObservableObject {
                         assetTitle: record.kind.rawValue,
                         queueState: mediaImportQueueState(for: record),
                         source: record.registry,
-                        detail: "Queued as local registration metadata only. No media file is selected, copied, or written.",
+                        detail: importedAsset(projectID: record.projectID, kind: record.kind)?.storedRelativePath ?? "Awaiting user-selected local media.",
                         systemImage: record.systemImage
                     )
                 }
@@ -3127,8 +3360,8 @@ final class HFStreamingStore: ObservableObject {
             return HFCreatorMediaImportValidationRecord(
                 id: "import-validation-\(record.id)",
                 title: "\(record.projectTitle) \(record.assetTitle)",
-                detail: isPassed ? "Registry state can be linked to the project manifest." : "Registry metadata must exist before local registration.",
-                status: isPassed ? "Validated" : "Blocked",
+                detail: isPassed ? "Local import state can be linked to the project manifest." : "Select or retry local media before project readiness can advance.",
+                status: isPassed ? "Validated" : "Needs Import",
                 isPassed: isPassed,
                 systemImage: record.systemImage
             )
@@ -3145,7 +3378,7 @@ final class HFStreamingStore: ObservableObject {
                     registry: record.source,
                     registrationState: record.queueState == "Ready" ? "Registered" : "Registered for Review",
                     linkedManifest: "project-manifest-\(slugID(record.projectTitle))",
-                    detail: "Registration connects asset metadata to the creator project runtime without touching local files.",
+                    detail: "Registration connects sandbox media paths and checksums to the creator project runtime.",
                     systemImage: record.systemImage
                 )
             }
@@ -3194,7 +3427,7 @@ final class HFStreamingStore: ObservableObject {
             HFCreatorMediaImportPreflightRecord(id: "queue", title: "Import Queue", detail: "\(queue.count) asset registration records are queued from media runtime state.", result: queue.isEmpty ? "Empty" : "Queued", isPassed: !queue.isEmpty, systemImage: "list.bullet.rectangle.fill"),
             HFCreatorMediaImportPreflightRecord(id: "validation", title: "Asset Validation", detail: "\(validations.filter(\.isPassed).count)/\(validations.count) local registration records pass validation.", result: validations.contains { !$0.isPassed } ? "Review" : "Clear", isPassed: !validations.isEmpty, systemImage: "checkmark.shield.fill"),
             HFCreatorMediaImportPreflightRecord(id: "registration", title: "Media Registration", detail: "\(registrations.count) metadata records can link to project manifests.", result: registrations.isEmpty ? "Waiting" : "Registered", isPassed: !registrations.isEmpty, systemImage: "rectangle.stack.badge.plus"),
-            HFCreatorMediaImportPreflightRecord(id: "boundary", title: "Local Boundary", detail: "No file picker, file copy, file write, network request, cloud storage, or transcode path is active.", result: "Safe", isPassed: links.contains { $0.status == "Linked" }, systemImage: "lock.shield.fill")
+            HFCreatorMediaImportPreflightRecord(id: "boundary", title: "Local Boundary", detail: "Files are copied only into Application Support. No upload, backend request, cloud storage, or transcode path is active.", result: "Safe", isPassed: links.contains { $0.status == "Linked" }, systemImage: "lock.shield.fill")
         ]
     }
 
@@ -3203,16 +3436,18 @@ final class HFStreamingStore: ObservableObject {
         kind: HFCreatorMediaAssetKind,
         status: HFCreatorPublishingAssetStatus
     ) -> HFCreatorMediaAssetRecord {
-        HFCreatorMediaAssetRecord(
+        let imported = importedAsset(projectID: project.id, kind: kind)
+        let resolvedStatus = imported == nil ? status : .ready
+        return HFCreatorMediaAssetRecord(
             id: "\(project.id)-\(kind.id.lowercased())",
             projectID: project.id,
             projectTitle: project.title,
             kind: kind,
-            status: status,
+            status: resolvedStatus,
             registry: "\(kind.rawValue) Registry",
-            lifecycle: mediaAssetLifecycle(for: status),
-            readiness: readinessStatus(for: status),
-            detail: mediaAssetDetail(project: project, kind: kind, status: status),
+            lifecycle: imported == nil ? mediaAssetLifecycle(for: resolvedStatus) : "Imported into app sandbox",
+            readiness: readinessStatus(for: resolvedStatus),
+            detail: mediaAssetDetail(project: project, kind: kind, status: resolvedStatus, imported: imported),
             systemImage: kind.systemImage
         )
     }
@@ -3233,17 +3468,29 @@ final class HFStreamingStore: ObservableObject {
     private func mediaAssetDetail(
         project: HFCreatorPublishingContent,
         kind: HFCreatorMediaAssetKind,
-        status: HFCreatorPublishingAssetStatus
+        status: HFCreatorPublishingAssetStatus,
+        imported: HFCreatorImportedMediaAsset? = nil
     ) -> String {
+        if let imported {
+            return "\(imported.originalFilename) copied to app sandbox. \(imported.displaySize). Checksum \(imported.checksum.prefix(12))."
+        }
         switch kind {
         case .poster:
-            return project.posterAssetName == nil ? "Poster uses local placeholder metadata. No file picker or upload is active." : "Poster registry references bundled local artwork metadata."
+            return project.posterAssetName == nil ? "Poster uses local placeholder metadata until a local file is imported." : "Poster registry references bundled local artwork metadata."
         case .trailer:
-            return "Trailer state is \(status.rawValue). No upload, transcode, or media transfer exists."
+            return "Trailer state is \(status.rawValue). No upload, transcode, or backend transfer is active."
         case .metadata:
             return "Metadata readiness tracks title, description, creator, genre, tags, and runtime."
         case .artwork:
-            return "Artwork package state is tracked for local publishing readiness only."
+            return "Artwork package state is tracked for local publishing readiness and local import records."
+        }
+    }
+
+    private func importedAsset(projectID: String, kind: HFCreatorMediaAssetKind) -> HFCreatorImportedMediaAsset? {
+        contentSnapshot.importedMediaAssets.first {
+            $0.projectID == projectID
+                && $0.kind == kind
+                && ($0.status == .imported || $0.status == .duplicate)
         }
     }
 
@@ -3324,6 +3571,9 @@ final class HFStreamingStore: ObservableObject {
     }
 
     private func mediaImportQueueState(for record: HFCreatorMediaAssetRecord) -> String {
+        if importedAsset(projectID: record.projectID, kind: record.kind) != nil {
+            return "Imported"
+        }
         switch record.status {
         case .ready:
             return "Ready"
@@ -6278,9 +6528,77 @@ final class HFStreamingStore: ObservableObject {
     private func persistCreatorPublishingContents() {
         contentSnapshot.publishingProjects = creatorPublishingContents
         contentSnapshot.updatedAtLabel = "Creator drafts persisted locally"
+        persistContentSnapshot(reason: "Publishing snapshot changed")
+    }
+
+    private func persistContentSnapshot(reason: String) {
         contentStorage.saveSnapshot(contentSnapshot)
-        invalidateCatalogRuntime(reason: "Publishing snapshot changed")
-        refreshIdentitySessionRuntime(reason: "Publishing snapshot changed")
+        invalidateCatalogRuntime(reason: reason)
+        refreshIdentitySessionRuntime(reason: reason)
+    }
+
+    private func markProjectAssetReady(projectID: String, kind: HFCreatorMediaAssetKind) {
+        guard let index = creatorPublishingContents.firstIndex(where: { $0.id == projectID }) else { return }
+        switch kind {
+        case .poster:
+            creatorPublishingContents[index].posterStatus = .ready
+        case .trailer:
+            creatorPublishingContents[index].trailerStatus = .ready
+        case .artwork:
+            creatorPublishingContents[index].artworkStatus = .ready
+        case .metadata:
+            creatorPublishingContents[index].metadataStatus = .ready
+        }
+        creatorPublishingContents[index].updatedAtLabel = "Local media import updated project readiness"
+        contentSnapshot.publishingProjects = creatorPublishingContents
+    }
+
+    private func mediaRootDirectory() -> URL {
+        let baseURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return baseURL.appendingPathComponent("HighFiveCinema", isDirectory: true)
+    }
+
+    private func mediaDirectory(for projectID: String) throws -> URL {
+        let directory = mediaRootDirectory()
+            .appendingPathComponent("Media", isDirectory: true)
+            .appendingPathComponent(projectID, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    private func sanitizedFilename(_ filename: String) -> String {
+        let fallback = "highfive-local-media"
+        let resolved = filename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? fallback : filename
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._- "))
+        let scalars = resolved.unicodeScalars.map { allowed.contains($0) ? Character($0) : "-" }
+        let sanitized = String(scalars).replacingOccurrences(of: " ", with: "-")
+        return sanitized.isEmpty ? fallback : sanitized
+    }
+
+    private func contentTypeIdentifier(for url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "jpg", "jpeg":
+            return "public.jpeg"
+        case "png":
+            return "public.png"
+        case "heic":
+            return "public.heic"
+        case "mov":
+            return "com.apple.quicktime-movie"
+        case "mp4", "m4v":
+            return "public.mpeg-4"
+        default:
+            return "public.data"
+        }
+    }
+
+    private func sha256Hex(for data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func timestampLabel() -> String {
+        ISO8601DateFormatter().string(from: Date())
     }
 
     // Communication Service
