@@ -604,6 +604,79 @@ struct HFCreatorLocalImportResult: Equatable {
     var message: String
 }
 
+struct HFCreatorLocalReleasePackageRecord: Identifiable, Codable, Equatable, Hashable {
+    let id: String
+    var projectID: String
+    var projectTitle: String
+    var packageVersion: String
+    var packageRelativePath: String
+    var exportManifestRelativePath: String
+    var checksum: String
+    var manifestStatus: String
+    var validationStatus: String
+    var createdAtLabel: String
+    var history: [String]
+
+    var shortChecksum: String {
+        String(checksum.prefix(12))
+    }
+}
+
+struct HFCreatorLocalReleasePackageManifest: Codable, Equatable {
+    var packageID: String
+    var packageVersion: String
+    var createdAtLabel: String
+    var project: HFCreatorReleaseProjectManifest
+    var assets: [HFCreatorReleaseAssetManifest]
+    var validation: [HFCreatorReleaseValidationReport]
+    var rights: HFCreatorReleaseRightsMetadata
+    var creator: HFCreatorReleaseCreatorMetadata
+    var relationships: [String]
+}
+
+struct HFCreatorReleaseProjectManifest: Codable, Equatable {
+    var projectID: String
+    var creatorID: String
+    var contentID: String
+    var title: String
+    var description: String
+    var genre: String
+    var tags: [String]
+    var runtime: String
+    var releaseState: String
+}
+
+struct HFCreatorReleaseAssetManifest: Codable, Equatable {
+    var assetID: String
+    var kind: String
+    var filename: String
+    var relativePath: String
+    var checksum: String
+    var fileSizeBytes: Int
+    var inspectionState: String
+    var technicalSummary: String
+}
+
+struct HFCreatorReleaseValidationReport: Codable, Equatable {
+    var gate: String
+    var status: String
+    var detail: String
+    var isPassing: Bool
+}
+
+struct HFCreatorReleaseRightsMetadata: Codable, Equatable {
+    var rightsState: String
+    var territoryPreview: String
+    var clearanceState: String
+    var notes: String
+}
+
+struct HFCreatorReleaseCreatorMetadata: Codable, Equatable {
+    var creatorID: String
+    var creatorName: String
+    var workspace: String
+}
+
 struct HFCreatorMediaInspectionRecord: Identifiable, Codable, Equatable, Hashable {
     let id: String
     var assetID: String
@@ -1434,6 +1507,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
     var publishingProjects: [HFCreatorPublishingContent]
     var importedMediaAssets: [HFCreatorImportedMediaAsset]
     var mediaInspectionRecords: [HFCreatorMediaInspectionRecord]
+    var localReleasePackages: [HFCreatorLocalReleasePackageRecord]
     var updatedAtLabel: String
 
     var titleCount: Int { movies.count }
@@ -1450,6 +1524,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         publishingProjects: [HFCreatorPublishingContent],
         importedMediaAssets: [HFCreatorImportedMediaAsset] = [],
         mediaInspectionRecords: [HFCreatorMediaInspectionRecord] = [],
+        localReleasePackages: [HFCreatorLocalReleasePackageRecord] = [],
         updatedAtLabel: String
     ) {
         self.movies = movies
@@ -1459,6 +1534,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         self.publishingProjects = publishingProjects
         self.importedMediaAssets = importedMediaAssets
         self.mediaInspectionRecords = mediaInspectionRecords
+        self.localReleasePackages = localReleasePackages
         self.updatedAtLabel = updatedAtLabel
     }
 
@@ -1470,6 +1546,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         case publishingProjects
         case importedMediaAssets
         case mediaInspectionRecords
+        case localReleasePackages
         case updatedAtLabel
     }
 
@@ -1482,6 +1559,7 @@ struct HFContentBackendSnapshot: Codable, Equatable {
         publishingProjects = try container.decode([HFCreatorPublishingContent].self, forKey: .publishingProjects)
         importedMediaAssets = try container.decodeIfPresent([HFCreatorImportedMediaAsset].self, forKey: .importedMediaAssets) ?? []
         mediaInspectionRecords = try container.decodeIfPresent([HFCreatorMediaInspectionRecord].self, forKey: .mediaInspectionRecords) ?? []
+        localReleasePackages = try container.decodeIfPresent([HFCreatorLocalReleasePackageRecord].self, forKey: .localReleasePackages) ?? []
         updatedAtLabel = try container.decode(String.self, forKey: .updatedAtLabel)
     }
 }
@@ -1725,6 +1803,7 @@ private struct HFContentStorageLayer {
         try snapshot.collections.forEach { try append(type: "collection", id: $0.id, value: $0) }
         try snapshot.importedMediaAssets.forEach { try append(type: "imported_media_asset", id: $0.id, value: $0) }
         try snapshot.mediaInspectionRecords.forEach { try append(type: "media_inspection_record", id: $0.id, value: $0) }
+        try snapshot.localReleasePackages.forEach { try append(type: "local_release_package", id: $0.id, value: $0) }
         try snapshot.publishingProjects.forEach { project in
             try append(type: "publishing_project", id: project.id, value: project)
             if project.releaseState == .draft {
@@ -2453,6 +2532,7 @@ final class HFStreamingStore: ObservableObject {
         )
         seedLocalMediaImportIfRequested()
         seedMediaInspectionIfRequested()
+        seedLocalReleasePackageIfRequested()
         refreshMediaInspectionPreflight()
         rebuildCatalogRuntime(reason: "Initial local catalog load")
         rebuildIdentitySessionRuntime(reason: "Initial local session load")
@@ -3212,6 +3292,31 @@ final class HFStreamingStore: ObservableObject {
         )
     }
 
+    private func seedLocalReleasePackageIfRequested() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("--hf-package-create-seed")
+                || arguments.contains("--hf-package-validation-seed")
+                || arguments.contains("--hf-package-history-seed") else {
+            return
+        }
+        if contentSnapshot.importedMediaAssets.isEmpty,
+           let projectID = primaryImportProjectID() {
+            _ = try? importLocalMediaData(
+                projectID: projectID,
+                kind: .poster,
+                filename: "highfive-package-fixture.png",
+                data: Self.mediaInspectionFixturePNGData(),
+                contentType: "public.png"
+            )
+        }
+        if contentSnapshot.localReleasePackages.isEmpty {
+            _ = try? createLocalReleasePackage()
+        }
+        if arguments.contains("--hf-package-validation-seed") {
+            _ = validateLatestLocalReleasePackage()
+        }
+    }
+
     var creatorUploadWorkflowSnapshot: HFCreatorUploadWorkflowSnapshot {
         let selection = creatorUploadAssetSelectionRecords
         let validation = creatorUploadValidationRecords
@@ -3322,7 +3427,7 @@ final class HFStreamingStore: ObservableObject {
             manifestCount: creatorProjectManifestRecords.count,
             assetManifestCount: creatorProjectAssetManifestRecords.count,
             validationPassed: validations.filter(\.releaseReady).count,
-            releasePackages: creatorProjectReleasePackageRecords.count,
+            releasePackages: max(creatorProjectReleasePackageRecords.count, contentSnapshot.localReleasePackages.count),
             timelineEvents: creatorProjectTimelineRecords.count,
             updatedAtLabel: "Creator project runtime resolved from local repository state"
         )
@@ -3413,6 +3518,108 @@ final class HFStreamingStore: ObservableObject {
                 systemImage: validation?.releaseReady == true ? "shippingbox.fill" : "shippingbox"
             )
         }
+    }
+
+    var localReleasePackageHistory: [HFCreatorLocalReleasePackageRecord] {
+        contentSnapshot.localReleasePackages.sorted { $0.createdAtLabel > $1.createdAtLabel }
+    }
+
+    var latestLocalReleasePackageURL: URL? {
+        guard let latest = localReleasePackageHistory.first else { return nil }
+        return mediaRootDirectory().appendingPathComponent(latest.exportManifestRelativePath, isDirectory: false)
+    }
+
+    var localReleasePackageReadinessLabel: String {
+        guard !contentSnapshot.localReleasePackages.isEmpty else { return "No Package" }
+        let valid = contentSnapshot.localReleasePackages.filter { $0.validationStatus == "Validated" }.count
+        return "\(valid)/\(contentSnapshot.localReleasePackages.count) Valid"
+    }
+
+    @discardableResult
+    func createLocalReleasePackage(projectID: String? = nil) throws -> HFCreatorLocalReleasePackageRecord {
+        let releaseReadyIDs = Set(creatorProjectValidationRecords.filter(\.releaseReady).map { $0.id.replacingOccurrences(of: "project-validation-", with: "") })
+        let selectedProject = projectID.flatMap { id in creatorPublishingContents.first { $0.id == id } }
+            ?? creatorPublishingContents.first { releaseReadyIDs.contains($0.id) }
+            ?? creatorReadyForReviewProjects.first
+            ?? creatorPublishingContents.first { $0.releaseState != .archived }
+        guard let project = selectedProject else {
+            throw NSError(domain: "HFLocalReleasePackage", code: 1, userInfo: [NSLocalizedDescriptionKey: "No active creator project is available for packaging"])
+        }
+
+        refreshMediaInspectionPreflight()
+        let packageVersion = projectVersion(for: project)
+        let packageID = "release-package-\(project.id)-\(slugID(timestampLabel()))"
+        let packageDirectory = try packageDirectory(for: packageID)
+        let manifest = makeLocalReleasePackageManifest(project: project, packageID: packageID, packageVersion: packageVersion)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        let files: [(String, Data)] = [
+            ("release-manifest.json", try encoder.encode(manifest)),
+            ("project-manifest.json", try encoder.encode(manifest.project)),
+            ("asset-manifest.json", try encoder.encode(manifest.assets)),
+            ("validation-report.json", try encoder.encode(manifest.validation)),
+            ("rights-metadata.json", try encoder.encode(manifest.rights)),
+            ("creator-metadata.json", try encoder.encode(manifest.creator))
+        ]
+
+        for (filename, data) in files {
+            try data.write(to: packageDirectory.appendingPathComponent(filename, isDirectory: false), options: .atomic)
+        }
+
+        let manifestData = try encoder.encode(manifest)
+        let checksum = sha256Hex(for: manifestData)
+        let validationResult = validateLocalReleasePackage(at: packageDirectory.appendingPathComponent("release-manifest.json", isDirectory: false))
+        let record = HFCreatorLocalReleasePackageRecord(
+            id: packageID,
+            projectID: project.id,
+            projectTitle: project.title,
+            packageVersion: packageVersion,
+            packageRelativePath: "Packages/\(packageID)",
+            exportManifestRelativePath: "Packages/\(packageID)/release-manifest.json",
+            checksum: checksum,
+            manifestStatus: validationResult ? "Manifest Valid" : "Manifest Review",
+            validationStatus: validationResult ? "Validated" : "Needs Review",
+            createdAtLabel: timestampLabel(),
+            history: [
+                "Package directory created",
+                "Release manifest written",
+                "Project manifest written",
+                "Asset manifest written",
+                "Validation report written",
+                "Import-back validation \(validationResult ? "passed" : "needs review")"
+            ]
+        )
+
+        contentSnapshot.localReleasePackages.removeAll { $0.id == packageID }
+        contentSnapshot.localReleasePackages.insert(record, at: 0)
+        contentSnapshot.updatedAtLabel = "Local release package created"
+        persistContentSnapshot(reason: "Local release package created")
+        return record
+    }
+
+    func validateLatestLocalReleasePackage() -> Bool {
+        guard let latest = localReleasePackageHistory.first else { return false }
+        let manifestURL = mediaRootDirectory().appendingPathComponent(latest.exportManifestRelativePath, isDirectory: false)
+        let isValid = validateLocalReleasePackage(at: manifestURL)
+        guard let index = contentSnapshot.localReleasePackages.firstIndex(where: { $0.id == latest.id }) else {
+            return isValid
+        }
+        contentSnapshot.localReleasePackages[index].validationStatus = isValid ? "Validated" : "Needs Review"
+        contentSnapshot.localReleasePackages[index].manifestStatus = isValid ? "Manifest Valid" : "Manifest Review"
+        contentSnapshot.localReleasePackages[index].history.append("Import-back validation \(isValid ? "passed" : "failed") at \(timestampLabel())")
+        contentSnapshot.updatedAtLabel = "Local release package validated"
+        persistContentSnapshot(reason: "Local release package validated")
+        return isValid
+    }
+
+    func cleanupLocalReleasePackages() {
+        for package in contentSnapshot.localReleasePackages {
+            try? FileManager.default.removeItem(at: mediaRootDirectory().appendingPathComponent(package.packageRelativePath, isDirectory: true))
+        }
+        contentSnapshot.localReleasePackages.removeAll()
+        contentSnapshot.updatedAtLabel = "Local release packages cleaned"
+        persistContentSnapshot(reason: "Local release packages cleaned")
     }
 
     var creatorProjectTimelineRecords: [HFCreatorProjectTimelineRecord] {
@@ -6692,6 +6899,86 @@ final class HFStreamingStore: ObservableObject {
         contentSnapshot.publishingProjects = creatorPublishingContents
     }
 
+    private func makeLocalReleasePackageManifest(
+        project: HFCreatorPublishingContent,
+        packageID: String,
+        packageVersion: String
+    ) -> HFCreatorLocalReleasePackageManifest {
+        let projectAssets = contentSnapshot.importedMediaAssets.filter { $0.projectID == project.id }
+        let assetManifests = projectAssets.map { asset -> HFCreatorReleaseAssetManifest in
+            let inspection = contentSnapshot.mediaInspectionRecords.first { $0.assetID == asset.id }
+            return HFCreatorReleaseAssetManifest(
+                assetID: asset.id,
+                kind: asset.kind.rawValue,
+                filename: asset.originalFilename,
+                relativePath: asset.storedRelativePath,
+                checksum: asset.checksum,
+                fileSizeBytes: asset.byteCount,
+                inspectionState: inspection?.state.rawValue ?? "Not Inspected",
+                technicalSummary: inspection?.summary ?? "No inspection record"
+            )
+        }
+        let validation = creatorProjectValidationRecords.first { $0.id == "project-validation-\(project.id)" }
+        let quarantinedCount = contentSnapshot.mediaInspectionRecords.filter { $0.projectID == project.id && $0.isQuarantined }.count
+        let validationReports = [
+            HFCreatorReleaseValidationReport(gate: "Metadata", status: validation?.metadataComplete == true ? "Ready" : "Review", detail: "Title, description, creator, genre, tags, and runtime.", isPassing: validation?.metadataComplete == true),
+            HFCreatorReleaseValidationReport(gate: "Poster", status: validation?.posterReady == true ? "Ready" : "Review", detail: "Poster registry and imported artwork state.", isPassing: validation?.posterReady == true),
+            HFCreatorReleaseValidationReport(gate: "Trailer", status: validation?.trailerReady == true ? "Ready" : "Review", detail: "Trailer registry and imported media state.", isPassing: validation?.trailerReady == true),
+            HFCreatorReleaseValidationReport(gate: "Inspection", status: quarantinedCount == 0 ? "Clear" : "Quarantine", detail: "\(quarantinedCount) quarantined imported media assets.", isPassing: quarantinedCount == 0),
+            HFCreatorReleaseValidationReport(gate: "Release", status: validation?.releaseReady == true && quarantinedCount == 0 ? "Ready" : "Review", detail: "Project runtime release readiness plus media inspection status.", isPassing: validation?.releaseReady == true && quarantinedCount == 0)
+        ]
+
+        return HFCreatorLocalReleasePackageManifest(
+            packageID: packageID,
+            packageVersion: packageVersion,
+            createdAtLabel: timestampLabel(),
+            project: HFCreatorReleaseProjectManifest(
+                projectID: project.id,
+                creatorID: creatorID(for: project.creator),
+                contentID: project.movie.id,
+                title: project.title,
+                description: project.description,
+                genre: project.genre,
+                tags: project.tags,
+                runtime: project.runtime,
+                releaseState: project.releaseState.rawValue
+            ),
+            assets: assetManifests,
+            validation: validationReports,
+            rights: HFCreatorReleaseRightsMetadata(
+                rightsState: "Planning",
+                territoryPreview: "Local territory preview",
+                clearanceState: "Not legally submitted",
+                notes: "Placeholder rights fields for package completeness. No contracts or licensing transaction is created."
+            ),
+            creator: HFCreatorReleaseCreatorMetadata(
+                creatorID: creatorID(for: project.creator),
+                creatorName: project.creator,
+                workspace: identitySessionRuntime.workspaceTitle
+            ),
+            relationships: [
+                "Project -> \(project.id)",
+                "Creator -> \(creatorID(for: project.creator))",
+                "Content -> \(project.movie.id)",
+                "Collections -> \(project.tags.joined(separator: ", "))"
+            ]
+        )
+    }
+
+    private func validateLocalReleasePackage(at manifestURL: URL) -> Bool {
+        guard let data = try? Data(contentsOf: manifestURL),
+              let manifest = try? JSONDecoder().decode(HFCreatorLocalReleasePackageManifest.self, from: data) else {
+            return false
+        }
+        return !manifest.packageID.isEmpty
+            && !manifest.packageVersion.isEmpty
+            && !manifest.project.projectID.isEmpty
+            && !manifest.project.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !manifest.creator.creatorID.isEmpty
+            && !manifest.validation.isEmpty
+            && manifest.validation.contains { $0.gate == "Release" }
+    }
+
     private func makeMediaInspectionRecord(
         for asset: HFCreatorImportedMediaAsset,
         fileURL: URL
@@ -6893,6 +7180,14 @@ final class HFStreamingStore: ObservableObject {
         let directory = mediaRootDirectory()
             .appendingPathComponent("Media", isDirectory: true)
             .appendingPathComponent(projectID, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    private func packageDirectory(for packageID: String) throws -> URL {
+        let directory = mediaRootDirectory()
+            .appendingPathComponent("Packages", isDirectory: true)
+            .appendingPathComponent(packageID, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
     }

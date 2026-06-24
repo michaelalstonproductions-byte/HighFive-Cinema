@@ -263,6 +263,11 @@ private enum HFCreatorProSpotlight {
     case mediaInspectionPreflight
     case mediaInspectionReport
     case mediaInspectionQuarantine
+    case localPackageRuntime
+    case localPackageCreate
+    case localPackageHistory
+    case localPackageValidation
+    case localPackageExport
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -367,6 +372,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-media-inspection-preflight") { return .mediaInspectionPreflight }
         if arguments.contains("--hf-media-inspection-report") { return .mediaInspectionReport }
         if arguments.contains("--hf-media-quarantine") { return .mediaInspectionQuarantine }
+        if arguments.contains("--hf-start-local-package") { return .localPackageRuntime }
+        if arguments.contains("--hf-package-create") { return .localPackageCreate }
+        if arguments.contains("--hf-package-history") { return .localPackageHistory }
+        if arguments.contains("--hf-package-validation") { return .localPackageValidation }
+        if arguments.contains("--hf-package-export") { return .localPackageExport }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -435,6 +445,7 @@ struct CreatorStudioView: View {
     @State private var selectedPhotoImportItem: PhotosPickerItem?
     @State private var isFileImporterPresented = false
     @State private var mediaImportNotice = "Choose a project and select local media."
+    @State private var localPackageNotice = "Create a local release package from the current project runtime."
     private let proSpotlight: HFCreatorProSpotlight
     private let launchProSpotlight: HFLaunchProSpotlight
 
@@ -2426,6 +2437,16 @@ struct CreatorStudioView: View {
             creatorMediaInspectionReportSection
         case .mediaInspectionQuarantine:
             creatorMediaInspectionQuarantineSection
+        case .localPackageRuntime:
+            creatorLocalPackageRuntimeSection
+        case .localPackageCreate:
+            creatorLocalPackageCreateSection
+        case .localPackageHistory:
+            creatorLocalPackageHistorySection
+        case .localPackageValidation:
+            creatorLocalPackageValidationSection
+        case .localPackageExport:
+            creatorLocalPackageExportSection
         }
     }
 
@@ -2446,6 +2467,7 @@ struct CreatorStudioView: View {
             creatorProjectRuntimeDashboard
             creatorMediaImportRuntimeDashboard
             creatorMediaInspectionPreflightSection
+            creatorLocalPackageRuntimeSection
             creatorMediaAssetRuntimeSection
             creatorUploadWorkflowDashboard
             creatorDraftWorkspaceDashboard
@@ -2528,6 +2550,10 @@ struct CreatorStudioView: View {
             creatorMediaImportPreflightSection
             creatorMediaInspectionReportSection
             creatorMediaInspectionQuarantineSection
+            creatorLocalPackageCreateSection
+            creatorLocalPackageHistorySection
+            creatorLocalPackageValidationSection
+            creatorLocalPackageExportSection
             creatorDraftEditorSection
             creatorDraftValidationSection
             creatorMediaAssetRuntimeSection
@@ -4995,6 +5021,187 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.mediaInspection.quarantine")
     }
 
+    private var creatorLocalPackageRuntimeSection: some View {
+        let packages = streamingStore.localReleasePackageHistory
+        let latest = packages.first
+
+        return creatorProSpotlight(
+            title: "Local Packaging Runtime",
+            detail: "Validated projects create deterministic local release packages with manifest, asset, validation, rights, creator, and checksum records.",
+            systemImage: "shippingbox.and.arrow.backward.fill",
+            accent: HFColors.gold,
+            identifier: "hf.localPackage.runtime"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Packages", value: "\(packages.count)")
+                    creatorProStat(title: "Readiness", value: streamingStore.localReleasePackageReadinessLabel)
+                    creatorProStat(title: "Checksum", value: latest?.shortChecksum ?? "None")
+                    creatorProStat(title: "Version", value: latest?.packageVersion ?? "No package")
+                }
+
+                Text(latest?.packageRelativePath ?? "No local package has been created yet.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var creatorLocalPackageCreateSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Create Local Package",
+                    detail: "Writes a release package into Application Support. Source assets are referenced by manifest and are not modified.",
+                    systemImage: "shippingbox.fill",
+                    accent: HFColors.gold
+                )
+
+                HStack(spacing: HFSpacing.xs) {
+                    Button {
+                        createLocalReleasePackage()
+                    } label: {
+                        Label("Create Package", systemImage: "shippingbox.and.arrow.backward.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(HFColors.gold)
+                    .accessibilityIdentifier("hf.localPackage.create")
+
+                    Button {
+                        streamingStore.cleanupLocalReleasePackages()
+                        localPackageNotice = "Local package history and package files were cleaned from the app sandbox."
+                    } label: {
+                        Label("Clean Packages", systemImage: "trash")
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("hf.localPackage.cleanup")
+                }
+
+                Text(localPackageNotice)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.localPackage.notice")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.localPackage.createPanel")
+    }
+
+    private var creatorLocalPackageHistorySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Package History",
+                    detail: "Package history persists package path, manifest path, checksum, validation status, and creation time.",
+                    systemImage: "clock.arrow.circlepath",
+                    accent: HFColors.cyanGlow
+                )
+
+                if streamingStore.localReleasePackageHistory.isEmpty {
+                    HFCreatorStudioReadinessRow(
+                        title: "No Package History",
+                        detail: "Create a package to persist local package history.",
+                        status: "Waiting",
+                        systemImage: "shippingbox",
+                        accent: HFColors.cyanGlow
+                    )
+                } else {
+                    VStack(spacing: HFSpacing.xs) {
+                        ForEach(streamingStore.localReleasePackageHistory.prefix(6)) { record in
+                            HFCreatorStudioReadinessRow(
+                                title: record.projectTitle,
+                                detail: "\(record.exportManifestRelativePath). Checksum \(record.shortChecksum). \(record.createdAtLabel)",
+                                status: record.validationStatus,
+                                systemImage: "shippingbox.fill",
+                                accent: record.validationStatus == "Validated" ? HFColors.gold : HFColors.cyanGlow
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.localPackage.history")
+    }
+
+    private var creatorLocalPackageValidationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Import-Back Validation",
+                    detail: "Reads the release manifest back from the package directory and validates the required schema fields.",
+                    systemImage: "doc.text.magnifyingglass",
+                    accent: HFColors.violet
+                )
+
+                Button {
+                    let passed = streamingStore.validateLatestLocalReleasePackage()
+                    localPackageNotice = passed ? "Latest package manifest imported back and validated." : "Latest package manifest needs review."
+                } label: {
+                    Label("Validate Latest Package", systemImage: "checkmark.seal.fill")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("hf.localPackage.validate")
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.localReleasePackageHistory.prefix(3)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.id,
+                            detail: record.history.suffix(3).joined(separator: " / "),
+                            status: record.manifestStatus,
+                            systemImage: "doc.richtext.fill",
+                            accent: record.manifestStatus == "Manifest Valid" ? HFColors.gold : HFColors.cyanGlow
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.localPackage.validation")
+    }
+
+    private var creatorLocalPackageExportSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Export Package",
+                    detail: "The system export surface shares the generated release manifest file. No upload, backend transfer, or distribution API is connected.",
+                    systemImage: "square.and.arrow.up.fill",
+                    accent: HFColors.gold
+                )
+
+                if let exportURL = streamingStore.latestLocalReleasePackageURL {
+                    ShareLink(item: exportURL) {
+                        Label("Export Manifest", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(HFColors.gold)
+                    .accessibilityIdentifier("hf.localPackage.export")
+
+                    Text(exportURL.lastPathComponent)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                } else {
+                    HFCreatorStudioReadinessRow(
+                        title: "No Export File",
+                        detail: "Create a local package before opening the export surface.",
+                        status: "Waiting",
+                        systemImage: "square.and.arrow.up",
+                        accent: HFColors.cyanGlow
+                    )
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.localPackage.exportPanel")
+    }
+
     private var creatorUploadWorkflowDashboard: some View {
         let snapshot = streamingStore.creatorUploadWorkflowSnapshot
 
@@ -6724,6 +6931,15 @@ struct CreatorStudioView: View {
             return "rectangle.stack.fill"
         case .metadata:
             return "doc.text.fill"
+        }
+    }
+
+    private func createLocalReleasePackage() {
+        do {
+            let record = try streamingStore.createLocalReleasePackage()
+            localPackageNotice = "Created \(record.projectTitle) package. Manifest \(record.manifestStatus). Checksum \(record.shortChecksum)."
+        } catch {
+            localPackageNotice = "Package creation failed: \(error.localizedDescription)"
         }
     }
 
