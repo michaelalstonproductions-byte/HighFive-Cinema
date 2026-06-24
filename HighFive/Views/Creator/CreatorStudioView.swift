@@ -215,6 +215,13 @@ private enum HFCreatorProSpotlight {
     case licensingPackages
     case licensingReadiness
     case dealPreparation
+    case integrationDashboard
+    case integrationServices
+    case integrationDataSources
+    case integrationSync
+    case integrationAPI
+    case integrationEnvironments
+    case integrationAudit
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -273,6 +280,13 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-licensing-packages") { return .licensingPackages }
         if arguments.contains("--hf-licensing-readiness") { return .licensingReadiness }
         if arguments.contains("--hf-deal-preparation") { return .dealPreparation }
+        if arguments.contains("--hf-start-integration") { return .integrationDashboard }
+        if arguments.contains("--hf-integration-services") { return .integrationServices }
+        if arguments.contains("--hf-integration-data-sources") { return .integrationDataSources }
+        if arguments.contains("--hf-integration-sync") { return .integrationSync }
+        if arguments.contains("--hf-integration-api") { return .integrationAPI }
+        if arguments.contains("--hf-integration-environments") { return .integrationEnvironments }
+        if arguments.contains("--hf-integration-audit") { return .integrationAudit }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2215,6 +2229,20 @@ struct CreatorStudioView: View {
             rightsReadinessSection
         case .dealPreparation:
             dealPreparationSection
+        case .integrationDashboard:
+            integrationReadinessDashboardSection
+        case .integrationServices:
+            serviceRegistrySection
+        case .integrationDataSources:
+            dataSourceRegistrySection
+        case .integrationSync:
+            syncReadinessSection
+        case .integrationAPI:
+            apiReadinessSection
+        case .integrationEnvironments:
+            environmentProfilesSection
+        case .integrationAudit:
+            integrationAuditSection
         }
     }
 
@@ -2229,6 +2257,7 @@ struct CreatorStudioView: View {
             administrationDashboardSection
             marketplaceDistributionDashboardSection
             rightsLicensingDashboardSection
+            integrationReadinessDashboardSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2279,6 +2308,12 @@ struct CreatorStudioView: View {
             licensingPackagesSection
             rightsReadinessSection
             dealPreparationSection
+            serviceRegistrySection
+            dataSourceRegistrySection
+            syncReadinessSection
+            apiReadinessSection
+            environmentProfilesSection
+            integrationAuditSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -3589,6 +3624,157 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.rights.dealPreparation")
+    }
+
+    private var integrationReadinessDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Integration Readiness",
+            detail: "Local bridge from product systems to future infrastructure: services, data sources, sync, API shapes, environments, and audit.",
+            systemImage: "point.3.connected.trianglepath.dotted",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.integration.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Services", value: "\(streamingStore.serviceRegistryRecords.count)")
+                    creatorProStat(title: "Data", value: "\(streamingStore.dataSourceRegistryRecords.count)")
+                    creatorProStat(title: "Sync", value: "\(streamingStore.syncReadinessRecords.count)")
+                    creatorProStat(title: "Audit", value: "\(streamingStore.integrationAuditRecords.count)")
+                }
+
+                Text("Local Product Systems -> Readiness -> Infrastructure Later")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.integration.workflow")
+
+                Text("Integration readiness is documentation and mapping only. No connector, request, sync job, secret storage, or external mutation is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.integration.localOnly")
+            }
+        }
+    }
+
+    private var serviceRegistrySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Service Registry",
+                    detail: "Planned product services are listed by area, dependency, readiness, and local boundary.",
+                    systemImage: "gearshape.2.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.serviceRegistryRecords) { record in
+                        serviceRegistryRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.integration.serviceRegistry")
+    }
+
+    private var dataSourceRegistrySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Data Source Registry", actionTitle: "Local")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.dataSourceRegistryRecords) { record in
+                        dataSourceRegistryCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.integration.dataSources")
+    }
+
+    private var syncReadinessSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Sync Readiness",
+                    detail: "Local state groups are shaped for future sync without creating accounts, jobs, or remote mutation.",
+                    systemImage: "arrow.triangle.2.circlepath",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.syncReadinessRecords) { record in
+                        syncReadinessRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.integration.syncReadiness")
+    }
+
+    private var apiReadinessSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "API Readiness",
+                    detail: "Future request and response shapes are named without adding transport behavior.",
+                    systemImage: "curlybraces.square.fill",
+                    accent: HFColors.violet
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.apiReadinessRecords) { record in
+                        apiReadinessCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.integration.apiReadiness")
+    }
+
+    private var environmentProfilesSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Environment Profiles", actionTitle: "Readiness")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.environmentProfileRecords) { record in
+                        environmentProfileCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.integration.environmentProfiles")
+    }
+
+    private var integrationAuditSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Integration Audit",
+                    detail: "Safety checks confirm the readiness layer does not connect services, move money, sync remotely, or store secrets.",
+                    systemImage: "list.clipboard.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.integrationAuditRecords) { record in
+                        integrationAuditRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.integration.audit")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -5248,6 +5434,226 @@ struct CreatorStudioView: View {
 
     private func rightsAccent(for state: String) -> Color {
         state.contains("Cleared") || state.contains("tracked") ? HFColors.gold : HFColors.violet
+    }
+
+    private func serviceRegistryRow(_ record: HFServiceRegistryRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(integrationAccent(for: record.productArea))
+                .frame(width: 38, height: 38)
+                .background(integrationAccent(for: record.productArea).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.productArea)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(integrationAccent(for: record.productArea))
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.readiness) • \(record.dependency)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(2)
+                Text(record.boundary)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.integration.service.\(record.id)")
+    }
+
+    private func dataSourceRegistryCard(_ record: HFDataSourceRegistryRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: integrationAccent(for: record.owner).opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: record.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(integrationAccent(for: record.owner))
+                Text(record.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.state)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.sourceType)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 190, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.integration.dataSource.\(record.id)")
+    }
+
+    private func syncReadinessRow(_ record: HFSyncReadinessRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background(HFColors.gold.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.readiness)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.localCount) local records")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.integration.sync.\(record.id)")
+    }
+
+    private func apiReadinessCard(_ record: HFAPIReadinessRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.violet)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+            Text(record.shapeState)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+            Text(record.requestShape)
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(2)
+            Text("\(record.responseShape) • \(record.boundary)")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.integration.api.\(record.id)")
+    }
+
+    private func environmentProfileCard(_ record: HFEnvironmentProfileRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: environmentAccent(for: record.status).opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: record.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(environmentAccent(for: record.status))
+                Text(record.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.profile)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.services)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+                Text("\(record.dataPolicy) • \(record.status)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 196, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.integration.environment.\(record.id)")
+    }
+
+    private func integrationAuditRow(_ record: HFIntegrationAuditRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(integrationAccent(for: record.category))
+                .frame(width: 38, height: 38)
+                .background(integrationAccent(for: record.category).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.category)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(integrationAccent(for: record.category))
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text(record.result)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.integration.audit.\(record.id)")
+    }
+
+    private func integrationAccent(for category: String) -> Color {
+        switch category {
+        case "CMS", "Catalog", "Architecture", "Sync":
+            return HFColors.cyanGlow
+        case "Revenue", "Commerce", "Security":
+            return HFColors.gold
+        case "Rights", "Creator":
+            return HFColors.violet
+        default:
+            return HFColors.textSecondary
+        }
+    }
+
+    private func environmentAccent(for status: String) -> Color {
+        status == "Active" ? HFColors.gold : HFColors.cyanGlow
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {

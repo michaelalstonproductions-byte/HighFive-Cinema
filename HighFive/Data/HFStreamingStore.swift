@@ -602,6 +602,64 @@ struct HFDealPreparationRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFServiceRegistryRecord: Identifiable {
+    let id: String
+    var title: String
+    var productArea: String
+    var readiness: String
+    var dependency: String
+    var boundary: String
+    var systemImage: String
+}
+
+struct HFDataSourceRegistryRecord: Identifiable {
+    let id: String
+    var title: String
+    var sourceType: String
+    var owner: String
+    var state: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFSyncReadinessRecord: Identifiable {
+    let id: String
+    var title: String
+    var localCount: String
+    var readiness: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFAPIReadinessRecord: Identifiable {
+    let id: String
+    var title: String
+    var shapeState: String
+    var requestShape: String
+    var responseShape: String
+    var boundary: String
+    var systemImage: String
+}
+
+struct HFEnvironmentProfileRecord: Identifiable {
+    let id: String
+    var title: String
+    var profile: String
+    var services: String
+    var dataPolicy: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFIntegrationAuditRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var result: String
+    var category: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -3242,6 +3300,65 @@ final class HFStreamingStore: ObservableObject {
             HFDealPreparationRecord(id: "revenue", title: "Revenue Context", detail: "\(licensingPackageRecords.count) licensing estimates are derived from local revenue signals.", readiness: "Estimate", source: "Revenue", systemImage: "dollarsign.circle.fill"),
             HFDealPreparationRecord(id: "marketplace", title: "Marketplace Context", detail: "\(marketplaceCatalogRecords.count) catalog packages are visible for preparation.", readiness: "Preview", source: "Marketplace", systemImage: "bag.fill"),
             HFDealPreparationRecord(id: "distribution", title: "Distribution Context", detail: "\(distributionTargetRecords.count) target surfaces define planning context.", readiness: "Planning", source: "Distribution", systemImage: "point.3.connected.trianglepath.dotted")
+        ]
+    }
+
+    var serviceRegistryRecords: [HFServiceRegistryRecord] {
+        [
+            HFServiceRegistryRecord(id: "catalog", title: "Catalog Service", productArea: "CMS", readiness: "\(cmsContentRecords.count) records", dependency: "Content models", boundary: "No remote connector", systemImage: "rectangle.stack.fill"),
+            HFServiceRegistryRecord(id: "discovery", title: "Discovery Service", productArea: "Discovery", readiness: "\(discoveryCollections.count) rails", dependency: "Published catalog", boundary: "Local ranking only", systemImage: "sparkle.magnifyingglass"),
+            HFServiceRegistryRecord(id: "creator", title: "Creator Service", productArea: "Creator", readiness: "\(creatorProfiles.count) profiles", dependency: "Creator profiles", boundary: "No account service", systemImage: "person.crop.rectangle.stack.fill"),
+            HFServiceRegistryRecord(id: "commerce", title: "Commerce Service", productArea: "Revenue", readiness: "\(revenueTitleRecords.count) estimates", dependency: "Revenue preview", boundary: "Planning only", systemImage: "dollarsign.circle.fill"),
+            HFServiceRegistryRecord(id: "rights", title: "Rights Service", productArea: "Rights", readiness: "\(rightsLedgerRecords.count) ledger rows", dependency: "Marketplace packages", boundary: "Planning only", systemImage: "checkmark.shield.fill"),
+            HFServiceRegistryRecord(id: "notifications", title: "Activity Service", productArea: "Activity", readiness: "\(productNotificationRecords.count) events", dependency: "Local activity center", boundary: "No push channel", systemImage: "bell.badge.fill")
+        ]
+    }
+
+    var dataSourceRegistryRecords: [HFDataSourceRegistryRecord] {
+        [
+            HFDataSourceRegistryRecord(id: "catalog", title: "Catalog Data Source", sourceType: "Local catalog", owner: "CMS", state: "\(cmsContentRecords.count) records", detail: "Movies, series, episodes, trailers, collections, and creators.", systemImage: "externaldrive.fill"),
+            HFDataSourceRegistryRecord(id: "publishing", title: "Publishing Data Source", sourceType: "Local creator projects", owner: "Creator Studio", state: "\(creatorPublishingContents.count) projects", detail: "Draft, review, scheduled, published, and archived states.", systemImage: "square.stack.3d.up.fill"),
+            HFDataSourceRegistryRecord(id: "analytics", title: "Analytics Data Source", sourceType: "Computed local metrics", owner: "Analytics", state: "\(analyticsTitleRecords.count) titles", detail: "Views, completion, discovery, creator, and revenue signals.", systemImage: "chart.bar.xaxis"),
+            HFDataSourceRegistryRecord(id: "library", title: "Library Data Source", sourceType: "Local viewer activity", owner: "Library", state: "\(libraryViewingHistory.count) history rows", detail: "Continue watching, favorites, watch later, history, and collections.", systemImage: "bookmark.fill"),
+            HFDataSourceRegistryRecord(id: "rights", title: "Rights Data Source", sourceType: "Local rights planning", owner: "Rights", state: "\(rightsLedgerRecords.count) ledger rows", detail: "Windows, territories, clearance, licensing, and preparation.", systemImage: "books.vertical.fill")
+        ]
+    }
+
+    var syncReadinessRecords: [HFSyncReadinessRecord] {
+        [
+            HFSyncReadinessRecord(id: "catalog", title: "Catalog Sync Readiness", localCount: "\(cmsContentRecords.count)", readiness: "Schema ready", detail: "Content objects have local IDs, types, metadata, relationships, and status.", systemImage: "arrow.triangle.2.circlepath"),
+            HFSyncReadinessRecord(id: "publishing", title: "Publishing Sync Readiness", localCount: "\(creatorPublishingContents.count)", readiness: "Lifecycle ready", detail: "Publishing state can be mapped later without changing the local workflow.", systemImage: "paperplane.circle.fill"),
+            HFSyncReadinessRecord(id: "library", title: "Library Sync Readiness", localCount: "\(libraryViewingHistory.count)", readiness: "User-state ready", detail: "Viewer state remains local until a future account boundary exists.", systemImage: "person.crop.circle.badge.clock"),
+            HFSyncReadinessRecord(id: "analytics", title: "Analytics Sync Readiness", localCount: "\(analyticsTitleRecords.count)", readiness: "Computed ready", detail: "Metrics can be exported later from local computed records.", systemImage: "chart.xyaxis.line"),
+            HFSyncReadinessRecord(id: "rights", title: "Rights Sync Readiness", localCount: "\(rightsLedgerRecords.count)", readiness: "Planning ready", detail: "Rights rows have package, window, territory, and clearance fields.", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var apiReadinessRecords: [HFAPIReadinessRecord] {
+        [
+            HFAPIReadinessRecord(id: "catalog", title: "Catalog API Readiness", shapeState: "Shape drafted", requestShape: "Content query", responseShape: "Movie, series, episode, collection", boundary: "No request sent", systemImage: "curlybraces.square.fill"),
+            HFAPIReadinessRecord(id: "publishing", title: "Publishing API Readiness", shapeState: "Lifecycle mapped", requestShape: "Project package", responseShape: "Review state", boundary: "No publish action", systemImage: "doc.badge.gearshape.fill"),
+            HFAPIReadinessRecord(id: "library", title: "Library API Readiness", shapeState: "State mapped", requestShape: "Viewer state", responseShape: "Saved and progress state", boundary: "No account sync", systemImage: "bookmark.square.fill"),
+            HFAPIReadinessRecord(id: "analytics", title: "Analytics API Readiness", shapeState: "Metric groups mapped", requestShape: "Title activity", responseShape: "Views, completion, watch time", boundary: "No telemetry upload", systemImage: "chart.bar.doc.horizontal.fill"),
+            HFAPIReadinessRecord(id: "rights", title: "Rights API Readiness", shapeState: "Package mapped", requestShape: "Rights ledger package", responseShape: "Readiness state", boundary: "No external exchange", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var environmentProfileRecords: [HFEnvironmentProfileRecord] {
+        [
+            HFEnvironmentProfileRecord(id: "local", title: "Local Product Profile", profile: "Current", services: "\(serviceRegistryRecords.count) planned services", dataPolicy: "Local mock and computed state", status: "Active", systemImage: "iphone.gen3"),
+            HFEnvironmentProfileRecord(id: "staging", title: "Staging Profile", profile: "Future", services: "Readiness only", dataPolicy: "Requires explicit runtime configuration later", status: "Not connected", systemImage: "testtube.2"),
+            HFEnvironmentProfileRecord(id: "production", title: "Production Profile", profile: "Future", services: "Infrastructure later", dataPolicy: "Requires account, security, monitoring, and governance later", status: "Not connected", systemImage: "building.2.fill")
+        ]
+    }
+
+    var integrationAuditRecords: [HFIntegrationAuditRecord] {
+        [
+            HFIntegrationAuditRecord(id: "no-network", title: "No network connector", detail: "P15 records service readiness without adding transport behavior.", result: "Safe", category: "Boundary", systemImage: "network.slash"),
+            HFIntegrationAuditRecord(id: "no-secrets", title: "No secrets", detail: "No secrets, keys, or account identifiers are added.", result: "Clean", category: "Security", systemImage: "lock.shield.fill"),
+            HFIntegrationAuditRecord(id: "no-money", title: "No money movement", detail: "Revenue, marketplace, rights, and licensing remain estimates and planning records.", result: "Preview", category: "Commerce", systemImage: "dollarsign.circle.fill"),
+            HFIntegrationAuditRecord(id: "no-sync", title: "No sync job", detail: "Sync readiness is documented without background jobs or remote mutation.", result: "Local", category: "Sync", systemImage: "arrow.triangle.2.circlepath"),
+            HFIntegrationAuditRecord(id: "local-first", title: "Local-first bridge", detail: "The product is prepared for future infrastructure while preserving current local flows.", result: "Ready", category: "Architecture", systemImage: "point.3.connected.trianglepath.dotted")
         ]
     }
 

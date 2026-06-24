@@ -161,6 +161,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInPlatformAdministration
             || Self.shouldStartInMarketplaceDistribution
             || Self.shouldStartInRightsLicensingOperations
+            || Self.shouldStartInIntegrationReadiness
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -223,6 +224,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInPlatformAdministration
             || Self.shouldStartInMarketplaceDistribution
             || Self.shouldStartInRightsLicensingOperations
+            || Self.shouldStartInIntegrationReadiness
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -342,6 +344,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInPlatformAdministration
             || Self.shouldStartInMarketplaceDistribution
             || Self.shouldStartInRightsLicensingOperations
+            || Self.shouldStartInIntegrationReadiness
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -475,6 +478,17 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-licensing-packages")
             || arguments.contains("--hf-licensing-readiness")
             || arguments.contains("--hf-deal-preparation")
+    }
+
+    private static var shouldStartInIntegrationReadiness: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-integration")
+            || arguments.contains("--hf-integration-services")
+            || arguments.contains("--hf-integration-data-sources")
+            || arguments.contains("--hf-integration-sync")
+            || arguments.contains("--hf-integration-api")
+            || arguments.contains("--hf-integration-environments")
+            || arguments.contains("--hf-integration-audit")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {
