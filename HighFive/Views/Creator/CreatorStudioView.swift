@@ -186,6 +186,13 @@ private enum HFCreatorProSpotlight {
     case revenueTitles
     case revenueAnalytics
     case revenuePayouts
+    case notificationsCenter
+    case activityCenter
+    case notificationPublishing
+    case notificationDiscovery
+    case notificationSeries
+    case notificationCollaboration
+    case notificationRevenue
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -214,6 +221,14 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-revenue-titles") { return .revenueTitles }
         if arguments.contains("--hf-revenue-analytics") { return .revenueAnalytics }
         if arguments.contains("--hf-revenue-payouts") { return .revenuePayouts }
+        if arguments.contains("--hf-start-notifications") { return .notificationsCenter }
+        if arguments.contains("--hf-notifications-center") { return .notificationsCenter }
+        if arguments.contains("--hf-activity-center") { return .activityCenter }
+        if arguments.contains("--hf-notifications-publishing") { return .notificationPublishing }
+        if arguments.contains("--hf-notifications-discovery") { return .notificationDiscovery }
+        if arguments.contains("--hf-notifications-series") { return .notificationSeries }
+        if arguments.contains("--hf-notifications-collaboration") { return .notificationCollaboration }
+        if arguments.contains("--hf-notifications-revenue") { return .notificationRevenue }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2098,6 +2113,20 @@ struct CreatorStudioView: View {
             revenueAnalyticsSection
         case .revenuePayouts:
             payoutPreviewSection
+        case .notificationsCenter:
+            notificationsCenterSection
+        case .activityCenter:
+            productActivityCenterSection
+        case .notificationPublishing:
+            notificationCategorySection("Publishing")
+        case .notificationDiscovery:
+            notificationCategorySection("Discovery")
+        case .notificationSeries:
+            notificationCategorySection("Series")
+        case .notificationCollaboration:
+            notificationCategorySection("Collaboration")
+        case .notificationRevenue:
+            notificationCategorySection("Revenue")
         }
     }
 
@@ -2108,6 +2137,7 @@ struct CreatorStudioView: View {
             creatorPublishingPipelineSection
             creatorPublishingSystemDashboard
             revenueDashboardSection
+            notificationsCenterSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2135,6 +2165,10 @@ struct CreatorStudioView: View {
             revenueAnalyticsSection
             creatorRevenueSummarySection
             payoutPreviewSection
+            productActivityCenterSection
+            notificationCategorySection("Publishing")
+            notificationCategorySection("Series")
+            notificationCategorySection("Revenue")
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -2888,6 +2922,82 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.revenue.payoutPreview")
+    }
+
+    private var notificationsCenterSection: some View {
+        creatorProSpotlight(
+            title: "Notifications Center",
+            detail: "Local notification layer for publishing alerts, discovery activity, series updates, collaboration updates, analytics milestones, and revenue milestones.",
+            systemImage: "bell.badge.fill",
+            accent: HFColors.gold,
+            identifier: "hf.notifications.center"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Items", value: "\(streamingStore.productNotificationRecords.count)")
+                    creatorProStat(title: "Activity", value: "\(streamingStore.activityCenterRecords.count)")
+                    creatorProStat(title: "Series", value: "\(notificationCount(for: "Series"))")
+                    creatorProStat(title: "Revenue", value: "\(notificationCount(for: "Revenue"))")
+                }
+
+                Text("Publishing -> Discovery -> Series -> Collaboration -> Revenue")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.notifications.workflow")
+
+                Text("Local activity only. No system delivery registration, remote message service, external delivery channel, or background delivery job is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.notifications.localOnly")
+            }
+        }
+    }
+
+    private var productActivityCenterSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Activity Center",
+                    detail: "Unified local timeline for creator work, viewer activity, publishing operations, discovery, series, collaboration, and revenue.",
+                    systemImage: "waveform.path.ecg",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.activityCenterRecords) { record in
+                        activityCenterCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.notifications.activityCenter")
+    }
+
+    private func notificationCategorySection(_ category: String) -> some View {
+        let records = streamingStore.productNotificationRecords.filter { $0.category == category }
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: notificationAccent(for: category).opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "\(category) Activity",
+                    detail: "Read-only local \(category.lowercased()) activity surfaced inside HighFive.",
+                    systemImage: notificationIcon(for: category),
+                    accent: notificationAccent(for: category)
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(records) { record in
+                        notificationRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.notifications.\(category.lowercased())")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -3806,6 +3916,114 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.revenue.payout.\(record.id)")
+    }
+
+    private func notificationRow(_ record: HFProductNotificationRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(notificationAccent(for: record.category))
+                .frame(width: 38, height: 38)
+                .background(notificationAccent(for: record.category).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.category)
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(notificationAccent(for: record.category))
+                        .lineLimit(1)
+                    Text(record.timeLabel)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(HFColors.textMuted)
+                        .lineLimit(1)
+                }
+
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+
+                Text(record.status)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.notifications.item.\(record.id)")
+    }
+
+    private func activityCenterCard(_ record: HFActivityCenterRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(record.value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(2)
+            Text(record.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+            Text(record.status)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.notifications.activity.\(record.id)")
+    }
+
+    private func notificationCount(for category: String) -> Int {
+        streamingStore.productNotificationRecords.filter { $0.category == category }.count
+    }
+
+    private func notificationIcon(for category: String) -> String {
+        switch category {
+        case "Publishing": return "paperplane.circle.fill"
+        case "Discovery": return "sparkle.magnifyingglass"
+        case "Series": return "play.square.stack.fill"
+        case "Collaboration": return "person.3.sequence.fill"
+        case "Revenue": return "dollarsign.circle.fill"
+        case "Analytics": return "chart.bar.xaxis"
+        case "Library": return "bookmark.fill"
+        default: return "bell.badge.fill"
+        }
+    }
+
+    private func notificationAccent(for category: String) -> Color {
+        switch category {
+        case "Publishing", "Revenue", "Library":
+            return HFColors.gold
+        case "Discovery", "Series", "Analytics":
+            return HFColors.cyanGlow
+        case "Collaboration":
+            return HFColors.violet
+        default:
+            return HFColors.textSecondary
+        }
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {

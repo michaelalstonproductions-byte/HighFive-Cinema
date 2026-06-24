@@ -406,6 +406,25 @@ struct HFPayoutPreviewRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFProductNotificationRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var category: String
+    var status: String
+    var timeLabel: String
+    var systemImage: String
+}
+
+struct HFActivityCenterRecord: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var value: String
+    var status: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -2719,6 +2738,101 @@ final class HFStreamingStore: ObservableObject {
             HFPayoutPreviewRecord(id: "pending", title: "Pending Preview", value: revenueCurrencyLabel(cents: pendingCents), detail: "Local creator earnings preview awaiting review", state: "Preview", systemImage: "hourglass.circle.fill"),
             HFPayoutPreviewRecord(id: "projected", title: "Projected Preview", value: revenueCurrencyLabel(cents: projectedCents), detail: "Projected from current catalog and analytics signals", state: "Projected", systemImage: "chart.bar.xaxis"),
             HFPayoutPreviewRecord(id: "lifetime", title: "Lifetime Preview", value: revenueCurrencyLabel(cents: lifetimeCents), detail: "Long-range estimate for creator business planning", state: "Lifetime", systemImage: "infinity.circle.fill")
+        ]
+    }
+
+    var productNotificationRecords: [HFProductNotificationRecord] {
+        let published = creatorPublishedProjects.first ?? creatorPublishingContents.first!
+        let queue = creatorPublishingQueueRecords.first
+        let nextEpisode = nextEpisodeRecommendations.first
+        let collaboration = creatorCollaborationActivity.first
+        let analytics = analyticsInsights.first
+        let revenue = revenueInsights.first
+
+        return [
+            HFProductNotificationRecord(
+                id: "publishing-alert",
+                title: "Publishing readiness updated",
+                detail: "\(queue?.project.title ?? published.title) is \(queue?.stage ?? "ready for local review").",
+                category: "Publishing",
+                status: "Review",
+                timeLabel: "Now",
+                systemImage: "paperplane.circle.fill"
+            ),
+            HFProductNotificationRecord(
+                id: "title-published",
+                title: "Title available in discovery",
+                detail: "\(published.title) is eligible for local discovery and creator profile placement.",
+                category: "Discovery",
+                status: "Local",
+                timeLabel: "Today",
+                systemImage: "sparkle.magnifyingglass"
+            ),
+            HFProductNotificationRecord(
+                id: "series-updated",
+                title: "Series structure updated",
+                detail: "\(primarySeriesRecord.title) now has \(primarySeriesRecord.episodeCount) local episode records.",
+                category: "Series",
+                status: "Updated",
+                timeLabel: "Today",
+                systemImage: "play.square.stack.fill"
+            ),
+            HFProductNotificationRecord(
+                id: "episode-available",
+                title: "Next episode available",
+                detail: nextEpisode?.detail ?? "Continue Watching can resolve the next local episode.",
+                category: "Series",
+                status: "Ready",
+                timeLabel: "Today",
+                systemImage: "forward.frame.fill"
+            ),
+            HFProductNotificationRecord(
+                id: "library-milestone",
+                title: "Library milestone",
+                detail: "\(libraryContinueWatchingMovies.count) continue-watching paths and \(libraryUserCollections.count) user collections are active locally.",
+                category: "Library",
+                status: "Active",
+                timeLabel: "Yesterday",
+                systemImage: "bookmark.fill"
+            ),
+            HFProductNotificationRecord(
+                id: "analytics-milestone",
+                title: analytics?.title ?? "Analytics milestone",
+                detail: analytics?.detail ?? "Local analytics are ready for creator review.",
+                category: "Analytics",
+                status: analytics?.value ?? "Ready",
+                timeLabel: "Yesterday",
+                systemImage: "chart.bar.xaxis"
+            ),
+            HFProductNotificationRecord(
+                id: "revenue-milestone",
+                title: revenue?.title ?? "Revenue milestone",
+                detail: "\(revenue?.detail ?? "Local catalog") is driving \(revenue?.value ?? "$0") in estimated revenue.",
+                category: "Revenue",
+                status: "Estimate",
+                timeLabel: "Yesterday",
+                systemImage: "dollarsign.circle.fill"
+            ),
+            HFProductNotificationRecord(
+                id: "collaboration-update",
+                title: collaboration?.title ?? "Collaboration update",
+                detail: collaboration?.detail ?? "Local team activity is ready for review.",
+                category: "Collaboration",
+                status: collaboration?.actorRole ?? "Team",
+                timeLabel: collaboration?.timeLabel ?? "Yesterday",
+                systemImage: "person.3.sequence.fill"
+            )
+        ]
+    }
+
+    var activityCenterRecords: [HFActivityCenterRecord] {
+        [
+            HFActivityCenterRecord(id: "publishing", title: "Publishing Activity", detail: "Queue, readiness, audit, and local discovery eligibility", value: "\(creatorPublishingQueueRecords.count)", status: "Review", systemImage: "paperplane.circle.fill"),
+            HFActivityCenterRecord(id: "creator", title: "Creator Activity", detail: "Projects, collaboration notes, tasks, and creator profile updates", value: "\(creatorCollaborationActivity.count)", status: "Active", systemImage: "wand.and.stars"),
+            HFActivityCenterRecord(id: "discovery", title: "Discovery Activity", detail: "Featured, trending, creator published, and collection signals", value: "\(discoveryCollections.count)", status: "Local", systemImage: "sparkle.magnifyingglass"),
+            HFActivityCenterRecord(id: "series", title: "Series Activity", detail: "Series, episode management, and next episode readiness", value: "\(episodeRecords.count)", status: "Episodes", systemImage: "play.square.stack.fill"),
+            HFActivityCenterRecord(id: "collaboration", title: "Collaboration Activity", detail: "Team roles, task board movement, notes, and timeline updates", value: "\(creatorCollaborationTasks.count)", status: "Tasks", systemImage: "person.3.fill"),
+            HFActivityCenterRecord(id: "revenue", title: "Revenue Activity", detail: "Estimated title revenue, creator summaries, and payout previews", value: "\(revenueTitleRecords.count)", status: "Estimate", systemImage: "dollarsign.circle.fill")
         ]
     }
 

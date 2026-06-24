@@ -157,6 +157,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorCollaboration
             || Self.shouldStartInSeriesEpisodes
             || Self.shouldStartInRevenueSystem
+            || Self.shouldStartInNotificationsActivity
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -215,6 +216,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorCollaboration
             || Self.shouldStartInSeriesEpisodes
             || Self.shouldStartInRevenueSystem
+            || Self.shouldStartInNotificationsActivity
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -330,6 +332,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorCollaboration
             || Self.shouldStartInSeriesEpisodes
             || Self.shouldStartInRevenueSystem
+            || Self.shouldStartInNotificationsActivity
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -417,6 +420,18 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-revenue-titles")
             || arguments.contains("--hf-revenue-analytics")
             || arguments.contains("--hf-revenue-payouts")
+    }
+
+    private static var shouldStartInNotificationsActivity: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-notifications")
+            || arguments.contains("--hf-notifications-center")
+            || arguments.contains("--hf-activity-center")
+            || arguments.contains("--hf-notifications-publishing")
+            || arguments.contains("--hf-notifications-discovery")
+            || arguments.contains("--hf-notifications-series")
+            || arguments.contains("--hf-notifications-collaboration")
+            || arguments.contains("--hf-notifications-revenue")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {
