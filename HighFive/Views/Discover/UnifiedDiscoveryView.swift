@@ -23,7 +23,7 @@ struct UnifiedDiscoveryView: View {
     }
 
     private var streamingDiscoveryRails: [Category] {
-        streamingStore.catalogRails(filter: selectedFilter)
+        streamingStore.catalogRuntimeCollections(filter: selectedFilter, pageSize: 12)
     }
 
     private var header: some View {

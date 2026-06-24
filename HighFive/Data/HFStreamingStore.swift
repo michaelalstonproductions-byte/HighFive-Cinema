@@ -1366,6 +1366,137 @@ struct HFContentQueryEngine {
     }
 }
 
+enum HFCatalogRuntimeState: String, Hashable {
+    case idle = "Idle"
+    case loading = "Loading"
+    case ready = "Ready"
+    case empty = "Empty"
+    case stale = "Stale"
+    case failed = "Failed"
+
+    var accessibilityIdentifier: String {
+        "hf.catalog.runtime.\(rawValue.lowercased())"
+    }
+}
+
+enum HFCatalogRuntimeSort: String, CaseIterable, Identifiable {
+    case editorial = "Editorial"
+    case title = "Title"
+    case creator = "Creator"
+    case recentlyPublished = "Recently Published"
+    case progress = "Progress"
+
+    var id: String { rawValue }
+}
+
+struct HFCatalogRuntimeSnapshot: Hashable {
+    var state: HFCatalogRuntimeState
+    var totalTitles: Int
+    var totalCreators: Int
+    var totalCollections: Int
+    var totalSeries: Int
+    var totalEpisodes: Int
+    var cachedPageCount: Int
+    var generation: Int
+    var reason: String
+    var updatedAtLabel: String
+    var invalidationReason: String?
+
+    var statusLabel: String {
+        switch state {
+        case .ready:
+            return "Catalog Ready"
+        case .loading:
+            return "Loading Catalog"
+        case .empty:
+            return "Catalog Empty"
+        case .stale:
+            return "Catalog Stale"
+        case .failed:
+            return "Catalog Needs Attention"
+        case .idle:
+            return "Catalog Idle"
+        }
+    }
+
+    var detail: String {
+        let summary = "\(totalTitles) titles, \(totalCreators) creators, \(totalCollections) collections"
+        guard let invalidationReason else { return summary }
+        return "\(summary). \(invalidationReason)"
+    }
+
+    static func loading(reason: String, previousCount: Int = 0, generation: Int = 0) -> HFCatalogRuntimeSnapshot {
+        HFCatalogRuntimeSnapshot(
+            state: .loading,
+            totalTitles: previousCount,
+            totalCreators: 0,
+            totalCollections: 0,
+            totalSeries: 0,
+            totalEpisodes: 0,
+            cachedPageCount: 0,
+            generation: generation,
+            reason: reason,
+            updatedAtLabel: "Loading local catalog",
+            invalidationReason: nil
+        )
+    }
+
+    static func ready(
+        titles: Int,
+        creators: Int,
+        collections: Int,
+        series: Int,
+        episodes: Int,
+        cachedPageCount: Int,
+        generation: Int,
+        reason: String
+    ) -> HFCatalogRuntimeSnapshot {
+        HFCatalogRuntimeSnapshot(
+            state: titles == 0 ? .empty : .ready,
+            totalTitles: titles,
+            totalCreators: creators,
+            totalCollections: collections,
+            totalSeries: series,
+            totalEpisodes: episodes,
+            cachedPageCount: cachedPageCount,
+            generation: generation,
+            reason: reason,
+            updatedAtLabel: "Local catalog refreshed",
+            invalidationReason: nil
+        )
+    }
+
+    func invalidated(reason: String) -> HFCatalogRuntimeSnapshot {
+        var snapshot = self
+        snapshot.state = .stale
+        snapshot.reason = "Invalidated"
+        snapshot.updatedAtLabel = "Refresh needed"
+        snapshot.invalidationReason = reason
+        return snapshot
+    }
+}
+
+struct HFCatalogRuntimePage: Identifiable, Hashable {
+    var id: String { cacheKey }
+    let cacheKey: String
+    let filter: String
+    let sort: HFCatalogRuntimeSort
+    let page: Int
+    let pageSize: Int
+    let totalResults: Int
+    let totalPages: Int
+    let movies: [Movie]
+    let generation: Int
+
+    var hasNextPage: Bool {
+        page + 1 < totalPages
+    }
+
+    var isEmpty: Bool {
+        movies.isEmpty
+    }
+}
+
 struct HFBackendRuntimeConfigRow: Identifiable, Codable, Equatable {
     let id: String
     var title: String
@@ -1394,6 +1525,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var lastPlaybackDescriptorAuditContext: HFBackendRequestAuditContext?
     @Published private(set) var creatorPublishingContents: [HFCreatorPublishingContent]
     @Published private(set) var contentSnapshot: HFContentBackendSnapshot
+    @Published private(set) var catalogRuntimeSnapshot: HFCatalogRuntimeSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -1417,6 +1549,8 @@ final class HFStreamingStore: ObservableObject {
     private let remotePlaybackDescriptorGateway: HFRemotePlaybackDescriptorGateway
     private let entitlementPlaybackAdapter: HFBackendEntitlementPlaybackAdapter
     private let contentStorage: HFContentStorageLayer
+    private var catalogRuntimePageCache: [String: HFCatalogRuntimePage] = [:]
+    private var catalogRuntimeGeneration = 0
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -1469,6 +1603,7 @@ final class HFStreamingStore: ObservableObject {
         let loadedContentSnapshot = resolvedContentStorage.loadSnapshot(seed: seedSnapshot)
         contentStorage = resolvedContentStorage
         contentSnapshot = loadedContentSnapshot
+        catalogRuntimeSnapshot = .loading(reason: "Initial catalog load")
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -1507,6 +1642,7 @@ final class HFStreamingStore: ObservableObject {
             movieID: continueWatchingMovie.id,
             detail: "Staging backend not configured. Local Preview fallback active."
         )
+        rebuildCatalogRuntime(reason: "Initial local catalog load")
     }
 
     var backendStatus: HFBackendServiceStatus {
@@ -2057,6 +2193,158 @@ final class HFStreamingStore: ObservableObject {
 
     func queryLibraryRecommendations(anchor movie: Movie? = nil, limit: Int = 10) -> [Movie] {
         contentQueryEngine.libraryAwareRecommendations(anchor: movie, limit: limit)
+    }
+
+    func loadCatalogRuntime() {
+        if catalogRuntimeSnapshot.state == .idle || catalogRuntimeSnapshot.state == .empty || catalogRuntimeSnapshot.state == .failed {
+            refreshCatalogRuntime(reason: "Catalog load requested")
+        }
+    }
+
+    func refreshCatalogRuntime(reason: String = "Manual catalog refresh") {
+        catalogRuntimeSnapshot = .loading(
+            reason: reason,
+            previousCount: catalogRuntimeSnapshot.totalTitles,
+            generation: catalogRuntimeGeneration
+        )
+        rebuildCatalogRuntime(reason: reason)
+    }
+
+    func invalidateCatalogRuntime(reason: String) {
+        catalogRuntimePageCache.removeAll()
+        catalogRuntimeSnapshot = catalogRuntimeSnapshot.invalidated(reason: reason)
+        rebuildCatalogRuntime(reason: "Invalidated: \(reason)")
+    }
+
+    func catalogRuntimePage(
+        filter: String = "All",
+        sort: HFCatalogRuntimeSort = .editorial,
+        page: Int = 0,
+        pageSize: Int = 12
+    ) -> HFCatalogRuntimePage {
+        let normalizedPage = max(0, page)
+        let normalizedPageSize = max(1, pageSize)
+        let cacheKey = catalogRuntimeCacheKey(
+            filter: filter,
+            sort: sort,
+            page: normalizedPage,
+            pageSize: normalizedPageSize
+        )
+        if let cached = catalogRuntimePageCache[cacheKey], cached.generation == catalogRuntimeSnapshot.generation {
+            return cached
+        }
+
+        let filtered = sortedCatalogRuntimeMovies(filter: filter, sort: sort)
+        let totalPages = max(1, Int(ceil(Double(filtered.count) / Double(normalizedPageSize))))
+        let start = normalizedPage * normalizedPageSize
+        let movies = start >= filtered.count ? [] : Array(filtered.dropFirst(start).prefix(normalizedPageSize))
+        let pageRecord = HFCatalogRuntimePage(
+            cacheKey: cacheKey,
+            filter: filter,
+            sort: sort,
+            page: normalizedPage,
+            pageSize: normalizedPageSize,
+            totalResults: filtered.count,
+            totalPages: totalPages,
+            movies: movies,
+            generation: catalogRuntimeSnapshot.generation
+        )
+        catalogRuntimePageCache[cacheKey] = pageRecord
+        return pageRecord
+    }
+
+    func catalogRuntimeMovies(
+        filter: String = "All",
+        sort: HFCatalogRuntimeSort = .editorial,
+        page: Int = 0,
+        pageSize: Int = 12
+    ) -> [Movie] {
+        catalogRuntimePage(filter: filter, sort: sort, page: page, pageSize: pageSize).movies
+    }
+
+    func catalogRuntimeCollections(filter: String = "All", pageSize: Int = 12) -> [Category] {
+        catalogRails(filter: filter).map { category in
+            let page = catalogRuntimePage(filter: category.id, sort: .editorial, page: 0, pageSize: pageSize)
+            guard !page.movies.isEmpty else { return category }
+            return Category(id: category.id, title: category.title, subtitle: category.subtitle, movies: page.movies)
+        }
+    }
+
+    private func rebuildCatalogRuntime(reason: String) {
+        catalogRuntimeGeneration += 1
+        catalogRuntimePageCache.removeAll()
+        let titles = queryCatalog()
+        catalogRuntimeSnapshot = .ready(
+            titles: titles.count,
+            creators: persistedCreators.count,
+            collections: queryCollections().count,
+            series: querySeries().count,
+            episodes: queryEpisodes().count,
+            cachedPageCount: 0,
+            generation: catalogRuntimeGeneration,
+            reason: reason
+        )
+    }
+
+    private func catalogRuntimeCacheKey(
+        filter: String,
+        sort: HFCatalogRuntimeSort,
+        page: Int,
+        pageSize: Int
+    ) -> String {
+        "\(filter.lowercased())|\(sort.rawValue)|\(page)|\(pageSize)|\(catalogRuntimeGeneration)"
+    }
+
+    private func sortedCatalogRuntimeMovies(filter: String, sort: HFCatalogRuntimeSort) -> [Movie] {
+        let filtered = catalogRuntimeFilteredMovies(filter: filter)
+        switch sort {
+        case .editorial:
+            return filtered
+        case .title:
+            return filtered.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        case .creator:
+            return filtered.sorted {
+                if $0.creatorName == $1.creatorName {
+                    return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+                }
+                return $0.creatorName.localizedCaseInsensitiveCompare($1.creatorName) == .orderedAscending
+            }
+        case .recentlyPublished:
+            let recentIDs = queryRecentlyPublished(limit: max(filtered.count, 1)).map(\.id)
+            return filtered.sorted { lhs, rhs in
+                (recentIDs.firstIndex(of: lhs.id) ?? Int.max) < (recentIDs.firstIndex(of: rhs.id) ?? Int.max)
+            }
+        case .progress:
+            return filtered.sorted { ($0.progress ?? 0) > ($1.progress ?? 0) }
+        }
+    }
+
+    private func catalogRuntimeFilteredMovies(filter: String) -> [Movie] {
+        switch filter {
+        case "All":
+            return queryCatalog()
+        case "Movies", "Series", "Originals", "Creator Published", "Downloaded":
+            return queryTitles(search: "", filter: filter)
+        case "Saved":
+            return libraryRepository.fetchSavedTitles()
+        case "Continue Watching":
+            return libraryRepository.fetchContinueWatching()
+        case "Offline":
+            return libraryRepository.fetchOfflineTitles()
+        case "Premieres":
+            return queryCatalog().filter { $0.isComingSoon || $0.genres.contains("Premiere") }
+        case "Progress":
+            return queryCatalog().filter { $0.progress != nil }
+        default:
+            if let collection = queryCollection(id: filter) {
+                return collection.movies
+            }
+            let genreMatches = queryTitles(genre: filter)
+            if !genreMatches.isEmpty { return genreMatches }
+            let tagMatches = queryTitles(tag: filter)
+            if !tagMatches.isEmpty { return tagMatches }
+            return queryTitles(search: filter)
+        }
     }
 
     var contentBackendRepositoryMetrics: [HFContentRepositoryMetric] {
@@ -3124,6 +3412,7 @@ final class HFStreamingStore: ObservableObject {
         let catalogMovie = self.movie(id: movie.id) ?? movie
         lastPlayerMovieID = catalogMovie.id
         UserDefaults.standard.set(catalogMovie.id, forKey: lastPlayerMovieKey)
+        invalidateCatalogRuntime(reason: "Continue watching changed")
     }
 
     // Cloud Library Service
@@ -3252,12 +3541,14 @@ final class HFStreamingStore: ObservableObject {
         let catalogMovie = self.movie(id: movie.id) ?? movie
         downloadedMovieIDs.insert(catalogMovie.id)
         persist(downloadedMovieIDs, key: scopedDownloadsKey)
+        invalidateCatalogRuntime(reason: "Local offline shelf changed")
     }
 
     func removeOfflineAsset(for movie: Movie) {
         let catalogMovie = self.movie(id: movie.id) ?? movie
         downloadedMovieIDs.remove(catalogMovie.id)
         persist(downloadedMovieIDs, key: scopedDownloadsKey)
+        invalidateCatalogRuntime(reason: "Local offline shelf changed")
     }
 
     func offlineAssetRecord(for movie: Movie) -> HFOfflineAssetRecord {
@@ -3300,6 +3591,7 @@ final class HFStreamingStore: ObservableObject {
             fallbackIDs: Set(HFMockData.movies.filter(\.isDownloaded).map(\.id))
         )
         refreshAuthRuntimeStatus()
+        invalidateCatalogRuntime(reason: "Active profile changed")
     }
 
     // hf.services.unifiedStore
@@ -4451,6 +4743,7 @@ final class HFStreamingStore: ObservableObject {
             savedMovieIDs.insert(movie.id)
         }
         persist(savedMovieIDs, key: scopedSavedKey)
+        invalidateCatalogRuntime(reason: "Saved library changed")
     }
 
     func isDownloaded(_ movie: Movie) -> Bool {
@@ -4468,6 +4761,7 @@ final class HFStreamingStore: ObservableObject {
     func removeAllDownloads() {
         downloadedMovieIDs.removeAll()
         persist(downloadedMovieIDs, key: scopedDownloadsKey)
+        invalidateCatalogRuntime(reason: "Local offline shelf cleared")
     }
 
     func addRecentSearch(_ query: String) {
@@ -4641,6 +4935,7 @@ final class HFStreamingStore: ObservableObject {
         contentSnapshot.publishingProjects = creatorPublishingContents
         contentSnapshot.updatedAtLabel = "Creator drafts persisted locally"
         contentStorage.saveSnapshot(contentSnapshot)
+        invalidateCatalogRuntime(reason: "Publishing snapshot changed")
     }
 
     // Communication Service

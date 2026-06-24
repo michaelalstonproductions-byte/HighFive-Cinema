@@ -21,7 +21,7 @@ struct HomeView: View {
     }
 
     private var continueWatching: [Movie] {
-        streamingStore.allCatalogMovies.filter { $0.progress != nil }
+        streamingStore.catalogRuntimeMovies(filter: "Progress", sort: .progress, pageSize: 10)
     }
 
     var body: some View {
@@ -297,7 +297,7 @@ struct HomeView: View {
 
                 HStack(spacing: HFSpacing.xs) {
                     premiumSignal(title: "Originals", value: "\(streamingStore.originalsCatalog.count)", color: HFColors.gold)
-                    premiumSignal(title: "Catalog", value: "\(streamingStore.allCatalogMovies.count)", color: HFColors.cyanGlow)
+                    premiumSignal(title: "Catalog", value: "\(streamingStore.catalogRuntimeSnapshot.totalTitles)", color: HFColors.cyanGlow)
                     premiumSignal(title: "Saved", value: "\(streamingStore.savedMovies.count)", color: HFColors.violet)
                 }
             }
@@ -320,25 +320,25 @@ struct HomeView: View {
             premiumRail(
                 title: "Premiere Previews",
                 subtitle: "Featured local catalog",
-                movies: streamingStore.allCatalogMovies.filter(\.isComingSoon),
+                movies: streamingStore.catalogRuntimeMovies(filter: "Premieres", sort: .recentlyPublished, pageSize: 10),
                 identifier: "hf.streaming.premium.premieresRail"
             )
             premiumRail(
                 title: "Trending Now",
                 subtitle: "Tonight's local picks",
-                movies: Array(streamingStore.allCatalogMovies.prefix(8)),
+                movies: streamingStore.catalogRuntimeMovies(sort: .editorial, pageSize: 8),
                 identifier: "hf.streaming.premium.trendingRail"
             )
             premiumRail(
                 title: "Creator Spotlight",
                 subtitle: "Creator-led stories",
-                movies: Array(streamingStore.allCatalogMovies.filter { $0.creatorName == heroMovie.creatorName }.prefix(8)),
+                movies: Array(streamingStore.queryCatalog().filter { $0.creatorName == heroMovie.creatorName }.prefix(8)),
                 identifier: "hf.streaming.premium.creatorSpotlightRail"
             )
             premiumRail(
                 title: "Award Winners",
                 subtitle: "Editorial collection",
-                movies: Array(streamingStore.allCatalogMovies.reversed().prefix(8)),
+                movies: streamingStore.catalogRuntimeMovies(sort: .recentlyPublished, pageSize: 8),
                 identifier: "hf.streaming.premium.awardWinnersRail"
             )
             collectionWorlds
@@ -350,7 +350,7 @@ struct HomeView: View {
             HFSectionHeader(title: title, actionTitle: subtitle)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach((movies.isEmpty ? streamingStore.allCatalogMovies : movies).prefix(10)) { movie in
+                    ForEach((movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies).prefix(10)) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 148, showMetadata: true, showProgress: movie.progress != nil)
                         }
@@ -444,7 +444,7 @@ struct HomeView: View {
                 }
 
                 HStack(spacing: HFSpacing.sm) {
-                    actionTile(title: "Discover", value: "\(streamingStore.allCatalogMovies.count)", systemImage: "sparkles", action: onDiscover)
+                    actionTile(title: "Discover", value: "\(streamingStore.catalogRuntimeSnapshot.totalTitles)", systemImage: "sparkles", action: onDiscover)
                     actionTile(title: "Library", value: "\(streamingStore.savedMovies.count)", systemImage: "bookmark.fill", action: onMyList)
                     actionTile(title: "Offline", value: "\(streamingStore.downloadedMovies.count)", systemImage: "arrow.down.circle.fill", action: onDownloads)
                 }

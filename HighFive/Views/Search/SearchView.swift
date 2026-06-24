@@ -606,7 +606,7 @@ struct SearchView: View {
                 accent: HFColors.cyanGlow
             ) {
                 VStack(spacing: HFSpacing.xs) {
-                    inspectorRow(title: "Local catalog", detail: "\(streamingStore.allCatalogMovies.count) local titles available.", status: "Local", identifier: "hf.search.localCatalog")
+                    inspectorRow(title: "Catalog runtime", detail: streamingStore.catalogRuntimeSnapshot.detail, status: streamingStore.catalogRuntimeSnapshot.statusLabel, identifier: "hf.search.localCatalog")
                     inspectorRow(title: "Selected focus", detail: selectedFocus.title, status: "Selected", identifier: "hf.spatial.search.selectedFocus")
                     inspectorRow(title: "Remote search", detail: "No remote catalog search is connected.", status: "Not Connected Yet", identifier: "hf.search.localOnly")
                 }
