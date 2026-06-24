@@ -269,6 +269,73 @@ struct HFCreatorPublishingContent: Identifiable, Codable, Equatable {
     }
 }
 
+enum HFCreatorMediaAssetKind: String, CaseIterable, Identifiable {
+    case poster = "Poster"
+    case trailer = "Trailer"
+    case artwork = "Artwork"
+    case metadata = "Metadata"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .poster: return "photo.fill.on.rectangle.fill"
+        case .trailer: return "film.stack.fill"
+        case .artwork: return "rectangle.stack.fill"
+        case .metadata: return "text.justify.left"
+        }
+    }
+}
+
+struct HFCreatorMediaAssetRecord: Identifiable, Hashable {
+    let id: String
+    var projectID: String
+    var projectTitle: String
+    var kind: HFCreatorMediaAssetKind
+    var status: HFCreatorPublishingAssetStatus
+    var registry: String
+    var lifecycle: String
+    var readiness: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFCreatorMediaAssetRuntimeSnapshot: Hashable {
+    var totalAssets: Int
+    var readyAssets: Int
+    var needsReviewAssets: Int
+    var placeholderAssets: Int
+    var missingAssets: Int
+    var posterAssets: Int
+    var trailerAssets: Int
+    var artworkAssets: Int
+    var metadataAssets: Int
+    var updatedAtLabel: String
+
+    var readinessLabel: String {
+        "\(readyAssets)/\(totalAssets) Ready"
+    }
+
+    var detail: String {
+        "\(posterAssets) poster, \(trailerAssets) trailer, \(artworkAssets) artwork, \(metadataAssets) metadata registry records"
+    }
+
+    static var empty: HFCreatorMediaAssetRuntimeSnapshot {
+        HFCreatorMediaAssetRuntimeSnapshot(
+            totalAssets: 0,
+            readyAssets: 0,
+            needsReviewAssets: 0,
+            placeholderAssets: 0,
+            missingAssets: 0,
+            posterAssets: 0,
+            trailerAssets: 0,
+            artworkAssets: 0,
+            metadataAssets: 0,
+            updatedAtLabel: "No asset registry loaded"
+        )
+    }
+}
+
 struct HFCreatorDraftValidationItem: Identifiable {
     let id: String
     var title: String
@@ -2198,6 +2265,100 @@ final class HFStreamingStore: ObservableObject {
         ]
     }
 
+    var mediaAssetRuntimeSnapshot: HFCreatorMediaAssetRuntimeSnapshot {
+        let records = creatorMediaAssetRecords
+        return HFCreatorMediaAssetRuntimeSnapshot(
+            totalAssets: records.count,
+            readyAssets: records.filter { $0.status == .ready }.count,
+            needsReviewAssets: records.filter { $0.status == .needsReview }.count,
+            placeholderAssets: records.filter { $0.status == .placeholder }.count,
+            missingAssets: records.filter { $0.status == .missing }.count,
+            posterAssets: records.filter { $0.kind == .poster }.count,
+            trailerAssets: records.filter { $0.kind == .trailer }.count,
+            artworkAssets: records.filter { $0.kind == .artwork }.count,
+            metadataAssets: records.filter { $0.kind == .metadata }.count,
+            updatedAtLabel: "Asset runtime resolved locally"
+        )
+    }
+
+    var creatorMediaAssetRecords: [HFCreatorMediaAssetRecord] {
+        creatorPublishingContents.flatMap { mediaAssetRecords(for: $0) }
+    }
+
+    var posterAssetRegistry: [HFCreatorMediaAssetRecord] {
+        creatorMediaAssetRecords.filter { $0.kind == .poster }
+    }
+
+    var trailerAssetRegistry: [HFCreatorMediaAssetRecord] {
+        creatorMediaAssetRecords.filter { $0.kind == .trailer }
+    }
+
+    var artworkAssetRegistry: [HFCreatorMediaAssetRecord] {
+        creatorMediaAssetRecords.filter { $0.kind == .artwork }
+    }
+
+    func mediaAssetRecords(for project: HFCreatorPublishingContent) -> [HFCreatorMediaAssetRecord] {
+        [
+            mediaAssetRecord(project: project, kind: .poster, status: project.posterStatus),
+            mediaAssetRecord(project: project, kind: .trailer, status: project.trailerStatus),
+            mediaAssetRecord(project: project, kind: .metadata, status: project.metadataStatus),
+            mediaAssetRecord(project: project, kind: .artwork, status: project.artworkStatus)
+        ]
+    }
+
+    func mediaAssetReadinessRecords(for project: HFCreatorPublishingContent) -> [HFCreatorMediaAssetRecord] {
+        mediaAssetRecords(for: project)
+    }
+
+    private func mediaAssetRecord(
+        project: HFCreatorPublishingContent,
+        kind: HFCreatorMediaAssetKind,
+        status: HFCreatorPublishingAssetStatus
+    ) -> HFCreatorMediaAssetRecord {
+        HFCreatorMediaAssetRecord(
+            id: "\(project.id)-\(kind.id.lowercased())",
+            projectID: project.id,
+            projectTitle: project.title,
+            kind: kind,
+            status: status,
+            registry: "\(kind.rawValue) Registry",
+            lifecycle: mediaAssetLifecycle(for: status),
+            readiness: readinessStatus(for: status),
+            detail: mediaAssetDetail(project: project, kind: kind, status: status),
+            systemImage: kind.systemImage
+        )
+    }
+
+    private func mediaAssetLifecycle(for status: HFCreatorPublishingAssetStatus) -> String {
+        switch status {
+        case .ready:
+            return "Ready for local review"
+        case .needsReview:
+            return "Needs creator review"
+        case .placeholder:
+            return "Placeholder only"
+        case .missing:
+            return "Missing local metadata"
+        }
+    }
+
+    private func mediaAssetDetail(
+        project: HFCreatorPublishingContent,
+        kind: HFCreatorMediaAssetKind,
+        status: HFCreatorPublishingAssetStatus
+    ) -> String {
+        switch kind {
+        case .poster:
+            return project.posterAssetName == nil ? "Poster uses local placeholder metadata. No file picker or upload is active." : "Poster registry references bundled local artwork metadata."
+        case .trailer:
+            return "Trailer state is \(status.rawValue). No upload, transcode, or media transfer exists."
+        case .metadata:
+            return "Metadata readiness tracks title, description, creator, genre, tags, and runtime."
+        case .artwork:
+            return "Artwork package state is tracked for local publishing readiness only."
+        }
+    }
+
     func refreshIdentitySessionRuntime(reason: String = "Session refreshed") {
         rebuildIdentitySessionRuntime(reason: reason)
     }
@@ -2619,15 +2780,16 @@ final class HFStreamingStore: ObservableObject {
     var creatorPublishingReadinessItems: [HFCreatorPublishingReadinessItem] {
         let activeProjects = creatorPublishingContents.filter { $0.releaseState != .archived }
         let readyProjects = activeProjects.filter(\.readyForReview).count
+        let activeAssets = activeProjects.flatMap(mediaAssetRecords(for:))
         let assetReady = activeProjects.filter { project in
-            [project.posterStatus, project.trailerStatus, project.metadataStatus, project.artworkStatus].allSatisfy { $0 == .ready }
+            mediaAssetRecords(for: project).allSatisfy { $0.status == .ready }
         }.count
 
         return [
-            HFCreatorPublishingReadinessItem(id: "metadata", title: "Metadata readiness", detail: "\(activeProjects.filter { $0.metadataStatus == .ready }.count) of \(activeProjects.count) active records have metadata ready.", status: "\(activeProjects.filter { $0.metadataStatus == .ready }.count)/\(activeProjects.count)", systemImage: "text.justify.left"),
-            HFCreatorPublishingReadinessItem(id: "poster", title: "Poster readiness", detail: "\(activeProjects.filter { $0.posterStatus == .ready }.count) poster records are ready or staged.", status: "\(activeProjects.filter { $0.posterStatus == .ready }.count)/\(activeProjects.count)", systemImage: "photo.fill.on.rectangle.fill"),
-            HFCreatorPublishingReadinessItem(id: "trailer", title: "Trailer readiness", detail: "\(activeProjects.filter { $0.trailerStatus == .ready }.count) trailer records have local preview status.", status: "\(activeProjects.filter { $0.trailerStatus == .ready }.count)/\(activeProjects.count)", systemImage: "film.stack.fill"),
-            HFCreatorPublishingReadinessItem(id: "assets", title: "Artwork readiness", detail: "\(assetReady) active packages have all asset statuses ready.", status: "\(assetReady)/\(activeProjects.count)", systemImage: "rectangle.stack.fill"),
+            HFCreatorPublishingReadinessItem(id: "metadata", title: "Metadata readiness", detail: "\(activeAssets.filter { $0.kind == .metadata && $0.status == .ready }.count) metadata records are ready in the media asset runtime.", status: "\(activeAssets.filter { $0.kind == .metadata && $0.status == .ready }.count)/\(activeProjects.count)", systemImage: "text.justify.left"),
+            HFCreatorPublishingReadinessItem(id: "poster", title: "Poster readiness", detail: "\(activeAssets.filter { $0.kind == .poster && $0.status == .ready }.count) poster registry records are ready or staged.", status: "\(activeAssets.filter { $0.kind == .poster && $0.status == .ready }.count)/\(activeProjects.count)", systemImage: "photo.fill.on.rectangle.fill"),
+            HFCreatorPublishingReadinessItem(id: "trailer", title: "Trailer readiness", detail: "\(activeAssets.filter { $0.kind == .trailer && $0.status == .ready }.count) trailer registry records have local preview state.", status: "\(activeAssets.filter { $0.kind == .trailer && $0.status == .ready }.count)/\(activeProjects.count)", systemImage: "film.stack.fill"),
+            HFCreatorPublishingReadinessItem(id: "assets", title: "Media asset runtime", detail: "\(assetReady) active packages have runtime asset records ready.", status: "\(assetReady)/\(activeProjects.count)", systemImage: "rectangle.stack.fill"),
             HFCreatorPublishingReadinessItem(id: "review", title: "Ready for review", detail: "\(readyProjects) packages can move into local review.", status: "\(readyProjects)", systemImage: "checkmark.seal.fill"),
             HFCreatorPublishingReadinessItem(id: "discovery", title: "Discovery connection", detail: "\(creatorPublishedProjects.count) published packages appear in local discovery.", status: "\(creatorPublishedProjects.count)", systemImage: "sparkle.magnifyingglass")
         ]
@@ -5049,9 +5211,9 @@ final class HFStreamingStore: ObservableObject {
 
         return [
             HFCreatorDraftValidationItem(id: "metadata", title: "Draft Metadata", detail: "Title, synopsis, genre, tags, and runtime are stored in the content snapshot.", status: hasTitle && hasDescription && hasGenre && hasTags && hasRuntime ? "Ready" : "Needs detail", isComplete: hasTitle && hasDescription && hasGenre && hasTags && hasRuntime, systemImage: "text.justify.left"),
-            HFCreatorDraftValidationItem(id: "poster", title: "Draft Artwork", detail: "Poster status is tracked without file selection or media writes.", status: draft.posterStatus.rawValue, isComplete: draft.posterStatus == .ready || draft.posterStatus == .needsReview, systemImage: "photo.fill.on.rectangle.fill"),
-            HFCreatorDraftValidationItem(id: "trailer", title: "Draft Trailer State", detail: "Trailer readiness is a local state only.", status: draft.trailerStatus.rawValue, isComplete: draft.trailerStatus == .ready || draft.trailerStatus == .needsReview, systemImage: "film.stack.fill"),
-            HFCreatorDraftValidationItem(id: "artwork", title: "Artwork Package", detail: "Artwork package status stays attached to the draft record.", status: draft.artworkStatus.rawValue, isComplete: draft.artworkStatus == .ready || draft.artworkStatus == .needsReview, systemImage: "rectangle.stack.fill"),
+            HFCreatorDraftValidationItem(id: "poster", title: "Draft Poster Registry", detail: mediaAssetRecord(project: draft, kind: .poster, status: draft.posterStatus).detail, status: draft.posterStatus.rawValue, isComplete: draft.posterStatus == .ready || draft.posterStatus == .needsReview, systemImage: "photo.fill.on.rectangle.fill"),
+            HFCreatorDraftValidationItem(id: "trailer", title: "Draft Trailer Registry", detail: mediaAssetRecord(project: draft, kind: .trailer, status: draft.trailerStatus).detail, status: draft.trailerStatus.rawValue, isComplete: draft.trailerStatus == .ready || draft.trailerStatus == .needsReview, systemImage: "film.stack.fill"),
+            HFCreatorDraftValidationItem(id: "artwork", title: "Artwork Registry", detail: mediaAssetRecord(project: draft, kind: .artwork, status: draft.artworkStatus).detail, status: draft.artworkStatus.rawValue, isComplete: draft.artworkStatus == .ready || draft.artworkStatus == .needsReview, systemImage: "rectangle.stack.fill"),
             HFCreatorDraftValidationItem(id: "review", title: "Ready For Review", detail: "A draft becomes review-ready when core metadata and asset states are complete.", status: draft.readyForReview ? "Ready" : "Draft", isComplete: draft.readyForReview, systemImage: "checkmark.seal.fill")
         ]
     }

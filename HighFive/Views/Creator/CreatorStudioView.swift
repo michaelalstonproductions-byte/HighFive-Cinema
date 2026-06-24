@@ -2321,6 +2321,7 @@ struct CreatorStudioView: View {
         case .contentBackendRelationships:
             contentBackendRelationshipsSection
         case .draftWorkspace:
+            creatorMediaAssetRuntimeSection
             creatorDraftWorkspaceDashboard
         case .draftEditor:
             creatorDraftEditorSection
@@ -2347,6 +2348,7 @@ struct CreatorStudioView: View {
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
             contentBackendFoundationSection
+            creatorMediaAssetRuntimeSection
             creatorDraftWorkspaceDashboard
             creatorCollaborationDashboard
 
@@ -2416,6 +2418,7 @@ struct CreatorStudioView: View {
             contentBackendRelationshipsSection
             creatorDraftEditorSection
             creatorDraftValidationSection
+            creatorMediaAssetRuntimeSection
             creatorDraftCompareSection
             creatorDraftHistorySection
             creatorCollaborationTeamSection
@@ -4258,6 +4261,46 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.draftWorkspace.editor")
         .onAppear {
             hydrateDraftWorkspaceIfNeeded()
+        }
+    }
+
+    private var creatorMediaAssetRuntimeSection: some View {
+        let snapshot = streamingStore.mediaAssetRuntimeSnapshot
+
+        return creatorProSpotlight(
+            title: "Creator Media Asset Runtime",
+            detail: "Poster, trailer, artwork, and metadata registry records are tracked locally before any upload pipeline exists.",
+            systemImage: "rectangle.stack.badge.play.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.mediaAsset.runtime"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Assets", value: "\(snapshot.totalAssets)")
+                    creatorProStat(title: "Ready", value: "\(snapshot.readyAssets)")
+                    creatorProStat(title: "Review", value: "\(snapshot.needsReviewAssets)")
+                    creatorProStat(title: "Placeholder", value: "\(snapshot.placeholderAssets)")
+                }
+                .accessibilityIdentifier("hf.mediaAsset.runtime.summary")
+
+                Text(snapshot.detail)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorMediaAssetRecords.prefix(6)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: "\(record.projectTitle) \(record.kind.rawValue)",
+                            detail: record.detail,
+                            status: record.readiness,
+                            systemImage: record.systemImage,
+                            accent: record.status == .ready ? HFColors.gold : HFColors.cyanGlow
+                        )
+                        .accessibilityIdentifier("hf.mediaAsset.registry.\(record.id)")
+                    }
+                }
+            }
         }
     }
 
