@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SQLite3
 
 struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
     let id: String
@@ -1361,6 +1362,26 @@ struct HFContentBackendSnapshot: Codable, Equatable {
     var draftCount: Int { publishingProjects.filter { $0.releaseState == .draft }.count }
 }
 
+struct HFContentDatabaseHealth: Equatable {
+    var schemaVersion: Int
+    var storageKind: String
+    var databasePath: String
+    var migrationState: String
+    var lastError: String?
+    var recordCounts: [String: Int]
+    var updatedAtLabel: String
+
+    var totalRecords: Int {
+        recordCounts.values.reduce(0, +)
+    }
+}
+
+private struct HFContentDatabaseRecordEnvelope: Codable {
+    var id: String
+    var type: String
+    var payload: Data
+}
+
 struct HFContentRepositoryMetric: Identifiable {
     let id: String
     var title: String
@@ -1381,23 +1402,327 @@ struct HFContentRelationshipRecord: Identifiable {
 private struct HFContentStorageLayer {
     private let defaults: UserDefaults
     private let snapshotKey = "hf.contentBackend.snapshot.v1"
+    private let schemaVersion = 1
+    private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+    private var databaseURL: URL {
+        let baseURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        return baseURL
+            .appendingPathComponent("HighFiveCinema", isDirectory: true)
+            .appendingPathComponent("ContentDatabase", isDirectory: true)
+            .appendingPathComponent("highfive_content.sqlite3", isDirectory: false)
+    }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
     func loadSnapshot(seed: HFContentBackendSnapshot) -> HFContentBackendSnapshot {
-        guard let data = defaults.data(forKey: snapshotKey),
-              let decoded = try? JSONDecoder().decode(HFContentBackendSnapshot.self, from: data) else {
-            saveSnapshot(seed)
-            return seed
+        do {
+            let database = try openDatabase()
+            defer { sqlite3_close(database) }
+            try ensureSchema(database)
+
+            if let stored = try readSnapshot(database) {
+                return stored
+            }
+
+            let migrated = loadLegacySnapshot() ?? seed
+            try writeSnapshot(migrated, database: database, migrationState: loadLegacySnapshot() == nil ? "Seeded durable database" : "Migrated from UserDefaults snapshot")
+            return migrated
+        } catch {
+            return loadLegacySnapshot() ?? seed
         }
-        return decoded
     }
 
     func saveSnapshot(_ snapshot: HFContentBackendSnapshot) {
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        defaults.set(data, forKey: snapshotKey)
+        do {
+            let database = try openDatabase()
+            defer { sqlite3_close(database) }
+            try ensureSchema(database)
+            try writeSnapshot(snapshot, database: database, migrationState: "Stored in durable local database")
+        } catch {
+            return
+        }
+    }
+
+    func healthCheck() -> HFContentDatabaseHealth {
+        do {
+            let database = try openDatabase()
+            defer { sqlite3_close(database) }
+            try ensureSchema(database)
+            return HFContentDatabaseHealth(
+                schemaVersion: schemaVersion,
+                storageKind: "SQLite",
+                databasePath: databaseURL.path,
+                migrationState: try metadataValue("migration_state", database: database) ?? "Ready",
+                lastError: nil,
+                recordCounts: try recordCounts(database),
+                updatedAtLabel: try metadataValue("updated_at", database: database) ?? "No durable write yet"
+            )
+        } catch {
+            return HFContentDatabaseHealth(
+                schemaVersion: schemaVersion,
+                storageKind: "SQLite",
+                databasePath: databaseURL.path,
+                migrationState: "Unavailable",
+                lastError: String(describing: error),
+                recordCounts: [:],
+                updatedAtLabel: "Database health check failed"
+            )
+        }
+    }
+
+    func exportFixtureData(seed: HFContentBackendSnapshot) -> Data? {
+        let snapshot = loadSnapshot(seed: seed)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try? encoder.encode(snapshot)
+    }
+
+    private func loadLegacySnapshot() -> HFContentBackendSnapshot? {
+        guard let data = defaults.data(forKey: snapshotKey) else { return nil }
+        return try? JSONDecoder().decode(HFContentBackendSnapshot.self, from: data)
+    }
+
+    private func openDatabase() throws -> OpaquePointer {
+        try FileManager.default.createDirectory(at: databaseURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        var database: OpaquePointer?
+        guard sqlite3_open(databaseURL.path, &database) == SQLITE_OK, let database else {
+            throw NSError(domain: "HFContentStorageLayer", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unable to open content database"])
+        }
+        return database
+    }
+
+    private func ensureSchema(_ database: OpaquePointer) throws {
+        try execute("PRAGMA journal_mode=WAL;", database: database)
+        try execute("PRAGMA foreign_keys=ON;", database: database)
+        try execute("""
+        CREATE TABLE IF NOT EXISTS schema_info (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            version INTEGER NOT NULL,
+            migrated_at TEXT NOT NULL
+        );
+        """, database: database)
+        try execute("""
+        CREATE TABLE IF NOT EXISTS content_snapshot (
+            id TEXT PRIMARY KEY,
+            schema_version INTEGER NOT NULL,
+            payload BLOB NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        """, database: database)
+        try execute("""
+        CREATE TABLE IF NOT EXISTS content_records (
+            type TEXT NOT NULL,
+            id TEXT NOT NULL,
+            payload BLOB NOT NULL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (type, id)
+        );
+        """, database: database)
+        try execute("""
+        CREATE TABLE IF NOT EXISTS content_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+        """, database: database)
+        try execute(
+            "INSERT OR IGNORE INTO schema_info (id, version, migrated_at) VALUES (1, ?, ?);",
+            database: database,
+            bindings: [.int(schemaVersion), .text(timestampLabel())]
+        )
+    }
+
+    private func readSnapshot(_ database: OpaquePointer) throws -> HFContentBackendSnapshot? {
+        guard let data = try queryBlob(
+            "SELECT payload FROM content_snapshot WHERE id = ? LIMIT 1;",
+            database: database,
+            bindings: [.text("canonical")]
+        ) else {
+            return nil
+        }
+        return try JSONDecoder().decode(HFContentBackendSnapshot.self, from: data)
+    }
+
+    private func writeSnapshot(_ snapshot: HFContentBackendSnapshot, database: OpaquePointer, migrationState: String) throws {
+        let timestamp = timestampLabel()
+        let snapshotData = try JSONEncoder().encode(snapshot)
+        let records = try makeRecordEnvelopes(from: snapshot)
+
+        try execute("BEGIN IMMEDIATE TRANSACTION;", database: database)
+        do {
+            try execute(
+                "INSERT OR REPLACE INTO content_snapshot (id, schema_version, payload, updated_at) VALUES (?, ?, ?, ?);",
+                database: database,
+                bindings: [.text("canonical"), .int(schemaVersion), .blob(snapshotData), .text(timestamp)]
+            )
+            try execute("DELETE FROM content_records;", database: database)
+            for record in records {
+                try execute(
+                    "INSERT OR REPLACE INTO content_records (type, id, payload, updated_at) VALUES (?, ?, ?, ?);",
+                    database: database,
+                    bindings: [.text(record.type), .text(record.id), .blob(record.payload), .text(timestamp)]
+                )
+            }
+            try setMetadata("migration_state", value: migrationState, database: database)
+            try setMetadata("updated_at", value: timestamp, database: database)
+            try execute(
+                "UPDATE schema_info SET version = ?, migrated_at = ? WHERE id = 1;",
+                database: database,
+                bindings: [.int(schemaVersion), .text(timestamp)]
+            )
+            try execute("COMMIT TRANSACTION;", database: database)
+        } catch {
+            try? execute("ROLLBACK TRANSACTION;", database: database)
+            throw error
+        }
+    }
+
+    private func makeRecordEnvelopes(from snapshot: HFContentBackendSnapshot) throws -> [HFContentDatabaseRecordEnvelope] {
+        var records: [HFContentDatabaseRecordEnvelope] = []
+        let encoder = JSONEncoder()
+
+        func append<T: Encodable>(type: String, id: String, value: T) throws {
+            records.append(
+                HFContentDatabaseRecordEnvelope(
+                    id: id,
+                    type: type,
+                    payload: try encoder.encode(value)
+                )
+            )
+        }
+
+        try snapshot.movies.forEach { try append(type: "movie", id: $0.id, value: $0) }
+        try snapshot.creators.forEach { try append(type: "creator", id: $0.id, value: $0) }
+        try snapshot.series.forEach { try append(type: "series", id: $0.id, value: $0) }
+        try snapshot.series.flatMap(\.seasons).forEach { try append(type: "season", id: $0.id, value: $0) }
+        try snapshot.series.flatMap(\.seasons).flatMap(\.episodes).forEach { try append(type: "episode", id: $0.id, value: $0) }
+        try snapshot.collections.forEach { try append(type: "collection", id: $0.id, value: $0) }
+        try snapshot.publishingProjects.forEach { project in
+            try append(type: "publishing_project", id: project.id, value: project)
+            if project.releaseState == .draft {
+                try append(type: "draft", id: project.id, value: project)
+            }
+            try append(type: "project_manifest", id: "project-manifest-\(project.id)", value: project)
+            try append(type: "asset_metadata", id: "asset-metadata-\(project.id)", value: [
+                "poster": project.posterStatus.rawValue,
+                "trailer": project.trailerStatus.rawValue,
+                "metadata": project.metadataStatus.rawValue,
+                "artwork": project.artworkStatus.rawValue
+            ])
+        }
+        return records
+    }
+
+    private func recordCounts(_ database: OpaquePointer) throws -> [String: Int] {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, "SELECT type, COUNT(*) FROM content_records GROUP BY type;", -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw sqliteError(database)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var counts: [String: Int] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let type = String(cString: sqlite3_column_text(statement, 0))
+            counts[type] = Int(sqlite3_column_int(statement, 1))
+        }
+        return counts
+    }
+
+    private func setMetadata(_ key: String, value: String, database: OpaquePointer) throws {
+        try execute(
+            "INSERT OR REPLACE INTO content_metadata (key, value) VALUES (?, ?);",
+            database: database,
+            bindings: [.text(key), .text(value)]
+        )
+    }
+
+    private func metadataValue(_ key: String, database: OpaquePointer) throws -> String? {
+        guard let data = try queryText(
+            "SELECT value FROM content_metadata WHERE key = ? LIMIT 1;",
+            database: database,
+            bindings: [.text(key)]
+        ) else {
+            return nil
+        }
+        return data
+    }
+
+    private enum SQLiteBinding {
+        case int(Int)
+        case text(String)
+        case blob(Data)
+    }
+
+    private func execute(_ sql: String, database: OpaquePointer, bindings: [SQLiteBinding] = []) throws {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw sqliteError(database)
+        }
+        defer { sqlite3_finalize(statement) }
+        try bind(bindings, to: statement)
+        while true {
+            let result = sqlite3_step(statement)
+            if result == SQLITE_DONE {
+                return
+            }
+            if result != SQLITE_ROW {
+                throw sqliteError(database)
+            }
+        }
+    }
+
+    private func queryBlob(_ sql: String, database: OpaquePointer, bindings: [SQLiteBinding] = []) throws -> Data? {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw sqliteError(database)
+        }
+        defer { sqlite3_finalize(statement) }
+        try bind(bindings, to: statement)
+        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+        guard let bytes = sqlite3_column_blob(statement, 0) else { return nil }
+        return Data(bytes: bytes, count: Int(sqlite3_column_bytes(statement, 0)))
+    }
+
+    private func queryText(_ sql: String, database: OpaquePointer, bindings: [SQLiteBinding] = []) throws -> String? {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw sqliteError(database)
+        }
+        defer { sqlite3_finalize(statement) }
+        try bind(bindings, to: statement)
+        guard sqlite3_step(statement) == SQLITE_ROW, let text = sqlite3_column_text(statement, 0) else { return nil }
+        return String(cString: text)
+    }
+
+    private func bind(_ bindings: [SQLiteBinding], to statement: OpaquePointer) throws {
+        for (index, binding) in bindings.enumerated() {
+            let position = Int32(index + 1)
+            let result: Int32
+            switch binding {
+            case .int(let value):
+                result = sqlite3_bind_int(statement, position, Int32(value))
+            case .text(let value):
+                result = sqlite3_bind_text(statement, position, value, -1, sqliteTransient)
+            case .blob(let data):
+                result = data.withUnsafeBytes { buffer in
+                    sqlite3_bind_blob(statement, position, buffer.baseAddress, Int32(data.count), sqliteTransient)
+                }
+            }
+            guard result == SQLITE_OK else {
+                throw NSError(domain: "HFContentStorageLayer", code: Int(result), userInfo: [NSLocalizedDescriptionKey: "Unable to bind SQLite value"])
+            }
+        }
+    }
+
+    private func sqliteError(_ database: OpaquePointer) -> NSError {
+        let message = sqlite3_errmsg(database).map { String(cString: $0) } ?? "Unknown SQLite error"
+        return NSError(domain: "HFContentStorageLayer", code: Int(sqlite3_errcode(database)), userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    private func timestampLabel() -> String {
+        ISO8601DateFormatter().string(from: Date())
     }
 }
 
@@ -3364,12 +3689,31 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var contentBackendPersistenceMetrics: [HFContentRepositoryMetric] {
-        [
-            HFContentRepositoryMetric(id: "snapshot", title: "Content Snapshot", value: "\(contentSnapshot.titleCount)", detail: "Movies, creators, series, collections, and publishing projects load from one persisted snapshot.", systemImage: "externaldrive.fill"),
-            HFContentRepositoryMetric(id: "episodes", title: "Episode Storage", value: "\(contentSnapshot.episodeCount)", detail: "Series, seasons, and episodes are encoded as canonical content records.", systemImage: "play.square.stack.fill"),
-            HFContentRepositoryMetric(id: "drafts", title: "Draft Persistence", value: "\(contentSnapshot.draftCount)", detail: "Creator drafts can be created, updated, loaded, and archived locally.", systemImage: "pencil.and.outline"),
-            HFContentRepositoryMetric(id: "updated", title: "Snapshot State", value: "Stored", detail: contentSnapshot.updatedAtLabel, systemImage: "checkmark.seal.fill")
+        let databaseHealth = contentStorage.healthCheck()
+        return [
+            HFContentRepositoryMetric(id: "database", title: "Durable Content Database", value: databaseHealth.storageKind, detail: "Schema v\(databaseHealth.schemaVersion) stores content records with rollback-safe SQLite transactions.", systemImage: "externaldrive.fill"),
+            HFContentRepositoryMetric(id: "records", title: "Database Records", value: "\(databaseHealth.totalRecords)", detail: "Movies, creators, series, seasons, episodes, collections, projects, drafts, manifests, and asset metadata are recorded by type.", systemImage: "tablecells.fill"),
+            HFContentRepositoryMetric(id: "migration", title: "Migration State", value: databaseHealth.migrationState, detail: databaseHealth.lastError ?? "Legacy UserDefaults snapshots remain readable as rollback fallback.", systemImage: "arrow.triangle.2.circlepath"),
+            HFContentRepositoryMetric(id: "updated", title: "Database Health", value: databaseHealth.lastError == nil ? "Healthy" : "Review", detail: databaseHealth.updatedAtLabel, systemImage: databaseHealth.lastError == nil ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
         ]
+    }
+
+    var contentDatabaseHealthRecords: [HFContentRepositoryMetric] {
+        let databaseHealth = contentStorage.healthCheck()
+        let sortedCounts = databaseHealth.recordCounts.sorted { $0.key < $1.key }
+        return sortedCounts.map { key, value in
+            HFContentRepositoryMetric(
+                id: "database-\(key)",
+                title: key.replacingOccurrences(of: "_", with: " ").capitalized,
+                value: "\(value)",
+                detail: "Stored in the durable content database at schema v\(databaseHealth.schemaVersion).",
+                systemImage: "cylinder.split.1x2.fill"
+            )
+        }
+    }
+
+    func contentDatabaseExportFixtureData() -> Data? {
+        contentStorage.exportFixtureData(seed: contentSnapshot)
     }
 
     var contentBackendFetchMetrics: [HFContentRepositoryMetric] {
