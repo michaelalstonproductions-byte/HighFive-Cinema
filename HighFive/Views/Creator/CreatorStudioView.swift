@@ -2107,7 +2107,8 @@ struct CreatorStudioView: View {
     }
 
     private var creatorIdentityCard: some View {
-        HStack(alignment: .center, spacing: HFSpacing.md) {
+        let session = streamingStore.currentSessionRuntime
+        return HStack(alignment: .center, spacing: HFSpacing.md) {
             ZStack {
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                     .fill(HFColors.goldGradient)
@@ -2128,6 +2129,12 @@ struct CreatorStudioView: View {
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.gold)
 
+                Text("\(session.workspaceTitle) • \(session.permissionSummary)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.76)
+
                 Text("Current project: \(streamingStore.featuredMovie.title)")
                     .font(HFTypography.micro)
                     .foregroundStyle(HFColors.textSecondary)
@@ -2145,8 +2152,9 @@ struct CreatorStudioView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Creator identity card. \(streamingStore.activeViewingProfile.displayName). Current project \(streamingStore.featuredMovie.title).")
+        .accessibilityLabel("Creator identity card. \(session.displayName). \(session.workspaceTitle). Current project \(streamingStore.featuredMovie.title).")
         .accessibilityIdentifier("hf.creator.pro.identityCard")
+        .accessibilityIdentifier("hf.identity.session.creatorWorkspace")
     }
 
     @ViewBuilder

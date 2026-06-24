@@ -9,6 +9,74 @@ struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
     var accentName: String
 }
 
+enum HFIdentitySessionRuntimeState: String, Hashable {
+    case localActive = "Local Active"
+    case switchingProfile = "Switching Profile"
+    case needsLocalProfile = "Needs Local Profile"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFIdentitySessionRuntimeSnapshot: Hashable {
+    var state: HFIdentitySessionRuntimeState
+    var activeProfileID: String
+    var displayName: String
+    var viewerRole: String
+    var avatarSymbol: String
+    var creatorName: String
+    var creatorRole: String
+    var workspaceID: String
+    var workspaceTitle: String
+    var workspaceScope: String
+    var permissionSummary: String
+    var sessionMode: String
+    var reason: String
+    var updatedAtLabel: String
+
+    var statusLabel: String {
+        state.statusLabel
+    }
+
+    var detail: String {
+        "\(displayName) is working in \(workspaceTitle) as \(viewerRole). \(permissionSummary)"
+    }
+
+    static var empty: HFIdentitySessionRuntimeSnapshot {
+        HFIdentitySessionRuntimeSnapshot(
+            state: .needsLocalProfile,
+            activeProfileID: "none",
+            displayName: "Local Viewer",
+            viewerRole: "Viewer",
+            avatarSymbol: "person.crop.circle.fill",
+            creatorName: "HighFive Creator",
+            creatorRole: "Creator",
+            workspaceID: "local-watch",
+            workspaceTitle: "Watch Workspace",
+            workspaceScope: "Local preview",
+            permissionSummary: "Read-only local preview",
+            sessionMode: "Local Session",
+            reason: "Waiting for local profile",
+            updatedAtLabel: "Not loaded"
+        )
+    }
+}
+
+struct HFSessionPermissionRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
+struct HFWorkspaceSessionRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 enum HFPlaybackSourceStatus: Equatable {
     case playableLocal
     case sourceNotConnected
@@ -1526,6 +1594,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var creatorPublishingContents: [HFCreatorPublishingContent]
     @Published private(set) var contentSnapshot: HFContentBackendSnapshot
     @Published private(set) var catalogRuntimeSnapshot: HFCatalogRuntimeSnapshot
+    @Published private(set) var identitySessionRuntime: HFIdentitySessionRuntimeSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -1604,6 +1673,7 @@ final class HFStreamingStore: ObservableObject {
         contentStorage = resolvedContentStorage
         contentSnapshot = loadedContentSnapshot
         catalogRuntimeSnapshot = .loading(reason: "Initial catalog load")
+        identitySessionRuntime = .empty
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -1643,6 +1713,7 @@ final class HFStreamingStore: ObservableObject {
             detail: "Staging backend not configured. Local Preview fallback active."
         )
         rebuildCatalogRuntime(reason: "Initial local catalog load")
+        rebuildIdentitySessionRuntime(reason: "Initial local session load")
     }
 
     var backendStatus: HFBackendServiceStatus {
@@ -2051,6 +2122,110 @@ final class HFStreamingStore: ObservableObject {
         localProfiles.first { $0.id == activeProfileID } ?? localProfiles[0]
     }
 
+    var activeCreatorProfile: HFCreatorProfile {
+        creatorProfiles.first { profile in
+            profile.creator.name.localizedCaseInsensitiveCompare(activeViewingProfile.displayName) == .orderedSame
+        } ?? creatorProfiles.first ?? creatorProfile(for: Creator(id: "local-creator", name: activeViewingProfile.displayName, role: "Creator", avatarAssetName: nil, featuredMovieIDs: []))
+    }
+
+    var currentSessionRuntime: HFIdentitySessionRuntimeSnapshot {
+        identitySessionRuntime
+    }
+
+    var sessionPermissionRecords: [HFSessionPermissionRecord] {
+        [
+            HFSessionPermissionRecord(
+                id: "watch",
+                title: "Watch",
+                detail: "Browse, save, continue watching, and open local preview playback.",
+                status: "Allowed",
+                systemImage: "play.rectangle.fill"
+            ),
+            HFSessionPermissionRecord(
+                id: "create",
+                title: "Create",
+                detail: activeViewingProfile.role == "Creator" ? "Creator workspace can edit local drafts and review publishing state." : "Creator workspace is available as local preview context.",
+                status: activeViewingProfile.role == "Creator" ? "Owner" : "Preview",
+                systemImage: "wand.and.stars"
+            ),
+            HFSessionPermissionRecord(
+                id: "publish",
+                title: "Publish",
+                detail: "Publishing remains local review only. No external publish action is connected.",
+                status: "Local Review",
+                systemImage: "paperplane.circle.fill"
+            ),
+            HFSessionPermissionRecord(
+                id: "admin",
+                title: "Admin",
+                detail: "Administration, moderation, rights, and revenue surfaces are read-only local planning.",
+                status: "Read Only",
+                systemImage: "checkmark.shield.fill"
+            )
+        ]
+    }
+
+    var workspaceSessionRecords: [HFWorkspaceSessionRecord] {
+        [
+            HFWorkspaceSessionRecord(
+                id: "watch",
+                title: "Watch Workspace",
+                detail: "\(catalogRuntimeSnapshot.totalTitles) runtime titles available through the catalog facade.",
+                status: catalogRuntimeSnapshot.statusLabel,
+                systemImage: "sparkles.tv.fill"
+            ),
+            HFWorkspaceSessionRecord(
+                id: "creator",
+                title: "Creator Workspace",
+                detail: "\(creatorPublishingContents.count) projects mapped to \(activeCreatorProfile.creator.name).",
+                status: activeViewingProfile.role == "Creator" ? "Owner" : "Preview",
+                systemImage: "wand.and.stars.inverse"
+            ),
+            HFWorkspaceSessionRecord(
+                id: "library",
+                title: "Library Workspace",
+                detail: "\(savedMovieIDs.count) saved titles and \(downloadedMovieIDs.count) local offline states for this profile.",
+                status: "Profile Scoped",
+                systemImage: "bookmark.fill"
+            ),
+            HFWorkspaceSessionRecord(
+                id: "business",
+                title: "Business Workspace",
+                detail: "Revenue, rights, marketplace, and licensing records remain preview-only.",
+                status: "Read Only",
+                systemImage: "chart.line.uptrend.xyaxis"
+            )
+        ]
+    }
+
+    func refreshIdentitySessionRuntime(reason: String = "Session refreshed") {
+        rebuildIdentitySessionRuntime(reason: reason)
+    }
+
+    private func rebuildIdentitySessionRuntime(reason: String) {
+        let profile = activeViewingProfile
+        let creator = activeCreatorProfile.creator
+        let workspaceTitle = profile.role == "Creator" ? "Creator Workspace" : "Watch Workspace"
+        let workspaceScope = profile.role == "Creator" ? "Drafts, publishing, analytics, and local review" : "Streaming, library, and profile-scoped recommendations"
+        let permissionSummary = profile.role == "Creator" ? "Owner permissions for local creator workspaces" : "Viewer permissions with creator preview access"
+        identitySessionRuntime = HFIdentitySessionRuntimeSnapshot(
+            state: .localActive,
+            activeProfileID: profile.id,
+            displayName: profile.displayName,
+            viewerRole: profile.role,
+            avatarSymbol: profile.avatarSymbol,
+            creatorName: creator.name,
+            creatorRole: creator.role,
+            workspaceID: profile.role == "Creator" ? "creator-workspace" : "watch-workspace",
+            workspaceTitle: workspaceTitle,
+            workspaceScope: workspaceScope,
+            permissionSummary: permissionSummary,
+            sessionMode: "Local Session",
+            reason: reason,
+            updatedAtLabel: "Local session resolved"
+        )
+    }
+
     var profileInitials: String {
         let parts = activeViewingProfile.displayName
             .split(separator: " ")
@@ -2061,7 +2236,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var accountMode: String {
-        "Profile Active"
+        identitySessionRuntime.statusLabel
     }
 
     var cloudAccountStatus: String {
@@ -3570,6 +3745,7 @@ final class HFStreamingStore: ObservableObject {
         localProfiles[index].displayName = trimmed
         UserDefaults.standard.set(trimmed, forKey: profileDisplayNamePrefix + activeProfileID)
         refreshAuthRuntimeStatus()
+        refreshIdentitySessionRuntime(reason: "Display name changed")
     }
 
     func selectProfile(_ profile: HFLocalViewingProfile) {
@@ -3592,6 +3768,7 @@ final class HFStreamingStore: ObservableObject {
         )
         refreshAuthRuntimeStatus()
         invalidateCatalogRuntime(reason: "Active profile changed")
+        refreshIdentitySessionRuntime(reason: "Active profile changed")
     }
 
     // hf.services.unifiedStore
@@ -4936,6 +5113,7 @@ final class HFStreamingStore: ObservableObject {
         contentSnapshot.updatedAtLabel = "Creator drafts persisted locally"
         contentStorage.saveSnapshot(contentSnapshot)
         invalidateCatalogRuntime(reason: "Publishing snapshot changed")
+        refreshIdentitySessionRuntime(reason: "Publishing snapshot changed")
     }
 
     // Communication Service

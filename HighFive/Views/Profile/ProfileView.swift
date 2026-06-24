@@ -368,6 +368,7 @@ struct ProfileView: View {
 
     private var accountPanel: some View {
         let authStatus = streamingStore.accountRuntimeStatus
+        let session = streamingStore.currentSessionRuntime
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
@@ -405,11 +406,37 @@ struct ProfileView: View {
 
                     HFAccountReadinessRow(
                         title: "Session",
-                        detail: authStatus.sessionState.detail,
-                        status: authStatus.sessionState.statusLabel,
+                        detail: session.detail,
+                        status: session.statusLabel,
                         systemImage: "person.crop.circle.badge.checkmark",
                         identifier: "hf.account.sessionState"
                     )
+
+                    HFAccountReadinessRow(
+                        title: "Workspace",
+                        detail: session.workspaceScope,
+                        status: session.workspaceTitle,
+                        systemImage: "rectangle.3.group.fill",
+                        identifier: "hf.identity.workspace"
+                    )
+
+                    HFAccountReadinessRow(
+                        title: "Creator identity",
+                        detail: "\(session.creatorName) • \(session.creatorRole)",
+                        status: session.sessionMode,
+                        systemImage: "person.crop.rectangle.stack.fill",
+                        identifier: "hf.identity.creator"
+                    )
+
+                    ForEach(streamingStore.sessionPermissionRecords) { permission in
+                        HFAccountReadinessRow(
+                            title: permission.title,
+                            detail: permission.detail,
+                            status: permission.status,
+                            systemImage: permission.systemImage,
+                            identifier: "hf.identity.permission.\(permission.id)"
+                        )
+                    }
 
                     HFAccountReadinessRow(
                         title: "Sign-in readiness",
