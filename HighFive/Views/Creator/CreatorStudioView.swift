@@ -182,6 +182,10 @@ private enum HFCreatorProSpotlight {
     case seriesEpisodes
     case seriesNextEpisode
     case seriesAnalytics
+    case revenueDashboard
+    case revenueTitles
+    case revenueAnalytics
+    case revenuePayouts
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -205,6 +209,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-series-episodes") { return .seriesEpisodes }
         if arguments.contains("--hf-series-next-episode") { return .seriesNextEpisode }
         if arguments.contains("--hf-series-analytics") { return .seriesAnalytics }
+        if arguments.contains("--hf-start-revenue") { return .revenueDashboard }
+        if arguments.contains("--hf-revenue-dashboard") { return .revenueDashboard }
+        if arguments.contains("--hf-revenue-titles") { return .revenueTitles }
+        if arguments.contains("--hf-revenue-analytics") { return .revenueAnalytics }
+        if arguments.contains("--hf-revenue-payouts") { return .revenuePayouts }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2081,6 +2090,14 @@ struct CreatorStudioView: View {
             nextEpisodeEngineSection
         case .seriesAnalytics:
             episodeAnalyticsSection
+        case .revenueDashboard:
+            revenueDashboardSection
+        case .revenueTitles:
+            titleRevenueSection
+        case .revenueAnalytics:
+            revenueAnalyticsSection
+        case .revenuePayouts:
+            payoutPreviewSection
         }
     }
 
@@ -2090,6 +2107,7 @@ struct CreatorStudioView: View {
             seriesEpisodesDashboard
             creatorPublishingPipelineSection
             creatorPublishingSystemDashboard
+            revenueDashboardSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2113,6 +2131,10 @@ struct CreatorStudioView: View {
             episodeManagementSection
             nextEpisodeEngineSection
             episodeAnalyticsSection
+            titleRevenueSection
+            revenueAnalyticsSection
+            creatorRevenueSummarySection
+            payoutPreviewSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -2754,6 +2776,118 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.series.analytics")
+    }
+
+    private var revenueDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Creator Revenue Dashboard",
+            detail: "Local-only business layer for estimated revenue, source mix, trend, top titles, and creator planning previews.",
+            systemImage: "dollarsign.circle.fill",
+            accent: HFColors.gold,
+            identifier: "hf.revenue.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.revenueDashboardMetrics.prefix(4)) { metric in
+                        creatorProStat(title: metric.title, value: metric.value)
+                    }
+                }
+
+                Text("Create -> Publish -> Discover -> Analyze -> Earn")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.revenue.workflow")
+
+                Text("Revenue is an estimate preview computed from local catalog and analytics signals. No external money movement, live settlement, or payout handling is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.revenue.previewOnly")
+            }
+        }
+    }
+
+    private var titleRevenueSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Title Revenue", actionTitle: "Estimate")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.revenueTitleRecords.prefix(8)) { record in
+                        titleRevenueCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.revenue.titleRevenue")
+    }
+
+    private var revenueAnalyticsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Revenue Analytics",
+                    detail: "Highest earning title, fastest growing title, completion quality, and collection lift are local estimates.",
+                    systemImage: "chart.line.uptrend.xyaxis",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.revenueInsights) { insight in
+                        revenueInsightCard(insight)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.revenue.analytics")
+    }
+
+    private var creatorRevenueSummarySection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Creator Revenue", actionTitle: "Summary")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.creatorRevenueSummaries.prefix(6)) { summary in
+                        creatorRevenueSummaryCard(summary)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.revenue.creatorSummary")
+    }
+
+    private var payoutPreviewSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Creator Payout Preview",
+                    detail: "Pending, projected, and lifetime creator earnings are planning previews only.",
+                    systemImage: "wallet.pass.fill",
+                    accent: HFColors.violet
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 152), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.payoutPreviewRecords) { record in
+                        payoutPreviewCard(record)
+                    }
+                }
+
+                Text("Preview only. No external account connection, live settlement, funds movement, tax document, or external ledger is active.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.revenue.noProcessing")
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.revenue.payoutPreview")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -3535,6 +3669,143 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.series.analytics.\(record.id)")
+    }
+
+    private func titleRevenueCard(_ record: HFTitleRevenueRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HFPosterCard(movie: record.movie, width: 112, showTitle: false, posterOnly: true)
+
+                Text(record.movie.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+
+                Text(record.estimatedRevenue)
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                HStack(spacing: HFSpacing.xs) {
+                    analyticsMiniPill("\(record.views)", "Views", HFColors.cyanGlow)
+                    analyticsMiniPill(record.revenuePerView, "Per view", HFColors.gold)
+                }
+
+                Text("\(record.streamingRevenue) stream • \(record.premiumRevenue) premium")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text("\(record.collectionRevenue) collection • \(record.growthLabel) trend")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 152, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(record.movie.title), estimated revenue \(record.estimatedRevenue), \(record.views) local views.")
+        .accessibilityIdentifier("hf.revenue.title.\(record.id)")
+    }
+
+    private func revenueInsightCard(_ insight: HFRevenueInsight) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: insight.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(insight.value)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(insight.title)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+            Text(insight.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.revenue.insight.\(insight.id)")
+    }
+
+    private func creatorRevenueSummaryCard(_ summary: HFCreatorRevenueSummary) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                HStack(spacing: HFSpacing.xs) {
+                    Image(systemName: "person.crop.rectangle.stack.fill")
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundStyle(HFColors.violet)
+                    Text(summary.growthLabel)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                }
+
+                Text(summary.creatorName)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+
+                Text(summary.topTitle)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+
+                HStack(spacing: HFSpacing.xs) {
+                    analyticsMiniPill(summary.estimatedRevenue, "Estimate", HFColors.gold)
+                    analyticsMiniPill(summary.projectedRevenue, "Projected", HFColors.cyanGlow)
+                }
+
+                Text("\(summary.titleCount) titles • \(summary.lifetimePreview) lifetime preview")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 184, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.revenue.creator.\(summary.id)")
+    }
+
+    private func payoutPreviewCard(_ record: HFPayoutPreviewRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.violet)
+            Text(record.value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(2)
+            Text(record.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+            Text(record.state)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.violet)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.revenue.payout.\(record.id)")
     }
 
     private func creatorPublishingProjectCard(_ project: HFCreatorPublishingContent) -> some View {

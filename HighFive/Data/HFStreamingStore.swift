@@ -356,6 +356,56 @@ struct HFAnalyticsInsight: Identifiable {
     var systemImage: String
 }
 
+struct HFRevenueMetric: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFTitleRevenueRecord: Identifiable {
+    let id: String
+    var movie: Movie
+    var estimatedRevenue: String
+    var streamingRevenue: String
+    var premiumRevenue: String
+    var collectionRevenue: String
+    var revenuePerView: String
+    var views: Int
+    var watchTime: String
+    var completionRate: Int
+    var growthLabel: String
+}
+
+struct HFCreatorRevenueSummary: Identifiable {
+    let id: String
+    var creatorName: String
+    var estimatedRevenue: String
+    var projectedRevenue: String
+    var lifetimePreview: String
+    var topTitle: String
+    var titleCount: Int
+    var growthLabel: String
+}
+
+struct HFRevenueInsight: Identifiable {
+    let id: String
+    var title: String
+    var detail: String
+    var value: String
+    var systemImage: String
+}
+
+struct HFPayoutPreviewRecord: Identifiable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var state: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -2591,6 +2641,87 @@ final class HFStreamingStore: ObservableObject {
         ]
     }
 
+    var revenueTitleRecords: [HFTitleRevenueRecord] {
+        analyticsTitleRecords
+            .map(revenueRecord)
+            .sorted { lhs, rhs in
+                revenueCents(from: lhs.estimatedRevenue) > revenueCents(from: rhs.estimatedRevenue)
+            }
+    }
+
+    var revenueDashboardMetrics: [HFRevenueMetric] {
+        let records = revenueTitleRecords
+        let totalCents = records.reduce(0) { $0 + revenueCents(from: $1.estimatedRevenue) }
+        let streamingCents = records.reduce(0) { $0 + revenueCents(from: $1.streamingRevenue) }
+        let premiumCents = records.reduce(0) { $0 + revenueCents(from: $1.premiumRevenue) }
+        let collectionCents = records.reduce(0) { $0 + revenueCents(from: $1.collectionRevenue) }
+        let projectedCents = Int(Double(totalCents) * 1.18)
+
+        return [
+            HFRevenueMetric(id: "estimated", title: "Estimated Revenue", value: revenueCurrencyLabel(cents: totalCents), detail: "Local estimate from views, watch time, completion, and saves", systemImage: "chart.line.uptrend.xyaxis"),
+            HFRevenueMetric(id: "streaming", title: "Streaming Revenue", value: revenueCurrencyLabel(cents: streamingCents), detail: "Catalog viewing estimate", systemImage: "play.tv.fill"),
+            HFRevenueMetric(id: "premium", title: "Premium Revenue", value: revenueCurrencyLabel(cents: premiumCents), detail: "Premium intent preview from completion and favorites", systemImage: "sparkles.tv.fill"),
+            HFRevenueMetric(id: "collection", title: "Collection Revenue", value: revenueCurrencyLabel(cents: collectionCents), detail: "Library adds and collection activity estimate", systemImage: "rectangle.stack.fill"),
+            HFRevenueMetric(id: "projected", title: "Projected", value: revenueCurrencyLabel(cents: projectedCents), detail: "Forward-looking preview only", systemImage: "clock.badge.checkmark")
+        ]
+    }
+
+    var creatorRevenueSummaries: [HFCreatorRevenueSummary] {
+        creatorProfiles.map { profile in
+            let titleIDs = Set(profile.filmography.map(\.id))
+            let records = revenueTitleRecords.filter { titleIDs.contains($0.movie.id) }
+            let totalCents = records.reduce(0) { $0 + revenueCents(from: $1.estimatedRevenue) }
+            let projectedCents = Int(Double(totalCents) * 1.22)
+            let lifetimeCents = Int(Double(totalCents) * 2.6)
+            let topTitle = records.first?.movie.title ?? profile.featuredProject?.title ?? "Local slate"
+            let growth = "+\(10 + analyticsSeed(profile.id + "revenue") % 32)%"
+
+            return HFCreatorRevenueSummary(
+                id: profile.id,
+                creatorName: profile.creator.name,
+                estimatedRevenue: revenueCurrencyLabel(cents: totalCents),
+                projectedRevenue: revenueCurrencyLabel(cents: projectedCents),
+                lifetimePreview: revenueCurrencyLabel(cents: lifetimeCents),
+                topTitle: topTitle,
+                titleCount: records.count,
+                growthLabel: growth
+            )
+        }
+        .sorted { revenueCents(from: $0.estimatedRevenue) > revenueCents(from: $1.estimatedRevenue) }
+    }
+
+    var revenueInsights: [HFRevenueInsight] {
+        let records = revenueTitleRecords
+        let highest = records.first
+        let fastest = records.sorted { lhs, rhs in
+            analyticsSeed(lhs.movie.id + "revenue-growth") > analyticsSeed(rhs.movie.id + "revenue-growth")
+        }.first
+        let bestCompletion = records.sorted { $0.completionRate > $1.completionRate }.first
+        let strongestCollection = records.sorted { lhs, rhs in
+            revenueCents(from: lhs.collectionRevenue) > revenueCents(from: rhs.collectionRevenue)
+        }.first
+
+        return [
+            HFRevenueInsight(id: "highest-earning", title: "Highest Earning Title", detail: highest?.movie.title ?? "Local catalog", value: highest?.estimatedRevenue ?? "$0", systemImage: "crown.fill"),
+            HFRevenueInsight(id: "fastest-growing", title: "Fastest Growing Title", detail: fastest?.movie.title ?? "Local catalog", value: fastest?.growthLabel ?? "+0%", systemImage: "chart.line.uptrend.xyaxis"),
+            HFRevenueInsight(id: "best-completion", title: "Best Completion Rate", detail: bestCompletion?.movie.title ?? "Local catalog", value: "\(bestCompletion?.completionRate ?? 0)%", systemImage: "checkmark.seal.fill"),
+            HFRevenueInsight(id: "collection-lift", title: "Collection Lift", detail: strongestCollection?.movie.title ?? "Local catalog", value: strongestCollection?.collectionRevenue ?? "$0", systemImage: "bookmark.fill")
+        ]
+    }
+
+    var payoutPreviewRecords: [HFPayoutPreviewRecord] {
+        let totalCents = revenueTitleRecords.reduce(0) { $0 + revenueCents(from: $1.estimatedRevenue) }
+        let pendingCents = Int(Double(totalCents) * 0.28)
+        let projectedCents = Int(Double(totalCents) * 1.18)
+        let lifetimeCents = Int(Double(totalCents) * 2.85)
+
+        return [
+            HFPayoutPreviewRecord(id: "pending", title: "Pending Preview", value: revenueCurrencyLabel(cents: pendingCents), detail: "Local creator earnings preview awaiting review", state: "Preview", systemImage: "hourglass.circle.fill"),
+            HFPayoutPreviewRecord(id: "projected", title: "Projected Preview", value: revenueCurrencyLabel(cents: projectedCents), detail: "Projected from current catalog and analytics signals", state: "Projected", systemImage: "chart.bar.xaxis"),
+            HFPayoutPreviewRecord(id: "lifetime", title: "Lifetime Preview", value: revenueCurrencyLabel(cents: lifetimeCents), detail: "Long-range estimate for creator business planning", state: "Lifetime", systemImage: "infinity.circle.fill")
+        ]
+    }
+
     private func analyticsRecord(for movie: Movie) -> HFTitleAnalyticsRecord {
         let seed = analyticsSeed(movie.id)
         let isCreatorPublished = creatorPublishedMovies.contains { $0.id == movie.id }
@@ -2618,6 +2749,31 @@ final class HFStreamingStore: ObservableObject {
         )
     }
 
+    private func revenueRecord(for record: HFTitleAnalyticsRecord) -> HFTitleRevenueRecord {
+        let seed = analyticsSeed(record.id + "revenue")
+        let watchMinutes = analyticsMinutes(from: record.averageWatchTime)
+        let streamingCents = record.totalViews * (6 + seed % 5)
+        let premiumCents = max(0, record.completionRate - 35) * max(1, record.favorites) * 7
+        let collectionCents = record.libraryAdds * (18 + seed % 14)
+        let totalCents = streamingCents + premiumCents + collectionCents
+        let perViewCents = record.totalViews == 0 ? 0 : max(1, totalCents / record.totalViews)
+        let growth = "+\(8 + seed % 36)%"
+
+        return HFTitleRevenueRecord(
+            id: record.id,
+            movie: record.movie,
+            estimatedRevenue: revenueCurrencyLabel(cents: totalCents),
+            streamingRevenue: revenueCurrencyLabel(cents: streamingCents),
+            premiumRevenue: revenueCurrencyLabel(cents: premiumCents),
+            collectionRevenue: revenueCurrencyLabel(cents: collectionCents),
+            revenuePerView: revenueCurrencyLabel(cents: perViewCents),
+            views: record.totalViews,
+            watchTime: "\(max(1, watchMinutes * max(1, record.totalViews / 24) / 60))h",
+            completionRate: record.completionRate,
+            growthLabel: growth
+        )
+    }
+
     private func analyticsRuntimeMinutes(for movie: Movie) -> Int {
         let number = movie.duration.split(separator: " ").compactMap { Int($0) }.first
         return max(12, number ?? (movie.duration.localizedCaseInsensitiveContains("episode") ? 44 : 96))
@@ -2629,6 +2785,17 @@ final class HFStreamingStore: ObservableObject {
 
     private func analyticsSeed(_ key: String) -> Int {
         key.unicodeScalars.reduce(0) { $0 + Int($1.value) }
+    }
+
+    private func revenueCurrencyLabel(cents: Int) -> String {
+        let dollars = max(0, cents) / 100
+        let centsRemainder = max(0, cents) % 100
+        return "$\(dollars).\(String(format: "%02d", centsRemainder))"
+    }
+
+    private func revenueCents(from label: String) -> Int {
+        let digits = label.filter(\.isNumber)
+        return Int(digits) ?? 0
     }
 
     // hf.services.libraryState

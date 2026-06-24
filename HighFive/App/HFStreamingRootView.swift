@@ -156,6 +156,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-calendar")
             || Self.shouldStartInCreatorCollaboration
             || Self.shouldStartInSeriesEpisodes
+            || Self.shouldStartInRevenueSystem
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -213,6 +214,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-calendar")
             || Self.shouldStartInCreatorCollaboration
             || Self.shouldStartInSeriesEpisodes
+            || Self.shouldStartInRevenueSystem
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -327,6 +329,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-publishing-calendar")
             || Self.shouldStartInCreatorCollaboration
             || Self.shouldStartInSeriesEpisodes
+            || Self.shouldStartInRevenueSystem
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -405,6 +408,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-series-episodes")
             || arguments.contains("--hf-series-next-episode")
             || arguments.contains("--hf-series-analytics")
+    }
+
+    private static var shouldStartInRevenueSystem: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-revenue")
+            || arguments.contains("--hf-revenue-dashboard")
+            || arguments.contains("--hf-revenue-titles")
+            || arguments.contains("--hf-revenue-analytics")
+            || arguments.contains("--hf-revenue-payouts")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {
