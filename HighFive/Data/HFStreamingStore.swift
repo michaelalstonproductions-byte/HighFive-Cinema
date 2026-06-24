@@ -660,6 +660,66 @@ struct HFIntegrationAuditRecord: Identifiable {
     var systemImage: String
 }
 
+struct HFProductionConnectionRecord: Identifiable {
+    let id: String
+    var title: String
+    var domain: String
+    var readiness: String
+    var handoff: String
+    var boundary: String
+    var systemImage: String
+}
+
+struct HFProductionFeatureFlagRecord: Identifiable {
+    let id: String
+    var title: String
+    var scope: String
+    var defaultState: String
+    var rolloutNote: String
+    var boundary: String
+    var systemImage: String
+}
+
+struct HFProductionServiceMappingRecord: Identifiable {
+    let id: String
+    var title: String
+    var localSystem: String
+    var futureSystem: String
+    var mappingState: String
+    var dependency: String
+    var systemImage: String
+}
+
+struct HFProductionEnvironmentSwitchRecord: Identifiable {
+    let id: String
+    var title: String
+    var mode: String
+    var availability: String
+    var guardrail: String
+    var notes: String
+    var systemImage: String
+}
+
+struct HFProductionReadinessReportRecord: Identifiable {
+    let id: String
+    var title: String
+    var score: String
+    var state: String
+    var summary: String
+    var nextStep: String
+    var systemImage: String
+}
+
+struct HFProductionDependencyGraphRecord: Identifiable {
+    let id: String
+    var title: String
+    var upstream: String
+    var downstream: String
+    var readiness: String
+    var blocker: String
+    var systemImage: String
+}
+
 struct HFCreatorPublishingQueueRecord: Identifiable {
     let id: String
     var project: HFCreatorPublishingContent
@@ -3359,6 +3419,64 @@ final class HFStreamingStore: ObservableObject {
             HFIntegrationAuditRecord(id: "no-money", title: "No money movement", detail: "Revenue, marketplace, rights, and licensing remain estimates and planning records.", result: "Preview", category: "Commerce", systemImage: "dollarsign.circle.fill"),
             HFIntegrationAuditRecord(id: "no-sync", title: "No sync job", detail: "Sync readiness is documented without background jobs or remote mutation.", result: "Local", category: "Sync", systemImage: "arrow.triangle.2.circlepath"),
             HFIntegrationAuditRecord(id: "local-first", title: "Local-first bridge", detail: "The product is prepared for future infrastructure while preserving current local flows.", result: "Ready", category: "Architecture", systemImage: "point.3.connected.trianglepath.dotted")
+        ]
+    }
+
+    var productionConnectionRecords: [HFProductionConnectionRecord] {
+        [
+            HFProductionConnectionRecord(id: "catalog", title: "Catalog Connection", domain: "CMS", readiness: "\(cmsContentRecords.count) local records", handoff: "Catalog shape", boundary: "Planning only", systemImage: "rectangle.stack.fill"),
+            HFProductionConnectionRecord(id: "publishing", title: "Publishing Connection", domain: "Creator", readiness: "\(creatorPublishingContents.count) project records", handoff: "Lifecycle state", boundary: "No publish action", systemImage: "paperplane.circle.fill"),
+            HFProductionConnectionRecord(id: "library", title: "Library Connection", domain: "Viewer", readiness: "\(libraryViewingHistory.count) activity rows", handoff: "Viewer state", boundary: "Local state only", systemImage: "bookmark.square.fill"),
+            HFProductionConnectionRecord(id: "analytics", title: "Analytics Connection", domain: "Insights", readiness: "\(analyticsTitleRecords.count) title signals", handoff: "Metric groups", boundary: "No telemetry move", systemImage: "chart.xyaxis.line"),
+            HFProductionConnectionRecord(id: "rights", title: "Rights Connection", domain: "Licensing", readiness: "\(rightsLedgerRecords.count) ledger rows", handoff: "Rights package", boundary: "Planning only", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var productionFeatureFlagRecords: [HFProductionFeatureFlagRecord] {
+        [
+            HFProductionFeatureFlagRecord(id: "creator-publishing", title: "Creator Publishing", scope: "Creator Studio", defaultState: "Local on", rolloutNote: "Gate future live handoff", boundary: "No external action", systemImage: "square.stack.3d.up.fill"),
+            HFProductionFeatureFlagRecord(id: "discovery-ranking", title: "Discovery Ranking", scope: "Search", defaultState: "Local on", rolloutNote: "Compare local and future ranking modes", boundary: "Local ranking only", systemImage: "sparkle.magnifyingglass"),
+            HFProductionFeatureFlagRecord(id: "library-state", title: "Library State", scope: "Library", defaultState: "Local on", rolloutNote: "Protect viewer history migration", boundary: "No user sync", systemImage: "bookmark.fill"),
+            HFProductionFeatureFlagRecord(id: "rights-planning", title: "Rights Planning", scope: "Marketplace", defaultState: "Preview on", rolloutNote: "Keep licensing preparation separate", boundary: "No deal action", systemImage: "doc.richtext.fill"),
+            HFProductionFeatureFlagRecord(id: "activity-center", title: "Activity Center", scope: "Notifications", defaultState: "Local on", rolloutNote: "Keep local alerts separate from future delivery", boundary: "Local alerts only", systemImage: "bell.badge.fill")
+        ]
+    }
+
+    var productionServiceMappingRecords: [HFProductionServiceMappingRecord] {
+        [
+            HFProductionServiceMappingRecord(id: "catalog", title: "Catalog Mapping", localSystem: "CMS records", futureSystem: "Catalog runtime", mappingState: "Fields mapped", dependency: "Content IDs", systemImage: "arrow.left.arrow.right.square.fill"),
+            HFProductionServiceMappingRecord(id: "creator", title: "Creator Mapping", localSystem: "Profiles + projects", futureSystem: "Creator runtime", mappingState: "Owner fields mapped", dependency: "Creator IDs", systemImage: "person.crop.rectangle.stack.fill"),
+            HFProductionServiceMappingRecord(id: "library", title: "Library Mapping", localSystem: "Viewing history", futureSystem: "Viewer runtime", mappingState: "State groups mapped", dependency: "Viewer boundary", systemImage: "rectangle.stack.person.crop.fill"),
+            HFProductionServiceMappingRecord(id: "analytics", title: "Analytics Mapping", localSystem: "Computed metrics", futureSystem: "Insights runtime", mappingState: "Metric names mapped", dependency: "Event taxonomy", systemImage: "chart.bar.doc.horizontal.fill"),
+            HFProductionServiceMappingRecord(id: "marketplace", title: "Marketplace Mapping", localSystem: "Distribution planning", futureSystem: "Package runtime", mappingState: "Package fields mapped", dependency: "Rights readiness", systemImage: "bag.fill")
+        ]
+    }
+
+    var productionEnvironmentSwitchRecords: [HFProductionEnvironmentSwitchRecord] {
+        [
+            HFProductionEnvironmentSwitchRecord(id: "local", title: "Local Profile", mode: "Current", availability: "Available", guardrail: "Default path", notes: "Uses local mock and computed records.", systemImage: "iphone.gen3"),
+            HFProductionEnvironmentSwitchRecord(id: "preview", title: "Preview Profile", mode: "Future", availability: "Locked", guardrail: "Requires explicit enablement later", notes: "Reserved for internal review flows.", systemImage: "eye.fill"),
+            HFProductionEnvironmentSwitchRecord(id: "staging", title: "Staging Profile", mode: "Future", availability: "Locked", guardrail: "Requires runtime setup later", notes: "Reserved for validation after services exist.", systemImage: "testtube.2"),
+            HFProductionEnvironmentSwitchRecord(id: "production", title: "Production Profile", mode: "Future", availability: "Locked", guardrail: "Requires governance later", notes: "Reserved for real release operations.", systemImage: "building.2.fill")
+        ]
+    }
+
+    var productionReadinessReportRecords: [HFProductionReadinessReportRecord] {
+        [
+            HFProductionReadinessReportRecord(id: "catalog", title: "Catalog Readiness", score: "\(cmsContentRecords.count)", state: "Mapped", summary: "Content types, relationships, and status fields are ready for handoff planning.", nextStep: "Validate identifiers", systemImage: "rectangle.stack.fill"),
+            HFProductionReadinessReportRecord(id: "creator", title: "Creator Readiness", score: "\(creatorProfiles.count)", state: "Mapped", summary: "Profiles, publishing projects, collaboration, and revenue previews share creator context.", nextStep: "Confirm ownership model", systemImage: "person.crop.circle.fill"),
+            HFProductionReadinessReportRecord(id: "viewer", title: "Viewer Readiness", score: "\(libraryViewingHistory.count)", state: "Mapped", summary: "Library, history, favorites, collections, and activity are grouped for future migration.", nextStep: "Confirm viewer boundary", systemImage: "person.2.fill"),
+            HFProductionReadinessReportRecord(id: "business", title: "Business Readiness", score: "\(rightsReadinessRecords.count)", state: "Planning", summary: "Marketplace, rights, licensing, and revenue records remain planning surfaces.", nextStep: "Confirm governance", systemImage: "checkmark.shield.fill")
+        ]
+    }
+
+    var productionDependencyGraphRecords: [HFProductionDependencyGraphRecord] {
+        [
+            HFProductionDependencyGraphRecord(id: "publishing-discovery", title: "Publishing -> Discovery", upstream: "Published content", downstream: "Discovery rails", readiness: "Linked", blocker: "None for local mode", systemImage: "point.3.connected.trianglepath.dotted"),
+            HFProductionDependencyGraphRecord(id: "cms-library", title: "CMS -> Library", upstream: "Content IDs", downstream: "Viewer shelves", readiness: "Linked", blocker: "Viewer boundary later", systemImage: "rectangle.stack.person.crop.fill"),
+            HFProductionDependencyGraphRecord(id: "series-analytics", title: "Series -> Analytics", upstream: "Episode records", downstream: "Episode metrics", readiness: "Linked", blocker: "Event taxonomy later", systemImage: "chart.bar.xaxis"),
+            HFProductionDependencyGraphRecord(id: "marketplace-rights", title: "Marketplace -> Rights", upstream: "Release packages", downstream: "Rights ledger", readiness: "Linked", blocker: "Clearance review later", systemImage: "checkmark.shield.fill"),
+            HFProductionDependencyGraphRecord(id: "revenue-licensing", title: "Revenue -> Licensing", upstream: "Revenue estimates", downstream: "Licensing preview", readiness: "Linked", blocker: "Business policy later", systemImage: "dollarsign.circle.fill")
         ]
     }
 

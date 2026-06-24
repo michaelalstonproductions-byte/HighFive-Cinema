@@ -162,6 +162,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInMarketplaceDistribution
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
+            || Self.shouldStartInProductionBridge
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -225,6 +226,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInMarketplaceDistribution
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
+            || Self.shouldStartInProductionBridge
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -345,6 +347,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInMarketplaceDistribution
             || Self.shouldStartInRightsLicensingOperations
             || Self.shouldStartInIntegrationReadiness
+            || Self.shouldStartInProductionBridge
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -489,6 +492,17 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-integration-api")
             || arguments.contains("--hf-integration-environments")
             || arguments.contains("--hf-integration-audit")
+    }
+
+    private static var shouldStartInProductionBridge: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-production-bridge")
+            || arguments.contains("--hf-production-connections")
+            || arguments.contains("--hf-production-flags")
+            || arguments.contains("--hf-production-service-mapping")
+            || arguments.contains("--hf-production-environments")
+            || arguments.contains("--hf-production-readiness")
+            || arguments.contains("--hf-production-dependencies")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

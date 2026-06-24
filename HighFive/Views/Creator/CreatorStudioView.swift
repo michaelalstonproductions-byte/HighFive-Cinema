@@ -222,6 +222,13 @@ private enum HFCreatorProSpotlight {
     case integrationAPI
     case integrationEnvironments
     case integrationAudit
+    case productionBridgeDashboard
+    case productionConnections
+    case productionFeatureFlags
+    case productionServiceMapping
+    case productionEnvironmentSwitching
+    case productionReadinessReports
+    case productionDependencyGraph
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
@@ -287,6 +294,13 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-integration-api") { return .integrationAPI }
         if arguments.contains("--hf-integration-environments") { return .integrationEnvironments }
         if arguments.contains("--hf-integration-audit") { return .integrationAudit }
+        if arguments.contains("--hf-start-production-bridge") { return .productionBridgeDashboard }
+        if arguments.contains("--hf-production-connections") { return .productionConnections }
+        if arguments.contains("--hf-production-flags") { return .productionFeatureFlags }
+        if arguments.contains("--hf-production-service-mapping") { return .productionServiceMapping }
+        if arguments.contains("--hf-production-environments") { return .productionEnvironmentSwitching }
+        if arguments.contains("--hf-production-readiness") { return .productionReadinessReports }
+        if arguments.contains("--hf-production-dependencies") { return .productionDependencyGraph }
         if arguments.contains("--hf-start-creator-publishing") { return .pipeline }
         if arguments.contains("--hf-creator-pro-pipeline") { return .pipeline }
         if arguments.contains("--hf-creator-pro-social-assets") { return .socialAssets }
@@ -2243,6 +2257,20 @@ struct CreatorStudioView: View {
             environmentProfilesSection
         case .integrationAudit:
             integrationAuditSection
+        case .productionBridgeDashboard:
+            productionBridgeDashboardSection
+        case .productionConnections:
+            productionConnectionRegistrySection
+        case .productionFeatureFlags:
+            productionFeatureFlagsSection
+        case .productionServiceMapping:
+            productionServiceMappingSection
+        case .productionEnvironmentSwitching:
+            productionEnvironmentSwitchingSection
+        case .productionReadinessReports:
+            productionReadinessReportsSection
+        case .productionDependencyGraph:
+            productionDependencyGraphSection
         }
     }
 
@@ -2258,6 +2286,7 @@ struct CreatorStudioView: View {
             marketplaceDistributionDashboardSection
             rightsLicensingDashboardSection
             integrationReadinessDashboardSection
+            productionBridgeDashboardSection
             creatorCollaborationDashboard
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
@@ -2314,6 +2343,12 @@ struct CreatorStudioView: View {
             apiReadinessSection
             environmentProfilesSection
             integrationAuditSection
+            productionConnectionRegistrySection
+            productionFeatureFlagsSection
+            productionServiceMappingSection
+            productionEnvironmentSwitchingSection
+            productionReadinessReportsSection
+            productionDependencyGraphSection
             creatorCollaborationTeamSection
             creatorCollaborationTaskBoardSection
             creatorCollaborationNotesSection
@@ -3775,6 +3810,157 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.integration.audit")
+    }
+
+    private var productionBridgeDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Production Infrastructure Bridge",
+            detail: "Final readiness map from local product systems to future production systems: connections, flags, service mapping, environments, reports, and dependencies.",
+            systemImage: "point.3.connected.trianglepath.dotted",
+            accent: HFColors.gold,
+            identifier: "hf.productionBridge.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Connections", value: "\(streamingStore.productionConnectionRecords.count)")
+                    creatorProStat(title: "Flags", value: "\(streamingStore.productionFeatureFlagRecords.count)")
+                    creatorProStat(title: "Reports", value: "\(streamingStore.productionReadinessReportRecords.count)")
+                    creatorProStat(title: "Graph", value: "\(streamingStore.productionDependencyGraphRecords.count)")
+                }
+
+                Text("Local Systems -> Bridge Plan -> Production Later")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.productionBridge.workflow")
+
+                Text("This bridge is a planning layer only. Connections, environment switching, and dependency maps remain inactive until a future service phase.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.productionBridge.localOnly")
+            }
+        }
+    }
+
+    private var productionConnectionRegistrySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Connection Registry",
+                    detail: "Planned production connections are grouped by domain, local handoff, readiness, and boundary.",
+                    systemImage: "link.circle.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionConnectionRecords) { record in
+                        productionConnectionRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBridge.connectionRegistry")
+    }
+
+    private var productionFeatureFlagsSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Feature Flags", actionTitle: "Local")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.productionFeatureFlagRecords) { record in
+                        productionFeatureFlagCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBridge.featureFlags")
+    }
+
+    private var productionServiceMappingSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Service Mapping",
+                    detail: "Local product systems are mapped to future production domains without activating any external runtime.",
+                    systemImage: "arrow.left.arrow.right.square.fill",
+                    accent: HFColors.violet
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 168), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.productionServiceMappingRecords) { record in
+                        productionServiceMappingCard(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBridge.serviceMapping")
+    }
+
+    private var productionEnvironmentSwitchingSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Environment Switching", actionTitle: "Locked")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.productionEnvironmentSwitchRecords) { record in
+                        productionEnvironmentSwitchCard(record)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBridge.environmentSwitching")
+    }
+
+    private var productionReadinessReportsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Readiness Reports",
+                    detail: "Production handoff reports summarize what is mapped, what remains local, and what needs future validation.",
+                    systemImage: "doc.text.magnifyingglass",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionReadinessReportRecords) { record in
+                        productionReadinessReportRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBridge.readinessReports")
+    }
+
+    private var productionDependencyGraphSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Dependency Graph",
+                    detail: "Product dependencies show how publishing, discovery, CMS, library, series, analytics, marketplace, rights, and revenue connect.",
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionDependencyGraphRecords) { record in
+                        productionDependencyGraphRow(record)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionBridge.dependencyGraph")
     }
 
     private var creatorPublishingPipelineSection: some View {
@@ -5639,6 +5825,209 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.integration.audit.\(record.id)")
     }
 
+    private func productionConnectionRow(_ record: HFProductionConnectionRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(productionAccent(for: record.domain))
+                .frame(width: 38, height: 38)
+                .background(productionAccent(for: record.domain).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.domain)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(productionAccent(for: record.domain))
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.readiness) • \(record.handoff)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(2)
+                Text(record.boundary)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBridge.connection.\(record.id)")
+    }
+
+    private func productionFeatureFlagCard(_ record: HFProductionFeatureFlagRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: productionAccent(for: record.scope).opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: record.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(productionAccent(for: record.scope))
+                Text(record.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.defaultState)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.scope)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+                Text("\(record.rolloutNote) • \(record.boundary)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 190, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBridge.flag.\(record.id)")
+    }
+
+    private func productionServiceMappingCard(_ record: HFProductionServiceMappingRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.violet)
+            Text(record.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+            Text(record.mappingState)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+            Text(record.localSystem)
+                .font(HFTypography.micro.weight(.semibold))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(2)
+            Text("\(record.futureSystem) • \(record.dependency)")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.24))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBridge.mapping.\(record.id)")
+    }
+
+    private func productionEnvironmentSwitchCard(_ record: HFProductionEnvironmentSwitchRecord) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: productionEnvironmentAccent(for: record.availability).opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: record.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(productionEnvironmentAccent(for: record.availability))
+                Text(record.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(record.mode)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+                Text(record.availability)
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+                Text("\(record.guardrail) • \(record.notes)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+            .frame(width: 196, alignment: .topLeading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBridge.environment.\(record.id)")
+    }
+
+    private func productionReadinessReportRow(_ record: HFProductionReadinessReportRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(productionAccent(for: record.title))
+                .frame(width: 38, height: 38)
+                .background(productionAccent(for: record.title).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.state)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(productionAccent(for: record.title))
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.score) • \(record.nextStep)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(2)
+                Text(record.summary)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBridge.report.\(record.id)")
+    }
+
+    private func productionDependencyGraphRow(_ record: HFProductionDependencyGraphRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background(HFColors.cyanGlow.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.readiness)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+                Text(record.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text("\(record.upstream) -> \(record.downstream)")
+                    .font(HFTypography.micro.weight(.semibold))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(2)
+                Text(record.blocker)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionBridge.dependency.\(record.id)")
+    }
+
     private func integrationAccent(for category: String) -> Color {
         switch category {
         case "CMS", "Catalog", "Architecture", "Sync":
@@ -5650,6 +6039,23 @@ struct CreatorStudioView: View {
         default:
             return HFColors.textSecondary
         }
+    }
+
+    private func productionAccent(for category: String) -> Color {
+        switch category {
+        case "CMS", "Catalog", "Viewer", "Library", "Search", "Notifications":
+            return HFColors.cyanGlow
+        case "Creator", "Creator Studio", "Marketplace", "Rights", "Licensing":
+            return HFColors.violet
+        case "Revenue", "Insights", "Analytics":
+            return HFColors.gold
+        default:
+            return HFColors.textSecondary
+        }
+    }
+
+    private func productionEnvironmentAccent(for availability: String) -> Color {
+        availability == "Available" ? HFColors.gold : HFColors.textSecondary
     }
 
     private func environmentAccent(for status: String) -> Color {
