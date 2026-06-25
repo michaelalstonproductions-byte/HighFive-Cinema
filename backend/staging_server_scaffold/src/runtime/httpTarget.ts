@@ -26,7 +26,11 @@ import {
   openAPIPath,
   playbackHLSPath,
   playbackDescriptorPath,
-  readinessPath
+  readinessPath,
+  viewerLibraryOfflinePath,
+  viewerLibraryPath,
+  viewerLibraryProgressPath,
+  viewerLibrarySavePath
 } from "../contracts.js";
 import { openAPISpec } from "../catalog/openapi.js";
 import { catalogDelta, catalogSummary, catalogSync, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
@@ -78,6 +82,13 @@ import {
   processingReadinessSummary,
   retryProcessingJob
 } from "../routes/processing.js";
+import {
+  saveViewerLibraryTitle,
+  updateViewerOfflineState,
+  updateViewerProgress,
+  viewerLibraryReadinessSummary,
+  viewerLibrarySnapshot
+} from "../routes/library.js";
 import type { RuntimeConfig } from "./runtimeConfig.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
@@ -142,6 +153,49 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, catalogDelta(queryValue(request.url, "cursor")));
+        return;
+      }
+
+      if (path === viewerLibraryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, viewerLibrarySnapshot(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === viewerLibrarySavePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, saveViewerLibraryTitle(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === viewerLibraryProgressPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, updateViewerProgress(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === viewerLibraryOfflinePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, updateViewerOfflineState(authHeader(request.headers.authorization), body));
         return;
       }
 
@@ -472,6 +526,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     creator_upload_assets_path: creatorUploadAssetsPath,
     creator_processing_jobs_path: creatorProcessingJobsPath,
     playback_hls_path: playbackHLSPath,
+    viewer_library_path: viewerLibraryPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -484,6 +539,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const publishing = publishingReadinessSummary();
   const uploads = uploadReadinessSummary();
   const processing = processingReadinessSummary();
+  const library = viewerLibraryReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -506,6 +562,10 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     hls_output_contract: Boolean(processing.hls_output_contract),
     playback_descriptor_resolution: Boolean(processing.playback_descriptor_resolution),
     processing_jobs: Number(processing.jobs),
+    viewer_library_enabled: Boolean(library.viewer_library_enabled),
+    playback_progress_enabled: Boolean(library.playback_progress),
+    offline_records_enabled: Boolean(library.offline_records),
+    library_conflict_policy: String(library.conflict_policy),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),

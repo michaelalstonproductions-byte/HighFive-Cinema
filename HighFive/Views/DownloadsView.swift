@@ -9,6 +9,7 @@ struct DownloadsView: View {
     var onFindMore: (() -> Void)?
     @State private var isSceneAwake = false
     @State private var showsInspector = false
+    @State private var didRequestOfflineRuntime = false
 
     private let forcesEmptyState: Bool
 
@@ -20,6 +21,12 @@ struct DownloadsView: View {
 
     private var usesFallbackLayout: Bool {
         dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var shouldRunOfflineRuntime: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-download-offline-sync")
+            || arguments.contains("--hf-download-storage")
     }
 
     private var downloads: [Movie] {
@@ -38,8 +45,14 @@ struct DownloadsView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                if shouldRunOfflineRuntime {
+                    viewerOfflineRuntimeSurface
+                }
                 capsuleWorld
                 premiumCapsuleStats
+                if !shouldRunOfflineRuntime {
+                    viewerOfflineRuntimeSurface
+                }
                 localOfflineShelf
                 if downloads.isEmpty {
                     emptyShelf
@@ -60,6 +73,11 @@ struct DownloadsView: View {
             withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isSceneAwake = true
             }
+        }
+        .task {
+            guard shouldRunOfflineRuntime, !didRequestOfflineRuntime else { return }
+            didRequestOfflineRuntime = true
+            await streamingStore.runViewerLibraryProgressOfflineFixture(for: selectedMovie)
         }
         .accessibilityIdentifier("hf.spatial.downloads")
         .accessibilityIdentifier("hf.streaming.premium.downloadsCapsule")
@@ -182,6 +200,65 @@ struct DownloadsView: View {
             capsuleStat(title: "Storage", value: "Visual", systemImage: "internaldrive.fill", color: HFColors.violet)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var viewerOfflineRuntimeSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "externaldrive.badge.checkmark")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.cyanGlow.opacity(0.16))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Offline Download Runtime")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .accessibilityIdentifier("hf.viewer.offline.runtime")
+                        Text(streamingStore.viewerLibraryRuntimeSnapshot.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    Text(streamingStore.viewerLibraryRuntimeSnapshot.statusLabel)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .frame(minHeight: 26)
+                        .background(HFColors.cyanGlow.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                if streamingStore.viewerOfflineDownloadRecords.isEmpty {
+                    compactNotice("No synced offline records yet. Local offline preview remains available.")
+                        .padding(.horizontal, -HFSpacing.screenHorizontal)
+                } else {
+                    VStack(spacing: HFSpacing.xs) {
+                        ForEach(streamingStore.viewerOfflineDownloadRecords.prefix(4)) { record in
+                            inspectorRow(
+                                title: record.title,
+                                detail: "\(record.state) • \(record.storageState) • \(Self.byteCount(record.bytes))",
+                                status: record.entitlementState,
+                                color: HFColors.cyanGlow,
+                                identifier: "hf.viewer.offline.record.\(record.movieID)"
+                            )
+                        }
+                    }
+                    .accessibilityIdentifier("hf.viewer.offline.records")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.downloads.offlineRuntime")
+    }
+
+    private static func byteCount(_ bytes: Int) -> String {
+        guard bytes > 0 else { return "Local" }
+        return ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
     }
 
     private func capsuleStat(title: String, value: String, systemImage: String, color: Color) -> some View {

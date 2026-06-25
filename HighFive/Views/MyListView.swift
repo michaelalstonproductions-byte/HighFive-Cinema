@@ -10,6 +10,7 @@ struct MyListView: View {
     @State private var selectedFilter: String
     @State private var isSceneAwake = false
     @State private var showsInspector = false
+    @State private var didRequestViewerRuntime = false
 
     private let forcesEmptyState: Bool
     private let filters = ["Saved", "Continue Watching", "Watch Later", "Favorites", "History", "Offline"]
@@ -40,6 +41,13 @@ struct MyListView: View {
 
     private var usesFallbackLayout: Bool {
         dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var shouldRunViewerRuntime: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-viewer-library-runtime")
+            || arguments.contains("--hf-library-progress-sync")
+            || arguments.contains("--hf-library-recommendations-sync")
     }
 
     private var savedMovies: [Movie] {
@@ -79,12 +87,18 @@ struct MyListView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                if shouldRunViewerRuntime {
+                    viewerLibraryRuntimeSurface
+                }
                 if savedMovies.isEmpty {
                     emptyVault
                 } else {
                     vaultWorld
                     premiumVaultStats
                     personalLibrarySystem
+                    if !shouldRunViewerRuntime {
+                        viewerLibraryRuntimeSurface
+                    }
                     libraryActivitySurface
                     libraryCollectionsSurface
                     libraryIntelligenceSurface
@@ -106,6 +120,11 @@ struct MyListView: View {
             withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isSceneAwake = true
             }
+        }
+        .task {
+            guard shouldRunViewerRuntime, !didRequestViewerRuntime else { return }
+            didRequestViewerRuntime = true
+            await streamingStore.runViewerLibraryProgressOfflineFixture(for: selectedMovie)
         }
         .accessibilityIdentifier("hf.spatial.library")
         .accessibilityIdentifier("hf.streaming.premium.libraryVault")
@@ -215,6 +234,66 @@ struct MyListView: View {
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.library.personalHub")
+    }
+
+    private var viewerLibraryRuntimeSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "rectangle.stack.person.crop.fill")
+                        .font(.system(size: 21, weight: .black))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.cyanGlow.opacity(0.16))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Viewer Library Runtime")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .accessibilityIdentifier("hf.viewer.library.runtime")
+                        Text(streamingStore.viewerLibraryRuntimeSnapshot.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+
+                    Text(streamingStore.viewerLibraryRuntimeSnapshot.statusLabel)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .frame(minHeight: 26)
+                        .background(HFColors.cyanGlow.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.viewerLibraryRuntimeRows) { row in
+                        librarySignal(
+                            title: row.title,
+                            value: row.value,
+                            systemImage: row.systemImage,
+                            color: row.id == "offline" ? HFColors.violet : HFColors.cyanGlow,
+                            identifier: "hf.viewer.library.runtime.\(row.id)"
+                        )
+                        .accessibilityLabel("\(row.title), \(row.value), \(row.detail)")
+                    }
+                }
+
+                if let error = streamingStore.viewerLibraryRuntimeSnapshot.lastError {
+                    Text(error)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.gold)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("hf.viewer.library.runtime.error")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.viewer.library.sync")
     }
 
     private var libraryActivitySurface: some View {

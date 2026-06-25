@@ -87,8 +87,8 @@ struct HFStreamingRootView: View {
     private static var initialTab: HFStreamingTab {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("--hf-start-search") || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-start-search-empty") || arguments.contains("--hf-premium-streaming-discovery") { return .search }
-        if arguments.contains("--hf-start-library") || arguments.contains("--hf-start-library-continue") || arguments.contains("--hf-start-library-history") || arguments.contains("--hf-start-library-favorites") || arguments.contains("--hf-start-library-watch-later") || arguments.contains("--hf-start-library-offline") || arguments.contains("--hf-start-library-empty") || arguments.contains("--hf-premium-streaming-library") { return .library }
-        if arguments.contains("--hf-start-downloads") || arguments.contains("--hf-start-downloads-offline") || arguments.contains("--hf-start-downloads-empty") || arguments.contains("--hf-premium-streaming-downloads") { return .downloads }
+        if arguments.contains("--hf-start-library") || arguments.contains("--hf-start-library-continue") || arguments.contains("--hf-start-library-history") || arguments.contains("--hf-start-library-favorites") || arguments.contains("--hf-start-library-watch-later") || arguments.contains("--hf-start-library-offline") || arguments.contains("--hf-start-library-empty") || arguments.contains("--hf-premium-streaming-library") || arguments.contains("--hf-start-viewer-library-runtime") || arguments.contains("--hf-library-progress-sync") || arguments.contains("--hf-library-recommendations-sync") { return .library }
+        if arguments.contains("--hf-start-downloads") || arguments.contains("--hf-start-downloads-offline") || arguments.contains("--hf-start-downloads-empty") || arguments.contains("--hf-premium-streaming-downloads") || arguments.contains("--hf-download-offline-sync") || arguments.contains("--hf-download-storage") { return .downloads }
         if arguments.contains("--hf-start-connect") { return .profile }
         if Self.shouldStartInProfile { return .profile }
         return .home
@@ -137,9 +137,14 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-library-watch-later")
             || arguments.contains("--hf-start-library-offline")
             || arguments.contains("--hf-start-library-empty")
+            || arguments.contains("--hf-start-viewer-library-runtime")
+            || arguments.contains("--hf-library-progress-sync")
+            || arguments.contains("--hf-library-recommendations-sync")
             || arguments.contains("--hf-start-downloads")
             || arguments.contains("--hf-start-downloads-offline")
             || arguments.contains("--hf-start-downloads-empty")
+            || arguments.contains("--hf-download-offline-sync")
+            || arguments.contains("--hf-download-storage")
             || arguments.contains("--hf-start-movie-detail")
             || arguments.contains("--hf-start-player")
             || arguments.contains("--hf-start-player-controls")

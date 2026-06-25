@@ -84,6 +84,10 @@ export const creatorUploadDetailPath = "/v1/creator/uploads/";
 export const creatorUploadAssetsPath = "/v1/creator/uploads/assets";
 export const creatorProcessingJobsPath = "/v1/creator/processing/jobs";
 export const creatorProcessingJobDetailPath = "/v1/creator/processing/jobs/";
+export const viewerLibraryPath = "/v1/viewer/library";
+export const viewerLibrarySavePath = "/v1/viewer/library/save";
+export const viewerLibraryProgressPath = "/v1/viewer/library/progress";
+export const viewerLibraryOfflinePath = "/v1/viewer/library/offline";
 
 export const contractStates = [
   "entitlement_approved",

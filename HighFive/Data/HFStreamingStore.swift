@@ -777,6 +777,74 @@ struct HFStreamingPlaybackStatusRow: Identifiable, Hashable {
     var systemImage: String
 }
 
+enum HFViewerLibraryRuntimeState: String, Hashable {
+    case localCache = "Local Cache"
+    case syncing = "Syncing"
+    case synced = "Synced"
+    case offlineReady = "Offline Ready"
+    case failed = "Failed"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFViewerLibraryRuntimeSnapshot: Hashable {
+    var state: HFViewerLibraryRuntimeState
+    var userID: String
+    var savedCount: Int
+    var favoriteCount: Int
+    var continueWatchingCount: Int
+    var completedCount: Int
+    var offlineCount: Int
+    var recommendationCount: Int
+    var lastProgressTitle: String
+    var offlineStorageState: String
+    var conflictPolicy: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.statusLabel }
+
+    static func local(reason: String, userID: String = "local-viewer") -> HFViewerLibraryRuntimeSnapshot {
+        HFViewerLibraryRuntimeSnapshot(
+            state: .localCache,
+            userID: userID,
+            savedCount: 0,
+            favoriteCount: 0,
+            continueWatchingCount: 0,
+            completedCount: 0,
+            offlineCount: 0,
+            recommendationCount: 0,
+            lastProgressTitle: "Local",
+            offlineStorageState: "Local cache",
+            conflictPolicy: "Local wins",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFViewerLibraryRuntimeRow: Identifiable, Hashable {
+    var id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
+struct HFViewerOfflineDownloadRecord: Identifiable, Hashable {
+    var id: String
+    var movieID: String
+    var title: String
+    var state: String
+    var storageState: String
+    var entitlementState: String
+    var bytes: Int
+    var detail: String
+    var updatedAtLabel: String
+}
+
 struct HFCreatorProjectRuntimeSnapshot: Hashable {
     var projectCount: Int
     var manifestCount: Int
@@ -2909,6 +2977,11 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-playback-hls")
             || arguments.contains("--hf-playback-session")
             || arguments.contains("--hf-playback-error")
+            || arguments.contains("--hf-start-viewer-library-runtime")
+            || arguments.contains("--hf-library-progress-sync")
+            || arguments.contains("--hf-library-recommendations-sync")
+            || arguments.contains("--hf-download-offline-sync")
+            || arguments.contains("--hf-download-storage")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3410,6 +3483,42 @@ struct HFRemotePlaybackDescriptorRequest: Encodable {
     }
 }
 
+struct HFRemoteViewerSaveRequest: Encodable {
+    var movieID: String
+    var saved: Bool
+    var state: String
+
+    private enum CodingKeys: String, CodingKey {
+        case movieID = "movie_id"
+        case saved
+        case state
+    }
+}
+
+struct HFRemoteViewerProgressRequest: Encodable {
+    var movieID: String
+    var progress: Double
+    var completed: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case movieID = "movie_id"
+        case progress
+        case completed
+    }
+}
+
+struct HFRemoteViewerOfflineRequest: Encodable {
+    var movieID: String
+    var state: String
+    var bytes: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case movieID = "movie_id"
+        case state
+        case bytes
+    }
+}
+
 struct HFRemotePlaybackEntitlementResponse: Decodable, Hashable {
     var entitlementStatus: String
     var accessDecision: String
@@ -3452,6 +3561,113 @@ struct HFRemoteStreamingPlaybackDescriptorResponse: Decodable, Hashable {
         case processingJobID = "processing_job_id"
         case hlsMasterObjectKey = "hls_master_object_key"
     }
+}
+
+struct HFRemoteViewerLibraryRecord: Decodable, Hashable, Identifiable {
+    var id: String
+    var userID: String
+    var movieID: String
+    var state: String
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case movieID = "movie_id"
+        case state
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteViewerProgressRecord: Decodable, Hashable, Identifiable {
+    var id: String
+    var userID: String
+    var movieID: String
+    var progress: Double
+    var completed: Bool
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case movieID = "movie_id"
+        case progress
+        case completed
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteViewerOfflineRecord: Decodable, Hashable, Identifiable {
+    var id: String
+    var userID: String
+    var movieID: String
+    var state: String
+    var storageState: String
+    var entitlementState: String
+    var bytes: Int
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case movieID = "movie_id"
+        case state
+        case storageState = "storage_state"
+        case entitlementState = "entitlement_state"
+        case bytes
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteViewerRecommendationRecord: Decodable, Hashable, Identifiable {
+    var movieID: String
+    var title: String
+    var reason: String
+
+    var id: String { movieID }
+
+    private enum CodingKeys: String, CodingKey {
+        case movieID = "movie_id"
+        case title
+        case reason
+    }
+}
+
+struct HFRemoteViewerLibrarySnapshotResponse: Decodable, Hashable {
+    var status: String
+    var userID: String
+    var profileID: String
+    var savedTitles: [HFRemoteViewerLibraryRecord]
+    var favorites: [HFRemoteViewerLibraryRecord]
+    var watchLater: [HFRemoteViewerLibraryRecord]
+    var viewingHistory: [HFRemoteViewerProgressRecord]
+    var continueWatching: [HFRemoteViewerProgressRecord]
+    var completed: [HFRemoteViewerProgressRecord]
+    var offlineRecords: [HFRemoteViewerOfflineRecord]
+    var recommendations: [HFRemoteViewerRecommendationRecord]
+    var conflictPolicy: String
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case userID = "user_id"
+        case profileID = "profile_id"
+        case savedTitles = "saved_titles"
+        case favorites
+        case watchLater = "watch_later"
+        case viewingHistory = "viewing_history"
+        case continueWatching = "continue_watching"
+        case completed
+        case offlineRecords = "offline_records"
+        case recommendations
+        case conflictPolicy = "conflict_policy"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteViewerLibraryMutationResponse: Decodable, Hashable {
+    var status: String
+    var snapshot: HFRemoteViewerLibrarySnapshotResponse
 }
 
 struct HFRemoteCreatorUploadAPIClient {
@@ -3561,6 +3777,41 @@ struct HFRemoteCreatorUploadAPIClient {
             throw HFRemoteCreatorDraftAPIError.httpStatus(httpResponse.statusCode, detail)
         }
         return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    func createViewerDevelopmentSession() async throws -> String {
+        try await createDevelopmentSession(role: "viewer")
+    }
+
+    func fetchViewerLibrary(sessionID: String) async throws -> HFRemoteViewerLibrarySnapshotResponse {
+        try await jsonRequest(path: "/v1/viewer/library", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func saveViewerLibraryTitle(movieID: String, saved: Bool = true, state: String = "saved", sessionID: String) async throws -> HFRemoteViewerLibraryMutationResponse {
+        try await jsonRequest(
+            path: "/v1/viewer/library/save",
+            method: "POST",
+            sessionID: sessionID,
+            body: HFRemoteViewerSaveRequest(movieID: movieID, saved: saved, state: state)
+        )
+    }
+
+    func updateViewerProgress(movieID: String, progress: Double, completed: Bool, sessionID: String) async throws -> HFRemoteViewerLibraryMutationResponse {
+        try await jsonRequest(
+            path: "/v1/viewer/library/progress",
+            method: "POST",
+            sessionID: sessionID,
+            body: HFRemoteViewerProgressRequest(movieID: movieID, progress: progress, completed: completed)
+        )
+    }
+
+    func updateViewerOfflineState(movieID: String, state: String, bytes: Int, sessionID: String) async throws -> HFRemoteViewerLibraryMutationResponse {
+        try await jsonRequest(
+            path: "/v1/viewer/library/offline",
+            method: "POST",
+            sessionID: sessionID,
+            body: HFRemoteViewerOfflineRequest(movieID: movieID, state: state, bytes: bytes)
+        )
     }
 
     private func jsonRequest<Response: Decodable, Body: Encodable>(
@@ -4115,6 +4366,8 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var creatorRemoteProcessingJobRecords: [HFCreatorRemoteProcessingJobRecord] = []
     @Published private(set) var streamingPlaybackRuntimeSnapshot: HFStreamingPlaybackRuntimeSnapshot
     @Published private(set) var streamingPlaybackSessionRecords: [HFStreamingPlaybackSessionRecord] = []
+    @Published private(set) var viewerLibraryRuntimeSnapshot: HFViewerLibraryRuntimeSnapshot
+    @Published private(set) var viewerOfflineDownloadRecords: [HFViewerOfflineDownloadRecord] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -4225,6 +4478,10 @@ final class HFStreamingStore: ObservableObject {
         )
         streamingPlaybackRuntimeSnapshot = .local(
             reason: "Streaming playback runtime uses Local Preview until the loopback backend and processed HLS output are available."
+        )
+        viewerLibraryRuntimeSnapshot = .local(
+            reason: "Viewer library, progress, and offline state use the local cache until the loopback backend is enabled.",
+            userID: "local-viewer"
         )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
@@ -6448,6 +6705,179 @@ final class HFStreamingStore: ObservableObject {
             )
             return nil
         }
+    }
+
+    var viewerLibraryRuntimeRows: [HFViewerLibraryRuntimeRow] {
+        [
+            HFViewerLibraryRuntimeRow(
+                id: "saved",
+                title: "Saved Titles",
+                value: "\(viewerLibraryRuntimeSnapshot.savedCount)",
+                detail: "Synced My List and Watch Later records for the active viewer session.",
+                systemImage: "bookmark.fill"
+            ),
+            HFViewerLibraryRuntimeRow(
+                id: "progress",
+                title: "Playback Progress",
+                value: "\(viewerLibraryRuntimeSnapshot.continueWatchingCount)",
+                detail: viewerLibraryRuntimeSnapshot.lastProgressTitle,
+                systemImage: "play.circle.fill"
+            ),
+            HFViewerLibraryRuntimeRow(
+                id: "offline",
+                title: "Offline Records",
+                value: "\(viewerLibraryRuntimeSnapshot.offlineCount)",
+                detail: viewerLibraryRuntimeSnapshot.offlineStorageState,
+                systemImage: "arrow.down.circle.fill"
+            ),
+            HFViewerLibraryRuntimeRow(
+                id: "recommendations",
+                title: "Recommendations",
+                value: "\(viewerLibraryRuntimeSnapshot.recommendationCount)",
+                detail: viewerLibraryRuntimeSnapshot.conflictPolicy,
+                systemImage: "sparkles"
+            )
+        ]
+    }
+
+    @discardableResult
+    func runViewerLibraryProgressOfflineFixture(for movie: Movie? = nil) async -> HFViewerLibraryRuntimeSnapshot {
+        let catalogMovie = self.movie(id: movie?.id ?? continueWatchingMovie.id) ?? movie ?? continueWatchingMovie
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            let snapshot = HFViewerLibraryRuntimeSnapshot.local(
+                reason: "Loopback backend disabled. Viewer library, progress, and offline state remain in the local cache.",
+                userID: activeProfileID
+            )
+            viewerLibraryRuntimeSnapshot = localViewerLibrarySnapshot(from: snapshot)
+            viewerOfflineDownloadRecords = downloadedMovies.map(localOfflineRecord)
+            return viewerLibraryRuntimeSnapshot
+        }
+
+        viewerLibraryRuntimeSnapshot = HFViewerLibraryRuntimeSnapshot(
+            state: .syncing,
+            userID: activeProfileID,
+            savedCount: savedMovieIDs.count,
+            favoriteCount: libraryFavoriteMovies.count,
+            continueWatchingCount: libraryContinueWatchingMovies.count,
+            completedCount: libraryCompletedMovies.count,
+            offlineCount: downloadedMovieIDs.count,
+            recommendationCount: queryLibraryRecommendations(anchor: catalogMovie, limit: 8).count,
+            lastProgressTitle: catalogMovie.title,
+            offlineStorageState: "Preparing offline record",
+            conflictPolicy: "newest_record_wins",
+            detail: "Syncing viewer library, progress, and offline state through the loopback backend.",
+            lastError: nil,
+            updatedAtLabel: "Syncing"
+        )
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await client.createViewerDevelopmentSession()
+            _ = try await client.saveViewerLibraryTitle(movieID: catalogMovie.id, saved: true, state: "saved", sessionID: sessionID)
+            let progress = max(0.1, min(0.92, catalogMovie.progress ?? 0.64))
+            _ = try await client.updateViewerProgress(movieID: catalogMovie.id, progress: progress, completed: progress >= 0.95, sessionID: sessionID)
+
+            if streamingPlaybackRuntimeSnapshot.state != .descriptorReady {
+                _ = await runStreamingPlaybackRuntimeFixture(for: catalogMovie)
+            }
+
+            let offlineBytes = streamingPlaybackRuntimeSnapshot.state == .descriptorReady ? 32_112_640 : 12_288_000
+            let offline = try await client.updateViewerOfflineState(movieID: catalogMovie.id, state: "downloaded", bytes: offlineBytes, sessionID: sessionID)
+            applyRemoteViewerLibrarySnapshot(offline.snapshot, focusedMovie: catalogMovie, detail: "Synced viewer library, playback progress, and offline availability through the loopback backend.")
+        } catch {
+            viewerLibraryRuntimeSnapshot = HFViewerLibraryRuntimeSnapshot(
+                state: .failed,
+                userID: activeProfileID,
+                savedCount: savedMovieIDs.count,
+                favoriteCount: libraryFavoriteMovies.count,
+                continueWatchingCount: libraryContinueWatchingMovies.count,
+                completedCount: libraryCompletedMovies.count,
+                offlineCount: downloadedMovieIDs.count,
+                recommendationCount: queryLibraryRecommendations(anchor: catalogMovie, limit: 8).count,
+                lastProgressTitle: catalogMovie.title,
+                offlineStorageState: "Local cache fallback",
+                conflictPolicy: "Local wins",
+                detail: "Viewer library runtime could not reach the loopback backend. Local cache remains available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Library sync failed"
+            )
+            viewerOfflineDownloadRecords = downloadedMovies.map(localOfflineRecord)
+        }
+
+        return viewerLibraryRuntimeSnapshot
+    }
+
+    private func applyRemoteViewerLibrarySnapshot(_ snapshot: HFRemoteViewerLibrarySnapshotResponse, focusedMovie: Movie, detail: String) {
+        savedMovieIDs.formUnion(snapshot.savedTitles.map(\.movieID))
+        downloadedMovieIDs.formUnion(snapshot.offlineRecords.map(\.movieID))
+        persist(savedMovieIDs, key: scopedSavedKey)
+        persist(downloadedMovieIDs, key: scopedDownloadsKey)
+        let lastProgress = snapshot.continueWatching.first ?? snapshot.viewingHistory.first
+        let lastTitle = lastProgress.flatMap { movie(id: $0.movieID)?.title } ?? focusedMovie.title
+        viewerOfflineDownloadRecords = snapshot.offlineRecords.map { record in
+            let title = movie(id: record.movieID)?.title ?? record.movieID
+            return HFViewerOfflineDownloadRecord(
+                id: record.id,
+                movieID: record.movieID,
+                title: title,
+                state: record.state.capitalized,
+                storageState: record.storageState.capitalized,
+                entitlementState: record.entitlementState.capitalized,
+                bytes: record.bytes,
+                detail: "Offline playback record is synced for \(title).",
+                updatedAtLabel: record.updatedAt
+            )
+        }
+        viewerLibraryRuntimeSnapshot = HFViewerLibraryRuntimeSnapshot(
+            state: snapshot.offlineRecords.isEmpty ? .synced : .offlineReady,
+            userID: snapshot.userID,
+            savedCount: snapshot.savedTitles.count,
+            favoriteCount: snapshot.favorites.count,
+            continueWatchingCount: snapshot.continueWatching.count,
+            completedCount: snapshot.completed.count,
+            offlineCount: snapshot.offlineRecords.count,
+            recommendationCount: snapshot.recommendations.count,
+            lastProgressTitle: lastTitle,
+            offlineStorageState: snapshot.offlineRecords.first?.storageState.capitalized ?? "No offline records",
+            conflictPolicy: snapshot.conflictPolicy,
+            detail: detail,
+            lastError: nil,
+            updatedAtLabel: snapshot.updatedAt
+        )
+        invalidateCatalogRuntime(reason: "Viewer library runtime synced")
+    }
+
+    private func localViewerLibrarySnapshot(from snapshot: HFViewerLibraryRuntimeSnapshot) -> HFViewerLibraryRuntimeSnapshot {
+        HFViewerLibraryRuntimeSnapshot(
+            state: .localCache,
+            userID: snapshot.userID,
+            savedCount: savedMovies.count,
+            favoriteCount: libraryFavoriteMovies.count,
+            continueWatchingCount: libraryContinueWatchingMovies.count,
+            completedCount: libraryCompletedMovies.count,
+            offlineCount: downloadedMovies.count,
+            recommendationCount: queryLibraryRecommendations(anchor: libraryLastViewedMovie, limit: 8).count,
+            lastProgressTitle: libraryLastViewedMovie.title,
+            offlineStorageState: downloadedMovies.isEmpty ? "No offline records" : "Local offline cache",
+            conflictPolicy: "Local wins",
+            detail: snapshot.detail,
+            lastError: snapshot.lastError,
+            updatedAtLabel: snapshot.updatedAtLabel
+        )
+    }
+
+    private func localOfflineRecord(for movie: Movie) -> HFViewerOfflineDownloadRecord {
+        HFViewerOfflineDownloadRecord(
+            id: "local-offline-\(movie.id)",
+            movieID: movie.id,
+            title: movie.title,
+            state: "Local",
+            storageState: "Local cache",
+            entitlementState: "Preview",
+            bytes: 0,
+            detail: "Local offline preview record. No backend download record synced yet.",
+            updatedAtLabel: "Local"
+        )
     }
 
     var creatorProjectRuntimeSnapshot: HFCreatorProjectRuntimeSnapshot {

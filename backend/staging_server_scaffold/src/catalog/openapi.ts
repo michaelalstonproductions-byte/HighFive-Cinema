@@ -16,7 +16,11 @@ import {
   openAPIPath,
   playbackDescriptorPath,
   playbackHLSPath,
-  readinessPath
+  readinessPath,
+  viewerLibraryOfflinePath,
+  viewerLibraryPath,
+  viewerLibraryProgressPath,
+  viewerLibrarySavePath
 } from "../contracts.js";
 
 export function openAPISpec(): Record<string, unknown> {
@@ -59,6 +63,10 @@ export function openAPISpec(): Record<string, unknown> {
       [`${creatorProcessingJobDetailPath}{id}/retry`]: { post: { summary: "Retry a failed or completed media processing job idempotently" } },
       [playbackDescriptorPath]: { post: { summary: "Resolve a short-lived playback descriptor for entitled content" } },
       [`${playbackHLSPath}{id}/master.m3u8`]: { get: { summary: "Fetch signed local HLS master manifest for a processed asset" } },
+      [viewerLibraryPath]: { get: { summary: "Fetch authenticated viewer library, progress, and offline state" } },
+      [viewerLibrarySavePath]: { post: { summary: "Save or remove authenticated viewer library title state" } },
+      [viewerLibraryProgressPath]: { post: { summary: "Persist authenticated viewer playback progress" } },
+      [viewerLibraryOfflinePath]: { post: { summary: "Persist authenticated viewer offline download state" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };
