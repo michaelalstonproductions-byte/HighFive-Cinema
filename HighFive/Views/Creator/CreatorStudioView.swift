@@ -254,6 +254,10 @@ private enum HFCreatorProSpotlight {
     case draftValidation
     case draftCompare
     case draftHistory
+    case draftSyncDashboard
+    case draftSyncQueue
+    case draftSyncConflict
+    case draftSyncRevisions
     case uploadWorkflow
     case uploadSelection
     case uploadValidation
@@ -376,6 +380,10 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-draft-validation") { return .draftValidation }
         if arguments.contains("--hf-draft-compare") { return .draftCompare }
         if arguments.contains("--hf-draft-history") { return .draftHistory }
+        if arguments.contains("--hf-start-creator-draft-sync") { return .draftSyncDashboard }
+        if arguments.contains("--hf-draft-sync-queue") { return .draftSyncQueue }
+        if arguments.contains("--hf-draft-sync-conflict") { return .draftSyncConflict }
+        if arguments.contains("--hf-draft-sync-revisions") { return .draftSyncRevisions }
         if arguments.contains("--hf-start-creator-upload") { return .uploadWorkflow }
         if arguments.contains("--hf-upload-selection") { return .uploadSelection }
         if arguments.contains("--hf-upload-validation") { return .uploadValidation }
@@ -2435,8 +2443,9 @@ struct CreatorStudioView: View {
         case .contentBackendRelationships:
             contentBackendRelationshipsSection
         case .draftWorkspace:
-            creatorMediaAssetRuntimeSection
             creatorDraftWorkspaceDashboard
+            creatorDraftSyncDashboardSection
+            creatorMediaAssetRuntimeSection
         case .draftEditor:
             creatorDraftEditorSection
         case .draftValidation:
@@ -2445,6 +2454,14 @@ struct CreatorStudioView: View {
             creatorDraftCompareSection
         case .draftHistory:
             creatorDraftHistorySection
+        case .draftSyncDashboard:
+            creatorDraftSyncDashboardSection
+        case .draftSyncQueue:
+            creatorDraftSyncQueueSection
+        case .draftSyncConflict:
+            creatorDraftSyncConflictSection
+        case .draftSyncRevisions:
+            creatorDraftSyncRevisionsSection
         case .uploadWorkflow:
             creatorUploadWorkflowDashboard
         case .uploadSelection:
@@ -2525,6 +2542,7 @@ struct CreatorStudioView: View {
             creatorLocalPackageRuntimeSection
             creatorMediaAssetRuntimeSection
             creatorUploadWorkflowDashboard
+            creatorDraftSyncDashboardSection
             creatorDraftWorkspaceDashboard
             creatorCollaborationDashboard
 
@@ -4770,6 +4788,127 @@ struct CreatorStudioView: View {
         }
     }
 
+    private var creatorDraftSyncDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Creator Draft Sync",
+            detail: "Draft Workspace now reads and writes through the remote PublishingRepository when the loopback backend is enabled, with local queue fallback preserved.",
+            systemImage: "arrow.triangle.2.circlepath.doc.on.clipboard",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.draftSync.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorDraftSyncStatusRows) { metric in
+                        contentBackendMetricCard(metric)
+                    }
+                }
+
+                Button {
+                    Task { await streamingStore.refreshCreatorDraftRemoteSync() }
+                } label: {
+                    Label("Sync Remote Drafts", systemImage: "arrow.triangle.2.circlepath")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.draftSync.syncButton")
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorDraftRemoteSync()
+        }
+    }
+
+    private var creatorDraftSyncQueueSection: some View {
+        creatorProSpotlight(
+            title: "Draft Sync Queue",
+            detail: "Queue records show create, update, archive, restore, retry, and merge audit state from the remote publishing persistence layer.",
+            systemImage: "tray.and.arrow.up.fill",
+            accent: HFColors.gold,
+            identifier: "hf.draftSync.queue"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorDraftSyncQueueRecords.prefix(8)) { record in
+                    draftSyncQueueRow(record)
+                }
+                if streamingStore.creatorDraftSyncQueueRecords.isEmpty {
+                    draftSyncEmptyRow(title: "No queue records yet", detail: streamingStore.creatorDraftSyncRuntimeSnapshot.detail, systemImage: "checkmark.seal.fill")
+                }
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorDraftRemoteSync()
+            await streamingStore.refreshCreatorDraftSyncQueue()
+        }
+    }
+
+    private var creatorDraftSyncConflictSection: some View {
+        creatorProSpotlight(
+            title: "Draft Conflict Handling",
+            detail: "Optimistic concurrency is visible: stale base versions produce a conflict instead of silently replacing the server draft.",
+            systemImage: "exclamationmark.triangle.fill",
+            accent: HFColors.violet,
+            identifier: "hf.draftSync.conflict"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 142), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorDraftSyncStatusRows) { metric in
+                        contentBackendMetricCard(metric)
+                    }
+                }
+                draftSyncEmptyRow(
+                    title: streamingStore.creatorDraftSyncRuntimeSnapshot.statusLabel,
+                    detail: streamingStore.creatorDraftSyncRuntimeSnapshot.lastError ?? streamingStore.creatorDraftSyncRuntimeSnapshot.detail,
+                    systemImage: "point.3.connected.trianglepath.dotted"
+                )
+                Button {
+                    Task { await streamingStore.simulateCreatorDraftRemoteConflict() }
+                } label: {
+                    Label("Simulate Stale Edit", systemImage: "exclamationmark.triangle.fill")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.draftSync.conflictButton")
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorDraftRemoteSync()
+            await streamingStore.simulateCreatorDraftRemoteConflict()
+        }
+    }
+
+    private var creatorDraftSyncRevisionsSection: some View {
+        creatorProSpotlight(
+            title: "Draft Revision History",
+            detail: "Remote draft revisions and sync audits provide the persistence trail needed for review, restore, and conflict resolution.",
+            systemImage: "clock.arrow.circlepath",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.draftSync.revisions"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorDraftRevisionRecords.prefix(8)) { record in
+                    draftRevisionRow(record)
+                }
+                if streamingStore.creatorDraftRevisionRecords.isEmpty {
+                    draftSyncEmptyRow(title: "No revisions loaded", detail: streamingStore.creatorDraftSyncRuntimeSnapshot.detail, systemImage: "clock.badge.questionmark.fill")
+                }
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorDraftRemoteSync()
+            await streamingStore.refreshCreatorDraftRevisionHistory()
+        }
+    }
+
     private var creatorDraftWorkspaceDashboard: some View {
         let draft = activeWorkspaceDraft
 
@@ -4822,7 +4961,7 @@ struct CreatorStudioView: View {
 
                 HStack(spacing: HFSpacing.xs) {
                     Button {
-                        saveDraftWorkspace()
+                        Task { await saveDraftWorkspace() }
                     } label: {
                         HFCreatorStudioAction(title: "Save Draft", systemImage: "externaldrive.fill", isPrimary: true)
                     }
@@ -4830,7 +4969,7 @@ struct CreatorStudioView: View {
                     .accessibilityIdentifier("hf.draftWorkspace.save")
 
                     Button {
-                        createNewWorkspaceDraft()
+                        Task { await createNewWorkspaceDraft() }
                     } label: {
                         HFCreatorStudioAction(title: "New Draft", systemImage: "doc.badge.plus")
                     }
@@ -4841,6 +4980,12 @@ struct CreatorStudioView: View {
         }
         .onAppear {
             hydrateDraftWorkspaceIfNeeded()
+        }
+        .task {
+            await streamingStore.refreshCreatorDraftRemoteSync()
+            if let selectedDraftID {
+                await streamingStore.refreshCreatorDraftRevisionHistory(id: selectedDraftID)
+            }
         }
     }
 
@@ -4870,7 +5015,7 @@ struct CreatorStudioView: View {
                 }
 
                 Button {
-                    saveDraftWorkspace()
+                    Task { await saveDraftWorkspace() }
                 } label: {
                     HFCreatorStudioAction(title: "Save To Repository", systemImage: "externaldrive.fill", isPrimary: true)
                 }
@@ -5921,7 +6066,7 @@ struct CreatorStudioView: View {
                 }
 
                 Button {
-                    archiveDraftWorkspace()
+                    Task { await archiveDraftWorkspace() }
                 } label: {
                     HFCreatorStudioAction(title: "Archive Draft", systemImage: "archivebox.fill")
                 }
@@ -8453,9 +8598,9 @@ struct CreatorStudioView: View {
         draftWorkspaceNotice = "Loaded \(draft.title) from repository snapshot"
     }
 
-    private func saveDraftWorkspace() {
+    private func saveDraftWorkspace() async {
         if let selectedDraftID, streamingStore.loadCreatorDraft(id: selectedDraftID) != nil {
-            streamingStore.updateCreatorDraft(
+            await streamingStore.updateRemoteCreatorDraft(
                 id: selectedDraftID,
                 title: draftTitle,
                 description: draftDescription,
@@ -8472,7 +8617,7 @@ struct CreatorStudioView: View {
                 hydrateDraftWorkspace(from: saved)
             }
         } else {
-            let created = streamingStore.createCreatorDraft(
+            let created = await streamingStore.createRemoteCreatorDraft(
                 title: draftTitle,
                 description: draftDescription,
                 creator: streamingStore.activeViewingProfile.displayName,
@@ -8480,14 +8625,16 @@ struct CreatorStudioView: View {
                 tags: draftTagList,
                 runtime: draftRuntime
             )
-            hydrateDraftWorkspace(from: created)
+            if let created {
+                hydrateDraftWorkspace(from: created)
+            }
         }
         didSaveLocalDraft = true
-        draftWorkspaceNotice = "Draft saved to content snapshot"
+        draftWorkspaceNotice = streamingStore.creatorDraftSyncRuntimeSnapshot.state == .synced ? "Draft saved through remote PublishingRepository" : "Draft saved to content snapshot"
     }
 
-    private func createNewWorkspaceDraft() {
-        let created = streamingStore.createCreatorDraft(
+    private func createNewWorkspaceDraft() async {
+        let created = await streamingStore.createRemoteCreatorDraft(
             title: "Untitled Creator Draft",
             description: "New creator draft staged in the local content repository.",
             creator: streamingStore.activeViewingProfile.displayName,
@@ -8495,19 +8642,21 @@ struct CreatorStudioView: View {
             tags: ["Draft", "Creator"],
             runtime: "Draft"
         )
-        hydrateDraftWorkspace(from: created)
-        draftWorkspaceNotice = "New draft created in content snapshot"
+        if let created {
+            hydrateDraftWorkspace(from: created)
+        }
+        draftWorkspaceNotice = streamingStore.creatorDraftSyncRuntimeSnapshot.state == .synced ? "New draft created through remote PublishingRepository" : "New draft created in content snapshot"
     }
 
-    private func archiveDraftWorkspace() {
+    private func archiveDraftWorkspace() async {
         guard let selectedDraftID else { return }
-        streamingStore.archiveCreatorDraft(id: selectedDraftID)
+        await streamingStore.archiveRemoteCreatorDraft(id: selectedDraftID)
         if let nextDraft = streamingStore.creatorDraftProjects.first {
             hydrateDraftWorkspace(from: nextDraft)
         } else {
-            createNewWorkspaceDraft()
+            await createNewWorkspaceDraft()
         }
-        draftWorkspaceNotice = "Draft archived locally"
+        draftWorkspaceNotice = streamingStore.creatorDraftSyncRuntimeSnapshot.state == .synced ? "Draft archived through remote PublishingRepository" : "Draft archived locally"
     }
 
     private func draftTextField(title: String, text: Binding<String>, identifier: String, lineLimit: Int = 1) -> some View {
@@ -8649,6 +8798,105 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.draftWorkspace.history.\(record.id)")
+    }
+
+    private func draftSyncQueueRow(_ record: HFCreatorDraftSyncQueueRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background(HFColors.cyanGlow.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.action.capitalized)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer(minLength: 0)
+                    Text(record.result.capitalized)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                }
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                Text(record.createdAt)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(HFColors.textSecondary.opacity(0.82))
+                    .lineLimit(1)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.draftSync.queue.\(record.id)")
+    }
+
+    private func draftRevisionRow(_ record: HFCreatorDraftRevisionRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background(HFColors.gold.opacity(0.16))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.action.capitalized)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer(minLength: 0)
+                    Text("v\(record.version)")
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                }
+                Text(record.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                Text(record.createdAt)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(HFColors.textSecondary.opacity(0.82))
+                    .lineLimit(1)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.draftSync.revision.\(record.id)")
+    }
+
+    private func draftSyncEmptyRow(title: String, detail: String, systemImage: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.violet)
+                .frame(width: 38, height: 38)
+                .background(HFColors.violet.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     private func integrationAccent(for category: String) -> Color {

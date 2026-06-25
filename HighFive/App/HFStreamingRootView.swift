@@ -168,6 +168,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
+            || Self.shouldStartInCreatorDraftSync
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -237,6 +238,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
+            || Self.shouldStartInCreatorDraftSync
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -363,6 +365,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
+            || Self.shouldStartInCreatorDraftSync
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -561,6 +564,14 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-draft-validation")
             || arguments.contains("--hf-draft-compare")
             || arguments.contains("--hf-draft-history")
+    }
+
+    private static var shouldStartInCreatorDraftSync: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-creator-draft-sync")
+            || arguments.contains("--hf-draft-sync-queue")
+            || arguments.contains("--hf-draft-sync-conflict")
+            || arguments.contains("--hf-draft-sync-revisions")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

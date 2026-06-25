@@ -4,6 +4,9 @@ import {
   catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
+  creatorDraftDetailPath,
+  creatorDraftsPath,
+  creatorDraftSyncQueuePath,
   creatorDetailPath,
   openAPIPath,
   readinessPath
@@ -26,6 +29,18 @@ export function openAPISpec(): Record<string, unknown> {
       [`${contentDetailPath}{id}`]: { get: { summary: "Fetch content detail" } },
       [`${creatorDetailPath}{id}`]: { get: { summary: "Fetch creator detail" } },
       [`${collectionDetailPath}{id}`]: { get: { summary: "Fetch collection detail" } },
+      [creatorDraftsPath]: {
+        get: { summary: "List authenticated creator drafts" },
+        post: { summary: "Create authenticated creator draft" }
+      },
+      [`${creatorDraftDetailPath}{id}`]: {
+        get: { summary: "Fetch authenticated creator draft" },
+        patch: { summary: "Update authenticated creator draft with optimistic concurrency" }
+      },
+      [`${creatorDraftDetailPath}{id}/archive`]: { post: { summary: "Archive authenticated creator draft" } },
+      [`${creatorDraftDetailPath}{id}/restore`]: { post: { summary: "Restore authenticated creator draft" } },
+      [`${creatorDraftDetailPath}{id}/revisions`]: { get: { summary: "Fetch creator draft revision history" } },
+      [creatorDraftSyncQueuePath]: { get: { summary: "Fetch creator draft sync queue audit records" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

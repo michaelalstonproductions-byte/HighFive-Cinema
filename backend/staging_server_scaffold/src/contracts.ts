@@ -71,6 +71,9 @@ export const identityMePath = "/v1/identity/me";
 export const identityDeleteRequestPath = "/v1/identity/delete-request";
 export const identityAuditPath = "/v1/identity/audit";
 export const creatorWorkspacePath = "/v1/creator/workspace";
+export const creatorDraftsPath = "/v1/creator/drafts";
+export const creatorDraftDetailPath = "/v1/creator/drafts/";
+export const creatorDraftSyncQueuePath = "/v1/creator/draft-sync/queue";
 
 export const contractStates = [
   "entitlement_approved",

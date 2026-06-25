@@ -3,7 +3,7 @@ import type { JsonObject } from "../contracts.js";
 
 export type IdentityRole = "viewer" | "creator" | "admin";
 
-type IdentitySession = {
+export type IdentitySession = {
   session_id: string;
   user_id: string;
   display_name: string;
@@ -61,7 +61,7 @@ export function exchangeAppleIdentity(body: unknown): JsonObject {
 }
 
 export function refreshIdentitySession(authorizationHeader: string | undefined): JsonObject {
-  const session = requireSession(authorizationHeader);
+  const session = requireIdentitySession(authorizationHeader);
   const refreshed = {
     ...session,
     session_id: nextSessionID(session.role),
@@ -75,7 +75,7 @@ export function refreshIdentitySession(authorizationHeader: string | undefined):
 }
 
 export function signOutIdentitySession(authorizationHeader: string | undefined): JsonObject {
-  const session = requireSession(authorizationHeader);
+  const session = requireIdentitySession(authorizationHeader);
   sessions.delete(session.session_id);
   recordAudit("sign_out", session, "Session removed from local backend memory.");
   return {
@@ -86,13 +86,13 @@ export function signOutIdentitySession(authorizationHeader: string | undefined):
 }
 
 export function currentIdentitySession(authorizationHeader: string | undefined): JsonObject {
-  const session = requireSession(authorizationHeader);
+  const session = requireIdentitySession(authorizationHeader);
   recordAudit("me", session, "Current session inspected.");
   return sessionResponse(session, "Session active");
 }
 
 export function requestAccountDeletion(authorizationHeader: string | undefined): JsonObject {
-  const session = requireSession(authorizationHeader);
+  const session = requireIdentitySession(authorizationHeader);
   recordAudit("delete_request", session, "Account deletion request recorded for manual policy handling.");
   return {
     status: "deletion_requested",
@@ -104,7 +104,7 @@ export function requestAccountDeletion(authorizationHeader: string | undefined):
 }
 
 export function creatorWorkspaceMutation(authorizationHeader: string | undefined): JsonObject {
-  const session = requireSession(authorizationHeader);
+  const session = requireIdentitySession(authorizationHeader);
   if (session.role !== "creator" && session.role !== "admin") {
     recordAudit("creator_workspace_denied", session, "Viewer role denied creator workspace mutation.");
     const error = new Error("creator_role_required");
@@ -126,6 +126,17 @@ export function identityAuditTrail(): JsonObject {
     status: "ready",
     events: auditEvents.slice(-20)
   };
+}
+
+export function requireCreatorIdentitySession(authorizationHeader: string | undefined): IdentitySession {
+  const session = requireIdentitySession(authorizationHeader);
+  if (session.role !== "creator" && session.role !== "admin") {
+    recordAudit("creator_workspace_denied", session, "Viewer role denied creator workspace mutation.");
+    const error = new Error("creator_role_required");
+    error.name = "ForbiddenIdentityAccess";
+    throw error;
+  }
+  return session;
 }
 
 export function identityReadinessSummary(): JsonObject {
@@ -171,7 +182,7 @@ function createSession(input: {
   };
 }
 
-function requireSession(authorizationHeader: string | undefined): IdentitySession {
+export function requireIdentitySession(authorizationHeader: string | undefined): IdentitySession {
   const sessionID = parseAuthorization(authorizationHeader);
   const session = sessionID ? sessions.get(sessionID) : null;
   if (!session) {

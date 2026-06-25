@@ -5,7 +5,7 @@
     "declaration": false,
     "sourceMap": false,
     "rootDir": "./src",
-    "outDir": "/private/tmp/highfive-p31a-cloud-catalog-content-sync/compiled"
+    "outDir": "/private/tmp/highfive-p32a-creator-draft-sync-publishing-persistence/compiled"
   },
   "files": [
     "src/runtime/node-runtime-shims.d.ts",
@@ -27,6 +27,7 @@
     "src/catalog/openapi.ts",
     "src/routes/catalog.ts",
     "src/routes/identity.ts",
+    "src/routes/publishing.ts",
     "src/runtime/runtimeConfig.ts",
     "src/runtime/providerFactory.ts",
     "src/runtime/httpResponse.ts",

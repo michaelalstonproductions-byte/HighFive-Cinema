@@ -5,6 +5,9 @@ import {
   catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
+  creatorDraftDetailPath,
+  creatorDraftsPath,
+  creatorDraftSyncQueuePath,
   creatorWorkspacePath,
   creatorDetailPath,
   entitlementValidationPath,
@@ -32,6 +35,17 @@ import {
   requestAccountDeletion,
   signOutIdentitySession
 } from "../routes/identity.js";
+import {
+  archiveCreatorDraftRemote,
+  createCreatorDraftRemote,
+  creatorDraftRevisionHistory,
+  creatorDraftSyncQueue,
+  getCreatorDraft,
+  listCreatorDrafts,
+  publishingReadinessSummary,
+  restoreCreatorDraftRemote,
+  updateCreatorDraftRemote
+} from "../routes/publishing.js";
 import { createEntitlementRoute } from "../routes/entitlements.js";
 import { createPlaybackRoute } from "../routes/playback.js";
 import { descriptorSignerForRequest, entitlementProviderForRequest } from "./providerFactory.js";
@@ -191,6 +205,76 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === creatorDraftsPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, listCreatorDrafts(authHeader(request.headers.authorization)));
+          return;
+        }
+        if (request.method === "POST") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 201, createCreatorDraftRemote(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === creatorDraftSyncQueuePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, creatorDraftSyncQueue(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path.startsWith(creatorDraftDetailPath)) {
+        const draftRoute = creatorDraftRoute(path);
+        if (draftRoute.action === "archive") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, archiveCreatorDraftRemote(authHeader(request.headers.authorization), draftRoute.id, body));
+          return;
+        }
+        if (draftRoute.action === "restore") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, restoreCreatorDraftRemote(authHeader(request.headers.authorization), draftRoute.id, body));
+          return;
+        }
+        if (draftRoute.action === "revisions") {
+          if (request.method !== "GET") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          writeJson(response, 200, creatorDraftRevisionHistory(authHeader(request.headers.authorization), draftRoute.id));
+          return;
+        }
+        if (request.method === "GET") {
+          writeJson(response, 200, getCreatorDraft(authHeader(request.headers.authorization), draftRoute.id));
+          return;
+        }
+        if (request.method === "PATCH") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, updateCreatorDraftRemote(authHeader(request.headers.authorization), draftRoute.id, body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
       if (path.startsWith(contentDetailPath)) {
         if (request.method !== "GET") {
           const result = methodNotAllowed();
@@ -277,6 +361,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
 function readinessBody(config: RuntimeConfig): Record<string, string | number | boolean> {
   const summary = catalogSummary();
   const identity = identityReadinessSummary();
+  const publishing = publishingReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -293,7 +378,19 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
     role_authorization: Boolean(identity.role_authorization),
+    creator_draft_sync_enabled: Boolean(publishing.creator_draft_sync_enabled),
+    optimistic_concurrency: Boolean(publishing.optimistic_concurrency),
+    draft_role_enforcement: Boolean(publishing.role_enforcement),
     payments_enabled: false
+  };
+}
+
+function creatorDraftRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(creatorDraftDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
   };
 }
 

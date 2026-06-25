@@ -227,6 +227,38 @@ enum HFCreatorPublishingAssetStatus: String, CaseIterable, Codable, Equatable {
     case needsReview = "Needs Review"
 }
 
+extension HFCreatorReleaseState {
+    init(remoteRawValue: String) {
+        switch remoteRawValue.lowercased() {
+        case "review": self = .review
+        case "scheduled": self = .scheduled
+        case "published": self = .published
+        case "archived": self = .archived
+        default: self = .draft
+        }
+    }
+}
+
+extension HFCreatorPublishingAssetStatus {
+    init(remoteRawValue: String) {
+        switch remoteRawValue.lowercased().replacingOccurrences(of: "_", with: " ") {
+        case "missing": self = .missing
+        case "ready": self = .ready
+        case "needs review": self = .needsReview
+        default: self = .placeholder
+        }
+    }
+
+    var remoteRawValue: String {
+        switch self {
+        case .missing: return "missing"
+        case .placeholder: return "placeholder"
+        case .ready: return "ready"
+        case .needsReview: return "needs_review"
+        }
+    }
+}
+
 struct HFCreatorPublishingContent: Identifiable, Codable, Equatable {
     let id: String
     var title: String
@@ -2527,6 +2559,380 @@ struct HFProductionCatalogBackendConfiguration {
     }
 }
 
+enum HFCreatorDraftSyncState: String, Hashable {
+    case disabled = "Local Drafts"
+    case syncing = "Syncing"
+    case synced = "Remote Synced"
+    case queued = "Queued Offline"
+    case conflict = "Conflict"
+    case failed = "Sync Failed"
+}
+
+struct HFCreatorDraftSyncRuntimeSnapshot: Hashable {
+    var state: HFCreatorDraftSyncState
+    var endpoint: String
+    var remoteDraftCount: Int
+    var queuedEditCount: Int
+    var conflictCount: Int
+    var revisionCount: Int
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.rawValue }
+
+    static func local(snapshot: HFContentBackendSnapshot, reason: String) -> HFCreatorDraftSyncRuntimeSnapshot {
+        HFCreatorDraftSyncRuntimeSnapshot(
+            state: .disabled,
+            endpoint: "Local publishing repository",
+            remoteDraftCount: snapshot.publishingProjects.count,
+            queuedEditCount: 0,
+            conflictCount: 0,
+            revisionCount: 0,
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: snapshot.updatedAtLabel
+        )
+    }
+}
+
+struct HFCreatorDraftSyncQueueRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var projectID: String
+    var action: String
+    var result: String
+    var detail: String
+    var createdAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case projectID = "project_id"
+        case action
+        case result
+        case detail
+        case createdAt = "created_at"
+    }
+}
+
+struct HFCreatorDraftRevisionRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var projectID: String
+    var version: Int
+    var action: String
+    var actorUserID: String
+    var detail: String
+    var createdAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case projectID = "project_id"
+        case version
+        case action
+        case actorUserID = "actor_user_id"
+        case detail
+        case createdAt = "created_at"
+    }
+}
+
+struct HFRemoteCreatorDraftDTO: Codable, Hashable {
+    var id: String
+    var ownerUserID: String?
+    var creatorID: String?
+    var contentID: String?
+    var title: String
+    var description: String
+    var creator: String
+    var genre: String
+    var tags: [String]
+    var runtime: String
+    var releaseState: String
+    var posterAssetName: String?
+    var posterStatus: String
+    var trailerStatus: String
+    var metadataStatus: String
+    var artworkStatus: String
+    var version: Int
+    var updatedAtLabel: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case ownerUserID = "owner_user_id"
+        case creatorID = "creator_id"
+        case contentID = "content_id"
+        case title
+        case description
+        case creator
+        case genre
+        case tags
+        case runtime
+        case releaseState = "release_state"
+        case posterAssetName = "poster_asset_name"
+        case posterStatus = "poster_status"
+        case trailerStatus = "trailer_status"
+        case metadataStatus = "metadata_status"
+        case artworkStatus = "artwork_status"
+        case version
+        case updatedAtLabel = "updated_at_label"
+    }
+
+    init(draft: HFCreatorPublishingContent, baseVersion: Int? = nil) {
+        id = draft.id
+        ownerUserID = nil
+        creatorID = nil
+        contentID = draft.id
+        title = draft.title
+        description = draft.description
+        creator = draft.creator
+        genre = draft.genre
+        tags = draft.tags
+        runtime = draft.runtime
+        releaseState = draft.releaseState.rawValue.lowercased()
+        posterAssetName = draft.posterAssetName
+        posterStatus = draft.posterStatus.remoteRawValue
+        trailerStatus = draft.trailerStatus.remoteRawValue
+        metadataStatus = draft.metadataStatus.remoteRawValue
+        artworkStatus = draft.artworkStatus.remoteRawValue
+        version = baseVersion ?? 0
+        updatedAtLabel = draft.updatedAtLabel
+    }
+
+    var publishingContent: HFCreatorPublishingContent {
+        HFCreatorPublishingContent(
+            id: id,
+            title: title,
+            description: description,
+            posterAssetName: posterAssetName,
+            trailerStatus: HFCreatorPublishingAssetStatus(remoteRawValue: trailerStatus),
+            creator: creator,
+            genre: genre,
+            tags: tags,
+            runtime: runtime,
+            releaseState: HFCreatorReleaseState(remoteRawValue: releaseState),
+            posterStatus: HFCreatorPublishingAssetStatus(remoteRawValue: posterStatus),
+            metadataStatus: HFCreatorPublishingAssetStatus(remoteRawValue: metadataStatus),
+            artworkStatus: HFCreatorPublishingAssetStatus(remoteRawValue: artworkStatus),
+            updatedAtLabel: updatedAtLabel ?? "Remote draft synced"
+        )
+    }
+}
+
+struct HFRemoteCreatorDraftListResponse: Codable {
+    var status: String
+    var drafts: [HFRemoteCreatorDraftDTO]
+    var revisionCount: Int
+    var syncQueue: [HFCreatorDraftSyncQueueRecord]?
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case drafts
+        case revisionCount = "revision_count"
+        case syncQueue = "sync_queue"
+    }
+}
+
+struct HFRemoteCreatorDraftMutationResponse: Codable {
+    var status: String
+    var draft: HFRemoteCreatorDraftDTO
+    var revisions: [HFCreatorDraftRevisionRecord]
+    var auditRecords: [HFCreatorDraftSyncQueueRecord]?
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case draft
+        case revisions
+        case auditRecords = "audit_records"
+    }
+}
+
+struct HFRemoteCreatorDraftRevisionResponse: Codable {
+    var status: String
+    var projectID: String
+    var version: Int
+    var revisions: [HFCreatorDraftRevisionRecord]
+    var auditRecords: [HFCreatorDraftSyncQueueRecord]?
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case projectID = "project_id"
+        case version
+        case revisions
+        case auditRecords = "audit_records"
+    }
+}
+
+struct HFRemoteCreatorDraftQueueResponse: Codable {
+    var status: String
+    var queuedEdits: [HFCreatorDraftSyncQueueRecord]
+    var offlineEditsSupported: Bool
+    var retrySupported: Bool
+    var mergeStrategy: String
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case queuedEdits = "queued_edits"
+        case offlineEditsSupported = "offline_edits_supported"
+        case retrySupported = "retry_supported"
+        case mergeStrategy = "merge_strategy"
+    }
+}
+
+struct HFRemoteIdentitySignInResponse: Codable {
+    struct Session: Codable {
+        var sessionID: String
+
+        private enum CodingKeys: String, CodingKey {
+            case sessionID = "session_id"
+        }
+    }
+
+    var session: Session
+}
+
+enum HFRemoteCreatorDraftAPIError: Error, LocalizedError {
+    case invalidURL(String)
+    case invalidResponse
+    case httpStatus(Int, String)
+    case decodingFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL(let path):
+            return "Invalid draft sync URL for \(path)"
+        case .invalidResponse:
+            return "Draft sync endpoint returned a non-HTTP response"
+        case .httpStatus(let status, let detail):
+            return "Draft sync endpoint returned HTTP \(status): \(detail)"
+        case .decodingFailed(let detail):
+            return "Draft sync response could not be decoded: \(detail)"
+        }
+    }
+}
+
+struct HFRemoteCreatorDraftAPIClient {
+    var baseURL: URL
+    var session: URLSession = .shared
+
+    func createDevelopmentSession(role: String = "creator") async throws -> String {
+        let response: HFRemoteIdentitySignInResponse = try await request(
+            path: "/v1/identity/dev/sign-in",
+            method: "POST",
+            sessionID: nil,
+            body: ["role": role]
+        )
+        return response.session.sessionID
+    }
+
+    func listDrafts(sessionID: String) async throws -> HFRemoteCreatorDraftListResponse {
+        try await request(path: "/v1/creator/drafts", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func createDraft(_ draft: HFCreatorPublishingContent, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/creator/drafts", method: "POST", sessionID: sessionID, body: HFRemoteCreatorDraftDTO(draft: draft))
+    }
+
+    func updateDraft(_ draft: HFCreatorPublishingContent, baseVersion: Int, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/creator/drafts/\(draft.id)", method: "PATCH", sessionID: sessionID, body: HFRemoteCreatorDraftUpdatePayload(draft: draft, baseVersion: baseVersion))
+    }
+
+    func archiveDraft(id: String, baseVersion: Int, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/creator/drafts/\(id)/archive", method: "POST", sessionID: sessionID, body: ["base_version": baseVersion])
+    }
+
+    func restoreDraft(id: String, baseVersion: Int, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/creator/drafts/\(id)/restore", method: "POST", sessionID: sessionID, body: ["base_version": baseVersion])
+    }
+
+    func revisionHistory(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftRevisionResponse {
+        try await request(path: "/v1/creator/drafts/\(id)/revisions", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func syncQueue(sessionID: String) async throws -> HFRemoteCreatorDraftQueueResponse {
+        try await request(path: "/v1/creator/draft-sync/queue", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    private func request<Response: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        sessionID: String?,
+        body: Body?
+    ) async throws -> Response {
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw HFRemoteCreatorDraftAPIError.invalidURL(path)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let sessionID {
+            request.setValue("HighFiveSession \(sessionID)", forHTTPHeaderField: "Authorization")
+        }
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw HFRemoteCreatorDraftAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let detail = String(data: data, encoding: .utf8) ?? "No response body"
+            throw HFRemoteCreatorDraftAPIError.httpStatus(httpResponse.statusCode, detail)
+        }
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        } catch {
+            throw HFRemoteCreatorDraftAPIError.decodingFailed(error.localizedDescription)
+        }
+    }
+}
+
+struct HFRemoteCreatorDraftUpdatePayload: Encodable {
+    var id: String
+    var title: String
+    var description: String
+    var creator: String
+    var genre: String
+    var tags: [String]
+    var runtime: String
+    var posterAssetName: String?
+    var posterStatus: String
+    var trailerStatus: String
+    var metadataStatus: String
+    var artworkStatus: String
+    var baseVersion: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case description
+        case creator
+        case genre
+        case tags
+        case runtime
+        case posterAssetName = "poster_asset_name"
+        case posterStatus = "poster_status"
+        case trailerStatus = "trailer_status"
+        case metadataStatus = "metadata_status"
+        case artworkStatus = "artwork_status"
+        case baseVersion = "base_version"
+    }
+
+    init(draft: HFCreatorPublishingContent, baseVersion: Int) {
+        id = draft.id
+        title = draft.title
+        description = draft.description
+        creator = draft.creator
+        genre = draft.genre
+        tags = draft.tags
+        runtime = draft.runtime
+        posterAssetName = draft.posterAssetName
+        posterStatus = draft.posterStatus.remoteRawValue
+        trailerStatus = draft.trailerStatus.remoteRawValue
+        metadataStatus = draft.metadataStatus.remoteRawValue
+        artworkStatus = draft.artworkStatus.remoteRawValue
+        self.baseVersion = baseVersion
+    }
+}
+
 enum HFProductionCatalogAPIError: Error, LocalizedError {
     case invalidURL(String)
     case invalidResponse
@@ -3030,6 +3436,9 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var identityAccessRuntimeSnapshot: HFIdentityAccessRuntimeSnapshot
     @Published private(set) var productionCatalogRuntimeSnapshot: HFProductionCatalogRuntimeSnapshot
     @Published private(set) var cloudCatalogSyncRuntimeSnapshot: HFCloudCatalogSyncRuntimeSnapshot
+    @Published private(set) var creatorDraftSyncRuntimeSnapshot: HFCreatorDraftSyncRuntimeSnapshot
+    @Published private(set) var creatorDraftSyncQueueRecords: [HFCreatorDraftSyncQueueRecord] = []
+    @Published private(set) var creatorDraftRevisionRecords: [HFCreatorDraftRevisionRecord] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -3059,6 +3468,8 @@ final class HFStreamingStore: ObservableObject {
     private let productionCatalogConfiguration: HFProductionCatalogBackendConfiguration
     private var catalogRuntimePageCache: [String: HFCatalogRuntimePage] = [:]
     private var catalogRuntimeGeneration = 0
+    private var creatorDraftRemoteVersions: [String: Int] = [:]
+    private var lastRemotePublishingSessionID: String?
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -3125,6 +3536,10 @@ final class HFStreamingStore: ObservableObject {
             version: storedCloudCatalogVersion,
             reason: "Offline cache ready before cloud sync."
         )
+        creatorDraftSyncRuntimeSnapshot = .local(
+            snapshot: loadedContentSnapshot,
+            reason: "Creator draft sync disabled until the loopback backend is enabled."
+        )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -3177,6 +3592,12 @@ final class HFStreamingStore: ObservableObject {
                 await self.refreshCloudCatalogSync(full: true)
                 if launchArguments.contains("--hf-cloud-catalog-delta") {
                     await self.refreshCloudCatalogDeltaSync()
+                }
+                if launchArguments.contains("--hf-start-creator-draft-sync")
+                    || launchArguments.contains("--hf-draft-sync-queue")
+                    || launchArguments.contains("--hf-draft-sync-conflict")
+                    || launchArguments.contains("--hf-draft-sync-revisions") {
+                    await self.refreshCreatorDraftRemoteSync()
                 }
             }
         }
@@ -3588,6 +4009,302 @@ final class HFStreamingStore: ObservableObject {
         ]
     }
 
+    var creatorDraftSyncStatusRows: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(
+                id: "draft-sync-state",
+                title: "Draft Sync",
+                value: creatorDraftSyncRuntimeSnapshot.statusLabel,
+                detail: creatorDraftSyncRuntimeSnapshot.detail,
+                systemImage: creatorDraftSyncRuntimeSnapshot.state == .synced ? "checkmark.icloud.fill" : "externaldrive.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "draft-sync-remote",
+                title: "Remote Drafts",
+                value: "\(creatorDraftSyncRuntimeSnapshot.remoteDraftCount)",
+                detail: "Endpoint: \(creatorDraftSyncRuntimeSnapshot.endpoint)",
+                systemImage: "doc.text.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "draft-sync-conflicts",
+                title: "Conflicts",
+                value: "\(creatorDraftSyncRuntimeSnapshot.conflictCount)",
+                detail: creatorDraftSyncRuntimeSnapshot.lastError ?? "No active conflict.",
+                systemImage: creatorDraftSyncRuntimeSnapshot.conflictCount == 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "draft-sync-revisions",
+                title: "Revisions",
+                value: "\(creatorDraftSyncRuntimeSnapshot.revisionCount)",
+                detail: "\(creatorDraftSyncRuntimeSnapshot.queuedEditCount) queue audit records visible.",
+                systemImage: "clock.arrow.circlepath"
+            )
+        ]
+    }
+
+    func refreshCreatorDraftRemoteSync() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorDraftSyncRuntimeSnapshot = .local(
+                snapshot: contentSnapshot,
+                reason: "Creator draft sync disabled. Use HF_CINEMA_BACKEND_MODE=remote with the loopback backend to enable P32A draft persistence."
+            )
+            return
+        }
+
+        creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+            state: .syncing,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            remoteDraftCount: creatorDraftSyncRuntimeSnapshot.remoteDraftCount,
+            queuedEditCount: creatorDraftSyncQueueRecords.count,
+            conflictCount: 0,
+            revisionCount: creatorDraftRevisionRecords.count,
+            detail: "Fetching creator drafts through the remote publishing repository.",
+            lastError: nil,
+            updatedAtLabel: "Syncing"
+        )
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let response = try await client.listDrafts(sessionID: sessionID)
+            applyRemoteDraftList(response)
+        } catch {
+            creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+                state: .queued,
+                endpoint: "Local publishing repository",
+                remoteDraftCount: creatorPublishingContents.count,
+                queuedEditCount: creatorDraftSyncQueueRecords.count,
+                conflictCount: 0,
+                revisionCount: creatorDraftRevisionRecords.count,
+                detail: "Remote draft sync unavailable. Local edits remain queued through the content snapshot.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: contentSnapshot.updatedAtLabel
+            )
+        }
+    }
+
+    @discardableResult
+    func createRemoteCreatorDraft(
+        title: String,
+        description: String,
+        creator: String,
+        genre: String,
+        tags: [String],
+        runtime: String
+    ) async -> HFCreatorPublishingContent? {
+        let localDraft = HFCreatorPublishingContent(
+            id: "remote-draft-\(Self.slug(title))-\(creatorPublishingContents.count + 1)",
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled Remote Draft" : title,
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Creator draft prepared for remote publishing persistence." : description,
+            posterAssetName: nil,
+            trailerStatus: .ready,
+            creator: creator.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? activeViewingProfile.displayName : creator,
+            genre: genre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Drama" : genre,
+            tags: tags.isEmpty ? ["Creator", "Draft"] : tags,
+            runtime: runtime.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Draft" : runtime,
+            releaseState: .draft,
+            posterStatus: .ready,
+            metadataStatus: .ready,
+            artworkStatus: .ready,
+            updatedAtLabel: "Remote draft pending"
+        )
+
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            let draft = createCreatorDraft(
+                title: localDraft.title,
+                description: localDraft.description,
+                creator: localDraft.creator,
+                genre: localDraft.genre,
+                tags: localDraft.tags,
+                runtime: localDraft.runtime
+            )
+            creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+                state: .queued,
+                endpoint: "Local publishing repository",
+                remoteDraftCount: creatorPublishingContents.count,
+                queuedEditCount: creatorDraftSyncQueueRecords.count + 1,
+                conflictCount: 0,
+                revisionCount: creatorDraftRevisionRecords.count,
+                detail: "Remote backend disabled; draft created locally and queued for later sync.",
+                lastError: nil,
+                updatedAtLabel: draft.updatedAtLabel
+            )
+            return draft
+        }
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let response = try await client.createDraft(localDraft, sessionID: sessionID)
+            applyRemoteDraftMutation(response)
+            return response.draft.publishingContent
+        } catch {
+            creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+                state: .queued,
+                endpoint: "Local publishing repository",
+                remoteDraftCount: creatorPublishingContents.count,
+                queuedEditCount: creatorDraftSyncQueueRecords.count + 1,
+                conflictCount: 0,
+                revisionCount: creatorDraftRevisionRecords.count,
+                detail: "Create draft request failed; local repository remains authoritative until retry.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: contentSnapshot.updatedAtLabel
+            )
+            return nil
+        }
+    }
+
+    func updateRemoteCreatorDraft(
+        id: String,
+        title: String,
+        description: String,
+        creator: String,
+        genre: String,
+        tags: [String],
+        runtime: String,
+        posterStatus: HFCreatorPublishingAssetStatus,
+        trailerStatus: HFCreatorPublishingAssetStatus,
+        metadataStatus: HFCreatorPublishingAssetStatus,
+        artworkStatus: HFCreatorPublishingAssetStatus
+    ) async {
+        guard let existing = loadCreatorDraft(id: id) else { return }
+        var draft = existing
+        draft.title = title
+        draft.description = description
+        draft.creator = creator
+        draft.genre = genre
+        draft.tags = tags
+        draft.runtime = runtime
+        draft.posterStatus = posterStatus
+        draft.trailerStatus = trailerStatus
+        draft.metadataStatus = metadataStatus
+        draft.artworkStatus = artworkStatus
+
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            updateCreatorDraft(id: id, title: title, description: description, creator: creator, genre: genre, tags: tags, runtime: runtime, posterStatus: posterStatus, trailerStatus: trailerStatus, metadataStatus: metadataStatus, artworkStatus: artworkStatus)
+            return
+        }
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let response = try await client.updateDraft(draft, baseVersion: creatorDraftRemoteVersions[id] ?? 1, sessionID: sessionID)
+            applyRemoteDraftMutation(response)
+        } catch {
+            setRemoteDraftConflict(error: error, detail: "Draft update could not be applied. Resolve the server version before saving again.")
+        }
+    }
+
+    func archiveRemoteCreatorDraft(id: String) async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            archiveCreatorDraft(id: id)
+            return
+        }
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let response = try await client.archiveDraft(id: id, baseVersion: creatorDraftRemoteVersions[id] ?? 1, sessionID: sessionID)
+            applyRemoteDraftMutation(response)
+        } catch {
+            setRemoteDraftConflict(error: error, detail: "Archive request needs the latest remote version.")
+        }
+    }
+
+    func restoreRemoteCreatorDraft(id: String) async {
+        guard productionCatalogConfiguration.isRemoteEnabled else { return }
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let response = try await client.restoreDraft(id: id, baseVersion: creatorDraftRemoteVersions[id] ?? 1, sessionID: sessionID)
+            applyRemoteDraftMutation(response)
+        } catch {
+            setRemoteDraftConflict(error: error, detail: "Restore request needs the latest remote version.")
+        }
+    }
+
+    func refreshCreatorDraftRevisionHistory(id: String? = nil) async {
+        guard productionCatalogConfiguration.isRemoteEnabled else { return }
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let draftID = id ?? creatorPublishingContents.first?.id ?? "project-behind-the-vision"
+            let response = try await client.revisionHistory(id: draftID, sessionID: sessionID)
+            creatorDraftRevisionRecords = response.revisions
+            creatorDraftSyncQueueRecords = response.auditRecords ?? creatorDraftSyncQueueRecords
+            creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+                state: .synced,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                remoteDraftCount: creatorPublishingContents.count,
+                queuedEditCount: creatorDraftSyncQueueRecords.count,
+                conflictCount: 0,
+                revisionCount: response.revisions.count,
+                detail: "Revision history loaded from remote publishing persistence.",
+                lastError: nil,
+                updatedAtLabel: "Version \(response.version)"
+            )
+        } catch {
+            setRemoteDraftConflict(error: error, detail: "Revision history could not be loaded.")
+        }
+    }
+
+    func refreshCreatorDraftSyncQueue() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else { return }
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let response = try await client.syncQueue(sessionID: sessionID)
+            creatorDraftSyncQueueRecords = response.queuedEdits
+            creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+                state: .synced,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                remoteDraftCount: creatorPublishingContents.count,
+                queuedEditCount: response.queuedEdits.count,
+                conflictCount: 0,
+                revisionCount: creatorDraftRevisionRecords.count,
+                detail: "Sync queue loaded. Merge strategy: \(response.mergeStrategy).",
+                lastError: nil,
+                updatedAtLabel: "Queue ready"
+            )
+        } catch {
+            setRemoteDraftConflict(error: error, detail: "Draft sync queue could not be loaded.")
+        }
+    }
+
+    func simulateCreatorDraftRemoteConflict() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+                state: .conflict,
+                endpoint: "Local publishing repository",
+                remoteDraftCount: creatorPublishingContents.count,
+                queuedEditCount: creatorDraftSyncQueueRecords.count,
+                conflictCount: 1,
+                revisionCount: creatorDraftRevisionRecords.count,
+                detail: "Conflict simulation requires the loopback publishing backend.",
+                lastError: "Remote backend disabled",
+                updatedAtLabel: "Conflict preview"
+            )
+            return
+        }
+        do {
+            if creatorPublishingContents.isEmpty {
+                _ = await createRemoteCreatorDraft(
+                    title: "Conflict Simulation Draft",
+                    description: "A remote draft created to exercise conflict handling.",
+                    creator: activeViewingProfile.displayName,
+                    genre: "Drama",
+                    tags: ["Conflict", "Draft"],
+                    runtime: "41m"
+                )
+            }
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remotePublishingSessionID(client: client)
+            let draft = creatorPublishingContents.first ?? createCreatorDraft(title: "Conflict Simulation Draft", description: "A local fallback draft for conflict simulation.", creator: activeViewingProfile.displayName, genre: "Drama", tags: ["Conflict"], runtime: "41m")
+            _ = try await client.updateDraft(draft, baseVersion: 0, sessionID: sessionID)
+        } catch {
+            setRemoteDraftConflict(error: error, detail: "Concurrent edit detected. Server version remains authoritative until the creator reviews the conflict.")
+        }
+    }
+
     func refreshProductionCatalogRuntime() async {
         guard productionCatalogConfiguration.isRemoteEnabled else {
             productionCatalogRuntimeSnapshot = .localFallback(
@@ -3771,6 +4488,74 @@ final class HFStreamingStore: ObservableObject {
             version: response.catalogVersion,
             tombstoneCount: response.tombstones.count,
             detail: "Delta sync applied upserts and tombstones without duplicating catalog records."
+        )
+    }
+
+    private func remotePublishingSessionID(client: HFRemoteCreatorDraftAPIClient) async throws -> String {
+        if let lastRemotePublishingSessionID { return lastRemotePublishingSessionID }
+        let sessionID = try await client.createDevelopmentSession(role: "creator")
+        lastRemotePublishingSessionID = sessionID
+        return sessionID
+    }
+
+    private func applyRemoteDraftList(_ response: HFRemoteCreatorDraftListResponse) {
+        for draft in response.drafts {
+            upsertRemoteDraft(draft)
+        }
+        creatorDraftSyncQueueRecords = response.syncQueue ?? creatorDraftSyncQueueRecords
+        creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+            state: .synced,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            remoteDraftCount: response.drafts.count,
+            queuedEditCount: creatorDraftSyncQueueRecords.count,
+            conflictCount: 0,
+            revisionCount: response.revisionCount,
+            detail: "Creator drafts synchronized through the remote PublishingRepository facade.",
+            lastError: nil,
+            updatedAtLabel: "Remote draft sync ready"
+        )
+        persistCreatorPublishingContents()
+    }
+
+    private func applyRemoteDraftMutation(_ response: HFRemoteCreatorDraftMutationResponse) {
+        upsertRemoteDraft(response.draft)
+        creatorDraftRevisionRecords = response.revisions
+        creatorDraftSyncQueueRecords = response.auditRecords ?? creatorDraftSyncQueueRecords
+        creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+            state: .synced,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            remoteDraftCount: creatorPublishingContents.count,
+            queuedEditCount: creatorDraftSyncQueueRecords.count,
+            conflictCount: 0,
+            revisionCount: response.revisions.count,
+            detail: "Remote draft \(response.status) and merged into the local content snapshot.",
+            lastError: nil,
+            updatedAtLabel: "Remote version \(response.draft.version)"
+        )
+        persistCreatorPublishingContents()
+    }
+
+    private func upsertRemoteDraft(_ draft: HFRemoteCreatorDraftDTO) {
+        creatorDraftRemoteVersions[draft.id] = draft.version
+        let content = draft.publishingContent
+        if let index = creatorPublishingContents.firstIndex(where: { $0.id == content.id }) {
+            creatorPublishingContents[index] = content
+        } else {
+            creatorPublishingContents.insert(content, at: 0)
+        }
+    }
+
+    private func setRemoteDraftConflict(error: Error, detail: String) {
+        creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
+            state: .conflict,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            remoteDraftCount: creatorPublishingContents.count,
+            queuedEditCount: creatorDraftSyncQueueRecords.count,
+            conflictCount: 1,
+            revisionCount: creatorDraftRevisionRecords.count,
+            detail: detail,
+            lastError: error.localizedDescription,
+            updatedAtLabel: "Conflict recorded"
         )
     }
 
@@ -9025,6 +9810,18 @@ final class HFStreamingStore: ObservableObject {
     private static func uniqueCategories(_ categories: [Category]) -> [Category] {
         var seen = Set<String>()
         return categories.filter { seen.insert($0.id).inserted }
+    }
+
+    private static func slug(_ value: String) -> String {
+        let filtered = value
+            .lowercased()
+            .map { character -> Character in
+                character.isLetter || character.isNumber ? character : "-"
+            }
+        let collapsed = String(filtered)
+            .split(separator: "-")
+            .joined(separator: "-")
+        return collapsed.isEmpty ? "draft" : collapsed
     }
 
     private static func makeInitialContentSnapshot(projects: [HFCreatorPublishingContent]) -> HFContentBackendSnapshot {
