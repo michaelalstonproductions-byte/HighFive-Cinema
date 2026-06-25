@@ -551,6 +551,157 @@ struct HFCreatorRemoteUploadStatusRow: Identifiable, Hashable {
     var systemImage: String
 }
 
+enum HFCreatorRemoteProcessingState: String, Hashable {
+    case disabled = "Local Only"
+    case queued = "Queued"
+    case inspecting = "Inspecting"
+    case processing = "Processing"
+    case completed = "Completed"
+    case failed = "Failed"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFCreatorRemoteProcessingRuntimeSnapshot: Hashable {
+    var state: HFCreatorRemoteProcessingState
+    var endpoint: String
+    var jobCount: Int
+    var completedCount: Int
+    var failedCount: Int
+    var lastOutput: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.statusLabel }
+
+    static func local(reason: String) -> HFCreatorRemoteProcessingRuntimeSnapshot {
+        HFCreatorRemoteProcessingRuntimeSnapshot(
+            state: .disabled,
+            endpoint: "Local media runtime",
+            jobCount: 0,
+            completedCount: 0,
+            failedCount: 0,
+            lastOutput: "None",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFCreatorRemoteProcessingJobRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var assetID: String
+    var projectID: String
+    var creatorID: String?
+    var sourceObjectKey: String
+    var state: String
+    var progress: Int
+    var createdAt: String
+    var updatedAt: String
+    var completedAt: String?
+    var failureReason: String?
+    var retryCount: Int
+    var inspection: HFRemoteProcessingInspection?
+    var output: HFRemoteProcessingOutput?
+    var logs: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case assetID = "asset_id"
+        case projectID = "project_id"
+        case creatorID = "creator_id"
+        case sourceObjectKey = "source_object_key"
+        case state
+        case progress
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case completedAt = "completed_at"
+        case failureReason = "failure_reason"
+        case retryCount = "retry_count"
+        case inspection
+        case output
+        case logs
+    }
+}
+
+struct HFRemoteProcessingInspection: Codable, Hashable {
+    var fileSizeBytes: Int
+    var durationSeconds: Int
+    var aspectRatio: String
+    var frameRate: Int?
+    var videoCodec: String?
+    var audioCodec: String?
+    var audioChannelCount: Int
+    var hasVideoTrack: Bool
+    var hasAudioTrack: Bool
+    var ffprobeContract: String
+    var warningCount: Int
+    var warnings: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case fileSizeBytes = "file_size_bytes"
+        case durationSeconds = "duration_seconds"
+        case aspectRatio = "aspect_ratio"
+        case frameRate = "frame_rate"
+        case videoCodec = "video_codec"
+        case audioCodec = "audio_codec"
+        case audioChannelCount = "audio_channel_count"
+        case hasVideoTrack = "has_video_track"
+        case hasAudioTrack = "has_audio_track"
+        case ffprobeContract = "ffprobe_contract"
+        case warningCount = "warning_count"
+        case warnings
+    }
+}
+
+struct HFRemoteProcessingOutput: Codable, Hashable {
+    var outputState: String
+    var packageVersion: String
+    var hlsMasterObjectKey: String
+    var variants: [HFRemoteProcessingVariant]
+    var posterVariantObjectKey: String
+    var packageChecksumSHA256: String
+    var idempotencyKey: String
+    var storageProvider: String
+    var ffmpegContract: String
+
+    private enum CodingKeys: String, CodingKey {
+        case outputState = "output_state"
+        case packageVersion = "package_version"
+        case hlsMasterObjectKey = "hls_master_object_key"
+        case variants
+        case posterVariantObjectKey = "poster_variant_object_key"
+        case packageChecksumSHA256 = "package_checksum_sha256"
+        case idempotencyKey = "idempotency_key"
+        case storageProvider = "storage_provider"
+        case ffmpegContract = "ffmpeg_contract"
+    }
+}
+
+struct HFRemoteProcessingVariant: Codable, Hashable {
+    var quality: String
+    var objectKey: String
+    var bandwidth: Int
+    var codec: String
+
+    private enum CodingKeys: String, CodingKey {
+        case quality
+        case objectKey = "object_key"
+        case bandwidth
+        case codec
+    }
+}
+
+struct HFCreatorRemoteProcessingStatusRow: Identifiable, Hashable {
+    var id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
 struct HFCreatorProjectRuntimeSnapshot: Hashable {
     var projectCount: Int
     var manifestCount: Int
@@ -2674,6 +2825,11 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-upload-object-assets")
             || arguments.contains("--hf-upload-object-duplicates")
             || arguments.contains("--hf-upload-object-cancel")
+            || arguments.contains("--hf-start-media-processing")
+            || arguments.contains("--hf-processing-jobs")
+            || arguments.contains("--hf-processing-hls")
+            || arguments.contains("--hf-processing-status")
+            || arguments.contains("--hf-processing-logs")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3113,6 +3269,26 @@ struct HFRemoteUploadCancelResponse: Decodable {
     var detail: String
 }
 
+struct HFRemoteProcessingJobRequest: Encodable {
+    var assetID: String
+
+    private enum CodingKeys: String, CodingKey {
+        case assetID = "asset_id"
+    }
+}
+
+struct HFRemoteProcessingJobResponse: Decodable {
+    var status: String
+    var idempotent: Bool?
+    var job: HFCreatorRemoteProcessingJobRecord
+    var detail: String
+}
+
+struct HFRemoteProcessingJobsResponse: Decodable {
+    var status: String
+    var jobs: [HFCreatorRemoteProcessingJobRecord]
+}
+
 struct HFRemoteCreatorUploadAPIClient {
     var baseURL: URL
     var session: URLSession = .shared
@@ -3173,6 +3349,18 @@ struct HFRemoteCreatorUploadAPIClient {
     func cancelUpload(uploadURL: String, sessionID: String) async throws -> HFRemoteUploadCancelResponse {
         let cancelPath = uploadURL.replacingOccurrences(of: "/blob", with: "/cancel")
         return try await jsonRequest(path: cancelPath, method: "POST", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func createProcessingJob(assetID: String, sessionID: String) async throws -> HFRemoteProcessingJobResponse {
+        try await jsonRequest(path: "/v1/creator/processing/jobs", method: "POST", sessionID: sessionID, body: HFRemoteProcessingJobRequest(assetID: assetID))
+    }
+
+    func listProcessingJobs(sessionID: String) async throws -> HFRemoteProcessingJobsResponse {
+        try await jsonRequest(path: "/v1/creator/processing/jobs", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func retryProcessingJob(jobID: String, sessionID: String) async throws -> HFRemoteProcessingJobResponse {
+        try await jsonRequest(path: "/v1/creator/processing/jobs/\(jobID)/retry", method: "POST", sessionID: sessionID, body: Optional<[String: String]>.none)
     }
 
     private func jsonRequest<Response: Decodable, Body: Encodable>(
@@ -3719,6 +3907,8 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var creatorRemoteUploadRuntimeSnapshot: HFCreatorRemoteUploadRuntimeSnapshot
     @Published private(set) var creatorRemoteUploadSessionRecords: [HFCreatorRemoteUploadSessionRecord] = []
     @Published private(set) var creatorRemoteUploadedAssetRecords: [HFCreatorRemoteUploadedAssetRecord] = []
+    @Published private(set) var creatorRemoteProcessingRuntimeSnapshot: HFCreatorRemoteProcessingRuntimeSnapshot
+    @Published private(set) var creatorRemoteProcessingJobRecords: [HFCreatorRemoteProcessingJobRecord] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -3823,6 +4013,9 @@ final class HFStreamingStore: ObservableObject {
         )
         creatorRemoteUploadRuntimeSnapshot = .local(
             reason: "Creator upload object storage disabled until the loopback backend is enabled."
+        )
+        creatorRemoteProcessingRuntimeSnapshot = .local(
+            reason: "Media processing disabled until the loopback backend is enabled."
         )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
@@ -5684,6 +5877,185 @@ final class HFStreamingStore: ObservableObject {
                 updatedAtLabel: "Cancel failed"
             )
         }
+    }
+
+    var creatorRemoteProcessingStatusRows: [HFCreatorRemoteProcessingStatusRow] {
+        [
+            HFCreatorRemoteProcessingStatusRow(
+                id: "processing-state",
+                title: "Processing Runtime",
+                value: creatorRemoteProcessingRuntimeSnapshot.statusLabel,
+                detail: creatorRemoteProcessingRuntimeSnapshot.detail,
+                systemImage: creatorRemoteProcessingRuntimeSnapshot.state == .completed ? "play.rectangle.on.rectangle.fill" : "gearshape.2.fill"
+            ),
+            HFCreatorRemoteProcessingStatusRow(
+                id: "processing-jobs",
+                title: "Jobs",
+                value: "\(creatorRemoteProcessingRuntimeSnapshot.jobCount)",
+                detail: "Endpoint: \(creatorRemoteProcessingRuntimeSnapshot.endpoint)",
+                systemImage: "list.bullet.rectangle.portrait.fill"
+            ),
+            HFCreatorRemoteProcessingStatusRow(
+                id: "processing-output",
+                title: "HLS Output",
+                value: "\(creatorRemoteProcessingRuntimeSnapshot.completedCount)",
+                detail: creatorRemoteProcessingRuntimeSnapshot.lastOutput,
+                systemImage: "waveform.path.ecg.rectangle.fill"
+            ),
+            HFCreatorRemoteProcessingStatusRow(
+                id: "processing-failures",
+                title: "Failures",
+                value: "\(creatorRemoteProcessingRuntimeSnapshot.failedCount)",
+                detail: creatorRemoteProcessingRuntimeSnapshot.lastError ?? "Retry and idempotency contracts are available.",
+                systemImage: creatorRemoteProcessingRuntimeSnapshot.failedCount > 0 ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"
+            )
+        ]
+    }
+
+    func refreshCreatorRemoteProcessing() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteProcessingRuntimeSnapshot = .local(reason: "Remote media processing disabled. Local media inspection remains available.")
+            return
+        }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let response = try await client.listProcessingJobs(sessionID: sessionID)
+            creatorRemoteProcessingJobRecords = response.jobs
+            creatorRemoteProcessingRuntimeSnapshot = processingSnapshot(from: response.jobs, detail: response.jobs.isEmpty ? "Processing endpoint reachable; no jobs yet." : "Processing jobs loaded from the loopback backend.", updatedAtLabel: "Processing refreshed")
+        } catch {
+            creatorRemoteProcessingRuntimeSnapshot = HFCreatorRemoteProcessingRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                jobCount: creatorRemoteProcessingJobRecords.count,
+                completedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "completed" }.count,
+                failedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "failed" }.count,
+                lastOutput: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "None",
+                detail: "Remote processing endpoint unavailable. Local media runtime remains available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Processing refresh failed"
+            )
+        }
+    }
+
+    @discardableResult
+    func runCreatorRemoteProcessingFixture() async -> HFCreatorRemoteProcessingJobRecord? {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteProcessingRuntimeSnapshot = .local(reason: "Processing fixture skipped because the loopback backend is disabled.")
+            return nil
+        }
+        guard let projectID = primaryImportProjectID() else {
+            creatorRemoteProcessingRuntimeSnapshot = HFCreatorRemoteProcessingRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                jobCount: creatorRemoteProcessingJobRecords.count,
+                completedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "completed" }.count,
+                failedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "failed" }.count,
+                lastOutput: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "None",
+                detail: "No active creator project is available for processing.",
+                lastError: "Missing project",
+                updatedAtLabel: "Processing blocked"
+            )
+            return nil
+        }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let data = Data("highfive-p34a-source-video-fixture".utf8)
+            let created = try await client.createUploadSession(
+                projectID: projectID,
+                assetKind: "source_video",
+                filename: "highfive-source-fixture.mp4",
+                contentType: "video/mp4",
+                data: data,
+                sessionID: sessionID
+            )
+            creatorRemoteUploadSessionRecords.insert(created.session, at: 0)
+            let uploaded = try await client.uploadBlob(to: created.session.uploadURL, data: data, sessionID: sessionID)
+            creatorRemoteUploadedAssetRecords.insert(uploaded.assetRecord, at: 0)
+            let processed = try await client.createProcessingJob(assetID: uploaded.assetRecord.id, sessionID: sessionID)
+            creatorRemoteProcessingJobRecords.removeAll { $0.id == processed.job.id }
+            creatorRemoteProcessingJobRecords.insert(processed.job, at: 0)
+            creatorRemoteProcessingRuntimeSnapshot = processingSnapshot(from: creatorRemoteProcessingJobRecords, detail: processed.detail, updatedAtLabel: "Processing complete")
+            return processed.job
+        } catch {
+            creatorRemoteProcessingRuntimeSnapshot = HFCreatorRemoteProcessingRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                jobCount: creatorRemoteProcessingJobRecords.count,
+                completedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "completed" }.count,
+                failedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "failed" }.count,
+                lastOutput: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "None",
+                detail: "Processing fixture could not complete. Uploaded asset records remain intact.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Processing failed"
+            )
+            return nil
+        }
+    }
+
+    func retryLastCreatorRemoteProcessingJob() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteProcessingRuntimeSnapshot = .local(reason: "Processing retry skipped because the loopback backend is disabled.")
+            return
+        }
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            var jobID = creatorRemoteProcessingJobRecords.first?.id
+            if jobID == nil {
+                jobID = await runCreatorRemoteProcessingFixture()?.id
+            }
+            guard let jobID else { return }
+            let retry = try await client.retryProcessingJob(jobID: jobID, sessionID: sessionID)
+            creatorRemoteProcessingJobRecords.removeAll { $0.id == retry.job.id }
+            creatorRemoteProcessingJobRecords.insert(retry.job, at: 0)
+            creatorRemoteProcessingRuntimeSnapshot = processingSnapshot(from: creatorRemoteProcessingJobRecords, detail: retry.detail, updatedAtLabel: "Processing retried")
+        } catch {
+            creatorRemoteProcessingRuntimeSnapshot = HFCreatorRemoteProcessingRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                jobCount: creatorRemoteProcessingJobRecords.count,
+                completedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "completed" }.count,
+                failedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "failed" }.count,
+                lastOutput: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "None",
+                detail: "Processing retry could not complete.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Retry failed"
+            )
+        }
+    }
+
+    private func processingSnapshot(
+        from jobs: [HFCreatorRemoteProcessingJobRecord],
+        detail: String,
+        updatedAtLabel: String
+    ) -> HFCreatorRemoteProcessingRuntimeSnapshot {
+        let completed = jobs.filter { $0.state == "completed" }
+        let failed = jobs.filter { $0.state == "failed" }
+        let state = HFCreatorRemoteProcessingState(rawValue: jobs.first?.state.capitalized ?? "") ?? {
+            switch jobs.first?.state {
+            case "queued": return .queued
+            case "inspecting": return .inspecting
+            case "processing": return .processing
+            case "completed": return .completed
+            case "failed": return .failed
+            default: return jobs.isEmpty ? .queued : .completed
+            }
+        }()
+        return HFCreatorRemoteProcessingRuntimeSnapshot(
+            state: state,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            jobCount: jobs.count,
+            completedCount: completed.count,
+            failedCount: failed.count,
+            lastOutput: jobs.first?.output?.hlsMasterObjectKey ?? "None",
+            detail: detail,
+            lastError: failed.first?.failureReason,
+            updatedAtLabel: updatedAtLabel
+        )
     }
 
     var creatorProjectRuntimeSnapshot: HFCreatorProjectRuntimeSnapshot {

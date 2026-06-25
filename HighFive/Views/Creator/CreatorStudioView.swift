@@ -269,6 +269,11 @@ private enum HFCreatorProSpotlight {
     case remoteUploadAssets
     case remoteUploadDuplicates
     case remoteUploadCancel
+    case remoteProcessingDashboard
+    case remoteProcessingJobs
+    case remoteProcessingHLS
+    case remoteProcessingStatus
+    case remoteProcessingLogs
     case projectRuntime
     case projectManifest
     case projectAssets
@@ -400,6 +405,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-upload-object-assets") { return .remoteUploadAssets }
         if arguments.contains("--hf-upload-object-duplicates") { return .remoteUploadDuplicates }
         if arguments.contains("--hf-upload-object-cancel") { return .remoteUploadCancel }
+        if arguments.contains("--hf-start-media-processing") { return .remoteProcessingDashboard }
+        if arguments.contains("--hf-processing-jobs") { return .remoteProcessingJobs }
+        if arguments.contains("--hf-processing-hls") { return .remoteProcessingHLS }
+        if arguments.contains("--hf-processing-status") { return .remoteProcessingStatus }
+        if arguments.contains("--hf-processing-logs") { return .remoteProcessingLogs }
         if arguments.contains("--hf-start-project-runtime") { return .projectRuntime }
         if arguments.contains("--hf-project-manifest") { return .projectManifest }
         if arguments.contains("--hf-project-assets") { return .projectAssets }
@@ -2494,6 +2504,16 @@ struct CreatorStudioView: View {
             creatorRemoteUploadDuplicatesSection
         case .remoteUploadCancel:
             creatorRemoteUploadCancelSection
+        case .remoteProcessingDashboard:
+            creatorRemoteProcessingDashboardSection
+        case .remoteProcessingJobs:
+            creatorRemoteProcessingJobsSection
+        case .remoteProcessingHLS:
+            creatorRemoteProcessingHLSSection
+        case .remoteProcessingStatus:
+            creatorRemoteProcessingStatusSection
+        case .remoteProcessingLogs:
+            creatorRemoteProcessingLogsSection
         case .projectRuntime:
             creatorProjectRuntimeDashboard
         case .projectManifest:
@@ -6147,6 +6167,135 @@ struct CreatorStudioView: View {
         }
     }
 
+    private var creatorRemoteProcessingDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Media Processing Pipeline",
+            detail: "P34A turns uploaded source assets into inspected, job-tracked, playback-ready HLS package records through the loopback processing worker contract.",
+            systemImage: "gearshape.2.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.processing.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteProcessingStatusRows) { row in
+                        remoteProcessingStatusCard(row)
+                    }
+                }
+
+                Button {
+                    Task { _ = await streamingStore.runCreatorRemoteProcessingFixture() }
+                } label: {
+                    Label("Run Processing Job", systemImage: "play.rectangle.on.rectangle.fill")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.processing.runButton")
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorRemoteProcessing()
+        }
+    }
+
+    private var creatorRemoteProcessingJobsSection: some View {
+        creatorProSpotlight(
+            title: "Processing Jobs",
+            detail: "Each job tracks inspection, progress, retry count, failure reason, output metadata, and deterministic source asset lineage.",
+            systemImage: "list.bullet.rectangle.portrait.fill",
+            accent: HFColors.gold,
+            identifier: "hf.processing.jobs"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorRemoteProcessingJobRecords.prefix(8)) { record in
+                    remoteProcessingJobRow(record)
+                }
+                if streamingStore.creatorRemoteProcessingJobRecords.isEmpty {
+                    draftSyncEmptyRow(title: "No processing jobs yet", detail: streamingStore.creatorRemoteProcessingRuntimeSnapshot.detail, systemImage: "gearshape")
+                }
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorRemoteProcessing()
+            if streamingStore.creatorRemoteProcessingJobRecords.isEmpty {
+                _ = await streamingStore.runCreatorRemoteProcessingFixture()
+            }
+        }
+    }
+
+    private var creatorRemoteProcessingHLSSection: some View {
+        creatorProSpotlight(
+            title: "HLS Output",
+            detail: "Completed jobs create a deterministic local HLS package contract with master playlist, variant playlist, thumbnail manifest, checksum, and audio-track metadata.",
+            systemImage: "waveform.path.ecg.rectangle.fill",
+            accent: HFColors.violet,
+            identifier: "hf.processing.hls"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorRemoteProcessingJobRecords.filter { $0.output != nil }.prefix(6)) { record in
+                    remoteProcessingOutputRow(record)
+                }
+                if streamingStore.creatorRemoteProcessingJobRecords.filter({ $0.output != nil }).isEmpty {
+                    draftSyncEmptyRow(title: "No HLS output yet", detail: "Run a processing job to create local HLS package records.", systemImage: "waveform.path.ecg.rectangle")
+                }
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorRemoteProcessing()
+            if streamingStore.creatorRemoteProcessingJobRecords.filter({ $0.output != nil }).isEmpty {
+                _ = await streamingStore.runCreatorRemoteProcessingFixture()
+            }
+        }
+    }
+
+    private var creatorRemoteProcessingStatusSection: some View {
+        creatorProSpotlight(
+            title: "Processing Status",
+            detail: "The worker contract exposes queued, inspecting, processing, completed, and failed states with retry-safe progress and idempotent completed outputs.",
+            systemImage: "gauge.with.dots.needle.67percent",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.processing.status"
+        ) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                ForEach(streamingStore.creatorRemoteProcessingStatusRows) { row in
+                    remoteProcessingStatusCard(row)
+                }
+            }
+        }
+        .task {
+            await streamingStore.retryLastCreatorRemoteProcessingJob()
+        }
+    }
+
+    private var creatorRemoteProcessingLogsSection: some View {
+        creatorProSpotlight(
+            title: "Processing Logs",
+            detail: "Inspection, ffmpeg contract execution, output creation, retry, and failure events remain attached to each processing job for review.",
+            systemImage: "doc.text.magnifyingglass",
+            accent: HFColors.gold,
+            identifier: "hf.processing.logs"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorRemoteProcessingJobRecords.prefix(4)) { record in
+                    remoteProcessingLogRow(record)
+                }
+                if streamingStore.creatorRemoteProcessingJobRecords.isEmpty {
+                    draftSyncEmptyRow(title: "No processing logs yet", detail: streamingStore.creatorRemoteProcessingRuntimeSnapshot.detail, systemImage: "doc.text")
+                }
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorRemoteProcessing()
+            if streamingStore.creatorRemoteProcessingJobRecords.isEmpty {
+                _ = await streamingStore.runCreatorRemoteProcessingFixture()
+            }
+        }
+    }
+
     private var creatorDraftValidationSection: some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -9085,6 +9234,126 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.upload.object.asset.\(record.id)")
+    }
+
+    private func remoteProcessingStatusCard(_ row: HFCreatorRemoteProcessingStatusRow) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: row.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(row.value)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(row.title.uppercased())
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+            Text(row.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.processing.status.\(row.id)")
+    }
+
+    private func remoteProcessingJobRow(_ record: HFCreatorRemoteProcessingJobRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.state == "completed" ? "checkmark.seal.fill" : "gearshape.2.fill")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(record.state == "completed" ? HFColors.gold : HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background((record.state == "completed" ? HFColors.gold : HFColors.cyanGlow).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.id.replacingOccurrences(of: "processing-job-", with: "Job "))
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text("\(record.progress)%")
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text("\(record.state.capitalized) • retries \(record.retryCount) • asset \(record.assetID.prefix(12))")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text(record.failureReason ?? record.sourceObjectKey)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(record.failureReason == nil ? HFColors.cyanGlow : HFColors.redAccent)
+                    .lineLimit(2)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.processing.job.\(record.id)")
+    }
+
+    private func remoteProcessingOutputRow(_ record: HFCreatorRemoteProcessingJobRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: "play.rectangle.on.rectangle.fill")
+                    .foregroundStyle(HFColors.gold)
+                Text(record.output?.outputState.replacingOccurrences(of: "_", with: " ").capitalized ?? "No Output")
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Text(record.output?.packageVersion ?? "Pending")
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+            }
+            Text(record.output?.hlsMasterObjectKey ?? "No HLS master playlist yet")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(HFColors.cyanGlow)
+                .lineLimit(2)
+            Text("Variants \(record.output?.variants.count ?? 0) • checksum \(record.output?.packageChecksumSHA256.prefix(12) ?? "None")")
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.processing.hls.\(record.id)")
+    }
+
+    private func remoteProcessingLogRow(_ record: HFCreatorRemoteProcessingJobRecord) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .foregroundStyle(HFColors.gold)
+                Text(record.id.replacingOccurrences(of: "processing-job-", with: "Job "))
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+            }
+            ForEach(Array(record.logs.suffix(4).enumerated()), id: \.offset) { _, log in
+                Text(log)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.processing.logs.\(record.id)")
     }
 
     private func draftRevisionRow(_ record: HFCreatorDraftRevisionRecord) -> some View {

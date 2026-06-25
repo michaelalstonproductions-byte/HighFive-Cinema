@@ -10,6 +10,8 @@ import {
   creatorDraftSyncQueuePath,
   creatorWorkspacePath,
   creatorDetailPath,
+  creatorProcessingJobDetailPath,
+  creatorProcessingJobsPath,
   creatorUploadAssetsPath,
   creatorUploadDetailPath,
   creatorUploadSessionsPath,
@@ -67,6 +69,12 @@ import {
   putCreatorUploadBlob,
   uploadReadinessSummary
 } from "../routes/uploads.js";
+import {
+  createProcessingJob,
+  listProcessingJobs,
+  processingReadinessSummary,
+  retryProcessingJob
+} from "../routes/processing.js";
 import type { RuntimeConfig } from "./runtimeConfig.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
@@ -262,6 +270,37 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === creatorProcessingJobsPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, listProcessingJobs(authHeader(request.headers.authorization)));
+          return;
+        }
+        if (request.method === "POST") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 201, await createProcessingJob(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path.startsWith(creatorProcessingJobDetailPath)) {
+        const route = creatorProcessingRoute(path);
+        if (route.action === "retry") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          writeJson(response, 200, await retryProcessingJob(authHeader(request.headers.authorization), route.id));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
       if (path.startsWith(creatorUploadDetailPath)) {
         const uploadRoute = creatorUploadRoute(path);
         if (uploadRoute.action === "blob") {
@@ -412,6 +451,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     catalog_delta_path: catalogDeltaPath,
     creator_upload_sessions_path: creatorUploadSessionsPath,
     creator_upload_assets_path: creatorUploadAssetsPath,
+    creator_processing_jobs_path: creatorProcessingJobsPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -423,6 +463,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const identity = identityReadinessSummary();
   const publishing = publishingReadinessSummary();
   const uploads = uploadReadinessSummary();
+  const processing = processingReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -439,6 +480,11 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     local_object_storage: Boolean(uploads.local_object_storage),
     upload_checksum_validation: Boolean(uploads.checksum_validation),
     uploaded_asset_records: Number(uploads.uploaded_assets),
+    media_processing_enabled: Boolean(processing.processing_jobs_enabled),
+    ffprobe_inspection_contract: Boolean(processing.ffprobe_inspection_contract),
+    ffmpeg_processing_contract: Boolean(processing.ffmpeg_processing_contract),
+    hls_output_contract: Boolean(processing.hls_output_contract),
+    processing_jobs: Number(processing.jobs),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
@@ -447,6 +493,15 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     optimistic_concurrency: Boolean(publishing.optimistic_concurrency),
     draft_role_enforcement: Boolean(publishing.role_enforcement),
     payments_enabled: false
+  };
+}
+
+function creatorProcessingRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(creatorProcessingJobDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
   };
 }
 

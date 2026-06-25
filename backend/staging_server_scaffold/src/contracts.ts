@@ -77,6 +77,8 @@ export const creatorDraftSyncQueuePath = "/v1/creator/draft-sync/queue";
 export const creatorUploadSessionsPath = "/v1/creator/uploads/sessions";
 export const creatorUploadDetailPath = "/v1/creator/uploads/";
 export const creatorUploadAssetsPath = "/v1/creator/uploads/assets";
+export const creatorProcessingJobsPath = "/v1/creator/processing/jobs";
+export const creatorProcessingJobDetailPath = "/v1/creator/processing/jobs/";
 
 export const contractStates = [
   "entitlement_approved",

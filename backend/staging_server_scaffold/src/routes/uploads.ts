@@ -26,7 +26,7 @@ type UploadSessionRecord = {
   state: UploadState;
 };
 
-type UploadedAssetRecord = {
+export type UploadedAssetRecord = {
   id: string;
   upload_session_id: string;
   project_id: string;
@@ -187,6 +187,20 @@ export function listCreatorUploadedAssets(authorizationHeader: string | undefine
       credentials_required: false
     }
   };
+}
+
+export function uploadedAssetForProcessing(authorizationHeader: string | undefined, assetID: string): UploadedAssetRecord {
+  const session = requireCreatorIdentitySession(authorizationHeader);
+  const asset = uploadedAssets.get(assetID);
+  if (!asset) throw new ContractError("uploaded_asset_not_found", "Uploaded asset was not found.", 404);
+  if (!canAccessAsset(session, asset)) {
+    throw new ContractError("uploaded_asset_forbidden", "Uploaded asset belongs to another creator.", 403);
+  }
+  return asset;
+}
+
+export function uploadObjectStoreRoot(): string {
+  return objectStoreRoot;
 }
 
 export function resetUploadStorageForTests(): void {

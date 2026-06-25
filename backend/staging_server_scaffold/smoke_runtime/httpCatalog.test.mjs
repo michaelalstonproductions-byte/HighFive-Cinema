@@ -17,6 +17,10 @@ test("catalog: GET /ready reports seed catalog readiness", async () => {
   assert.equal(result.json.signed_upload_sessions, true);
   assert.equal(result.json.local_object_storage, true);
   assert.equal(result.json.upload_checksum_validation, true);
+  assert.equal(result.json.media_processing_enabled, true);
+  assert.equal(result.json.ffprobe_inspection_contract, true);
+  assert.equal(result.json.ffmpeg_processing_contract, true);
+  assert.equal(result.json.hls_output_contract, true);
   assert.equal(result.json.payments_enabled, false);
 });
 

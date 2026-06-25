@@ -8,6 +8,8 @@ import {
   creatorDraftsPath,
   creatorDraftSyncQueuePath,
   creatorDetailPath,
+  creatorProcessingJobDetailPath,
+  creatorProcessingJobsPath,
   creatorUploadAssetsPath,
   creatorUploadDetailPath,
   creatorUploadSessionsPath,
@@ -48,6 +50,11 @@ export function openAPISpec(): Record<string, unknown> {
       [`${creatorUploadDetailPath}{id}/blob`]: { put: { summary: "Upload verified asset bytes into local object storage" } },
       [`${creatorUploadDetailPath}{id}/cancel`]: { post: { summary: "Cancel creator upload session and cleanup local staging object" } },
       [creatorUploadAssetsPath]: { get: { summary: "List uploaded creator asset records" } },
+      [creatorProcessingJobsPath]: {
+        get: { summary: "List creator media processing jobs" },
+        post: { summary: "Create local media processing job for uploaded asset" }
+      },
+      [`${creatorProcessingJobDetailPath}{id}/retry`]: { post: { summary: "Retry a failed or completed media processing job idempotently" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };
