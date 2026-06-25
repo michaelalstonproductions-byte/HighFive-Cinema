@@ -1,10 +1,24 @@
-import { catalogSeed } from "../catalog/catalogSeed.js";
+import { catalogSeed, type CatalogCollection, type CatalogMovie, type CatalogSeed } from "../catalog/catalogSeed.js";
 import type { JsonObject } from "../contracts.js";
 import { ContractError } from "../errors.js";
-import { requireCreatorIdentitySession, type IdentitySession } from "./identity.js";
+import { requireCreatorIdentitySession, requireIdentitySession, type IdentitySession } from "./identity.js";
 
 type ReleaseState = "draft" | "review" | "scheduled" | "published" | "archived";
-type RevisionAction = "created" | "updated" | "archived" | "restored";
+type RevisionAction =
+  | "created"
+  | "updated"
+  | "archived"
+  | "restored"
+  | "submitted"
+  | "withdrawn"
+  | "revision_requested"
+  | "approved"
+  | "rejected"
+  | "scheduled"
+  | "published"
+  | "unpublished";
+
+type ReviewStatus = "pending_review" | "needs_revision" | "approved" | "rejected" | "scheduled" | "published" | "unpublished" | "archived";
 
 type DraftRevisionRecord = {
   id: string;
@@ -52,11 +66,31 @@ type PublishingDraftRecord = {
   revisions: DraftRevisionRecord[];
 };
 
+type PublishingReviewRecord = {
+  id: string;
+  project_id: string;
+  content_id: string;
+  creator_id: string;
+  title: string;
+  status: ReviewStatus;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  scheduled_for: string | null;
+  reviewer_user_id: string | null;
+  creator_note: string | null;
+  admin_note: string | null;
+  revision_request: string | null;
+  catalog_visible: boolean;
+  version: number;
+};
+
 const drafts = new Map<string, PublishingDraftRecord>();
+const reviews = new Map<string, PublishingReviewRecord>();
 const syncQueue: DraftSyncAuditRecord[] = [];
 let draftCounter = 1;
 let revisionCounter = 1;
 let auditCounter = 1;
+let reviewCounter = 1;
 
 seedDrafts();
 
@@ -67,7 +101,12 @@ export function publishingReadinessSummary(): JsonObject {
     conflict_detection: true,
     revision_history: true,
     role_enforcement: true,
-    offline_queue_contract: true
+    offline_queue_contract: true,
+    submit_for_review: true,
+    admin_review_queue: true,
+    approve_reject_schedule_publish: true,
+    catalog_visibility_transaction: true,
+    review_audit_log: true
   };
 }
 
@@ -233,9 +272,143 @@ export function creatorDraftSyncQueue(authorizationHeader: string | undefined): 
   };
 }
 
+export function submitCreatorDraftForReview(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  const session = requireCreatorIdentitySession(authorizationHeader);
+  const draft = requireDraftAccess(session, draftID);
+  assertExpectedVersion(draft, body);
+  assertReviewReady(draft);
+  draft.release_state = "review";
+  draft.version += 1;
+  draft.updated_at = nowISO();
+  draft.updated_at_label = "Submitted for admin review";
+  draft.revisions.push(revision(draft.id, draft.version, "submitted", session, noteField(body) ?? "Submitted for review."));
+  const review = upsertReview(draft, {
+    status: "pending_review",
+    submitted_at: draft.updated_at,
+    reviewed_at: null,
+    scheduled_for: null,
+    reviewer_user_id: null,
+    creator_note: noteField(body),
+    admin_note: null,
+    revision_request: null,
+    catalog_visible: false
+  });
+  recordAudit("submit_for_review", session, draft.id, "allowed", "Creator submitted project for admin review.");
+  return mutationResponse("submitted_for_review", draft, session, review);
+}
+
+export function withdrawCreatorReviewSubmission(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  const session = requireCreatorIdentitySession(authorizationHeader);
+  const draft = requireDraftAccess(session, draftID);
+  assertExpectedVersion(draft, body);
+  if (draft.release_state !== "review") {
+    throw new ContractError("draft_not_in_review", "Only projects in review can be withdrawn.", 409);
+  }
+  draft.release_state = "draft";
+  draft.version += 1;
+  draft.updated_at = nowISO();
+  draft.updated_at_label = "Review submission withdrawn";
+  draft.revisions.push(revision(draft.id, draft.version, "withdrawn", session, noteField(body) ?? "Review submission withdrawn by creator."));
+  const review = upsertReview(draft, {
+    status: "needs_revision",
+    reviewed_at: draft.updated_at,
+    reviewer_user_id: session.user_id,
+    creator_note: noteField(body),
+    admin_note: "Creator withdrew the review submission.",
+    revision_request: "Creator returned project to draft before admin decision.",
+    catalog_visible: false
+  });
+  recordAudit("withdraw_submission", session, draft.id, "allowed", "Creator withdrew project from review.");
+  return mutationResponse("withdrawn", draft, session, review);
+}
+
+export function adminReviewQueue(authorizationHeader: string | undefined): JsonObject {
+  const session = requireAdminSession(authorizationHeader);
+  const records = Array.from(reviews.values())
+    .filter((record) => record.status !== "archived")
+    .sort((a, b) => (b.submitted_at ?? "").localeCompare(a.submitted_at ?? ""));
+  recordAudit("admin_review_queue", session, "all", "allowed", `Returned ${records.length} review records.`);
+  return {
+    status: "ready",
+    review_queue: records.map(sanitizeReview),
+    pending_count: records.filter((record) => record.status === "pending_review").length,
+    approved_count: records.filter((record) => record.status === "approved").length,
+    published_count: records.filter((record) => record.status === "published").length,
+    audit_records: syncQueue.slice(-20)
+  };
+}
+
+export function adminReviewAuditTrail(authorizationHeader: string | undefined): JsonObject {
+  const session = requireAdminSession(authorizationHeader);
+  recordAudit("admin_review_audit", session, "all", "allowed", "Admin inspected publishing review audit trail.");
+  return {
+    status: "ready",
+    audit_records: syncQueue.slice(-50),
+    review_queue: Array.from(reviews.values()).map(sanitizeReview)
+  };
+}
+
+export function adminRequestRevision(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  return adminReviewMutation(authorizationHeader, draftID, body, "revision_requested", "needs_revision", "review", false);
+}
+
+export function adminApproveProject(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  return adminReviewMutation(authorizationHeader, draftID, body, "approved", "approved", "review", false);
+}
+
+export function adminRejectProject(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  return adminReviewMutation(authorizationHeader, draftID, body, "rejected", "rejected", "review", false);
+}
+
+export function adminScheduleProject(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  const scheduledFor = stringField(body, "scheduled_for") ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  return adminReviewMutation(authorizationHeader, draftID, body, "scheduled", "scheduled", "scheduled", false, scheduledFor);
+}
+
+export function adminPublishProject(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  return adminReviewMutation(authorizationHeader, draftID, body, "published", "published", "published", true);
+}
+
+export function adminUnpublishProject(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  return adminReviewMutation(authorizationHeader, draftID, body, "unpublished", "unpublished", "review", false);
+}
+
+export function adminArchiveProject(authorizationHeader: string | undefined, draftID: string, body: unknown): JsonObject {
+  return adminReviewMutation(authorizationHeader, draftID, body, "archived", "archived", "archived", false);
+}
+
 export function canAccessCreatorProject(session: IdentitySession, projectID: string): boolean {
   if (session.role === "admin") return true;
   return accessibleDrafts(session).some((draft) => draft.id === projectID);
+}
+
+export function governedCatalogSeed(seed: CatalogSeed = catalogSeed): CatalogSeed {
+  const publishedDrafts = Array.from(drafts.values()).filter((draft) => {
+    const review = reviews.get(draft.id);
+    return draft.release_state === "published" && (review?.catalog_visible ?? true);
+  });
+  const movies = uniqueByID([...seed.movies, ...publishedDrafts.map(catalogMovieFromDraft)]);
+  const creatorPublishedIDs = unique([
+    ...(seed.collections.find((collection) => collection.id === "creator-published")?.movie_ids ?? []),
+    ...publishedDrafts.map((draft) => draft.content_id)
+  ]);
+  const collections = seed.collections.map((collection): CatalogCollection => {
+    if (collection.id === "creator-published") return { ...collection, movie_ids: creatorPublishedIDs };
+    return collection;
+  });
+  if (!collections.some((collection) => collection.id === "creator-published")) {
+    collections.push({
+      id: "creator-published",
+      title: "Creator Published",
+      subtitle: "Governed published creator projects",
+      movie_ids: creatorPublishedIDs
+    });
+  }
+  return {
+    ...seed,
+    movies,
+    collections
+  };
 }
 
 function seedDrafts(): void {
@@ -277,7 +450,121 @@ function seedDrafts(): void {
       created_at: catalogSeed.generated_at
     });
     drafts.set(draft.id, draft);
+    if (draft.release_state === "published" || draft.release_state === "review" || draft.release_state === "scheduled") {
+      reviews.set(draft.id, {
+        id: `review-${reviewCounter++}`,
+        project_id: draft.id,
+        content_id: draft.content_id,
+        creator_id: draft.creator_id,
+        title: draft.title,
+        status: draft.release_state === "published" ? "published" : draft.release_state === "scheduled" ? "scheduled" : "pending_review",
+        submitted_at: catalogSeed.generated_at,
+        reviewed_at: draft.release_state === "published" ? catalogSeed.generated_at : null,
+        scheduled_for: null,
+        reviewer_user_id: draft.release_state === "published" ? "local-admin" : null,
+        creator_note: "Seeded creator project.",
+        admin_note: draft.release_state === "published" ? "Seeded project is visible in catalog." : null,
+        revision_request: null,
+        catalog_visible: draft.release_state === "published",
+        version: draft.version
+      });
+    }
   }
+}
+
+function requireAdminSession(authorizationHeader: string | undefined): IdentitySession {
+  const session = requireIdentitySession(authorizationHeader);
+  if (session.role !== "admin") {
+    recordAudit("admin_access_denied", session, "all", "denied", "Admin review workflow requires admin role.");
+    const error = new Error("admin_role_required");
+    error.name = "ForbiddenIdentityAccess";
+    throw error;
+  }
+  return session;
+}
+
+function adminReviewMutation(
+  authorizationHeader: string | undefined,
+  draftID: string,
+  body: unknown,
+  action: RevisionAction,
+  reviewStatus: ReviewStatus,
+  releaseState: ReleaseState,
+  catalogVisible: boolean,
+  scheduledFor: string | null = null
+): JsonObject {
+  const session = requireAdminSession(authorizationHeader);
+  const draft = requireDraftAccess(session, draftID);
+  assertAdminTransitionAllowed(draft, action);
+  draft.release_state = releaseState;
+  draft.version += 1;
+  draft.updated_at = nowISO();
+  draft.updated_at_label = labelFor(action);
+  if (releaseState === "archived") draft.archived_at = draft.updated_at;
+  if (action === "unpublished") draft.archived_at = null;
+  const detail = noteField(body) ?? labelFor(action);
+  draft.revisions.push(revision(draft.id, draft.version, action, session, detail));
+  const review = upsertReview(draft, {
+    status: reviewStatus,
+    reviewed_at: draft.updated_at,
+    scheduled_for: scheduledFor,
+    reviewer_user_id: session.user_id,
+    admin_note: detail,
+    revision_request: action === "revision_requested" ? detail : null,
+    catalog_visible: catalogVisible
+  });
+  recordAudit(action, session, draft.id, "allowed", `${labelFor(action)} Catalog visible: ${catalogVisible}.`);
+  return mutationResponse(action, draft, session, review);
+}
+
+function assertAdminTransitionAllowed(draft: PublishingDraftRecord, action: RevisionAction): void {
+  if (action === "published" && draft.release_state !== "review" && draft.release_state !== "scheduled") {
+    throw new ContractError("publish_state_invalid", "Project must be in review or scheduled before publish.", 409);
+  }
+  if ((action === "approved" || action === "rejected" || action === "revision_requested") && draft.release_state !== "review") {
+    throw new ContractError("review_state_invalid", "Project must be in review for this admin decision.", 409);
+  }
+}
+
+function assertReviewReady(draft: PublishingDraftRecord): void {
+  const statuses = [draft.poster_status, draft.trailer_status, draft.metadata_status, draft.artwork_status].map((status) => status.toLowerCase());
+  if (!statuses.every((status) => status === "ready")) {
+    throw new ContractError("publishing_readiness_failed", "Poster, trailer, metadata, and artwork must be ready before review submission.", 422);
+  }
+}
+
+function upsertReview(draft: PublishingDraftRecord, update: Partial<PublishingReviewRecord>): PublishingReviewRecord {
+  const previous = reviews.get(draft.id);
+  const review: PublishingReviewRecord = {
+    id: previous?.id ?? `review-${reviewCounter++}`,
+    project_id: draft.id,
+    content_id: draft.content_id,
+    creator_id: draft.creator_id,
+    title: draft.title,
+    status: update.status ?? previous?.status ?? "pending_review",
+    submitted_at: update.submitted_at ?? previous?.submitted_at ?? null,
+    reviewed_at: update.reviewed_at ?? previous?.reviewed_at ?? null,
+    scheduled_for: update.scheduled_for ?? previous?.scheduled_for ?? null,
+    reviewer_user_id: update.reviewer_user_id ?? previous?.reviewer_user_id ?? null,
+    creator_note: update.creator_note ?? previous?.creator_note ?? null,
+    admin_note: update.admin_note ?? previous?.admin_note ?? null,
+    revision_request: update.revision_request ?? previous?.revision_request ?? null,
+    catalog_visible: update.catalog_visible ?? previous?.catalog_visible ?? false,
+    version: draft.version
+  };
+  reviews.set(draft.id, review);
+  return review;
+}
+
+function mutationResponse(status: string, draft: PublishingDraftRecord, session: IdentitySession, review: PublishingReviewRecord): JsonObject {
+  return {
+    status,
+    draft: sanitizeDraft(draft),
+    review: sanitizeReview(review),
+    revisions: draft.revisions,
+    audit_records: syncQueue.filter((record) => record.project_id === draft.id || session.role === "admin").slice(-12),
+    catalog_visibility: review.catalog_visible ? "visible" : "private"
+  };
 }
 
 function accessibleDrafts(session: IdentitySession): PublishingDraftRecord[] {
@@ -371,6 +658,48 @@ function sanitizeDraft(draft: PublishingDraftRecord): JsonObject {
   };
 }
 
+function sanitizeReview(review: PublishingReviewRecord): JsonObject {
+  return {
+    id: review.id,
+    project_id: review.project_id,
+    content_id: review.content_id,
+    creator_id: review.creator_id,
+    title: review.title,
+    status: review.status,
+    submitted_at: review.submitted_at,
+    reviewed_at: review.reviewed_at,
+    scheduled_for: review.scheduled_for,
+    reviewer_user_id: review.reviewer_user_id,
+    creator_note: review.creator_note,
+    admin_note: review.admin_note,
+    revision_request: review.revision_request,
+    catalog_visible: review.catalog_visible,
+    version: review.version
+  };
+}
+
+function catalogMovieFromDraft(draft: PublishingDraftRecord): CatalogMovie {
+  return {
+    id: draft.content_id,
+    title: draft.title,
+    subtitle: "Creator Published",
+    synopsis: draft.description,
+    year: "2026",
+    rating: "NR",
+    duration: draft.runtime,
+    genres: unique([draft.genre, ...draft.tags]).filter(Boolean),
+    poster_asset_name: draft.poster_asset_name,
+    backdrop_asset_name: null,
+    creator_id: draft.creator_id,
+    creator_name: draft.creator,
+    is_original: false,
+    is_coming_soon: false,
+    is_downloaded: false,
+    progress: null,
+    collection_ids: ["creator-published", slug(draft.genre)]
+  };
+}
+
 function revision(projectID: string, version: number, action: RevisionAction, session: IdentitySession, detail: string): DraftRevisionRecord {
   return {
     id: `draft-revision-${revisionCounter++}`,
@@ -395,6 +724,14 @@ function recordAudit(action: string, session: IdentitySession, projectID: string
     created_at: nowISO()
   });
   if (syncQueue.length > 100) syncQueue.splice(0, syncQueue.length - 100);
+}
+
+function labelFor(action: string): string {
+  return action.split("_").map((part) => part.slice(0, 1).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function noteField(body: unknown): string | null {
+  return stringField(body, "note") ?? stringField(body, "admin_note") ?? stringField(body, "creator_note");
 }
 
 function membershipFor(session: IdentitySession): JsonObject[] {
@@ -433,4 +770,17 @@ function slug(value: string): string {
 
 function nowISO(): string {
   return new Date().toISOString();
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function uniqueByID<T extends { id: string }>(values: T[]): T[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    if (seen.has(value.id)) return false;
+    seen.add(value.id);
+    return true;
+  });
 }

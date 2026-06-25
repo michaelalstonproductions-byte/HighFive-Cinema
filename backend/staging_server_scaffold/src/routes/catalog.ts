@@ -1,7 +1,9 @@
 import { catalogSeed, type CatalogCollection, type CatalogMovie, type CatalogSeed } from "../catalog/catalogSeed.js";
 import { ContractError } from "../errors.js";
+import { governedCatalogSeed } from "./publishing.js";
 
 export function catalogSummary(seed: CatalogSeed = catalogSeed) {
+  seed = governedCatalogSeed(seed);
   return {
     generated_at: seed.generated_at,
     source: "local_seed",
@@ -17,7 +19,7 @@ export function catalogSummary(seed: CatalogSeed = catalogSeed) {
 }
 
 export function catalogSync(cursor: string | null, seed: CatalogSeed = catalogSeed) {
-  const syncedSeed = syncedCatalogSeed(seed);
+  const syncedSeed = syncedCatalogSeed(governedCatalogSeed(seed));
   return {
     ...catalogSummary(syncedSeed),
     source: "local_seed_sync",
@@ -89,6 +91,7 @@ export function catalogDelta(cursor: string | null, seed: CatalogSeed = catalogS
 }
 
 export function contentDetail(id: string, seed: CatalogSeed = catalogSeed): CatalogMovie {
+  seed = governedCatalogSeed(seed);
   const movie = seed.movies.find((candidate) => candidate.id === id);
   if (!movie) {
     throw new ContractError("content_not_found", "Catalog content was not found", 404);
@@ -97,6 +100,7 @@ export function contentDetail(id: string, seed: CatalogSeed = catalogSeed): Cata
 }
 
 export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed): CatalogSeed["creators"][number] & { titles: CatalogMovie[] } {
+  seed = governedCatalogSeed(seed);
   const creator = seed.creators.find((candidate) => candidate.id === id);
   if (!creator) {
     throw new ContractError("creator_not_found", "Catalog creator was not found", 404);
@@ -108,6 +112,7 @@ export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed): Cata
 }
 
 export function collectionDetail(id: string, seed: CatalogSeed = catalogSeed): CatalogCollection & { titles: CatalogMovie[] } {
+  seed = governedCatalogSeed(seed);
   const collection = seed.collections.find((candidate) => candidate.id === id);
   if (!collection) {
     throw new ContractError("collection_not_found", "Catalog collection was not found", 404);

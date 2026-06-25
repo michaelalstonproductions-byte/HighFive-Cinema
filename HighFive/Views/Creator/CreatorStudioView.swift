@@ -173,6 +173,10 @@ private enum HFCreatorProSpotlight {
     case publishingReadiness
     case publishingAudit
     case publishingCalendar
+    case publishingReviewDashboard
+    case publishingReviewQueue
+    case publishingReviewPublish
+    case publishingReviewAudit
     case collaborationDashboard
     case collaborationTeam
     case collaborationTasks
@@ -307,6 +311,10 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-publishing-readiness") { return .publishingReadiness }
         if arguments.contains("--hf-publishing-audit") { return .publishingAudit }
         if arguments.contains("--hf-publishing-calendar") { return .publishingCalendar }
+        if arguments.contains("--hf-start-publishing-review") { return .publishingReviewDashboard }
+        if arguments.contains("--hf-review-queue") { return .publishingReviewQueue }
+        if arguments.contains("--hf-review-publish") { return .publishingReviewPublish }
+        if arguments.contains("--hf-review-audit") { return .publishingReviewAudit }
         if arguments.contains("--hf-start-collaboration") { return .collaborationDashboard }
         if arguments.contains("--hf-collaboration-team") { return .collaborationTeam }
         if arguments.contains("--hf-collaboration-tasks") { return .collaborationTasks }
@@ -2310,6 +2318,14 @@ struct CreatorStudioView: View {
             publishingAuditSection
         case .publishingCalendar:
             publishingCalendarSection
+        case .publishingReviewDashboard:
+            publishingReviewWorkflowSection
+        case .publishingReviewQueue:
+            publishingReviewQueueSection
+        case .publishingReviewPublish:
+            publishingReviewCatalogVisibilitySection
+        case .publishingReviewAudit:
+            publishingReviewAuditTrailSection
         case .collaborationDashboard:
             creatorCollaborationDashboard
         case .collaborationTeam:
@@ -3012,6 +3028,146 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.publishing.audit")
+    }
+
+    private var publishingReviewWorkflowSection: some View {
+        creatorProSpotlight(
+            title: "Publishing Review Workflow",
+            detail: "Creator submit, admin review, approval, publish transaction, and catalog visibility now run through the loopback publishing service.",
+            systemImage: "checkmark.seal.text.page.fill",
+            accent: HFColors.gold,
+            identifier: "hf.publishingReview.workflow"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Pending", value: "\(streamingStore.publishingReviewRuntimeSnapshot.pendingCount)")
+                    creatorProStat(title: "Approved", value: "\(streamingStore.publishingReviewRuntimeSnapshot.approvedCount)")
+                    creatorProStat(title: "Published", value: "\(streamingStore.publishingReviewRuntimeSnapshot.publishedCount)")
+                    creatorProStat(title: "Audit", value: "\(streamingStore.publishingReviewRuntimeSnapshot.auditCount)")
+                }
+
+                Text("Draft Workspace -> Submit -> Admin Queue -> Approve -> Publish -> Catalog")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(streamingStore.publishingReviewRuntimeSnapshot.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await streamingStore.runPublishingReviewWorkflowFixture() }
+                } label: {
+                    Label("Run Review Workflow", systemImage: "play.circle.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(HFColors.gold)
+                .accessibilityIdentifier("hf.publishingReview.runWorkflow")
+            }
+        }
+        .task {
+            await streamingStore.runPublishingReviewWorkflowFixture()
+        }
+    }
+
+    private var publishingReviewQueueSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Admin Review Queue",
+                    detail: "Projects enter this queue only after creator submission and readiness validation.",
+                    systemImage: "tray.full.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                if streamingStore.publishingReviewRecords.isEmpty {
+                    HFCreatorStudioReadinessRow(title: "Review Queue", detail: "Open the workflow route or run the review workflow to load queue records.", status: "Waiting", systemImage: "hourglass", accent: HFColors.gold)
+                } else {
+                    VStack(spacing: HFSpacing.xs) {
+                        ForEach(streamingStore.publishingReviewRecords.prefix(8)) { record in
+                            HFCreatorStudioReadinessRow(
+                                title: record.title,
+                                detail: "\(record.projectID). Catalog \(record.catalogVisible ? "visible" : "private"). \(record.adminNote ?? record.creatorNote ?? "Awaiting decision.")",
+                                status: record.status.replacingOccurrences(of: "_", with: " ").capitalized,
+                                systemImage: record.catalogVisible ? "eye.circle.fill" : "lock.doc.fill",
+                                accent: record.catalogVisible ? HFColors.gold : HFColors.cyanGlow
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.runPublishingReviewWorkflowFixture()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishingReview.queue")
+    }
+
+    private var publishingReviewCatalogVisibilitySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Catalog Visibility Transaction",
+                    detail: "A project remains private through submit and approval, then becomes visible only after admin publish.",
+                    systemImage: "eye.trianglebadge.exclamationmark.fill",
+                    accent: HFColors.gold
+                )
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: HFSpacing.sm) {
+                        ForEach(streamingStore.publishingReviewStatusRows) { row in
+                            contentBackendRailCard(row)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                Text("Catalog visibility: \(streamingStore.publishingReviewRuntimeSnapshot.catalogVisibility)")
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.runPublishingReviewWorkflowFixture()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishingReview.catalogVisibility")
+    }
+
+    private var publishingReviewAuditTrailSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Publishing Review Audit",
+                    detail: "Submit, approve, publish, unpublish, rollback, and revision actions are retained as review audit records.",
+                    systemImage: "list.clipboard.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.publishingReviewAuditRecords.prefix(10)) { record in
+                        HFCreatorStudioReadinessRow(
+                            title: record.action.replacingOccurrences(of: "_", with: " ").capitalized,
+                            detail: "\(record.projectID). \(record.detail)",
+                            status: record.result.capitalized,
+                            systemImage: "checklist.checked",
+                            accent: HFColors.violet
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.runPublishingReviewWorkflowFixture()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.publishingReview.audit")
     }
 
     private var creatorCollaborationDashboard: some View {

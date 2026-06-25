@@ -3056,6 +3056,10 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-discovery-related")
             || arguments.contains("--hf-discovery-creator")
             || arguments.contains("--hf-discovery-empty")
+            || arguments.contains("--hf-start-publishing-review")
+            || arguments.contains("--hf-review-queue")
+            || arguments.contains("--hf-review-publish")
+            || arguments.contains("--hf-review-audit")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3134,6 +3138,79 @@ struct HFCreatorDraftRevisionRecord: Identifiable, Codable, Hashable {
         case actorUserID = "actor_user_id"
         case detail
         case createdAt = "created_at"
+    }
+}
+
+enum HFPublishingReviewRuntimeState: String, Hashable {
+    case disabled = "Local Review"
+    case syncing = "Review Syncing"
+    case ready = "Review Ready"
+    case failed = "Review Failed"
+}
+
+struct HFPublishingReviewRuntimeSnapshot: Hashable {
+    var state: HFPublishingReviewRuntimeState
+    var endpoint: String
+    var pendingCount: Int
+    var approvedCount: Int
+    var publishedCount: Int
+    var auditCount: Int
+    var catalogVisibility: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.rawValue }
+
+    static func local(reason: String) -> HFPublishingReviewRuntimeSnapshot {
+        HFPublishingReviewRuntimeSnapshot(
+            state: .disabled,
+            endpoint: "Local publishing repository",
+            pendingCount: 0,
+            approvedCount: 0,
+            publishedCount: 0,
+            auditCount: 0,
+            catalogVisibility: "Local",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFPublishingReviewRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var projectID: String
+    var contentID: String
+    var creatorID: String
+    var title: String
+    var status: String
+    var submittedAt: String?
+    var reviewedAt: String?
+    var scheduledFor: String?
+    var reviewerUserID: String?
+    var creatorNote: String?
+    var adminNote: String?
+    var revisionRequest: String?
+    var catalogVisible: Bool
+    var version: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case projectID = "project_id"
+        case contentID = "content_id"
+        case creatorID = "creator_id"
+        case title
+        case status
+        case submittedAt = "submitted_at"
+        case reviewedAt = "reviewed_at"
+        case scheduledFor = "scheduled_for"
+        case reviewerUserID = "reviewer_user_id"
+        case creatorNote = "creator_note"
+        case adminNote = "admin_note"
+        case revisionRequest = "revision_request"
+        case catalogVisible = "catalog_visible"
+        case version
     }
 }
 
@@ -3236,14 +3313,18 @@ struct HFRemoteCreatorDraftListResponse: Codable {
 struct HFRemoteCreatorDraftMutationResponse: Codable {
     var status: String
     var draft: HFRemoteCreatorDraftDTO
+    var review: HFPublishingReviewRecord?
     var revisions: [HFCreatorDraftRevisionRecord]
     var auditRecords: [HFCreatorDraftSyncQueueRecord]?
+    var catalogVisibility: String?
 
     private enum CodingKeys: String, CodingKey {
         case status
         case draft
+        case review
         case revisions
         case auditRecords = "audit_records"
+        case catalogVisibility = "catalog_visibility"
     }
 }
 
@@ -3276,6 +3357,36 @@ struct HFRemoteCreatorDraftQueueResponse: Codable {
         case offlineEditsSupported = "offline_edits_supported"
         case retrySupported = "retry_supported"
         case mergeStrategy = "merge_strategy"
+    }
+}
+
+struct HFRemotePublishingReviewQueueResponse: Codable {
+    var status: String
+    var reviewQueue: [HFPublishingReviewRecord]
+    var pendingCount: Int
+    var approvedCount: Int
+    var publishedCount: Int
+    var auditRecords: [HFCreatorDraftSyncQueueRecord]?
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case reviewQueue = "review_queue"
+        case pendingCount = "pending_count"
+        case approvedCount = "approved_count"
+        case publishedCount = "published_count"
+        case auditRecords = "audit_records"
+    }
+}
+
+struct HFRemotePublishingReviewAuditResponse: Codable {
+    var status: String
+    var auditRecords: [HFCreatorDraftSyncQueueRecord]
+    var reviewQueue: [HFPublishingReviewRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case auditRecords = "audit_records"
+        case reviewQueue = "review_queue"
     }
 }
 
@@ -3343,6 +3454,34 @@ struct HFRemoteCreatorDraftAPIClient {
 
     func restoreDraft(id: String, baseVersion: Int, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
         try await request(path: "/v1/creator/drafts/\(id)/restore", method: "POST", sessionID: sessionID, body: ["base_version": baseVersion])
+    }
+
+    func submitDraft(id: String, baseVersion: Int, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/creator/drafts/\(id)/submit", method: "POST", sessionID: sessionID, body: HFRemoteReviewNotePayload(baseVersion: baseVersion, creatorNote: "Submitted from Creator Studio review workflow."))
+    }
+
+    func withdrawDraft(id: String, baseVersion: Int, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/creator/drafts/\(id)/withdraw", method: "POST", sessionID: sessionID, body: HFRemoteReviewNotePayload(baseVersion: baseVersion, creatorNote: "Withdrawn for creator revision."))
+    }
+
+    func reviewQueue(sessionID: String) async throws -> HFRemotePublishingReviewQueueResponse {
+        try await request(path: "/v1/admin/review/queue", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func approveReview(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/admin/review/\(id)/approve", method: "POST", sessionID: sessionID, body: ["admin_note": "Approved by local admin review workflow."])
+    }
+
+    func requestRevision(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/admin/review/\(id)/request-revision", method: "POST", sessionID: sessionID, body: ["admin_note": "Revision requested by local admin review workflow."])
+    }
+
+    func publishReview(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/admin/review/\(id)/publish", method: "POST", sessionID: sessionID, body: ["admin_note": "Published by local admin review workflow."])
+    }
+
+    func reviewAudit(sessionID: String) async throws -> HFRemotePublishingReviewAuditResponse {
+        try await request(path: "/v1/admin/review/audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
     }
 
     func revisionHistory(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftRevisionResponse {
@@ -3433,6 +3572,24 @@ struct HFRemoteCreatorDraftUpdatePayload: Encodable {
         metadataStatus = draft.metadataStatus.remoteRawValue
         artworkStatus = draft.artworkStatus.remoteRawValue
         self.baseVersion = baseVersion
+    }
+}
+
+struct HFRemoteReviewNotePayload: Encodable {
+    var baseVersion: Int?
+    var creatorNote: String?
+    var adminNote: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case baseVersion = "base_version"
+        case creatorNote = "creator_note"
+        case adminNote = "admin_note"
+    }
+
+    init(baseVersion: Int? = nil, creatorNote: String? = nil, adminNote: String? = nil) {
+        self.baseVersion = baseVersion
+        self.creatorNote = creatorNote
+        self.adminNote = adminNote
     }
 }
 
@@ -4559,6 +4716,9 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var creatorDraftSyncRuntimeSnapshot: HFCreatorDraftSyncRuntimeSnapshot
     @Published private(set) var creatorDraftSyncQueueRecords: [HFCreatorDraftSyncQueueRecord] = []
     @Published private(set) var creatorDraftRevisionRecords: [HFCreatorDraftRevisionRecord] = []
+    @Published private(set) var publishingReviewRuntimeSnapshot: HFPublishingReviewRuntimeSnapshot
+    @Published private(set) var publishingReviewRecords: [HFPublishingReviewRecord] = []
+    @Published private(set) var publishingReviewAuditRecords: [HFCreatorDraftSyncQueueRecord] = []
     @Published private(set) var creatorRemoteUploadRuntimeSnapshot: HFCreatorRemoteUploadRuntimeSnapshot
     @Published private(set) var creatorRemoteUploadSessionRecords: [HFCreatorRemoteUploadSessionRecord] = []
     @Published private(set) var creatorRemoteUploadedAssetRecords: [HFCreatorRemoteUploadedAssetRecord] = []
@@ -4600,6 +4760,7 @@ final class HFStreamingStore: ObservableObject {
     private var catalogRuntimeGeneration = 0
     private var creatorDraftRemoteVersions: [String: Int] = [:]
     private var lastRemotePublishingSessionID: String?
+    private var lastRemoteAdminReviewSessionID: String?
     private var lastRemoteUploadSessionID: String?
 
     let launchChecklistItems = [
@@ -4670,6 +4831,9 @@ final class HFStreamingStore: ObservableObject {
         creatorDraftSyncRuntimeSnapshot = .local(
             snapshot: loadedContentSnapshot,
             reason: "Creator draft sync disabled until the loopback backend is enabled."
+        )
+        publishingReviewRuntimeSnapshot = .local(
+            reason: "Publishing review workflow disabled until the loopback backend is enabled."
         )
         creatorRemoteUploadRuntimeSnapshot = .local(
             reason: "Creator upload object storage disabled until the loopback backend is enabled."
@@ -4753,6 +4917,12 @@ final class HFStreamingStore: ObservableObject {
                     || launchArguments.contains("--hf-discovery-creator")
                     || launchArguments.contains("--hf-discovery-empty") {
                     await self.runSearchDiscoveryRecommendationServiceFixture()
+                }
+                if launchArguments.contains("--hf-start-publishing-review")
+                    || launchArguments.contains("--hf-review-queue")
+                    || launchArguments.contains("--hf-review-publish")
+                    || launchArguments.contains("--hf-review-audit") {
+                    await self.runPublishingReviewWorkflowFixture()
                 }
             }
         }
@@ -5425,6 +5595,120 @@ final class HFStreamingStore: ObservableObject {
         }
     }
 
+    var publishingReviewStatusRows: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(
+                id: "review-state",
+                title: "Review State",
+                value: publishingReviewRuntimeSnapshot.statusLabel,
+                detail: publishingReviewRuntimeSnapshot.detail,
+                systemImage: publishingReviewRuntimeSnapshot.state == .ready ? "checkmark.seal.fill" : "doc.text.magnifyingglass"
+            ),
+            HFContentRepositoryMetric(
+                id: "review-queue",
+                title: "Queue",
+                value: "\(publishingReviewRuntimeSnapshot.pendingCount)",
+                detail: "\(publishingReviewRuntimeSnapshot.approvedCount) approved, \(publishingReviewRuntimeSnapshot.publishedCount) published.",
+                systemImage: "tray.full.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "review-visibility",
+                title: "Catalog",
+                value: publishingReviewRuntimeSnapshot.catalogVisibility,
+                detail: "Public catalog visibility changes only after admin publish.",
+                systemImage: "eye.circle.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "review-audit",
+                title: "Audit",
+                value: "\(publishingReviewRuntimeSnapshot.auditCount)",
+                detail: "Submit, approve, publish, and rollback actions remain audited.",
+                systemImage: "list.clipboard.fill"
+            )
+        ]
+    }
+
+    func runPublishingReviewWorkflowFixture() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            publishingReviewRuntimeSnapshot = .local(reason: "Loopback backend disabled. Review workflow remains local preview only.")
+            return
+        }
+        publishingReviewRuntimeSnapshot = HFPublishingReviewRuntimeSnapshot(
+            state: .syncing,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            pendingCount: publishingReviewRecords.filter { $0.status == "pending_review" }.count,
+            approvedCount: publishingReviewRecords.filter { $0.status == "approved" }.count,
+            publishedCount: publishingReviewRecords.filter { $0.status == "published" }.count,
+            auditCount: publishingReviewAuditRecords.count,
+            catalogVisibility: "Syncing",
+            detail: "Running creator submit, admin review, publish, and catalog visibility workflow.",
+            lastError: nil,
+            updatedAtLabel: "Syncing"
+        )
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let creatorSession = try await remotePublishingSessionID(client: client)
+            let adminSession = try await remoteAdminReviewSessionID(client: client)
+            let draft = try await client.createDraft(
+                HFCreatorPublishingContent(
+                    id: "review-workflow-\(Int(Date().timeIntervalSince1970))",
+                    title: "Review Workflow Premiere",
+                    description: "A creator project used to verify real publishing review workflow behavior.",
+                    posterAssetName: nil,
+                    trailerStatus: .ready,
+                    creator: activeViewingProfile.displayName,
+                    genre: "Documentary",
+                    tags: ["Review", "Premiere"],
+                    runtime: "42m",
+                    releaseState: .draft,
+                    posterStatus: .ready,
+                    metadataStatus: .ready,
+                    artworkStatus: .ready,
+                    updatedAtLabel: "Review workflow draft"
+                ),
+                sessionID: creatorSession
+            )
+            applyRemoteDraftMutation(draft)
+            let submitted = try await client.submitDraft(id: draft.draft.id, baseVersion: draft.draft.version, sessionID: creatorSession)
+            applyRemoteDraftMutation(submitted)
+            let queue = try await client.reviewQueue(sessionID: adminSession)
+            applyPublishingReviewQueue(queue)
+            let approved = try await client.approveReview(id: submitted.draft.id, sessionID: adminSession)
+            applyRemoteDraftMutation(approved)
+            let published = try await client.publishReview(id: submitted.draft.id, sessionID: adminSession)
+            applyRemoteDraftMutation(published)
+            let audit = try await client.reviewAudit(sessionID: adminSession)
+            publishingReviewRecords = audit.reviewQueue
+            publishingReviewAuditRecords = audit.auditRecords
+            publishingReviewRuntimeSnapshot = HFPublishingReviewRuntimeSnapshot(
+                state: .ready,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                pendingCount: audit.reviewQueue.filter { $0.status == "pending_review" }.count,
+                approvedCount: audit.reviewQueue.filter { $0.status == "approved" }.count,
+                publishedCount: audit.reviewQueue.filter { $0.status == "published" }.count,
+                auditCount: audit.auditRecords.count,
+                catalogVisibility: published.catalogVisibility ?? "visible",
+                detail: "Creator submit -> admin approve -> publish completed. Published project is visible to catalog and discovery service.",
+                lastError: nil,
+                updatedAtLabel: published.status
+            )
+        } catch {
+            publishingReviewRuntimeSnapshot = HFPublishingReviewRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                pendingCount: publishingReviewRecords.filter { $0.status == "pending_review" }.count,
+                approvedCount: publishingReviewRecords.filter { $0.status == "approved" }.count,
+                publishedCount: publishingReviewRecords.filter { $0.status == "published" }.count,
+                auditCount: publishingReviewAuditRecords.count,
+                catalogVisibility: "Private",
+                detail: "Publishing review workflow failed; local creator drafts remain available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Review failed"
+            )
+        }
+    }
+
     func simulateCreatorDraftRemoteConflict() async {
         guard productionCatalogConfiguration.isRemoteEnabled else {
             creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
@@ -5653,6 +5937,13 @@ final class HFStreamingStore: ObservableObject {
         return sessionID
     }
 
+    private func remoteAdminReviewSessionID(client: HFRemoteCreatorDraftAPIClient) async throws -> String {
+        if let lastRemoteAdminReviewSessionID { return lastRemoteAdminReviewSessionID }
+        let sessionID = try await client.createDevelopmentSession(role: "admin")
+        lastRemoteAdminReviewSessionID = sessionID
+        return sessionID
+    }
+
     private func remoteUploadSessionID(client: HFRemoteCreatorUploadAPIClient) async throws -> String {
         if let lastRemoteUploadSessionID { return lastRemoteUploadSessionID }
         let sessionID = try await client.createDevelopmentSession(role: "creator")
@@ -5681,6 +5972,9 @@ final class HFStreamingStore: ObservableObject {
 
     private func applyRemoteDraftMutation(_ response: HFRemoteCreatorDraftMutationResponse) {
         upsertRemoteDraft(response.draft)
+        if let review = response.review {
+            upsertPublishingReviewRecord(review)
+        }
         creatorDraftRevisionRecords = response.revisions
         creatorDraftSyncQueueRecords = response.auditRecords ?? creatorDraftSyncQueueRecords
         creatorDraftSyncRuntimeSnapshot = HFCreatorDraftSyncRuntimeSnapshot(
@@ -5695,6 +5989,31 @@ final class HFStreamingStore: ObservableObject {
             updatedAtLabel: "Remote version \(response.draft.version)"
         )
         persistCreatorPublishingContents()
+    }
+
+    private func applyPublishingReviewQueue(_ response: HFRemotePublishingReviewQueueResponse) {
+        publishingReviewRecords = response.reviewQueue
+        publishingReviewAuditRecords = response.auditRecords ?? publishingReviewAuditRecords
+        publishingReviewRuntimeSnapshot = HFPublishingReviewRuntimeSnapshot(
+            state: .ready,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            pendingCount: response.pendingCount,
+            approvedCount: response.approvedCount,
+            publishedCount: response.publishedCount,
+            auditCount: publishingReviewAuditRecords.count,
+            catalogVisibility: response.publishedCount > 0 ? "visible" : "private",
+            detail: "Admin review queue loaded from the publishing backend.",
+            lastError: nil,
+            updatedAtLabel: response.status
+        )
+    }
+
+    private func upsertPublishingReviewRecord(_ record: HFPublishingReviewRecord) {
+        if let index = publishingReviewRecords.firstIndex(where: { $0.id == record.id }) {
+            publishingReviewRecords[index] = record
+        } else {
+            publishingReviewRecords.insert(record, at: 0)
+        }
     }
 
     private func upsertRemoteDraft(_ draft: HFRemoteCreatorDraftDTO) {

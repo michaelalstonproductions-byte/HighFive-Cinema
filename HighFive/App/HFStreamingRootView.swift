@@ -186,6 +186,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInDraftWorkspace
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
+            || Self.shouldStartInPublishingReview
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -257,6 +258,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInDraftWorkspace
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
+            || Self.shouldStartInPublishingReview
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -390,6 +392,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInDraftWorkspace
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
+            || Self.shouldStartInPublishingReview
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -616,6 +619,14 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-processing-hls")
             || arguments.contains("--hf-processing-status")
             || arguments.contains("--hf-processing-logs")
+    }
+
+    private static var shouldStartInPublishingReview: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-publishing-review")
+            || arguments.contains("--hf-review-queue")
+            || arguments.contains("--hf-review-publish")
+            || arguments.contains("--hf-review-audit")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

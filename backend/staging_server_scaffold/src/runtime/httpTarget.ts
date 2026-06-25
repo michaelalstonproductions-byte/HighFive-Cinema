@@ -5,6 +5,9 @@ import {
   catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
+  adminReviewAuditPath,
+  adminReviewDetailPath,
+  adminReviewQueuePath,
   creatorDraftDetailPath,
   creatorDraftsPath,
   creatorDraftSyncQueuePath,
@@ -49,6 +52,15 @@ import {
 } from "../routes/identity.js";
 import {
   archiveCreatorDraftRemote,
+  adminApproveProject,
+  adminArchiveProject,
+  adminPublishProject,
+  adminRejectProject,
+  adminRequestRevision,
+  adminReviewAuditTrail,
+  adminReviewQueue,
+  adminScheduleProject,
+  adminUnpublishProject,
   createCreatorDraftRemote,
   creatorDraftRevisionHistory,
   creatorDraftSyncQueue,
@@ -56,6 +68,8 @@ import {
   listCreatorDrafts,
   publishingReadinessSummary,
   restoreCreatorDraftRemote,
+  submitCreatorDraftForReview,
+  withdrawCreatorReviewSubmission,
   updateCreatorDraftRemote
 } from "../routes/publishing.js";
 import { createEntitlementRoute } from "../routes/entitlements.js";
@@ -318,6 +332,26 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === adminReviewQueuePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, adminReviewQueue(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === adminReviewAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, adminReviewAuditTrail(authHeader(request.headers.authorization)));
+        return;
+      }
+
       if (path === creatorUploadSessionsPath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -398,6 +432,26 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
 
       if (path.startsWith(creatorDraftDetailPath)) {
         const draftRoute = creatorDraftRoute(path);
+        if (draftRoute.action === "submit") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, submitCreatorDraftForReview(authHeader(request.headers.authorization), draftRoute.id, body));
+          return;
+        }
+        if (draftRoute.action === "withdraw") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, withdrawCreatorReviewSubmission(authHeader(request.headers.authorization), draftRoute.id, body));
+          return;
+        }
         if (draftRoute.action === "archive") {
           if (request.method !== "POST") {
             const result = methodNotAllowed();
@@ -437,6 +491,52 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path.startsWith(adminReviewDetailPath)) {
+        const reviewRoute = adminReviewRoute(path);
+        if (!reviewRoute.action) {
+          const result = routeNotFound();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        if (reviewRoute.action === "request-revision") {
+          writeJson(response, 200, adminRequestRevision(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        if (reviewRoute.action === "approve") {
+          writeJson(response, 200, adminApproveProject(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        if (reviewRoute.action === "reject") {
+          writeJson(response, 200, adminRejectProject(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        if (reviewRoute.action === "schedule") {
+          writeJson(response, 200, adminScheduleProject(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        if (reviewRoute.action === "publish") {
+          writeJson(response, 200, adminPublishProject(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        if (reviewRoute.action === "unpublish") {
+          writeJson(response, 200, adminUnpublishProject(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        if (reviewRoute.action === "archive") {
+          writeJson(response, 200, adminArchiveProject(authHeader(request.headers.authorization), reviewRoute.id, body));
+          return;
+        }
+        const result = routeNotFound();
         writeJson(response, result.statusCode, result.body);
         return;
       }
@@ -540,6 +640,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     playback_hls_path: playbackHLSPath,
     viewer_library_path: viewerLibraryPath,
     discovery_query_path: discoveryQueryPath,
+    admin_review_queue_path: adminReviewQueuePath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -592,7 +693,18 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     creator_draft_sync_enabled: Boolean(publishing.creator_draft_sync_enabled),
     optimistic_concurrency: Boolean(publishing.optimistic_concurrency),
     draft_role_enforcement: Boolean(publishing.role_enforcement),
+    admin_review_workflow: Boolean(publishing.admin_review_queue),
+    catalog_visibility_transaction: Boolean(publishing.catalog_visibility_transaction),
     payments_enabled: false
+  };
+}
+
+function adminReviewRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(adminReviewDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
   };
 }
 

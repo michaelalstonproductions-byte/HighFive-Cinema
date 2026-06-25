@@ -1,5 +1,6 @@
 import { catalogSeed, type CatalogCollection, type CatalogCreator, type CatalogEpisode, type CatalogMovie, type CatalogSeries } from "../catalog/catalogSeed.js";
 import { viewerLibraryRecommendationContext } from "./library.js";
+import { governedCatalogSeed } from "./publishing.js";
 
 type QueryKind = "search" | "creator" | "genre" | "tag" | "collection" | "series" | "episode" | "related" | "recent" | "creator-published" | "recommendations" | "trending" | "suggestions";
 
@@ -133,8 +134,8 @@ function titlesFor(params: DiscoveryQueryParams, context: ReturnType<typeof safe
 function creatorsFor(params: DiscoveryQueryParams): CatalogCreator[] {
   if (params.kind !== "creator" && params.kind !== "search") return [];
   const term = params.query;
-  if (!term) return catalogSeed.creators;
-  return catalogSeed.creators
+  if (!term) return discoverySeed().creators;
+  return discoverySeed().creators
     .map((creator) => ({ creator, score: creatorScore(creator, term) }))
     .filter((item) => item.score > 0)
     .sort((lhs, rhs) => rhs.score - lhs.score || lhs.creator.name.localeCompare(rhs.creator.name))
@@ -147,25 +148,25 @@ function collectionsFor(params: DiscoveryQueryParams, titles: CatalogMovie[]): C
     return collection ? [collection] : [];
   }
   const ids = new Set(titles.flatMap((title) => title.collection_ids));
-  return catalogSeed.collections.filter((collection) => ids.has(collection.id));
+  return discoverySeed().collections.filter((collection) => ids.has(collection.id));
 }
 
 function seriesFor(params: DiscoveryQueryParams): CatalogSeries[] {
   if (params.kind !== "series" && params.kind !== "search") return [];
   const term = params.query;
-  if (!term && params.kind === "series") return catalogSeed.series;
-  return catalogSeed.series.filter((series) => textIncludes(series.title, term) || textIncludes(series.creator_name, term) || textIncludes(series.genre, term));
+  if (!term && params.kind === "series") return discoverySeed().series;
+  return discoverySeed().series.filter((series) => textIncludes(series.title, term) || textIncludes(series.creator_name, term) || textIncludes(series.genre, term));
 }
 
 function episodesFor(params: DiscoveryQueryParams): CatalogEpisode[] {
   if (params.kind !== "episode" && params.kind !== "search") return [];
   const term = params.query;
-  return catalogSeed.series.flatMap((series) => series.seasons.flatMap((season) => season.episodes))
+  return discoverySeed().series.flatMap((series) => series.seasons.flatMap((season) => season.episodes))
     .filter((episode) => !term || textIncludes(episode.title, term) || textIncludes(episode.synopsis, term));
 }
 
 function relatedFor(params: DiscoveryQueryParams, titles: CatalogMovie[]): CatalogMovie[] {
-  const anchor = movieByID(params.anchor_id ?? "") ?? titles[0] ?? catalogSeed.movies[0];
+  const anchor = movieByID(params.anchor_id ?? "") ?? titles[0] ?? discoverySeed().movies[0];
   return relatedTitles(anchor, 8);
 }
 
@@ -192,19 +193,19 @@ function rankedTitles(query: string, filter: string): CatalogMovie[] {
 function filteredTitles(filter: string): CatalogMovie[] {
   switch (filter) {
   case "Movies":
-    return catalogSeed.movies.filter((movie) => !movie.duration.includes("episodes"));
+    return discoverySeed().movies.filter((movie) => !movie.duration.includes("episodes"));
   case "Series":
-    return catalogSeed.movies.filter((movie) => movie.duration.includes("episodes") || movie.genres.includes("Series"));
+    return discoverySeed().movies.filter((movie) => movie.duration.includes("episodes") || movie.genres.includes("Series"));
   case "Originals":
-    return catalogSeed.movies.filter((movie) => movie.is_original);
+    return discoverySeed().movies.filter((movie) => movie.is_original);
   case "Creator Published":
     return creatorPublishedTitles();
   case "Downloaded":
-    return catalogSeed.movies.filter((movie) => movie.is_downloaded);
+    return discoverySeed().movies.filter((movie) => movie.is_downloaded);
   case "All":
-    return catalogSeed.movies;
+    return discoverySeed().movies;
   default:
-    return byGenre(filter).length > 0 ? byGenre(filter) : catalogSeed.movies;
+    return byGenre(filter).length > 0 ? byGenre(filter) : discoverySeed().movies;
   }
 }
 
@@ -226,7 +227,7 @@ function titleScore(movie: CatalogMovie, term: string): number {
 }
 
 function creatorScore(creator: CatalogCreator, term: string): number {
-  const titleText = catalogSeed.movies.filter((movie) => movie.creator_id === creator.id).map((movie) => movie.title).join(" ");
+  const titleText = discoverySeed().movies.filter((movie) => movie.creator_id === creator.id).map((movie) => movie.title).join(" ");
   const fields: [string, number][] = [
     [creator.name, 130],
     [creator.role, 70],
@@ -236,33 +237,33 @@ function creatorScore(creator: CatalogCreator, term: string): number {
 }
 
 function byGenre(genre: string): CatalogMovie[] {
-  return catalogSeed.movies.filter((movie) => movie.genres.some((candidate) => textEquals(candidate, genre)));
+  return discoverySeed().movies.filter((movie) => movie.genres.some((candidate) => textEquals(candidate, genre)));
 }
 
 function byTag(tag: string): CatalogMovie[] {
-  return catalogSeed.movies.filter((movie) => searchTags(movie).some((candidate) => textIncludes(candidate, tag)));
+  return discoverySeed().movies.filter((movie) => searchTags(movie).some((candidate) => textIncludes(candidate, tag)));
 }
 
 function relatedTitles(anchor: CatalogMovie | undefined, limit: number): CatalogMovie[] {
-  if (!anchor) return catalogSeed.movies.slice(0, limit);
+  if (!anchor) return discoverySeed().movies.slice(0, limit);
   return uniqueMovies([
-    ...catalogSeed.movies.filter((movie) => movie.id !== anchor.id && movie.creator_id === anchor.creator_id),
-    ...catalogSeed.movies.filter((movie) => movie.id !== anchor.id && movie.genres.some((genre) => anchor.genres.includes(genre))),
+    ...discoverySeed().movies.filter((movie) => movie.id !== anchor.id && movie.creator_id === anchor.creator_id),
+    ...discoverySeed().movies.filter((movie) => movie.id !== anchor.id && movie.genres.some((genre) => anchor.genres.includes(genre))),
     ...recentlyPublished()
   ]).slice(0, limit);
 }
 
 function recentlyPublished(): CatalogMovie[] {
-  return catalogSeed.movies.filter((movie) => !movie.is_coming_soon).slice().reverse();
+  return discoverySeed().movies.filter((movie) => !movie.is_coming_soon).slice().reverse();
 }
 
 function creatorPublishedTitles(): CatalogMovie[] {
-  const publishedIDs = new Set(catalogSeed.publishing_projects.filter((project) => project.release_state === "published").map((project) => project.content_id));
-  return catalogSeed.movies.filter((movie) => publishedIDs.has(movie.id) || movie.collection_ids.includes("creator-published"));
+  const publishedIDs = new Set(discoverySeed().publishing_projects.filter((project) => project.release_state === "published").map((project) => project.content_id));
+  return discoverySeed().movies.filter((movie) => publishedIDs.has(movie.id) || movie.collection_ids.includes("creator-published"));
 }
 
 function trendingTitles(): CatalogMovie[] {
-  return catalogSeed.movies
+  return discoverySeed().movies
     .slice()
     .sort((lhs, rhs) => trendingScore(rhs) - trendingScore(lhs) || lhs.title.localeCompare(rhs.title));
 }
@@ -272,16 +273,16 @@ function libraryRecommendations(context: ReturnType<typeof safeRecommendationCon
   const seedMovies = [...seedIDs].map(movieByID).filter(isMovie);
   const genres = new Set(seedMovies.flatMap((movie) => movie.genres));
   const creatorIDs = new Set(seedMovies.map((movie) => movie.creator_id));
-  const base = catalogSeed.movies.filter((movie) => !seedIDs.has(movie.id) && (movie.genres.some((genre) => genres.has(genre)) || creatorIDs.has(movie.creator_id)));
+  const base = discoverySeed().movies.filter((movie) => !seedIDs.has(movie.id) && (movie.genres.some((genre) => genres.has(genre)) || creatorIDs.has(movie.creator_id)));
   return uniqueMovies([...base, ...trendingTitles(), ...recentlyPublished()]);
 }
 
 function suggestionsFor(query: string): string[] {
   const base = [
-    ...catalogSeed.movies.map((movie) => movie.title),
-    ...catalogSeed.creators.map((creator) => creator.name),
-    ...catalogSeed.collections.map((collection) => collection.title),
-    ...catalogSeed.movies.flatMap((movie) => movie.genres)
+    ...discoverySeed().movies.map((movie) => movie.title),
+    ...discoverySeed().creators.map((creator) => creator.name),
+    ...discoverySeed().collections.map((collection) => collection.title),
+    ...discoverySeed().movies.flatMap((movie) => movie.genres)
   ];
   const unique = [...new Set(base)];
   if (!query) return unique.slice(0, 8);
@@ -321,28 +322,32 @@ function positiveInt(value: string | null, fallback: number): number {
 }
 
 function movieByID(id: string): CatalogMovie | undefined {
-  return catalogSeed.movies.find((movie) => movie.id === id);
+  return discoverySeed().movies.find((movie) => movie.id === id);
 }
 
 function collectionByID(id: string): CatalogCollection | undefined {
   const term = id.trim();
-  return catalogSeed.collections.find((collection) => textEquals(collection.id, term) || textEquals(collection.title, term));
+  return discoverySeed().collections.find((collection) => textEquals(collection.id, term) || textEquals(collection.title, term));
 }
 
 function seriesByID(id: string): CatalogSeries | undefined {
   const term = id.trim();
-  return catalogSeed.series.find((series) => textEquals(series.id, term) || textEquals(series.title, term));
+  return discoverySeed().series.find((series) => textEquals(series.id, term) || textEquals(series.title, term));
 }
 
 function episodeByID(id: string): CatalogEpisode | undefined {
   const term = id.trim();
-  return catalogSeed.series.flatMap((series) => series.seasons.flatMap((season) => season.episodes))
+  return discoverySeed().series.flatMap((series) => series.seasons.flatMap((season) => season.episodes))
     .find((episode) => textEquals(episode.id, term) || textEquals(episode.title, term));
 }
 
 function seriesForEpisode(id: string): CatalogSeries[] {
   const episode = episodeByID(id);
-  return episode ? catalogSeed.series.filter((series) => series.id === episode.series_id) : [];
+  return episode ? discoverySeed().series.filter((series) => series.id === episode.series_id) : [];
+}
+
+function discoverySeed() {
+  return governedCatalogSeed(catalogSeed);
 }
 
 function searchTags(movie: CatalogMovie): string[] {

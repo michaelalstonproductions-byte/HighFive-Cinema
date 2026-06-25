@@ -15,6 +15,7 @@
     "streaming:smoke": "node --test smoke_runtime/httpStreamingPlayback.test.mjs",
     "library:smoke": "node --test smoke_runtime/httpViewerLibrary.test.mjs",
     "discovery:smoke": "node --test smoke_runtime/httpDiscovery.test.mjs",
+    "review:smoke": "node --test smoke_runtime/httpPublishingReview.test.mjs",
     "check:contracts": "node -e \"JSON.parse(require('fs').readFileSync('package.json', 'utf8')); JSON.parse(require('fs').readFileSync('tsconfig.json', 'utf8'))\"",
     "typecheck": "tsc --noEmit"
   },
