@@ -5,7 +5,7 @@
     "declaration": false,
     "sourceMap": false,
     "rootDir": "./src",
-    "outDir": "/private/tmp/highfive-p30a-real-identity-access/compiled"
+    "outDir": "/private/tmp/highfive-p31a-cloud-catalog-content-sync/compiled"
   },
   "files": [
     "src/runtime/node-runtime-shims.d.ts",

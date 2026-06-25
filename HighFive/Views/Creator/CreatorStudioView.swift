@@ -235,6 +235,10 @@ private enum HFCreatorProSpotlight {
     case productionBackendHealth
     case productionBackendCatalog
     case productionBackendFallback
+    case cloudCatalogSyncDashboard
+    case cloudCatalogCache
+    case cloudCatalogDelta
+    case cloudCatalogDiagnostics
     case realIdentityDashboard
     case realIdentitySignIn
     case realIdentitySession
@@ -353,6 +357,10 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-production-backend-health") { return .productionBackendHealth }
         if arguments.contains("--hf-production-backend-catalog") { return .productionBackendCatalog }
         if arguments.contains("--hf-production-backend-fallback") { return .productionBackendFallback }
+        if arguments.contains("--hf-start-cloud-catalog-sync") { return .cloudCatalogSyncDashboard }
+        if arguments.contains("--hf-cloud-catalog-cache") { return .cloudCatalogCache }
+        if arguments.contains("--hf-cloud-catalog-delta") { return .cloudCatalogDelta }
+        if arguments.contains("--hf-cloud-catalog-diagnostics") { return .cloudCatalogDiagnostics }
         if arguments.contains("--hf-start-real-identity") { return .realIdentityDashboard }
         if arguments.contains("--hf-identity-signin") { return .realIdentitySignIn }
         if arguments.contains("--hf-identity-session") { return .realIdentitySession }
@@ -2398,6 +2406,14 @@ struct CreatorStudioView: View {
             productionBackendCatalogSection
         case .productionBackendFallback:
             productionBackendFallbackSection
+        case .cloudCatalogSyncDashboard:
+            cloudCatalogSyncDashboardSection
+        case .cloudCatalogCache:
+            cloudCatalogCacheSection
+        case .cloudCatalogDelta:
+            cloudCatalogDeltaSection
+        case .cloudCatalogDiagnostics:
+            cloudCatalogDiagnosticsSection
         case .realIdentityDashboard:
             realIdentityAccessDashboardSection
         case .realIdentitySignIn:
@@ -2500,6 +2516,7 @@ struct CreatorStudioView: View {
             integrationReadinessDashboardSection
             productionBridgeDashboardSection
             productionBackendFoundationSection
+            cloudCatalogSyncDashboardSection
             realIdentityAccessDashboardSection
             contentBackendFoundationSection
             creatorProjectRuntimeDashboard
@@ -4419,6 +4436,109 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.productionBackend.fallback")
+    }
+
+    private var cloudCatalogSyncDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Cloud Catalog Content Sync",
+            detail: "Hybrid remote/local catalog sync with persisted cursor, content version, tombstone handling, cache invalidation, and stale-while-revalidate fallback.",
+            systemImage: "arrow.triangle.2.circlepath.icloud.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.cloudCatalog.sync.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "State", value: streamingStore.cloudCatalogSyncRuntimeSnapshot.statusLabel)
+                    creatorProStat(title: "Version", value: "\(streamingStore.cloudCatalogSyncRuntimeSnapshot.catalogVersion)")
+                    creatorProStat(title: "Titles", value: "\(streamingStore.cloudCatalogSyncRuntimeSnapshot.titleCount)")
+                    creatorProStat(title: "Tombstones", value: "\(streamingStore.cloudCatalogSyncRuntimeSnapshot.tombstoneCount)")
+                }
+
+                Text("Views -> HFStreamingStore -> Cloud Catalog Runtime -> ContentQueryEngine -> Repositories -> HFContentBackendSnapshot")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(streamingStore.cloudCatalogSyncRuntimeSnapshot.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .task {
+            await streamingStore.refreshCloudCatalogSync(full: true)
+        }
+    }
+
+    private var cloudCatalogCacheSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Catalog Cache", actionTitle: "SWR")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.cloudCatalogSyncStatusRows) { metric in
+                        contentBackendRailCard(metric)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.cloudCatalog.sync.cache")
+    }
+
+    private var cloudCatalogDeltaSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Delta Sync & Tombstones",
+                    detail: "Backend deltas apply upserts and removals against the durable cache while preserving creator projects, local media metadata, release packages, and user library state.",
+                    systemImage: "point.3.connected.trianglepath.dotted",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.cloudCatalogSyncStatusRows) { metric in
+                        contentBackendMetricRow(metric)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.refreshCloudCatalogDeltaSync()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.cloudCatalog.sync.delta")
+    }
+
+    private var cloudCatalogDiagnosticsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Sync Diagnostics",
+                    detail: "Cursor, version, cache policy, fallback, and last-error diagnostics for the cloud catalog runtime.",
+                    systemImage: "stethoscope",
+                    accent: HFColors.gold
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.cloudCatalogSyncDiagnostics) { record in
+                        contentBackendMetricRow(
+                            HFContentRepositoryMetric(
+                                id: record.id,
+                                title: record.title,
+                                value: record.status,
+                                detail: record.detail,
+                                systemImage: record.systemImage
+                            )
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.cloudCatalog.sync.diagnostics")
     }
 
     private var realIdentityAccessDashboardSection: some View {

@@ -1,6 +1,8 @@
 import { createServer, type Server } from "node:http";
 import {
   catalogPath,
+  catalogDeltaPath,
+  catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
   creatorWorkspacePath,
@@ -18,7 +20,7 @@ import {
   readinessPath
 } from "../contracts.js";
 import { openAPISpec } from "../catalog/openapi.js";
-import { catalogSummary, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
+import { catalogDelta, catalogSummary, catalogSync, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -84,6 +86,26 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, catalogSummary());
+        return;
+      }
+
+      if (path === catalogSyncPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, catalogSync(queryValue(request.url, "cursor")));
+        return;
+      }
+
+      if (path === catalogDeltaPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, catalogDelta(queryValue(request.url, "cursor")));
         return;
       }
 
@@ -244,6 +266,8 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     descriptor_path: playbackDescriptorPath,
     readiness_path: readinessPath,
     catalog_path: catalogPath,
+    catalog_sync_path: catalogSyncPath,
+    catalog_delta_path: catalogDeltaPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -262,6 +286,8 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     catalog_titles: summary.total_titles,
     catalog_creators: summary.total_creators,
     catalog_collections: summary.total_collections,
+    catalog_sync_enabled: true,
+    delta_sync_enabled: true,
     uploads_enabled: false,
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
@@ -277,4 +303,10 @@ function routeID(path: string, prefix: string): string {
 
 function authHeader(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function queryValue(rawURL: string | undefined, name: string): string | null {
+  if (!rawURL) return null;
+  const url = new URL(rawURL, "http://127.0.0.1");
+  return url.searchParams.get(name);
 }

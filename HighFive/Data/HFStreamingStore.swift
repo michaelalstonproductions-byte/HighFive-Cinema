@@ -2427,6 +2427,76 @@ struct HFProductionCatalogRuntimeSnapshot: Hashable {
     }
 }
 
+enum HFCloudCatalogSyncState: String, Hashable {
+    case localCache = "Local Cache"
+    case syncing = "Syncing"
+    case synced = "Cloud Synced"
+    case staleCache = "Stale Cache"
+    case failed = "Sync Failed"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFCloudCatalogTombstoneDTO: Codable, Hashable {
+    var id: String
+    var entityType: String
+    var entityID: String
+    var deletedAt: String
+    var reason: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case entityType = "entity_type"
+        case entityID = "entity_id"
+        case deletedAt = "deleted_at"
+        case reason
+    }
+}
+
+struct HFCloudCatalogSyncRuntimeSnapshot: Hashable {
+    var state: HFCloudCatalogSyncState
+    var source: String
+    var cursor: String?
+    var catalogVersion: Int
+    var titleCount: Int
+    var creatorCount: Int
+    var seriesCount: Int
+    var collectionCount: Int
+    var tombstoneCount: Int
+    var cachePolicy: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.statusLabel }
+
+    static func localCache(snapshot: HFContentBackendSnapshot, cursor: String?, version: Int, reason: String) -> HFCloudCatalogSyncRuntimeSnapshot {
+        HFCloudCatalogSyncRuntimeSnapshot(
+            state: .localCache,
+            source: "Durable Local Cache",
+            cursor: cursor,
+            catalogVersion: version,
+            titleCount: snapshot.movies.count,
+            creatorCount: snapshot.creators.count,
+            seriesCount: snapshot.series.count,
+            collectionCount: snapshot.collections.count,
+            tombstoneCount: 0,
+            cachePolicy: "stale-while-revalidate",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: snapshot.updatedAtLabel
+        )
+    }
+}
+
+struct HFCloudCatalogSyncDiagnosticRecord: Identifiable, Hashable {
+    let id: String
+    var title: String
+    var detail: String
+    var status: String
+    var systemImage: String
+}
+
 struct HFProductionCatalogEndpointRow: Identifiable, Hashable {
     let id: String
     var title: String
@@ -2447,6 +2517,10 @@ struct HFProductionCatalogBackendConfiguration {
         isRemoteEnabled = requestedMode == "remote"
             || arguments.contains("--hf-production-backend-catalog")
             || arguments.contains("--hf-start-production-backend")
+            || arguments.contains("--hf-start-cloud-catalog-sync")
+            || arguments.contains("--hf-cloud-catalog-cache")
+            || arguments.contains("--hf-cloud-catalog-delta")
+            || arguments.contains("--hf-cloud-catalog-diagnostics")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -2475,6 +2549,8 @@ enum HFProductionCatalogAPIError: Error, LocalizedError {
 
 protocol HFProductionCatalogAPIClient {
     func fetchCatalog() async throws -> HFProductionCatalogResponse
+    func fetchCatalogSync(cursor: String?) async throws -> HFProductionCatalogResponse
+    func fetchCatalogDelta(cursor: String?) async throws -> HFProductionCatalogDeltaResponse
 }
 
 struct HFLocalProductionCatalogAPIClient: HFProductionCatalogAPIClient {
@@ -2482,6 +2558,20 @@ struct HFLocalProductionCatalogAPIClient: HFProductionCatalogAPIClient {
 
     func fetchCatalog() async throws -> HFProductionCatalogResponse {
         HFProductionCatalogResponse.local(snapshot: snapshot)
+    }
+
+    func fetchCatalogSync(cursor: String?) async throws -> HFProductionCatalogResponse {
+        var response = HFProductionCatalogResponse.local(snapshot: snapshot)
+        response.source = "local_sync_cache"
+        response.syncCursor = cursor ?? "local-cache"
+        response.catalogVersion = 0
+        response.fullSync = true
+        response.tombstones = []
+        return response
+    }
+
+    func fetchCatalogDelta(cursor: String?) async throws -> HFProductionCatalogDeltaResponse {
+        HFProductionCatalogDeltaResponse.local(cursor: cursor)
     }
 }
 
@@ -2494,7 +2584,7 @@ struct HFRemoteProductionCatalogAPIClient: HFProductionCatalogAPIClient {
         var lastError: Error?
         for attempt in 0...retryCount {
             do {
-                let response = try await fetch(path: "/v1/catalog")
+                let response: HFProductionCatalogResponse = try await fetch(path: "/v1/catalog")
                 return response
             } catch {
                 lastError = error
@@ -2504,7 +2594,33 @@ struct HFRemoteProductionCatalogAPIClient: HFProductionCatalogAPIClient {
         throw lastError ?? HFProductionCatalogAPIError.invalidResponse
     }
 
-    private func fetch(path: String) async throws -> HFProductionCatalogResponse {
+    func fetchCatalogSync(cursor: String?) async throws -> HFProductionCatalogResponse {
+        try await fetchWithRetry(path: "/v1/catalog/sync", cursor: cursor)
+    }
+
+    func fetchCatalogDelta(cursor: String?) async throws -> HFProductionCatalogDeltaResponse {
+        try await fetchWithRetry(path: "/v1/catalog/delta", cursor: cursor)
+    }
+
+    private func fetchWithRetry<Response: Decodable>(path: String, cursor: String?) async throws -> Response {
+        var lastError: Error?
+        for attempt in 0...retryCount {
+            do {
+                let requestPath = cursor.map {
+                    let encoded = $0.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0
+                    return "\(path)?cursor=\(encoded)"
+                } ?? path
+                let response: Response = try await fetch(path: requestPath)
+                return response
+            } catch {
+                lastError = error
+                if attempt == retryCount { break }
+            }
+        }
+        throw lastError ?? HFProductionCatalogAPIError.invalidResponse
+    }
+
+    private func fetch<Response: Decodable>(path: String) async throws -> Response {
         guard let url = URL(string: path, relativeTo: baseURL) else {
             throw HFProductionCatalogAPIError.invalidURL(path)
         }
@@ -2516,7 +2632,7 @@ struct HFRemoteProductionCatalogAPIClient: HFProductionCatalogAPIClient {
             throw HFProductionCatalogAPIError.httpStatus(httpResponse.statusCode)
         }
         do {
-            return try JSONDecoder().decode(HFProductionCatalogResponse.self, from: data)
+            return try JSONDecoder().decode(Response.self, from: data)
         } catch {
             throw HFProductionCatalogAPIError.decodingFailed(error.localizedDescription)
         }
@@ -2534,6 +2650,11 @@ struct HFProductionCatalogResponse: Codable, Hashable {
     var creators: [HFProductionCatalogCreatorDTO]
     var series: [HFProductionCatalogSeriesDTO]
     var collections: [HFProductionCatalogCollectionDTO]
+    var catalogVersion: Int?
+    var previousCursor: String?
+    var syncCursor: String?
+    var fullSync: Bool?
+    var tombstones: [HFCloudCatalogTombstoneDTO]?
 
     private enum CodingKeys: String, CodingKey {
         case generatedAt = "generated_at"
@@ -2546,6 +2667,11 @@ struct HFProductionCatalogResponse: Codable, Hashable {
         case creators
         case series
         case collections
+        case catalogVersion = "catalog_version"
+        case previousCursor = "previous_cursor"
+        case syncCursor = "sync_cursor"
+        case fullSync = "full_sync"
+        case tombstones
     }
 
     static func local(snapshot: HFContentBackendSnapshot) -> HFProductionCatalogResponse {
@@ -2559,7 +2685,56 @@ struct HFProductionCatalogResponse: Codable, Hashable {
             movies: snapshot.movies.map(HFProductionCatalogMovieDTO.init(movie:)),
             creators: snapshot.creators.map(HFProductionCatalogCreatorDTO.init(creator:)),
             series: snapshot.series.map(HFProductionCatalogSeriesDTO.init(series:)),
-            collections: snapshot.collections.map(HFProductionCatalogCollectionDTO.init(collection:))
+            collections: snapshot.collections.map(HFProductionCatalogCollectionDTO.init(collection:)),
+            catalogVersion: 0,
+            previousCursor: nil,
+            syncCursor: "local-cache",
+            fullSync: true,
+            tombstones: []
+        )
+    }
+}
+
+struct HFProductionCatalogDeltaResponse: Codable, Hashable {
+    var generatedAt: String
+    var source: String
+    var catalogVersion: Int
+    var previousCursor: String?
+    var syncCursor: String
+    var fullSync: Bool
+    var movies: [HFProductionCatalogMovieDTO]
+    var creators: [HFProductionCatalogCreatorDTO]
+    var series: [HFProductionCatalogSeriesDTO]
+    var collections: [HFProductionCatalogCollectionDTO]
+    var tombstones: [HFCloudCatalogTombstoneDTO]
+
+    private enum CodingKeys: String, CodingKey {
+        case generatedAt = "generated_at"
+        case source
+        case catalogVersion = "catalog_version"
+        case previousCursor = "previous_cursor"
+        case syncCursor = "sync_cursor"
+        case fullSync = "full_sync"
+        case movies
+        case creators
+        case series
+        case collections
+        case tombstones
+    }
+
+    static func local(cursor: String?) -> HFProductionCatalogDeltaResponse {
+        HFProductionCatalogDeltaResponse(
+            generatedAt: "Local cache",
+            source: "local_snapshot",
+            catalogVersion: 0,
+            previousCursor: cursor,
+            syncCursor: cursor ?? "local-cache",
+            fullSync: false,
+            movies: [],
+            creators: [],
+            series: [],
+            collections: [],
+            tombstones: []
         )
     }
 }
@@ -2854,6 +3029,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var identitySessionRuntime: HFIdentitySessionRuntimeSnapshot
     @Published private(set) var identityAccessRuntimeSnapshot: HFIdentityAccessRuntimeSnapshot
     @Published private(set) var productionCatalogRuntimeSnapshot: HFProductionCatalogRuntimeSnapshot
+    @Published private(set) var cloudCatalogSyncRuntimeSnapshot: HFCloudCatalogSyncRuntimeSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -2861,6 +3037,8 @@ final class HFStreamingStore: ObservableObject {
     private let connectUpdatesKey = "hf.localConnectUpdates"
     private let launchChecklistKey = "hf.launchChecklistStates"
     private let activeProfileKey = "hf.localProfile.activeID"
+    private let cloudCatalogSyncCursorKey = "hf.cloudCatalog.sync.cursor"
+    private let cloudCatalogVersionKey = "hf.cloudCatalog.sync.version"
     private let profileDisplayNamePrefix = "hf.localProfile.displayName."
     private let lastPlayerMovieKey = "hf.player.lastMovieID"
     private let backendConfiguration: HFBackendConfiguration
@@ -2939,6 +3117,14 @@ final class HFStreamingStore: ObservableObject {
         identityAccessRuntimeSnapshot = .signedOut(reason: "No secure identity session restored yet.")
         productionCatalogConfiguration = HFProductionCatalogBackendConfiguration()
         productionCatalogRuntimeSnapshot = .localFallback(snapshot: loadedContentSnapshot, reason: "Production catalog backend disabled. Local content runtime remains active.")
+        let storedCloudCatalogCursor = defaults.string(forKey: cloudCatalogSyncCursorKey)
+        let storedCloudCatalogVersion = defaults.integer(forKey: cloudCatalogVersionKey)
+        cloudCatalogSyncRuntimeSnapshot = .localCache(
+            snapshot: loadedContentSnapshot,
+            cursor: storedCloudCatalogCursor,
+            version: storedCloudCatalogVersion,
+            reason: "Offline cache ready before cloud sync."
+        )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -2985,7 +3171,14 @@ final class HFStreamingStore: ObservableObject {
         restoreIdentityAccessSessionFromKeychain(reason: "Initial secure session restore")
         rebuildIdentitySessionRuntime(reason: "Initial local session load")
         if productionCatalogConfiguration.isRemoteEnabled {
-            Task { await self.refreshProductionCatalogRuntime() }
+            let launchArguments = ProcessInfo.processInfo.arguments
+            Task {
+                await self.refreshProductionCatalogRuntime()
+                await self.refreshCloudCatalogSync(full: true)
+                if launchArguments.contains("--hf-cloud-catalog-delta") {
+                    await self.refreshCloudCatalogDeltaSync()
+                }
+            }
         }
     }
 
@@ -3321,9 +3514,77 @@ final class HFStreamingStore: ObservableObject {
             HFProductionCatalogEndpointRow(id: "health", title: "Health", path: "/health", status: "GET", systemImage: "heart.text.square.fill"),
             HFProductionCatalogEndpointRow(id: "ready", title: "Readiness", path: "/ready", status: "GET", systemImage: "checkmark.seal.fill"),
             HFProductionCatalogEndpointRow(id: "catalog", title: "Catalog", path: "/v1/catalog", status: "GET", systemImage: "film.stack.fill"),
+            HFProductionCatalogEndpointRow(id: "catalog-sync", title: "Catalog Sync", path: "/v1/catalog/sync", status: "GET", systemImage: "arrow.triangle.2.circlepath"),
+            HFProductionCatalogEndpointRow(id: "catalog-delta", title: "Catalog Delta", path: "/v1/catalog/delta", status: "GET", systemImage: "point.3.connected.trianglepath.dotted"),
             HFProductionCatalogEndpointRow(id: "content", title: "Content Detail", path: "/v1/content/:id", status: "GET", systemImage: "play.rectangle.fill"),
             HFProductionCatalogEndpointRow(id: "creator", title: "Creator Detail", path: "/v1/creators/:id", status: "GET", systemImage: "person.crop.rectangle.stack.fill"),
             HFProductionCatalogEndpointRow(id: "collection", title: "Collection Detail", path: "/v1/collections/:id", status: "GET", systemImage: "rectangle.grid.2x2.fill")
+        ]
+    }
+
+    var cloudCatalogSyncStatusRows: [HFContentRepositoryMetric] {
+        [
+            HFContentRepositoryMetric(
+                id: "cloud-sync-state",
+                title: "Cloud Sync",
+                value: cloudCatalogSyncRuntimeSnapshot.statusLabel,
+                detail: cloudCatalogSyncRuntimeSnapshot.detail,
+                systemImage: cloudCatalogSyncRuntimeSnapshot.state == .synced ? "checkmark.icloud.fill" : "externaldrive.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "cloud-sync-version",
+                title: "Version",
+                value: "\(cloudCatalogSyncRuntimeSnapshot.catalogVersion)",
+                detail: "Cursor: \(cloudCatalogSyncRuntimeSnapshot.cursor ?? "not set")",
+                systemImage: "number.square.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "cloud-sync-cache",
+                title: "Offline Cache",
+                value: cloudCatalogSyncRuntimeSnapshot.cachePolicy,
+                detail: "\(cloudCatalogSyncRuntimeSnapshot.titleCount) titles, \(cloudCatalogSyncRuntimeSnapshot.creatorCount) creators, \(cloudCatalogSyncRuntimeSnapshot.collectionCount) collections.",
+                systemImage: "internaldrive.fill"
+            ),
+            HFContentRepositoryMetric(
+                id: "cloud-sync-tombstones",
+                title: "Tombstones",
+                value: "\(cloudCatalogSyncRuntimeSnapshot.tombstoneCount)",
+                detail: "Deleted backend records are removed from the local catalog cache during sync.",
+                systemImage: "trash.slash.fill"
+            )
+        ]
+    }
+
+    var cloudCatalogSyncDiagnostics: [HFCloudCatalogSyncDiagnosticRecord] {
+        [
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "state",
+                title: "Runtime State",
+                detail: cloudCatalogSyncRuntimeSnapshot.detail,
+                status: cloudCatalogSyncRuntimeSnapshot.statusLabel,
+                systemImage: "waveform.path.ecg.rectangle.fill"
+            ),
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "cursor",
+                title: "Sync Cursor",
+                detail: cloudCatalogSyncRuntimeSnapshot.cursor ?? "No cursor persisted yet.",
+                status: "Version \(cloudCatalogSyncRuntimeSnapshot.catalogVersion)",
+                systemImage: "arrow.left.arrow.right.square.fill"
+            ),
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "cache",
+                title: "Stale-While-Revalidate",
+                detail: "Home, Search, Discovery, Library, and Movie Detail continue reading the durable cache if the backend is unavailable.",
+                status: cloudCatalogSyncRuntimeSnapshot.cachePolicy,
+                systemImage: "externaldrive.badge.checkmark"
+            ),
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "error",
+                title: "Last Error",
+                detail: cloudCatalogSyncRuntimeSnapshot.lastError ?? "No sync error recorded.",
+                status: cloudCatalogSyncRuntimeSnapshot.lastError == nil ? "Clean" : "Fallback",
+                systemImage: cloudCatalogSyncRuntimeSnapshot.lastError == nil ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+            )
         ]
     }
 
@@ -3378,6 +3639,173 @@ final class HFStreamingStore: ObservableObject {
                 updatedAtLabel: "Fallback after backend request"
             )
         }
+    }
+
+    func refreshCloudCatalogSync(full: Bool = true) async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            cloudCatalogSyncRuntimeSnapshot = .localCache(
+                snapshot: contentSnapshot,
+                cursor: UserDefaults.standard.string(forKey: cloudCatalogSyncCursorKey),
+                version: UserDefaults.standard.integer(forKey: cloudCatalogVersionKey),
+                reason: "Cloud catalog sync disabled. Local durable cache remains the catalog source."
+            )
+            return
+        }
+
+        let storedCursor = UserDefaults.standard.string(forKey: cloudCatalogSyncCursorKey)
+        cloudCatalogSyncRuntimeSnapshot = HFCloudCatalogSyncRuntimeSnapshot(
+            state: .syncing,
+            source: "Loopback Cloud Catalog",
+            cursor: storedCursor,
+            catalogVersion: cloudCatalogSyncRuntimeSnapshot.catalogVersion,
+            titleCount: contentSnapshot.movies.count,
+            creatorCount: contentSnapshot.creators.count,
+            seriesCount: contentSnapshot.series.count,
+            collectionCount: contentSnapshot.collections.count,
+            tombstoneCount: cloudCatalogSyncRuntimeSnapshot.tombstoneCount,
+            cachePolicy: "stale-while-revalidate",
+            detail: full ? "Starting full catalog sync from the backend service." : "Starting delta catalog sync from the last cursor.",
+            lastError: nil,
+            updatedAtLabel: "Syncing"
+        )
+
+        do {
+            let client = HFRemoteProductionCatalogAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            if full {
+                let response = try await client.fetchCatalogSync(cursor: storedCursor)
+                applyCloudCatalogFullSync(response)
+            } else {
+                let response = try await client.fetchCatalogDelta(cursor: storedCursor)
+                applyCloudCatalogDeltaSync(response)
+            }
+        } catch {
+            cloudCatalogSyncRuntimeSnapshot = HFCloudCatalogSyncRuntimeSnapshot(
+                state: contentSnapshot.movies.isEmpty ? .failed : .staleCache,
+                source: "Durable Local Cache",
+                cursor: storedCursor,
+                catalogVersion: UserDefaults.standard.integer(forKey: cloudCatalogVersionKey),
+                titleCount: contentSnapshot.movies.count,
+                creatorCount: contentSnapshot.creators.count,
+                seriesCount: contentSnapshot.series.count,
+                collectionCount: contentSnapshot.collections.count,
+                tombstoneCount: cloudCatalogSyncRuntimeSnapshot.tombstoneCount,
+                cachePolicy: "stale-while-revalidate",
+                detail: "Cloud catalog request failed; cached catalog remains available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: contentSnapshot.updatedAtLabel
+            )
+        }
+    }
+
+    func refreshCloudCatalogDeltaSync() async {
+        await refreshCloudCatalogSync(full: false)
+    }
+
+    private func applyCloudCatalogFullSync(_ response: HFProductionCatalogResponse) {
+        let movies = Self.uniqueMovies(response.movies.map(\.movie))
+        let creators = Self.uniqueCreators(response.creators.map(\.creator))
+        let series = Self.uniqueSeries(response.series.compactMap { $0.series(using: movies) })
+        let collections = Self.uniqueCategories(response.collections.map { $0.collection(using: movies) })
+        var nextSnapshot = contentSnapshot
+        nextSnapshot.movies = movies
+        nextSnapshot.creators = creators
+        nextSnapshot.series = series
+        nextSnapshot.collections = collections
+        nextSnapshot.updatedAtLabel = "Cloud catalog sync \(response.catalogVersion ?? 0)"
+        persistCloudCatalogSnapshot(
+            nextSnapshot,
+            source: response.source,
+            cursor: response.syncCursor,
+            version: response.catalogVersion ?? 0,
+            tombstoneCount: response.tombstones?.count ?? 0,
+            detail: "Full sync replaced catalog entities while preserving creator drafts, project manifests, media metadata, and release packages."
+        )
+    }
+
+    private func applyCloudCatalogDeltaSync(_ response: HFProductionCatalogDeltaResponse) {
+        var movieMap = Dictionary(uniqueKeysWithValues: contentSnapshot.movies.map { ($0.id, $0) })
+        var creatorMap = Dictionary(uniqueKeysWithValues: contentSnapshot.creators.map { ($0.id, $0) })
+        var seriesMap = Dictionary(uniqueKeysWithValues: contentSnapshot.series.map { ($0.id, $0) })
+        var collectionMap = Dictionary(uniqueKeysWithValues: contentSnapshot.collections.map { ($0.id, $0) })
+
+        for tombstone in response.tombstones {
+            switch tombstone.entityType.lowercased() {
+            case "movie", "title":
+                movieMap.removeValue(forKey: tombstone.entityID)
+            case "creator":
+                creatorMap.removeValue(forKey: tombstone.entityID)
+            case "series":
+                seriesMap.removeValue(forKey: tombstone.entityID)
+            case "collection":
+                collectionMap.removeValue(forKey: tombstone.entityID)
+            default:
+                break
+            }
+        }
+
+        for movie in response.movies.map(\.movie) {
+            movieMap[movie.id] = movie
+        }
+        for creator in response.creators.map(\.creator) {
+            creatorMap[creator.id] = creator
+        }
+
+        let movies = Self.uniqueMovies(Array(movieMap.values)).sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        for series in response.series.compactMap({ $0.series(using: movies) }) {
+            seriesMap[series.id] = series
+        }
+        for collection in response.collections.map({ $0.collection(using: movies) }) {
+            collectionMap[collection.id] = collection
+        }
+
+        var nextSnapshot = contentSnapshot
+        nextSnapshot.movies = movies
+        nextSnapshot.creators = Self.uniqueCreators(Array(creatorMap.values)).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        nextSnapshot.series = Self.uniqueSeries(Array(seriesMap.values)).sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        nextSnapshot.collections = Self.uniqueCategories(Array(collectionMap.values)).sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        nextSnapshot.updatedAtLabel = "Cloud catalog delta \(response.catalogVersion)"
+        persistCloudCatalogSnapshot(
+            nextSnapshot,
+            source: response.source,
+            cursor: response.syncCursor,
+            version: response.catalogVersion,
+            tombstoneCount: response.tombstones.count,
+            detail: "Delta sync applied upserts and tombstones without duplicating catalog records."
+        )
+    }
+
+    private func persistCloudCatalogSnapshot(
+        _ snapshot: HFContentBackendSnapshot,
+        source: String,
+        cursor: String?,
+        version: Int,
+        tombstoneCount: Int,
+        detail: String
+    ) {
+        contentSnapshot = snapshot
+        creatorPublishingContents = snapshot.publishingProjects
+        contentStorage.saveSnapshot(snapshot)
+        if let cursor {
+            UserDefaults.standard.set(cursor, forKey: cloudCatalogSyncCursorKey)
+        }
+        UserDefaults.standard.set(version, forKey: cloudCatalogVersionKey)
+        cloudCatalogSyncRuntimeSnapshot = HFCloudCatalogSyncRuntimeSnapshot(
+            state: .synced,
+            source: source,
+            cursor: cursor,
+            catalogVersion: version,
+            titleCount: snapshot.movies.count,
+            creatorCount: snapshot.creators.count,
+            seriesCount: snapshot.series.count,
+            collectionCount: snapshot.collections.count,
+            tombstoneCount: tombstoneCount,
+            cachePolicy: "stale-while-revalidate",
+            detail: detail,
+            lastError: nil,
+            updatedAtLabel: snapshot.updatedAtLabel
+        )
+        invalidateCatalogRuntime(reason: "Cloud catalog sync")
+        refreshIdentitySessionRuntime(reason: "Cloud catalog sync")
     }
 
     func refreshAuthRuntimeStatus() {
@@ -8577,6 +9005,26 @@ final class HFStreamingStore: ObservableObject {
             return Set(fallback)
         }
         return fallbackIDs
+    }
+
+    private static func uniqueMovies(_ movies: [Movie]) -> [Movie] {
+        var seen = Set<String>()
+        return movies.filter { seen.insert($0.id).inserted }
+    }
+
+    private static func uniqueCreators(_ creators: [Creator]) -> [Creator] {
+        var seen = Set<String>()
+        return creators.filter { seen.insert($0.id).inserted }
+    }
+
+    private static func uniqueSeries(_ series: [HFSeriesRecord]) -> [HFSeriesRecord] {
+        var seen = Set<String>()
+        return series.filter { seen.insert($0.id).inserted }
+    }
+
+    private static func uniqueCategories(_ categories: [Category]) -> [Category] {
+        var seen = Set<String>()
+        return categories.filter { seen.insert($0.id).inserted }
     }
 
     private static func makeInitialContentSnapshot(projects: [HFCreatorPublishingContent]) -> HFContentBackendSnapshot {

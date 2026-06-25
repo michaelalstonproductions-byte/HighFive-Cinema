@@ -164,6 +164,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInProductionBackend
+            || Self.shouldStartInCloudCatalogSync
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
@@ -232,6 +233,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInProductionBackend
+            || Self.shouldStartInCloudCatalogSync
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
@@ -357,6 +359,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInIntegrationReadiness
             || Self.shouldStartInProductionBridge
             || Self.shouldStartInProductionBackend
+            || Self.shouldStartInCloudCatalogSync
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
@@ -410,6 +413,14 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-production-backend-health")
             || arguments.contains("--hf-production-backend-catalog")
             || arguments.contains("--hf-production-backend-fallback")
+    }
+
+    private static var shouldStartInCloudCatalogSync: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-cloud-catalog-sync")
+            || arguments.contains("--hf-cloud-catalog-cache")
+            || arguments.contains("--hf-cloud-catalog-delta")
+            || arguments.contains("--hf-cloud-catalog-diagnostics")
     }
 
     private static var shouldStartInRealIdentity: Bool {

@@ -1,5 +1,7 @@
 import {
   catalogPath,
+  catalogDeltaPath,
+  catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
   creatorDetailPath,
@@ -19,6 +21,8 @@ export function openAPISpec(): Record<string, unknown> {
       "/health": { get: { summary: "Health check" } },
       [readinessPath]: { get: { summary: "Readiness check" } },
       [catalogPath]: { get: { summary: "Fetch read-only catalog" } },
+      [catalogSyncPath]: { get: { summary: "Fetch full catalog sync snapshot" } },
+      [catalogDeltaPath]: { get: { summary: "Fetch catalog delta sync payload" } },
       [`${contentDetailPath}{id}`]: { get: { summary: "Fetch content detail" } },
       [`${creatorDetailPath}{id}`]: { get: { summary: "Fetch creator detail" } },
       [`${collectionDetailPath}{id}`]: { get: { summary: "Fetch collection detail" } },
