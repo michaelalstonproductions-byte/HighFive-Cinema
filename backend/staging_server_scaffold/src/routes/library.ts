@@ -12,6 +12,14 @@ type ViewerLibraryRecord = {
   updated_at: string;
 };
 
+export type ViewerLibraryRecommendationContext = {
+  user_id: string;
+  saved_movie_ids: string[];
+  progress_movie_ids: string[];
+  completed_movie_ids: string[];
+  offline_movie_ids: string[];
+};
+
 type ViewerProgressRecord = {
   id: string;
   user_id: string;
@@ -165,6 +173,21 @@ export function viewerLibraryReadinessSummary() {
     per_profile_progress: true,
     conflict_policy: "newest_record_wins",
     local_cache_fallback: true
+  };
+}
+
+export function viewerLibraryRecommendationContext(authorizationHeader: string | undefined): ViewerLibraryRecommendationContext | null {
+  if (!authorizationHeader) return null;
+  const session = requireViewerSession(authorizationHeader);
+  const saved = libraryRecords.filter((record) => record.user_id === session.user_id);
+  const progress = progressRecords.filter((record) => record.user_id === session.user_id);
+  const offline = offlineRecords.filter((record) => record.user_id === session.user_id);
+  return {
+    user_id: session.user_id,
+    saved_movie_ids: saved.map((record) => record.movie_id),
+    progress_movie_ids: progress.map((record) => record.movie_id),
+    completed_movie_ids: progress.filter((record) => record.completed || record.progress >= 0.95).map((record) => record.movie_id),
+    offline_movie_ids: offline.map((record) => record.movie_id)
   };
 }
 

@@ -86,7 +86,7 @@ struct HFStreamingRootView: View {
 
     private static var initialTab: HFStreamingTab {
         let arguments = ProcessInfo.processInfo.arguments
-        if arguments.contains("--hf-start-search") || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-start-search-empty") || arguments.contains("--hf-premium-streaming-discovery") { return .search }
+        if arguments.contains("--hf-start-search") || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-start-search-empty") || arguments.contains("--hf-premium-streaming-discovery") || arguments.contains("--hf-start-discovery-service") || arguments.contains("--hf-discovery-search-service") || arguments.contains("--hf-discovery-recommendations") || arguments.contains("--hf-discovery-related") || arguments.contains("--hf-discovery-creator") || arguments.contains("--hf-discovery-empty") { return .search }
         if arguments.contains("--hf-start-library") || arguments.contains("--hf-start-library-continue") || arguments.contains("--hf-start-library-history") || arguments.contains("--hf-start-library-favorites") || arguments.contains("--hf-start-library-watch-later") || arguments.contains("--hf-start-library-offline") || arguments.contains("--hf-start-library-empty") || arguments.contains("--hf-premium-streaming-library") || arguments.contains("--hf-start-viewer-library-runtime") || arguments.contains("--hf-library-progress-sync") || arguments.contains("--hf-library-recommendations-sync") { return .library }
         if arguments.contains("--hf-start-downloads") || arguments.contains("--hf-start-downloads-offline") || arguments.contains("--hf-start-downloads-empty") || arguments.contains("--hf-premium-streaming-downloads") || arguments.contains("--hf-download-offline-sync") || arguments.contains("--hf-download-storage") { return .downloads }
         if arguments.contains("--hf-start-connect") { return .profile }
@@ -95,7 +95,8 @@ struct HFStreamingRootView: View {
     }
 
     private static var initialSearchMode: HFSearchHubMode {
-        ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-discovery") ? .discover : .search
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-premium-streaming-discovery") || arguments.contains("--hf-start-discovery-service") || arguments.contains("--hf-discovery-recommendations") ? .discover : .search
     }
 
     private static var shouldSkipLaunchIntro: Bool {
@@ -130,6 +131,12 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-search")
             || arguments.contains("--hf-start-search-results")
             || arguments.contains("--hf-start-search-empty")
+            || arguments.contains("--hf-start-discovery-service")
+            || arguments.contains("--hf-discovery-search-service")
+            || arguments.contains("--hf-discovery-recommendations")
+            || arguments.contains("--hf-discovery-related")
+            || arguments.contains("--hf-discovery-creator")
+            || arguments.contains("--hf-discovery-empty")
             || arguments.contains("--hf-start-library")
             || arguments.contains("--hf-start-library-continue")
             || arguments.contains("--hf-start-library-history")

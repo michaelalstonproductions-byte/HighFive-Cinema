@@ -78,8 +78,10 @@ struct SearchView: View {
     @State private var selectedFocus: HFDiscoveryFocus
     @State private var isSceneAwake = false
     @State private var showsInspector = false
+    @State private var didRequestDiscoveryService = false
 
     private let forcesEmptyState: Bool
+    private let shouldRunDiscoveryService: Bool
     private let filters = ["All", "Movies", "Series", "Originals", "Creator Published", "Downloaded"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
@@ -87,13 +89,19 @@ struct SearchView: View {
 
     init(mode: Binding<HFSearchHubMode>) {
         let arguments = ProcessInfo.processInfo.arguments
-        let startsWithResults = arguments.contains("--hf-start-search-results") || arguments.contains("--hf-premium-streaming-discovery")
-        let startsEmpty = arguments.contains("--hf-start-search-empty")
+        let startsWithResults = arguments.contains("--hf-start-search-results") || arguments.contains("--hf-premium-streaming-discovery") || arguments.contains("--hf-start-discovery-service") || arguments.contains("--hf-discovery-search-service")
+        let startsEmpty = arguments.contains("--hf-start-search-empty") || arguments.contains("--hf-discovery-empty")
         _mode = mode
-        _query = State(initialValue: startsWithResults ? "Friendly" : "")
+        _query = State(initialValue: arguments.contains("--hf-discovery-creator") ? "Maya" : startsWithResults ? "Friendly" : "")
         _selectedFilter = State(initialValue: startsWithResults ? "Movies" : "All")
         _selectedFocus = State(initialValue: startsWithResults ? .films : .tonight)
         forcesEmptyState = startsEmpty
+        shouldRunDiscoveryService = arguments.contains("--hf-start-discovery-service")
+            || arguments.contains("--hf-discovery-search-service")
+            || arguments.contains("--hf-discovery-recommendations")
+            || arguments.contains("--hf-discovery-related")
+            || arguments.contains("--hf-discovery-creator")
+            || arguments.contains("--hf-discovery-empty")
     }
 
     private var usesFallbackLayout: Bool {
@@ -120,6 +128,9 @@ struct SearchView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                if shouldRunDiscoveryService {
+                    discoveryServiceRuntimeSurface
+                }
                 discoveryWorld
                 premiumDiscoveryCollections
                 creatorProfilesSection
@@ -139,6 +150,13 @@ struct SearchView: View {
             withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isSceneAwake = true
             }
+        }
+        .task {
+            guard shouldRunDiscoveryService, !didRequestDiscoveryService else { return }
+            didRequestDiscoveryService = true
+            let serviceQuery = query.isEmpty ? selectedFocus.querySeed : query
+            let serviceFilter = selectedFilter == "All" ? selectedFocus.filter : selectedFilter
+            await streamingStore.runSearchDiscoveryRecommendationServiceFixture(query: serviceQuery, filter: serviceFilter, anchor: featuredTitle)
         }
         .accessibilityIdentifier("hf.spatial.search")
         .accessibilityIdentifier("hf.streaming.premium.discovery")
@@ -194,6 +212,71 @@ struct SearchView: View {
         .hfSpatialSceneEntrance(isActive: isSceneAwake, reduceMotion: reduceMotion)
         .accessibilityIdentifier("hf.spatial.search.world")
         .accessibilityIdentifier("hf.spatial.accessibility.largeType")
+    }
+
+    private var discoveryServiceRuntimeSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "sparkle.magnifyingglass")
+                        .font(.system(size: 28, weight: .black))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .frame(width: 54, height: 54)
+                        .background(HFColors.cyanGlow.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Discovery Service")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(streamingStore.searchDiscoveryRecommendationSnapshot.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+
+                    Text(streamingStore.searchDiscoveryRecommendationSnapshot.statusLabel)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .frame(minHeight: 34)
+                        .background(HFColors.cyanGlow.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.searchDiscoveryServiceRows) { row in
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Image(systemName: row.systemImage)
+                                .font(.system(size: 20, weight: .black))
+                                .foregroundStyle(HFColors.cyanGlow)
+                            Text(row.value)
+                                .font(HFTypography.section)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text(row.title)
+                                .font(HFTypography.caption.weight(.bold))
+                                .foregroundStyle(HFColors.textSecondary)
+                            Text(row.detail)
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.textMuted)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.74)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(minHeight: 132, alignment: .topLeading)
+                        .padding(HFSpacing.sm)
+                        .background(Color.white.opacity(0.07))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                        .accessibilityIdentifier("hf.discovery.service.\(row.id)")
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.discovery.service.runtime")
     }
 
     private var discoveryLens: some View {

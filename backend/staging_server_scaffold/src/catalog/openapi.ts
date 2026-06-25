@@ -13,6 +13,7 @@ import {
   creatorUploadAssetsPath,
   creatorUploadDetailPath,
   creatorUploadSessionsPath,
+  discoveryQueryPath,
   openAPIPath,
   playbackDescriptorPath,
   playbackHLSPath,
@@ -67,6 +68,7 @@ export function openAPISpec(): Record<string, unknown> {
       [viewerLibrarySavePath]: { post: { summary: "Save or remove authenticated viewer library title state" } },
       [viewerLibraryProgressPath]: { post: { summary: "Persist authenticated viewer playback progress" } },
       [viewerLibraryOfflinePath]: { post: { summary: "Persist authenticated viewer offline download state" } },
+      [discoveryQueryPath]: { get: { summary: "Search, filter, paginate, and recommend catalog content" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

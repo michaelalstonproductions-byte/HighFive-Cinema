@@ -68,6 +68,7 @@ export const catalogDeltaPath = "/v1/catalog/delta";
 export const contentDetailPath = "/v1/content/";
 export const creatorDetailPath = "/v1/creators/";
 export const collectionDetailPath = "/v1/collections/";
+export const discoveryQueryPath = "/v1/discovery/query";
 export const identityDevSignInPath = "/v1/identity/dev/sign-in";
 export const identityAppleExchangePath = "/v1/identity/apple/exchange";
 export const identityRefreshPath = "/v1/identity/session/refresh";

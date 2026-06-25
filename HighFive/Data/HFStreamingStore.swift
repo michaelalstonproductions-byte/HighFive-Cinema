@@ -845,6 +845,74 @@ struct HFViewerOfflineDownloadRecord: Identifiable, Hashable {
     var updatedAtLabel: String
 }
 
+enum HFSearchDiscoveryServiceState: String, Hashable {
+    case localFallback = "Local Fallback"
+    case querying = "Querying"
+    case ready = "Service Ready"
+    case empty = "Empty"
+    case failed = "Failed"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFSearchDiscoveryRecommendationSnapshot: Hashable {
+    var state: HFSearchDiscoveryServiceState
+    var endpoint: String
+    var query: String
+    var filter: String
+    var anchorID: String?
+    var totalResults: Int
+    var titleIDs: [String]
+    var creatorIDs: [String]
+    var collectionIDs: [String]
+    var relatedTitleIDs: [String]
+    var recommendationIDs: [String]
+    var suggestionLabels: [String]
+    var trendingIDs: [String]
+    var recentlyPublishedIDs: [String]
+    var creatorPublishedIDs: [String]
+    var searchEventCount: Int
+    var cachePolicy: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.statusLabel }
+
+    static func local(reason: String, query: String = "", filter: String = "All") -> HFSearchDiscoveryRecommendationSnapshot {
+        HFSearchDiscoveryRecommendationSnapshot(
+            state: .localFallback,
+            endpoint: "HFContentQueryEngine",
+            query: query,
+            filter: filter,
+            anchorID: nil,
+            totalResults: 0,
+            titleIDs: [],
+            creatorIDs: [],
+            collectionIDs: [],
+            relatedTitleIDs: [],
+            recommendationIDs: [],
+            suggestionLabels: [],
+            trendingIDs: [],
+            recentlyPublishedIDs: [],
+            creatorPublishedIDs: [],
+            searchEventCount: 0,
+            cachePolicy: "Local query facade",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFSearchDiscoveryServiceRow: Identifiable, Hashable {
+    var id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
 struct HFCreatorProjectRuntimeSnapshot: Hashable {
     var projectCount: Int
     var manifestCount: Int
@@ -2982,6 +3050,12 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-library-recommendations-sync")
             || arguments.contains("--hf-download-offline-sync")
             || arguments.contains("--hf-download-storage")
+            || arguments.contains("--hf-start-discovery-service")
+            || arguments.contains("--hf-discovery-search-service")
+            || arguments.contains("--hf-discovery-recommendations")
+            || arguments.contains("--hf-discovery-related")
+            || arguments.contains("--hf-discovery-creator")
+            || arguments.contains("--hf-discovery-empty")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3670,6 +3744,102 @@ struct HFRemoteViewerLibraryMutationResponse: Decodable, Hashable {
     var snapshot: HFRemoteViewerLibrarySnapshotResponse
 }
 
+struct HFRemoteDiscoverySearchHistoryRecord: Decodable, Hashable, Identifiable {
+    var id: String
+    var query: String
+    var filter: String
+    var resultCount: Int
+    var createdAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case query
+        case filter
+        case resultCount = "result_count"
+        case createdAt = "created_at"
+    }
+}
+
+struct HFRemoteDiscoveryAnalyticsRecord: Decodable, Hashable {
+    var searchEvents: Int
+    var lastQueryID: String?
+    var cached: Bool
+    var fallbackAvailable: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case searchEvents = "search_events"
+        case lastQueryID = "last_query_id"
+        case cached
+        case fallbackAvailable = "fallback_available"
+    }
+}
+
+struct HFRemoteDiscoveryRecommendationRecord: Decodable, Hashable, Identifiable {
+    var movieID: String
+    var title: String
+    var reason: String
+
+    var id: String { movieID }
+
+    private enum CodingKeys: String, CodingKey {
+        case movieID = "movie_id"
+        case title
+        case reason
+    }
+}
+
+struct HFRemoteDiscoveryQueryResponse: Decodable, Hashable {
+    var status: String
+    var source: String
+    var query: String
+    var kind: String
+    var filter: String
+    var page: Int
+    var pageSize: Int
+    var totalResults: Int
+    var titles: [HFProductionCatalogMovieDTO]
+    var creators: [HFProductionCatalogCreatorDTO]
+    var collections: [HFProductionCatalogCollectionDTO]
+    var series: [HFProductionCatalogSeriesDTO]
+    var episodes: [HFProductionCatalogEpisodeDTO]
+    var relatedTitles: [HFProductionCatalogMovieDTO]
+    var recommendations: [HFRemoteDiscoveryRecommendationRecord]
+    var suggestions: [String]
+    var trending: [HFProductionCatalogMovieDTO]
+    var recentlyPublished: [HFProductionCatalogMovieDTO]
+    var creatorPublishedTitles: [HFProductionCatalogMovieDTO]
+    var searchHistory: [HFRemoteDiscoverySearchHistoryRecord]
+    var analytics: HFRemoteDiscoveryAnalyticsRecord
+    var cachePolicy: String
+    var generatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case source
+        case query
+        case kind
+        case filter
+        case page
+        case pageSize = "page_size"
+        case totalResults = "total_results"
+        case titles
+        case creators
+        case collections
+        case series
+        case episodes
+        case relatedTitles = "related_titles"
+        case recommendations
+        case suggestions
+        case trending
+        case recentlyPublished = "recently_published"
+        case creatorPublishedTitles = "creator_published_titles"
+        case searchHistory = "search_history"
+        case analytics
+        case cachePolicy = "cache_policy"
+        case generatedAt = "generated_at"
+    }
+}
+
 struct HFRemoteCreatorUploadAPIClient {
     var baseURL: URL
     var session: URLSession = .shared
@@ -3811,6 +3981,36 @@ struct HFRemoteCreatorUploadAPIClient {
             method: "POST",
             sessionID: sessionID,
             body: HFRemoteViewerOfflineRequest(movieID: movieID, state: state, bytes: bytes)
+        )
+    }
+
+    func fetchDiscoveryQuery(
+        query: String,
+        filter: String,
+        kind: String = "search",
+        anchorID: String? = nil,
+        page: Int = 1,
+        pageSize: Int = 12,
+        sessionID: String? = nil
+    ) async throws -> HFRemoteDiscoveryQueryResponse {
+        var items: [URLQueryItem] = [
+            URLQueryItem(name: "kind", value: kind),
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "filter", value: filter),
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "page_size", value: "\(pageSize)")
+        ]
+        if let anchorID {
+            items.append(URLQueryItem(name: "anchor_id", value: anchorID))
+        }
+        var components = URLComponents()
+        components.path = "/v1/discovery/query"
+        components.queryItems = items
+        return try await jsonRequest(
+            path: components.string ?? "/v1/discovery/query",
+            method: "GET",
+            sessionID: sessionID,
+            body: Optional<[String: String]>.none
         )
     }
 
@@ -4368,6 +4568,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var streamingPlaybackSessionRecords: [HFStreamingPlaybackSessionRecord] = []
     @Published private(set) var viewerLibraryRuntimeSnapshot: HFViewerLibraryRuntimeSnapshot
     @Published private(set) var viewerOfflineDownloadRecords: [HFViewerOfflineDownloadRecord] = []
+    @Published private(set) var searchDiscoveryRecommendationSnapshot: HFSearchDiscoveryRecommendationSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -4483,6 +4684,9 @@ final class HFStreamingStore: ObservableObject {
             reason: "Viewer library, progress, and offline state use the local cache until the loopback backend is enabled.",
             userID: "local-viewer"
         )
+        searchDiscoveryRecommendationSnapshot = .local(
+            reason: "Search, discovery, and recommendations use HFContentQueryEngine until the production discovery service is enabled."
+        )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -4541,6 +4745,14 @@ final class HFStreamingStore: ObservableObject {
                     || launchArguments.contains("--hf-draft-sync-conflict")
                     || launchArguments.contains("--hf-draft-sync-revisions") {
                     await self.refreshCreatorDraftRemoteSync()
+                }
+                if launchArguments.contains("--hf-start-discovery-service")
+                    || launchArguments.contains("--hf-discovery-search-service")
+                    || launchArguments.contains("--hf-discovery-recommendations")
+                    || launchArguments.contains("--hf-discovery-related")
+                    || launchArguments.contains("--hf-discovery-creator")
+                    || launchArguments.contains("--hf-discovery-empty") {
+                    await self.runSearchDiscoveryRecommendationServiceFixture()
                 }
             }
         }
@@ -6880,6 +7092,207 @@ final class HFStreamingStore: ObservableObject {
         )
     }
 
+    var searchDiscoveryServiceRows: [HFSearchDiscoveryServiceRow] {
+        [
+            HFSearchDiscoveryServiceRow(
+                id: "results",
+                title: "Search Results",
+                value: "\(searchDiscoveryRecommendationSnapshot.titleIDs.count)",
+                detail: "\(searchDiscoveryRecommendationSnapshot.query.isEmpty ? "Catalog" : searchDiscoveryRecommendationSnapshot.query) / \(searchDiscoveryRecommendationSnapshot.filter)",
+                systemImage: "magnifyingglass.circle.fill"
+            ),
+            HFSearchDiscoveryServiceRow(
+                id: "recommendations",
+                title: "Recommendations",
+                value: "\(searchDiscoveryRecommendationSnapshot.recommendationIDs.count)",
+                detail: searchDiscoveryRecommendationSnapshot.cachePolicy,
+                systemImage: "sparkles"
+            ),
+            HFSearchDiscoveryServiceRow(
+                id: "related",
+                title: "Related Titles",
+                value: "\(searchDiscoveryRecommendationSnapshot.relatedTitleIDs.count)",
+                detail: searchDiscoveryRecommendationSnapshot.anchorID ?? "No anchor",
+                systemImage: "point.3.connected.trianglepath.dotted"
+            ),
+            HFSearchDiscoveryServiceRow(
+                id: "events",
+                title: "Search Events",
+                value: "\(searchDiscoveryRecommendationSnapshot.searchEventCount)",
+                detail: searchDiscoveryRecommendationSnapshot.endpoint,
+                systemImage: "chart.xyaxis.line"
+            )
+        ]
+    }
+
+    @discardableResult
+    func runSearchDiscoveryRecommendationServiceFixture(
+        query: String? = nil,
+        filter: String = "All",
+        anchor movie: Movie? = nil
+    ) async -> HFSearchDiscoveryRecommendationSnapshot {
+        let arguments = ProcessInfo.processInfo.arguments
+        let resolvedQuery: String
+        if arguments.contains("--hf-discovery-empty") {
+            resolvedQuery = "zzzz-empty-query"
+        } else if arguments.contains("--hf-discovery-creator") {
+            resolvedQuery = "Maya"
+        } else {
+            resolvedQuery = query ?? "Friendly"
+        }
+        let resolvedFilter = arguments.contains("--hf-discovery-creator") ? "All" : filter
+        let anchorMovie = movie ?? featuredMovie
+
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            searchDiscoveryRecommendationSnapshot = localSearchDiscoverySnapshot(
+                query: resolvedQuery,
+                filter: resolvedFilter,
+                anchor: anchorMovie,
+                reason: "Production discovery service disabled. HFContentQueryEngine local fallback remains active."
+            )
+            return searchDiscoveryRecommendationSnapshot
+        }
+
+        searchDiscoveryRecommendationSnapshot = HFSearchDiscoveryRecommendationSnapshot(
+            state: .querying,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            query: resolvedQuery,
+            filter: resolvedFilter,
+            anchorID: anchorMovie.id,
+            totalResults: 0,
+            titleIDs: [],
+            creatorIDs: [],
+            collectionIDs: [],
+            relatedTitleIDs: [],
+            recommendationIDs: [],
+            suggestionLabels: [],
+            trendingIDs: [],
+            recentlyPublishedIDs: [],
+            creatorPublishedIDs: [],
+            searchEventCount: searchDiscoveryRecommendationSnapshot.searchEventCount,
+            cachePolicy: "Querying backend",
+            detail: "Fetching production search, discovery, related, and recommendation data from the loopback backend.",
+            lastError: nil,
+            updatedAtLabel: "Querying"
+        )
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await client.createViewerDevelopmentSession()
+            if arguments.contains("--hf-discovery-recommendations") {
+                _ = try? await client.saveViewerLibraryTitle(movieID: anchorMovie.id, saved: true, state: "favorite", sessionID: sessionID)
+                _ = try? await client.updateViewerProgress(movieID: anchorMovie.id, progress: max(anchorMovie.progress ?? 0.58, 0.58), completed: false, sessionID: sessionID)
+            }
+            let kind = arguments.contains("--hf-discovery-recommendations") ? "recommendations" :
+                arguments.contains("--hf-discovery-related") ? "related" :
+                arguments.contains("--hf-discovery-creator") ? "creator" : "search"
+            let response = try await client.fetchDiscoveryQuery(
+                query: resolvedQuery,
+                filter: resolvedFilter,
+                kind: kind,
+                anchorID: anchorMovie.id,
+                sessionID: sessionID
+            )
+            applyRemoteDiscoveryQuery(response, anchor: anchorMovie)
+        } catch {
+            searchDiscoveryRecommendationSnapshot = localSearchDiscoverySnapshot(
+                query: resolvedQuery,
+                filter: resolvedFilter,
+                anchor: anchorMovie,
+                reason: "Production discovery service failed. Local query facade remains available.",
+                error: error.localizedDescription
+            )
+        }
+
+        return searchDiscoveryRecommendationSnapshot
+    }
+
+    private func applyRemoteDiscoveryQuery(_ response: HFRemoteDiscoveryQueryResponse, anchor: Movie) {
+        let titleIDs = response.titles.map(\.id)
+        let relatedIDs = response.relatedTitles.map(\.id)
+        let recommendationIDs = response.recommendations.map(\.movieID)
+        let state: HFSearchDiscoveryServiceState = response.totalResults == 0 && titleIDs.isEmpty ? .empty : .ready
+        searchDiscoveryRecommendationSnapshot = HFSearchDiscoveryRecommendationSnapshot(
+            state: state,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            query: response.query,
+            filter: response.filter,
+            anchorID: anchor.id,
+            totalResults: response.totalResults,
+            titleIDs: titleIDs,
+            creatorIDs: response.creators.map(\.id),
+            collectionIDs: response.collections.map(\.id),
+            relatedTitleIDs: relatedIDs,
+            recommendationIDs: recommendationIDs,
+            suggestionLabels: response.suggestions,
+            trendingIDs: response.trending.map(\.id),
+            recentlyPublishedIDs: response.recentlyPublished.map(\.id),
+            creatorPublishedIDs: response.creatorPublishedTitles.map(\.id),
+            searchEventCount: response.analytics.searchEvents,
+            cachePolicy: response.cachePolicy,
+            detail: "Production discovery service returned search, collection, related-title, and recommendation payloads. Local fallback remains available.",
+            lastError: nil,
+            updatedAtLabel: response.generatedAt
+        )
+    }
+
+    private func localSearchDiscoverySnapshot(query: String, filter: String, anchor: Movie, reason: String, error: String? = nil) -> HFSearchDiscoveryRecommendationSnapshot {
+        let titles = queryTitles(search: query, filter: filter)
+        let related = queryRelatedContent(for: anchor, limit: 8)
+        let recommendations = contentQueryEngine.libraryAwareRecommendations(anchor: anchor, limit: 8)
+        return HFSearchDiscoveryRecommendationSnapshot(
+            state: error == nil ? .localFallback : .failed,
+            endpoint: "HFContentQueryEngine",
+            query: query,
+            filter: filter,
+            anchorID: anchor.id,
+            totalResults: titles.count,
+            titleIDs: titles.map(\.id),
+            creatorIDs: queryCreators(search: query).map(\.id),
+            collectionIDs: queryCollections().filter { collection in
+                !Set(collection.movies.map(\.id)).isDisjoint(with: Set(titles.map(\.id)))
+            }.map(\.id),
+            relatedTitleIDs: related.map(\.id),
+            recommendationIDs: recommendations.map(\.id),
+            suggestionLabels: Array((recentSearches + queryCollections().map(\.title)).prefix(8)),
+            trendingIDs: catalogRuntimeMovies(sort: .progress, pageSize: 8).map(\.id),
+            recentlyPublishedIDs: queryRecentlyPublished(limit: 8).map(\.id),
+            creatorPublishedIDs: queryCreatorPublishedTitles().map(\.id),
+            searchEventCount: recentSearches.count,
+            cachePolicy: "Local query facade",
+            detail: reason,
+            lastError: error,
+            updatedAtLabel: "Local"
+        )
+    }
+
+    private func remoteMovies(ids: [String]) -> [Movie] {
+        ids.compactMap { queryTitle(id: $0) }
+    }
+
+    private func remoteSearchMatches(query: String, filter: String) -> [Movie]? {
+        let snapshot = searchDiscoveryRecommendationSnapshot
+        guard snapshot.state == .ready || snapshot.state == .empty else { return nil }
+        guard snapshot.query.localizedCaseInsensitiveCompare(query) == .orderedSame,
+              snapshot.filter.localizedCaseInsensitiveCompare(filter) == .orderedSame else { return nil }
+        return remoteMovies(ids: snapshot.titleIDs)
+    }
+
+    private func remoteRelatedMatches(for movie: Movie) -> [Movie]? {
+        let snapshot = searchDiscoveryRecommendationSnapshot
+        guard snapshot.state == .ready, snapshot.anchorID == movie.id else { return nil }
+        let related = remoteMovies(ids: snapshot.relatedTitleIDs)
+        return related.isEmpty ? nil : related
+    }
+
+    private func remoteRecommendationMatches(anchor movie: Movie?) -> [Movie]? {
+        let snapshot = searchDiscoveryRecommendationSnapshot
+        guard snapshot.state == .ready else { return nil }
+        if let movie, let anchorID = snapshot.anchorID, anchorID != movie.id { return nil }
+        let recommendations = remoteMovies(ids: snapshot.recommendationIDs)
+        return recommendations.isEmpty ? nil : recommendations
+    }
+
     var creatorProjectRuntimeSnapshot: HFCreatorProjectRuntimeSnapshot {
         let validations = creatorProjectValidationRecords
 
@@ -7616,11 +8029,23 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func queryTitles(search query: String, filter: String = "All") -> [Movie] {
-        contentQueryEngine.searchTitles(query: query, filter: filter)
+        if let remote = remoteSearchMatches(query: query, filter: filter) {
+            return remote
+        }
+        return contentQueryEngine.searchTitles(query: query, filter: filter)
     }
 
     func queryCreators(search query: String) -> [Creator] {
-        contentQueryEngine.searchCreators(query: query)
+        let snapshot = searchDiscoveryRecommendationSnapshot
+        if snapshot.state == .ready,
+           snapshot.query.localizedCaseInsensitiveCompare(query) == .orderedSame,
+           !snapshot.creatorIDs.isEmpty {
+            let remoteCreators = snapshot.creatorIDs.compactMap { id in
+                persistedCreators.first { $0.id == id }
+            }
+            if !remoteCreators.isEmpty { return remoteCreators }
+        }
+        return contentQueryEngine.searchCreators(query: query)
     }
 
     func queryTitles(genre: String) -> [Movie] {
@@ -7656,7 +8081,10 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func queryRelatedContent(for movie: Movie, limit: Int = 8) -> [Movie] {
-        contentQueryEngine.relatedContent(for: movie, limit: limit)
+        if let remote = remoteRelatedMatches(for: movie) {
+            return Array(remote.prefix(limit))
+        }
+        return contentQueryEngine.relatedContent(for: movie, limit: limit)
     }
 
     func queryRecentlyPublished(limit: Int = 10) -> [Movie] {
@@ -7668,7 +8096,10 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func queryLibraryRecommendations(anchor movie: Movie? = nil, limit: Int = 10) -> [Movie] {
-        contentQueryEngine.libraryAwareRecommendations(anchor: movie, limit: limit)
+        if let remote = remoteRecommendationMatches(anchor: movie) {
+            return Array(remote.prefix(limit))
+        }
+        return contentQueryEngine.libraryAwareRecommendations(anchor: movie, limit: limit)
     }
 
     func loadCatalogRuntime() {
@@ -9978,7 +10409,13 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var discoveryCollections: [Category] {
-        compactCategories([
+        if searchDiscoveryRecommendationSnapshot.state == .ready, !searchDiscoveryRecommendationSnapshot.collectionIDs.isEmpty {
+            let remoteCollections = searchDiscoveryRecommendationSnapshot.collectionIDs.compactMap { queryCollection(id: $0) }
+            if !remoteCollections.isEmpty {
+                return remoteCollections
+            }
+        }
+        return compactCategories([
             Category(id: "featured", title: "Featured", subtitle: "High-signal local picks for the first watch decision", movies: [featuredMovie]),
             Category(id: "trending", title: "Trending", subtitle: "Local momentum from the HighFive catalog", movies: moviesByIDs(["friendly", "paranormall-s1", "black-turnip", "big-loss", "artist-development", "bleu-velvet"])),
             Category(id: "new-releases", title: "New Releases", subtitle: "Fresh and recently staged local catalog titles", movies: queryRecentlyPublished(limit: 10)),
@@ -9992,6 +10429,12 @@ final class HFStreamingStore: ObservableObject {
 
     func recommendationCollections(anchor movie: Movie? = nil) -> [Category] {
         let selected = movie ?? continueWatchingMovie
+        if let remote = remoteRecommendationMatches(anchor: selected), !remote.isEmpty {
+            return compactCategories([
+                Category(id: "remote-recommendations", title: "Backend Recommendations", subtitle: searchDiscoveryRecommendationSnapshot.cachePolicy, movies: remote),
+                Category(id: "remote-related", title: "Related Titles", subtitle: "Resolved by the production discovery service", movies: remoteRelatedMatches(for: selected) ?? queryRelatedContent(for: selected, limit: 10))
+            ])
+        }
         return compactCategories([
             Category(id: "because-you-watched", title: "Because You Watched \(selected.title)", subtitle: "Genre, tone, and creator-adjacent local picks", movies: queryLibraryRecommendations(anchor: selected, limit: 10)),
             Category(id: "similar-titles", title: "Similar Titles", subtitle: selected.genres.prefix(2).joined(separator: " + "), movies: queryRelatedContent(for: selected, limit: 10)),

@@ -10,6 +10,7 @@ import {
   creatorDraftSyncQueuePath,
   creatorWorkspacePath,
   creatorDetailPath,
+  discoveryQueryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -34,6 +35,7 @@ import {
 } from "../contracts.js";
 import { openAPISpec } from "../catalog/openapi.js";
 import { catalogDelta, catalogSummary, catalogSync, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
+import { discoveryQuery, discoveryReadinessSummary } from "../routes/discovery.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -163,6 +165,16 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, viewerLibrarySnapshot(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === discoveryQueryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, discoveryQuery(request.url, authHeader(request.headers.authorization)));
         return;
       }
 
@@ -527,6 +539,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     creator_processing_jobs_path: creatorProcessingJobsPath,
     playback_hls_path: playbackHLSPath,
     viewer_library_path: viewerLibraryPath,
+    discovery_query_path: discoveryQueryPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -540,6 +553,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const uploads = uploadReadinessSummary();
   const processing = processingReadinessSummary();
   const library = viewerLibraryReadinessSummary();
+  const discovery = discoveryReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -566,6 +580,11 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     playback_progress_enabled: Boolean(library.playback_progress),
     offline_records_enabled: Boolean(library.offline_records),
     library_conflict_policy: String(library.conflict_policy),
+    discovery_service_enabled: Boolean(discovery.discovery_service_enabled),
+    discovery_title_search: Boolean(discovery.title_search),
+    discovery_recommendations_enabled: Boolean(discovery.recommendations),
+    discovery_query_cache_enabled: Boolean(discovery.query_cache),
+    discovery_analytics_hook: Boolean(discovery.analytics_hook),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
