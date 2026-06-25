@@ -177,6 +177,10 @@ private enum HFCreatorProSpotlight {
     case publishingReviewQueue
     case publishingReviewPublish
     case publishingReviewAudit
+    case analyticsEventDashboard
+    case analyticsEventIngest
+    case analyticsEventMetrics
+    case analyticsEventPrivacy
     case collaborationDashboard
     case collaborationTeam
     case collaborationTasks
@@ -315,6 +319,10 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-review-queue") { return .publishingReviewQueue }
         if arguments.contains("--hf-review-publish") { return .publishingReviewPublish }
         if arguments.contains("--hf-review-audit") { return .publishingReviewAudit }
+        if arguments.contains("--hf-start-analytics-events") { return .analyticsEventDashboard }
+        if arguments.contains("--hf-analytics-events-ingest") { return .analyticsEventIngest }
+        if arguments.contains("--hf-analytics-events-dashboard") { return .analyticsEventMetrics }
+        if arguments.contains("--hf-analytics-events-privacy") { return .analyticsEventPrivacy }
         if arguments.contains("--hf-start-collaboration") { return .collaborationDashboard }
         if arguments.contains("--hf-collaboration-team") { return .collaborationTeam }
         if arguments.contains("--hf-collaboration-tasks") { return .collaborationTasks }
@@ -2326,6 +2334,14 @@ struct CreatorStudioView: View {
             publishingReviewCatalogVisibilitySection
         case .publishingReviewAudit:
             publishingReviewAuditTrailSection
+        case .analyticsEventDashboard:
+            analyticsEventPipelineDashboardSection
+        case .analyticsEventIngest:
+            analyticsEventIngestSection
+        case .analyticsEventMetrics:
+            analyticsEventMetricsSection
+        case .analyticsEventPrivacy:
+            analyticsEventPrivacySection
         case .collaborationDashboard:
             creatorCollaborationDashboard
         case .collaborationTeam:
@@ -3168,6 +3184,122 @@ struct CreatorStudioView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.publishingReview.audit")
+    }
+
+    private var analyticsEventPipelineDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Analytics Event Pipeline",
+            detail: "Versioned event ingestion, batching, idempotency, privacy sanitization, and aggregate creator metrics now run through the loopback analytics service.",
+            systemImage: "chart.xyaxis.line",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.analyticsEvent.pipeline"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    creatorProStat(title: "Events", value: "\(streamingStore.analyticsEventPipelineSnapshot.eventCount)")
+                    creatorProStat(title: "Accepted", value: "\(streamingStore.analyticsEventPipelineSnapshot.acceptedCount)")
+                    creatorProStat(title: "Deduped", value: "\(streamingStore.analyticsEventPipelineSnapshot.deduplicatedCount)")
+                    creatorProStat(title: "Complete", value: "\(streamingStore.analyticsEventPipelineSnapshot.completionRate)%")
+                }
+
+                Text("Playback -> Discovery -> Library -> Creator -> Publishing -> Aggregates")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(streamingStore.analyticsEventPipelineSnapshot.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task { await streamingStore.runAnalyticsEventPipelineFixture() }
+                } label: {
+                    Label("Run Analytics Pipeline", systemImage: "paperplane.circle.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(HFColors.cyanGlow)
+                .accessibilityIdentifier("hf.analyticsEvent.runPipeline")
+            }
+        }
+        .task {
+            await streamingStore.runAnalyticsEventPipelineFixture()
+        }
+    }
+
+    private var analyticsEventIngestSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Event Ingestion",
+                    detail: "Client batches use analytics.v1, idempotency keys, and a bounded accepted/rejected response.",
+                    systemImage: "tray.and.arrow.down.fill",
+                    accent: HFColors.gold
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.analyticsEventPipelineRows.prefix(4)) { row in
+                        analyticsEventPipelineCard(row)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.runAnalyticsEventPipelineFixture()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.analyticsEvent.ingest")
+    }
+
+    private var analyticsEventMetricsSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Aggregate Metrics",
+                    detail: "Playback, discovery, viewer, creator, upload, processing, and publishing signals roll into creator-facing aggregates.",
+                    systemImage: "chart.bar.doc.horizontal.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.analyticsEventPipelineRows) { row in
+                        analyticsEventPipelineCard(row)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.runAnalyticsEventPipelineFixture()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.analyticsEvent.dashboard")
+    }
+
+    private var analyticsEventPrivacySection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Privacy Controls",
+                    detail: "Analytics accepts authenticated and anonymous IDs while stripping private payload fields and credential-shaped values.",
+                    systemImage: "hand.raised.fill",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    HFCreatorStudioReadinessRow(title: "Schema", detail: streamingStore.analyticsEventPipelineSnapshot.schemaVersion, status: "Versioned", systemImage: "doc.badge.gearshape.fill", accent: HFColors.cyanGlow)
+                    HFCreatorStudioReadinessRow(title: "Private Fields", detail: "Email, token, secret, authorization, password, and credential keys are removed by the backend.", status: "Sanitized", systemImage: "lock.shield.fill", accent: HFColors.violet)
+                    HFCreatorStudioReadinessRow(title: "Rejected", detail: "Disallowed event names are rejected without failing accepted events in the same batch.", status: "\(streamingStore.analyticsEventPipelineSnapshot.rejectedCount)", systemImage: "exclamationmark.triangle.fill", accent: HFColors.gold)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .task {
+            await streamingStore.runAnalyticsEventPipelineFixture()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.analyticsEvent.privacy")
     }
 
     private var creatorCollaborationDashboard: some View {
@@ -9971,6 +10103,33 @@ struct CreatorStudioView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(metric.title), \(metric.value). \(metric.detail)")
         .accessibilityIdentifier("hf.analytics.viewer.\(metric.id)")
+    }
+
+    private func analyticsEventPipelineCard(_ row: HFAnalyticsEventPipelineRow) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.22)) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: row.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(HFColors.cyanGlow)
+                Text(row.value)
+                    .font(.system(size: 24, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.70)
+                Text(row.title)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text(row.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(3)
+            }
+            .padding(HFSpacing.sm)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(row.title), \(row.value). \(row.detail)")
+        .accessibilityIdentifier("hf.analyticsEvent.metric.\(row.id)")
     }
 
     private func titleAnalyticsCard(_ record: HFTitleAnalyticsRecord) -> some View {

@@ -1401,6 +1401,71 @@ struct HFAnalyticsInsight: Identifiable {
     var systemImage: String
 }
 
+enum HFAnalyticsEventPipelineState: String, Hashable {
+    case localFallback = "Local Fallback"
+    case sending = "Sending"
+    case ready = "Ready"
+    case failed = "Failed"
+}
+
+struct HFAnalyticsEventPipelineSnapshot: Equatable {
+    var state: HFAnalyticsEventPipelineState
+    var endpoint: String
+    var schemaVersion: String
+    var eventCount: Int
+    var acceptedCount: Int
+    var deduplicatedCount: Int
+    var rejectedCount: Int
+    var playbackEvents: Int
+    var discoveryEvents: Int
+    var creatorEvents: Int
+    var viewerEvents: Int
+    var completionRate: Int
+    var searches: Int
+    var saves: Int
+    var favorites: Int
+    var uploads: Int
+    var processingCompletions: Int
+    var publishingStateChanges: Int
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    static func local(reason: String) -> HFAnalyticsEventPipelineSnapshot {
+        HFAnalyticsEventPipelineSnapshot(
+            state: .localFallback,
+            endpoint: "Local analytics estimates",
+            schemaVersion: "analytics.v1",
+            eventCount: 0,
+            acceptedCount: 0,
+            deduplicatedCount: 0,
+            rejectedCount: 0,
+            playbackEvents: 0,
+            discoveryEvents: 0,
+            creatorEvents: 0,
+            viewerEvents: 0,
+            completionRate: 0,
+            searches: 0,
+            saves: 0,
+            favorites: 0,
+            uploads: 0,
+            processingCompletions: 0,
+            publishingStateChanges: 0,
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFAnalyticsEventPipelineRow: Identifiable, Equatable {
+    let id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
 struct HFRevenueMetric: Identifiable {
     let id: String
     var title: String
@@ -3060,6 +3125,10 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-review-queue")
             || arguments.contains("--hf-review-publish")
             || arguments.contains("--hf-review-audit")
+            || arguments.contains("--hf-start-analytics-events")
+            || arguments.contains("--hf-analytics-events-ingest")
+            || arguments.contains("--hf-analytics-events-dashboard")
+            || arguments.contains("--hf-analytics-events-privacy")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3390,6 +3459,107 @@ struct HFRemotePublishingReviewAuditResponse: Codable {
     }
 }
 
+struct HFRemoteAnalyticsEventPayload: Encodable {
+    var eventID: String
+    var idempotencyKey: String
+    var eventName: String
+    var contentID: String?
+    var creatorID: String?
+    var collectionID: String?
+    var projectID: String?
+    var source: String
+    var properties: [String: String]
+
+    private enum CodingKeys: String, CodingKey {
+        case eventID = "event_id"
+        case idempotencyKey = "idempotency_key"
+        case eventName = "event_name"
+        case contentID = "content_id"
+        case creatorID = "creator_id"
+        case collectionID = "collection_id"
+        case projectID = "project_id"
+        case source
+        case properties
+    }
+}
+
+struct HFRemoteAnalyticsBatchPayload: Encodable {
+    var events: [HFRemoteAnalyticsEventPayload]
+}
+
+struct HFRemoteAnalyticsCountRecord: Codable, Hashable {
+    var id: String
+    var count: Int
+}
+
+struct HFRemoteAnalyticsAggregations: Codable, Hashable {
+    var totalEvents: Int
+    var playbackEvents: Int
+    var discoveryEvents: Int
+    var creatorEvents: Int
+    var viewerEvents: Int
+    var saves: Int
+    var favorites: Int
+    var searches: Int
+    var uploads: Int
+    var processingCompletions: Int
+    var publishingStateChanges: Int
+    var topContent: [HFRemoteAnalyticsCountRecord]
+    var topCreators: [HFRemoteAnalyticsCountRecord]
+    var completionRate: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case totalEvents = "total_events"
+        case playbackEvents = "playback_events"
+        case discoveryEvents = "discovery_events"
+        case creatorEvents = "creator_events"
+        case viewerEvents = "viewer_events"
+        case saves
+        case favorites
+        case searches
+        case uploads
+        case processingCompletions = "processing_completions"
+        case publishingStateChanges = "publishing_state_changes"
+        case topContent = "top_content"
+        case topCreators = "top_creators"
+        case completionRate = "completion_rate"
+    }
+}
+
+struct HFRemoteAnalyticsIngestResponse: Codable {
+    var status: String
+    var schemaVersion: String
+    var acceptedCount: Int
+    var deduplicatedCount: Int
+    var rejectedCount: Int
+    var acceptedEventIDs: [String]
+    var aggregations: HFRemoteAnalyticsAggregations
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case schemaVersion = "schema_version"
+        case acceptedCount = "accepted_count"
+        case deduplicatedCount = "deduplicated_count"
+        case rejectedCount = "rejected_count"
+        case acceptedEventIDs = "accepted_event_ids"
+        case aggregations
+    }
+}
+
+struct HFRemoteAnalyticsDashboardResponse: Codable {
+    var status: String
+    var schemaVersion: String
+    var eventCount: Int
+    var aggregations: HFRemoteAnalyticsAggregations
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case schemaVersion = "schema_version"
+        case eventCount = "event_count"
+        case aggregations
+    }
+}
+
 struct HFRemoteIdentitySignInResponse: Codable {
     struct Session: Codable {
         var sessionID: String
@@ -3482,6 +3652,14 @@ struct HFRemoteCreatorDraftAPIClient {
 
     func reviewAudit(sessionID: String) async throws -> HFRemotePublishingReviewAuditResponse {
         try await request(path: "/v1/admin/review/audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func ingestAnalyticsEvents(_ events: [HFRemoteAnalyticsEventPayload], sessionID: String? = nil) async throws -> HFRemoteAnalyticsIngestResponse {
+        try await request(path: "/v1/analytics/events", method: "POST", sessionID: sessionID, body: HFRemoteAnalyticsBatchPayload(events: events))
+    }
+
+    func analyticsDashboard(sessionID: String? = nil) async throws -> HFRemoteAnalyticsDashboardResponse {
+        try await request(path: "/v1/analytics/dashboard", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
     }
 
     func revisionHistory(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftRevisionResponse {
@@ -4729,6 +4907,7 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var viewerLibraryRuntimeSnapshot: HFViewerLibraryRuntimeSnapshot
     @Published private(set) var viewerOfflineDownloadRecords: [HFViewerOfflineDownloadRecord] = []
     @Published private(set) var searchDiscoveryRecommendationSnapshot: HFSearchDiscoveryRecommendationSnapshot
+    @Published private(set) var analyticsEventPipelineSnapshot: HFAnalyticsEventPipelineSnapshot
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -4851,6 +5030,9 @@ final class HFStreamingStore: ObservableObject {
         searchDiscoveryRecommendationSnapshot = .local(
             reason: "Search, discovery, and recommendations use HFContentQueryEngine until the production discovery service is enabled."
         )
+        analyticsEventPipelineSnapshot = .local(
+            reason: "Analytics event pipeline disabled until the loopback backend is enabled."
+        )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -4923,6 +5105,12 @@ final class HFStreamingStore: ObservableObject {
                     || launchArguments.contains("--hf-review-publish")
                     || launchArguments.contains("--hf-review-audit") {
                     await self.runPublishingReviewWorkflowFixture()
+                }
+                if launchArguments.contains("--hf-start-analytics-events")
+                    || launchArguments.contains("--hf-analytics-events-ingest")
+                    || launchArguments.contains("--hf-analytics-events-dashboard")
+                    || launchArguments.contains("--hf-analytics-events-privacy") {
+                    await self.runAnalyticsEventPipelineFixture()
                 }
             }
         }
@@ -9954,6 +10142,150 @@ final class HFStreamingStore: ObservableObject {
             HFLibraryIntelligenceSignal(id: "next-episode", title: "Next Episode", detail: nextEpisodeRecommendations.first?.detail ?? "No series progress yet", value: "\(nextEpisodeRecommendations.count)", systemImage: "play.square.stack.fill"),
             HFLibraryIntelligenceSignal(id: "collections", title: "Collections", detail: "Favorites, documentaries, crime, premieres, creator collections", value: "\(libraryUserCollections.count)", systemImage: "rectangle.stack.fill"),
             HFLibraryIntelligenceSignal(id: "offline", title: "Downloads Integration", detail: "Local offline preview state only", value: "\(downloadedMovies.count)", systemImage: "arrow.down.circle.fill")
+        ]
+    }
+
+    var analyticsEventPipelineRows: [HFAnalyticsEventPipelineRow] {
+        [
+            HFAnalyticsEventPipelineRow(id: "events", title: "Events", value: "\(analyticsEventPipelineSnapshot.eventCount)", detail: analyticsEventPipelineSnapshot.schemaVersion, systemImage: "tray.full.fill"),
+            HFAnalyticsEventPipelineRow(id: "accepted", title: "Accepted", value: "\(analyticsEventPipelineSnapshot.acceptedCount)", detail: "Deduplicated \(analyticsEventPipelineSnapshot.deduplicatedCount)", systemImage: "checkmark.seal.fill"),
+            HFAnalyticsEventPipelineRow(id: "playback", title: "Playback", value: "\(analyticsEventPipelineSnapshot.playbackEvents)", detail: "Completion \(analyticsEventPipelineSnapshot.completionRate)%", systemImage: "play.tv.fill"),
+            HFAnalyticsEventPipelineRow(id: "discovery", title: "Discovery", value: "\(analyticsEventPipelineSnapshot.discoveryEvents)", detail: "\(analyticsEventPipelineSnapshot.searches) searches", systemImage: "sparkle.magnifyingglass"),
+            HFAnalyticsEventPipelineRow(id: "creator", title: "Creator", value: "\(analyticsEventPipelineSnapshot.creatorEvents)", detail: "\(analyticsEventPipelineSnapshot.publishingStateChanges) publishing events", systemImage: "person.crop.rectangle.stack.fill"),
+            HFAnalyticsEventPipelineRow(id: "library", title: "Library", value: "\(analyticsEventPipelineSnapshot.saves + analyticsEventPipelineSnapshot.favorites)", detail: "\(analyticsEventPipelineSnapshot.favorites) favorites", systemImage: "bookmark.fill")
+        ]
+    }
+
+    @discardableResult
+    func runAnalyticsEventPipelineFixture() async -> HFAnalyticsEventPipelineSnapshot {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            analyticsEventPipelineSnapshot = localAnalyticsEventPipelineSnapshot(reason: "Loopback backend disabled. Existing local analytics remain available.")
+            return analyticsEventPipelineSnapshot
+        }
+
+        analyticsEventPipelineSnapshot = HFAnalyticsEventPipelineSnapshot(
+            state: .sending,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            schemaVersion: "analytics.v1",
+            eventCount: analyticsEventPipelineSnapshot.eventCount,
+            acceptedCount: analyticsEventPipelineSnapshot.acceptedCount,
+            deduplicatedCount: analyticsEventPipelineSnapshot.deduplicatedCount,
+            rejectedCount: analyticsEventPipelineSnapshot.rejectedCount,
+            playbackEvents: analyticsEventPipelineSnapshot.playbackEvents,
+            discoveryEvents: analyticsEventPipelineSnapshot.discoveryEvents,
+            creatorEvents: analyticsEventPipelineSnapshot.creatorEvents,
+            viewerEvents: analyticsEventPipelineSnapshot.viewerEvents,
+            completionRate: analyticsEventPipelineSnapshot.completionRate,
+            searches: analyticsEventPipelineSnapshot.searches,
+            saves: analyticsEventPipelineSnapshot.saves,
+            favorites: analyticsEventPipelineSnapshot.favorites,
+            uploads: analyticsEventPipelineSnapshot.uploads,
+            processingCompletions: analyticsEventPipelineSnapshot.processingCompletions,
+            publishingStateChanges: analyticsEventPipelineSnapshot.publishingStateChanges,
+            detail: "Sending versioned playback, discovery, library, upload, processing, and publishing events to the loopback analytics endpoint.",
+            lastError: nil,
+            updatedAtLabel: "Sending"
+        )
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let viewerSessionID = try await client.createDevelopmentSession(role: "viewer")
+            let creatorSessionID = try await client.createDevelopmentSession(role: "creator")
+            let events = analyticsPipelineFixtureEvents()
+            let ingest = try await client.ingestAnalyticsEvents(events, sessionID: viewerSessionID)
+            _ = try? await client.ingestAnalyticsEvents([events[0]], sessionID: viewerSessionID)
+            _ = try? await client.ingestAnalyticsEvents([
+                HFRemoteAnalyticsEventPayload(
+                    eventID: "ios-p39-publishing-state",
+                    idempotencyKey: "ios-p39-publishing-state",
+                    eventName: "publishing_state_change",
+                    contentID: featuredMovie.id,
+                    creatorID: creatorID(for: featuredMovie.creatorName),
+                    collectionID: nil,
+                    projectID: "project-\(featuredMovie.id)",
+                    source: "ios_creator_fixture",
+                    properties: ["state": "submitted_for_review"]
+                )
+            ], sessionID: creatorSessionID)
+            let dashboard = try await client.analyticsDashboard(sessionID: viewerSessionID)
+            applyRemoteAnalyticsPipeline(ingest: ingest, dashboard: dashboard)
+        } catch {
+            analyticsEventPipelineSnapshot = localAnalyticsEventPipelineSnapshot(
+                reason: "Analytics event endpoint failed. Local P6 analytics remain visible.",
+                error: error.localizedDescription
+            )
+        }
+        return analyticsEventPipelineSnapshot
+    }
+
+    private func applyRemoteAnalyticsPipeline(ingest: HFRemoteAnalyticsIngestResponse, dashboard: HFRemoteAnalyticsDashboardResponse) {
+        let aggregate = dashboard.aggregations
+        analyticsEventPipelineSnapshot = HFAnalyticsEventPipelineSnapshot(
+            state: .ready,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            schemaVersion: dashboard.schemaVersion,
+            eventCount: dashboard.eventCount,
+            acceptedCount: ingest.acceptedCount,
+            deduplicatedCount: ingest.deduplicatedCount,
+            rejectedCount: ingest.rejectedCount,
+            playbackEvents: aggregate.playbackEvents,
+            discoveryEvents: aggregate.discoveryEvents,
+            creatorEvents: aggregate.creatorEvents,
+            viewerEvents: aggregate.viewerEvents,
+            completionRate: aggregate.completionRate,
+            searches: aggregate.searches,
+            saves: aggregate.saves,
+            favorites: aggregate.favorites,
+            uploads: aggregate.uploads,
+            processingCompletions: aggregate.processingCompletions,
+            publishingStateChanges: aggregate.publishingStateChanges,
+            detail: "Backend analytics accepted event batches, applied idempotency, sanitized payloads, and returned aggregate creator/viewer metrics.",
+            lastError: nil,
+            updatedAtLabel: "Remote"
+        )
+    }
+
+    private func localAnalyticsEventPipelineSnapshot(reason: String, error: String? = nil) -> HFAnalyticsEventPipelineSnapshot {
+        let metrics = analyticsViewerMetrics
+        let views = Int(metrics.first { $0.id == "views" }?.value ?? "0") ?? 0
+        let completion = Int((metrics.first { $0.id == "completion-rate" }?.value ?? "0").replacingOccurrences(of: "%", with: "")) ?? 0
+        return HFAnalyticsEventPipelineSnapshot(
+            state: error == nil ? .localFallback : .failed,
+            endpoint: "Local analytics estimates",
+            schemaVersion: "analytics.v1",
+            eventCount: views,
+            acceptedCount: 0,
+            deduplicatedCount: 0,
+            rejectedCount: 0,
+            playbackEvents: views,
+            discoveryEvents: analyticsDiscoveryRecords.count,
+            creatorEvents: analyticsCreatorRecords.count,
+            viewerEvents: localProfiles.count,
+            completionRate: completion,
+            searches: recentSearches.count,
+            saves: savedMovieIDs.count,
+            favorites: savedMovieIDs.count,
+            uploads: creatorRemoteUploadedAssetRecords.count,
+            processingCompletions: creatorRemoteProcessingJobRecords.filter { $0.state == "completed" }.count,
+            publishingStateChanges: creatorPublishingContents.count,
+            detail: reason,
+            lastError: error,
+            updatedAtLabel: "Local"
+        )
+    }
+
+    private func analyticsPipelineFixtureEvents() -> [HFRemoteAnalyticsEventPayload] {
+        let movie = featuredMovie
+        let creatorID = creatorID(for: movie.creatorName)
+        return [
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-playback-start", idempotencyKey: "ios-p39-playback-start", eventName: "playback_start", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-playback-progress", idempotencyKey: "ios-p39-playback-progress", eventName: "playback_progress", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0.64"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-playback-complete", idempotencyKey: "ios-p39-playback-complete", eventName: "playback_complete", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "1"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-search", idempotencyKey: "ios-p39-search", eventName: "search", contentID: nil, creatorID: nil, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["query": movie.title, "result_count": "1"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-click", idempotencyKey: "ios-p39-click", eventName: "search_result_click", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["rank": "1"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-favorite", idempotencyKey: "ios-p39-favorite", eventName: "favorite", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["state": "favorite"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-collection", idempotencyKey: "ios-p39-collection", eventName: "collection_open", contentID: nil, creatorID: nil, collectionID: "featured", projectID: nil, source: "ios_fixture", properties: ["surface": "featured"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-creator-open", idempotencyKey: "ios-p39-creator-open", eventName: "creator_profile_open", contentID: nil, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["profile": movie.creatorName])
         ]
     }
 

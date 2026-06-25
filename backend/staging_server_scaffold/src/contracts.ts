@@ -92,6 +92,8 @@ export const viewerLibraryPath = "/v1/viewer/library";
 export const viewerLibrarySavePath = "/v1/viewer/library/save";
 export const viewerLibraryProgressPath = "/v1/viewer/library/progress";
 export const viewerLibraryOfflinePath = "/v1/viewer/library/offline";
+export const analyticsEventsPath = "/v1/analytics/events";
+export const analyticsDashboardPath = "/v1/analytics/dashboard";
 
 export const contractStates = [
   "entitlement_approved",

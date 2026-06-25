@@ -1,6 +1,7 @@
 import { catalogSeed, type CatalogCollection, type CatalogCreator, type CatalogEpisode, type CatalogMovie, type CatalogSeries } from "../catalog/catalogSeed.js";
 import { viewerLibraryRecommendationContext } from "./library.js";
 import { governedCatalogSeed } from "./publishing.js";
+import { recordAnalyticsEvent } from "./analytics.js";
 
 type QueryKind = "search" | "creator" | "genre" | "tag" | "collection" | "series" | "episode" | "related" | "recent" | "creator-published" | "recommendations" | "trending" | "suggestions";
 
@@ -33,6 +34,13 @@ export function discoveryQuery(rawURL: string | undefined, authorizationHeader: 
   const totalResults = titles.length + creators.length + series.length + episodes.length + collections.length;
   const pagedTitles = paginate(titles, params.page, params.page_size);
   const analytics = recordSearchHistory(params, totalResults);
+  recordAnalyticsEvent("search", {
+    query: params.query,
+    filter: params.filter,
+    kind: params.kind,
+    page: params.page,
+    result_count: totalResults
+  }, { authorizationHeader, source: "discovery_query" });
 
   return {
     status: "ready",

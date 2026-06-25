@@ -1,6 +1,7 @@
 import { catalogSeed, type CatalogCollection, type CatalogMovie, type CatalogSeed } from "../catalog/catalogSeed.js";
 import type { JsonObject } from "../contracts.js";
 import { ContractError } from "../errors.js";
+import { recordAnalyticsEvent } from "./analytics.js";
 import { requireCreatorIdentitySession, requireIdentitySession, type IdentitySession } from "./identity.js";
 
 type ReleaseState = "draft" | "review" | "scheduled" | "published" | "archived";
@@ -557,6 +558,19 @@ function upsertReview(draft: PublishingDraftRecord, update: Partial<PublishingRe
 }
 
 function mutationResponse(status: string, draft: PublishingDraftRecord, session: IdentitySession, review: PublishingReviewRecord): JsonObject {
+  if (["submitted_for_review", "withdrawn", "approved", "rejected", "scheduled", "published", "unpublished", "archived", "revision_requested"].includes(status)) {
+    recordAnalyticsEvent("publishing_state_change", {
+      status,
+      release_state: draft.release_state,
+      catalog_visible: review.catalog_visible
+    }, {
+      identitySession: session,
+      contentID: draft.content_id,
+      creatorID: draft.creator_id,
+      projectID: draft.id,
+      source: "publishing_review"
+    });
+  }
   return {
     status,
     draft: sanitizeDraft(draft),

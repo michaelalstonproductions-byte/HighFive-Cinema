@@ -1,5 +1,6 @@
 import { catalogSeed, type CatalogCollection, type CatalogMovie, type CatalogSeed } from "../catalog/catalogSeed.js";
 import { ContractError } from "../errors.js";
+import { recordAnalyticsEvent } from "./analytics.js";
 import { governedCatalogSeed } from "./publishing.js";
 
 export function catalogSummary(seed: CatalogSeed = catalogSeed) {
@@ -90,33 +91,36 @@ export function catalogDelta(cursor: string | null, seed: CatalogSeed = catalogS
   };
 }
 
-export function contentDetail(id: string, seed: CatalogSeed = catalogSeed): CatalogMovie {
+export function contentDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string): CatalogMovie {
   seed = governedCatalogSeed(seed);
   const movie = seed.movies.find((candidate) => candidate.id === id);
   if (!movie) {
     throw new ContractError("content_not_found", "Catalog content was not found", 404);
   }
+  recordAnalyticsEvent("search_result_click", { content_id: id, title: movie.title }, { authorizationHeader, contentID: id, creatorID: movie.creator_id, source: "content_detail" });
   return movie;
 }
 
-export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed): CatalogSeed["creators"][number] & { titles: CatalogMovie[] } {
+export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string): CatalogSeed["creators"][number] & { titles: CatalogMovie[] } {
   seed = governedCatalogSeed(seed);
   const creator = seed.creators.find((candidate) => candidate.id === id);
   if (!creator) {
     throw new ContractError("creator_not_found", "Catalog creator was not found", 404);
   }
+  recordAnalyticsEvent("creator_profile_open", { creator_id: id, name: creator.name }, { authorizationHeader, creatorID: id, source: "creator_detail" });
   return {
     ...creator,
     titles: seed.movies.filter((movie) => movie.creator_id === id)
   };
 }
 
-export function collectionDetail(id: string, seed: CatalogSeed = catalogSeed): CatalogCollection & { titles: CatalogMovie[] } {
+export function collectionDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string): CatalogCollection & { titles: CatalogMovie[] } {
   seed = governedCatalogSeed(seed);
   const collection = seed.collections.find((candidate) => candidate.id === id);
   if (!collection) {
     throw new ContractError("collection_not_found", "Catalog collection was not found", 404);
   }
+  recordAnalyticsEvent("collection_open", { collection_id: id, title: collection.title }, { authorizationHeader, collectionID: id, source: "collection_detail" });
   return {
     ...collection,
     titles: collection.movie_ids

@@ -3,6 +3,7 @@ import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { JsonObject } from "../contracts.js";
 import { ContractError, errorBody } from "../errors.js";
+import { recordAnalyticsEvent } from "./analytics.js";
 import { requireCreatorIdentitySession, type IdentitySession } from "./identity.js";
 import { canAccessCreatorProject } from "./publishing.js";
 
@@ -152,6 +153,16 @@ export async function putCreatorUploadBlob(
   session.completed_at = completedAt;
   uploadedAssets.set(asset.id, asset);
   if (!duplicateOf) checksumIndex.set(checksum, asset.id);
+  recordAnalyticsEvent("upload", {
+    asset_kind: asset.asset_kind,
+    size_bytes: asset.size_bytes,
+    duplicate_detected: duplicateOf !== null
+  }, {
+    identitySession: identity,
+    creatorID: asset.creator_id,
+    projectID: asset.project_id,
+    source: "creator_upload"
+  });
 
   return {
     status: "uploaded",

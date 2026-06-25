@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { JsonObject } from "../contracts.js";
 import { ContractError } from "../errors.js";
+import { recordAnalyticsEvent } from "./analytics.js";
 import { requireCreatorIdentitySession } from "./identity.js";
 import { uploadedAssetForProcessing, uploadObjectStoreRoot, type UploadedAssetRecord } from "./uploads.js";
 
@@ -95,7 +96,7 @@ export function processedPlaybackManifest(
 }
 
 export async function createProcessingJob(authorizationHeader: string | undefined, body: unknown): Promise<JsonObject> {
-  requireCreatorIdentitySession(authorizationHeader);
+  const session = requireCreatorIdentitySession(authorizationHeader);
   const input = parseProcessingJobInput(body);
   const asset = uploadedAssetForProcessing(authorizationHeader, input.asset_id);
 
@@ -134,6 +135,17 @@ export async function createProcessingJob(authorizationHeader: string | undefine
   assetJobIndex.set(asset.id, job.id);
 
   await runProcessingJob(job, asset);
+  if (job.state === "completed") {
+    recordAnalyticsEvent("processing_complete", {
+      asset_id: asset.id,
+      output_state: job.output?.output_state ?? "unknown"
+    }, {
+      identitySession: session,
+      creatorID: job.creator_id,
+      projectID: job.project_id,
+      source: "media_processing"
+    });
+  }
   return {
     status: job.state,
     idempotent: false,
@@ -166,6 +178,18 @@ export async function retryProcessingJob(authorizationHeader: string | undefined
   job.logs.push(`${nowISO()} retry requested`);
   await runProcessingJob(job, asset);
   const completed = (job as ProcessingJobRecord).state === "completed";
+  if (completed) {
+    recordAnalyticsEvent("processing_complete", {
+      asset_id: asset.id,
+      retry_count: job.retry_count,
+      output_state: job.output?.output_state ?? "unknown"
+    }, {
+      identitySession: session,
+      creatorID: job.creator_id,
+      projectID: job.project_id,
+      source: "media_processing_retry"
+    });
+  }
   return {
     status: job.state,
     job: sanitizeProcessingJob(job),

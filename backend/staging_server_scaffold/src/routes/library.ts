@@ -1,5 +1,6 @@
 import { catalogSeed, type CatalogMovie } from "../catalog/catalogSeed.js";
 import { ContractError } from "../errors.js";
+import { recordAnalyticsEvent } from "./analytics.js";
 import { requireIdentitySession, type IdentitySession } from "./identity.js";
 
 type ViewerLibraryState = "saved" | "favorite" | "watch_later" | "history";
@@ -91,6 +92,11 @@ export function saveViewerLibraryTitle(authorizationHeader: string | undefined, 
       updated_at: nowISO()
     });
   }
+  recordAnalyticsEvent(state === "favorite" ? "favorite" : "save", {
+    movie_id: movieID,
+    state,
+    saved
+  }, { authorizationHeader, contentID: movieID, source: "viewer_library_save" });
   return {
     status: saved ? "saved" : "removed",
     record: libraryRecords.find((record) => record.user_id === session.user_id && record.movie_id === movieID && record.state === state) ?? null,
@@ -120,6 +126,11 @@ export function updateViewerProgress(authorizationHeader: string | undefined, bo
     progressRecords.push(record);
   }
   ensureHistoryRecord(session.user_id, movieID);
+  recordAnalyticsEvent(completed ? "playback_complete" : progress > 0 ? "playback_progress" : "playback_start", {
+    movie_id: movieID,
+    progress,
+    completed
+  }, { authorizationHeader, contentID: movieID, source: "viewer_library_progress" });
   return {
     status: "progress_saved",
     record,

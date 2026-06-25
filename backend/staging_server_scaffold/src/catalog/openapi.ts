@@ -4,6 +4,8 @@ import {
   catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
+  analyticsDashboardPath,
+  analyticsEventsPath,
   adminReviewAuditPath,
   adminReviewDetailPath,
   adminReviewQueuePath,
@@ -83,6 +85,8 @@ export function openAPISpec(): Record<string, unknown> {
       [viewerLibraryProgressPath]: { post: { summary: "Persist authenticated viewer playback progress" } },
       [viewerLibraryOfflinePath]: { post: { summary: "Persist authenticated viewer offline download state" } },
       [discoveryQueryPath]: { get: { summary: "Search, filter, paginate, and recommend catalog content" } },
+      [analyticsEventsPath]: { post: { summary: "Ingest versioned analytics event batches with idempotency and privacy controls" } },
+      [analyticsDashboardPath]: { get: { summary: "Fetch aggregate analytics for creator and platform dashboards" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

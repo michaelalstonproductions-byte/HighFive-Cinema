@@ -187,6 +187,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
+            || Self.shouldStartInAnalyticsEventPipeline
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -259,6 +260,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
+            || Self.shouldStartInAnalyticsEventPipeline
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -393,6 +395,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
+            || Self.shouldStartInAnalyticsEventPipeline
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -627,6 +630,14 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-review-queue")
             || arguments.contains("--hf-review-publish")
             || arguments.contains("--hf-review-audit")
+    }
+
+    private static var shouldStartInAnalyticsEventPipeline: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-analytics-events")
+            || arguments.contains("--hf-analytics-events-ingest")
+            || arguments.contains("--hf-analytics-events-dashboard")
+            || arguments.contains("--hf-analytics-events-privacy")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

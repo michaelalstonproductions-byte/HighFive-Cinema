@@ -5,6 +5,8 @@ import {
   catalogSyncPath,
   collectionDetailPath,
   contentDetailPath,
+  analyticsDashboardPath,
+  analyticsEventsPath,
   adminReviewAuditPath,
   adminReviewDetailPath,
   adminReviewQueuePath,
@@ -106,6 +108,7 @@ import {
   viewerLibrarySnapshot
 } from "../routes/library.js";
 import type { RuntimeConfig } from "./runtimeConfig.js";
+import { analyticsDashboard, analyticsReadinessSummary, ingestAnalyticsEvents } from "../routes/analytics.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
   return createServer(async (request, response) => {
@@ -222,6 +225,27 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 200, updateViewerOfflineState(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === analyticsEventsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 202, ingestAnalyticsEvents(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === analyticsDashboardPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, analyticsDashboard(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -547,7 +571,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, contentDetail(routeID(path, contentDetailPath)));
+        writeJson(response, 200, contentDetail(routeID(path, contentDetailPath), undefined, authHeader(request.headers.authorization)));
         return;
       }
 
@@ -557,7 +581,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, creatorDetail(routeID(path, creatorDetailPath)));
+        writeJson(response, 200, creatorDetail(routeID(path, creatorDetailPath), undefined, authHeader(request.headers.authorization)));
         return;
       }
 
@@ -567,7 +591,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, collectionDetail(routeID(path, collectionDetailPath)));
+        writeJson(response, 200, collectionDetail(routeID(path, collectionDetailPath), undefined, authHeader(request.headers.authorization)));
         return;
       }
 
@@ -640,6 +664,8 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     playback_hls_path: playbackHLSPath,
     viewer_library_path: viewerLibraryPath,
     discovery_query_path: discoveryQueryPath,
+    analytics_events_path: analyticsEventsPath,
+    analytics_dashboard_path: analyticsDashboardPath,
     admin_review_queue_path: adminReviewQueuePath,
     credentials_required: false,
     external_network_allowed: false,
@@ -655,6 +681,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const processing = processingReadinessSummary();
   const library = viewerLibraryReadinessSummary();
   const discovery = discoveryReadinessSummary();
+  const analytics = analyticsReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -686,6 +713,11 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     discovery_recommendations_enabled: Boolean(discovery.recommendations),
     discovery_query_cache_enabled: Boolean(discovery.query_cache),
     discovery_analytics_hook: Boolean(discovery.analytics_hook),
+    analytics_event_ingestion: Boolean(analytics.event_ingestion),
+    analytics_batching: Boolean(analytics.batching),
+    analytics_idempotency: Boolean(analytics.idempotency),
+    analytics_aggregations: Boolean(analytics.aggregations),
+    analytics_events: Number(analytics.event_count),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),

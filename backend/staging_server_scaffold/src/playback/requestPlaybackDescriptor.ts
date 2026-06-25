@@ -7,6 +7,7 @@ import { createAuditRecord, findAuditRecord } from "../audit.js";
 import { ContractError } from "../errors.js";
 import { productMatchesMovie } from "../productMapping.js";
 import type { PlaybackDescriptorSigner } from "../providers/providerInterfaces.js";
+import { recordAnalyticsEvent } from "../routes/analytics.js";
 import { processedPlaybackDescriptorForMovie } from "../routes/processing.js";
 
 export async function requestPlaybackDescriptor(
@@ -63,6 +64,11 @@ export async function requestPlaybackDescriptor(
       storekit_product_id: request.storekit_product_id,
       detail: "Short-lived processed HLS playback descriptor issued"
     });
+    recordAnalyticsEvent("playback_start", {
+      movie_id: request.movie_id,
+      playback_source: "processed_hls",
+      playback_format: "hls"
+    }, { contentID: request.movie_id, source: "playback_descriptor" });
     return {
       playback_descriptor_status: "descriptor_ready",
       playback_url_or_token_reference: processedPlayback.playback_url_or_token_reference,
@@ -83,6 +89,10 @@ export async function requestPlaybackDescriptor(
     storekit_product_id: request.storekit_product_id,
     detail: "Short-lived descriptor reference issued"
   });
+  recordAnalyticsEvent("playback_start", {
+    movie_id: request.movie_id,
+    playback_source: "descriptor_reference"
+  }, { contentID: request.movie_id, source: "playback_descriptor" });
 
   return {
     playback_descriptor_status: "descriptor_ready",
