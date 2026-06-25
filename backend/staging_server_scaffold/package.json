@@ -6,10 +6,11 @@
   "description": "HighFive staging backend scaffold for entitlement validation and playback descriptors.",
   "scripts": {
     "catalog:migrate:local": "node scripts/migrate_catalog_local.mjs",
-    "catalog:start": "node /private/tmp/highfive-p32a-creator-draft-sync-publishing-persistence/compiled/runtime/start.js",
+    "catalog:start": "node /private/tmp/highfive-p33a-creator-upload-object-storage/compiled/runtime/start.js",
     "catalog:smoke": "node --test smoke_runtime/httpCatalog.test.mjs",
     "identity:smoke": "node --test smoke_runtime/httpIdentity.test.mjs",
     "publishing:smoke": "node --test smoke_runtime/httpPublishing.test.mjs",
+    "uploads:smoke": "node --test smoke_runtime/httpUploads.test.mjs",
     "check:contracts": "node -e \"JSON.parse(require('fs').readFileSync('package.json', 'utf8')); JSON.parse(require('fs').readFileSync('tsconfig.json', 'utf8'))\"",
     "typecheck": "tsc --noEmit"
   },

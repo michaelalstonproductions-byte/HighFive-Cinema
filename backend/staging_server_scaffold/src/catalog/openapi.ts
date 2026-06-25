@@ -8,6 +8,9 @@ import {
   creatorDraftsPath,
   creatorDraftSyncQueuePath,
   creatorDetailPath,
+  creatorUploadAssetsPath,
+  creatorUploadDetailPath,
+  creatorUploadSessionsPath,
   openAPIPath,
   readinessPath
 } from "../contracts.js";
@@ -41,6 +44,10 @@ export function openAPISpec(): Record<string, unknown> {
       [`${creatorDraftDetailPath}{id}/restore`]: { post: { summary: "Restore authenticated creator draft" } },
       [`${creatorDraftDetailPath}{id}/revisions`]: { get: { summary: "Fetch creator draft revision history" } },
       [creatorDraftSyncQueuePath]: { get: { summary: "Fetch creator draft sync queue audit records" } },
+      [creatorUploadSessionsPath]: { post: { summary: "Create short-lived creator upload session" } },
+      [`${creatorUploadDetailPath}{id}/blob`]: { put: { summary: "Upload verified asset bytes into local object storage" } },
+      [`${creatorUploadDetailPath}{id}/cancel`]: { post: { summary: "Cancel creator upload session and cleanup local staging object" } },
+      [creatorUploadAssetsPath]: { get: { summary: "List uploaded creator asset records" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

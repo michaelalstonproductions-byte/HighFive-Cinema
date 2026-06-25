@@ -5,7 +5,7 @@
     "declaration": false,
     "sourceMap": false,
     "rootDir": "./src",
-    "outDir": "/private/tmp/highfive-p32a-creator-draft-sync-publishing-persistence/compiled"
+    "outDir": "/private/tmp/highfive-p33a-creator-upload-object-storage/compiled"
   },
   "files": [
     "src/runtime/node-runtime-shims.d.ts",
@@ -28,6 +28,7 @@
     "src/routes/catalog.ts",
     "src/routes/identity.ts",
     "src/routes/publishing.ts",
+    "src/routes/uploads.ts",
     "src/runtime/runtimeConfig.ts",
     "src/runtime/providerFactory.ts",
     "src/runtime/httpResponse.ts",

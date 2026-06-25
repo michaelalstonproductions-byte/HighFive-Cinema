@@ -264,6 +264,11 @@ private enum HFCreatorProSpotlight {
     case uploadManifest
     case uploadQueue
     case uploadPreflight
+    case remoteUploadDashboard
+    case remoteUploadSession
+    case remoteUploadAssets
+    case remoteUploadDuplicates
+    case remoteUploadCancel
     case projectRuntime
     case projectManifest
     case projectAssets
@@ -390,6 +395,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-upload-manifest") { return .uploadManifest }
         if arguments.contains("--hf-upload-queue") { return .uploadQueue }
         if arguments.contains("--hf-upload-preflight") { return .uploadPreflight }
+        if arguments.contains("--hf-start-creator-upload-object-storage") { return .remoteUploadDashboard }
+        if arguments.contains("--hf-upload-object-session") { return .remoteUploadSession }
+        if arguments.contains("--hf-upload-object-assets") { return .remoteUploadAssets }
+        if arguments.contains("--hf-upload-object-duplicates") { return .remoteUploadDuplicates }
+        if arguments.contains("--hf-upload-object-cancel") { return .remoteUploadCancel }
         if arguments.contains("--hf-start-project-runtime") { return .projectRuntime }
         if arguments.contains("--hf-project-manifest") { return .projectManifest }
         if arguments.contains("--hf-project-assets") { return .projectAssets }
@@ -2474,6 +2484,16 @@ struct CreatorStudioView: View {
             creatorUploadQueueSection
         case .uploadPreflight:
             creatorUploadPreflightSection
+        case .remoteUploadDashboard:
+            creatorRemoteUploadDashboardSection
+        case .remoteUploadSession:
+            creatorRemoteUploadSessionSection
+        case .remoteUploadAssets:
+            creatorRemoteUploadedAssetsSection
+        case .remoteUploadDuplicates:
+            creatorRemoteUploadDuplicatesSection
+        case .remoteUploadCancel:
+            creatorRemoteUploadCancelSection
         case .projectRuntime:
             creatorProjectRuntimeDashboard
         case .projectManifest:
@@ -5999,6 +6019,134 @@ struct CreatorStudioView: View {
         .accessibilityIdentifier("hf.upload.preflight")
     }
 
+    private var creatorRemoteUploadDashboardSection: some View {
+        creatorProSpotlight(
+            title: "Creator Upload Object Storage",
+            detail: "P33A creates signed upload sessions, sends verified asset bytes to the loopback object store, and records local-to-cloud asset mappings.",
+            systemImage: "externaldrive.connected.to.line.below.fill",
+            accent: HFColors.gold,
+            identifier: "hf.upload.object.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteUploadStatusRows) { row in
+                        remoteUploadStatusCard(row)
+                    }
+                }
+
+                Button {
+                    Task { _ = await streamingStore.runCreatorRemoteUploadFixture() }
+                } label: {
+                    Label("Run Signed Upload", systemImage: "arrow.up.doc.fill")
+                        .font(HFTypography.smallAction)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 42)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.upload.object.runButton")
+            }
+        }
+        .task {
+            await streamingStore.refreshCreatorRemoteUploads()
+        }
+    }
+
+    private var creatorRemoteUploadSessionSection: some View {
+        creatorProSpotlight(
+            title: "Signed Upload Session",
+            detail: "A short-lived session signs the asset path, expected size, checksum, and project ownership before any bytes are accepted.",
+            systemImage: "key.viewfinder",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.upload.object.session"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorRemoteUploadSessionRecords.prefix(6)) { record in
+                    remoteUploadSessionRow(record)
+                }
+                if streamingStore.creatorRemoteUploadSessionRecords.isEmpty {
+                    draftSyncEmptyRow(title: "No upload session yet", detail: streamingStore.creatorRemoteUploadRuntimeSnapshot.detail, systemImage: "key.slash.fill")
+                }
+            }
+        }
+        .task {
+            _ = await streamingStore.runCreatorRemoteUploadFixture()
+        }
+    }
+
+    private var creatorRemoteUploadedAssetsSection: some View {
+        creatorProSpotlight(
+            title: "Uploaded Asset Records",
+            detail: "Uploaded posters, trailers, source videos, and artwork resolve to server asset records with checksum, object key, storage provider, and duplicate mapping.",
+            systemImage: "shippingbox.fill",
+            accent: HFColors.gold,
+            identifier: "hf.upload.object.assets"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                ForEach(streamingStore.creatorRemoteUploadedAssetRecords.prefix(8)) { record in
+                    remoteUploadedAssetRow(record)
+                }
+                if streamingStore.creatorRemoteUploadedAssetRecords.isEmpty {
+                    draftSyncEmptyRow(title: "No asset records yet", detail: streamingStore.creatorRemoteUploadRuntimeSnapshot.detail, systemImage: "shippingbox")
+                }
+            }
+        }
+        .task {
+            _ = await streamingStore.runCreatorRemoteUploadFixture()
+            await streamingStore.refreshCreatorRemoteUploads()
+        }
+    }
+
+    private var creatorRemoteUploadDuplicatesSection: some View {
+        creatorProSpotlight(
+            title: "Duplicate Detection",
+            detail: "The object store indexes checksums so repeat uploads are deterministic and linked to the original uploaded asset.",
+            systemImage: "doc.on.doc.fill",
+            accent: HFColors.violet,
+            identifier: "hf.upload.object.duplicates"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteUploadStatusRows) { row in
+                        remoteUploadStatusCard(row)
+                    }
+                }
+                ForEach(streamingStore.creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.prefix(4)) { record in
+                    remoteUploadedAssetRow(record)
+                }
+            }
+        }
+        .task {
+            await streamingStore.runCreatorRemoteUploadDuplicateFixture()
+        }
+    }
+
+    private var creatorRemoteUploadCancelSection: some View {
+        creatorProSpotlight(
+            title: "Cancel & Cleanup",
+            detail: "Cancelled sessions remove local staging objects and refuse later bytes, keeping failed or abandoned uploads deterministic.",
+            systemImage: "xmark.bin.fill",
+            accent: HFColors.redAccent,
+            identifier: "hf.upload.object.cancel"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteUploadStatusRows) { row in
+                        remoteUploadStatusCard(row)
+                    }
+                }
+                ForEach(streamingStore.creatorRemoteUploadSessionRecords.prefix(4)) { record in
+                    remoteUploadSessionRow(record)
+                }
+            }
+        }
+        .task {
+            await streamingStore.runCreatorRemoteUploadCancelFixture()
+        }
+    }
+
     private var creatorDraftValidationSection: some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -8834,6 +8982,109 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.draftSync.queue.\(record.id)")
+    }
+
+    private func remoteUploadStatusCard(_ row: HFCreatorRemoteUploadStatusRow) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: row.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+            Text(row.value)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(row.title.uppercased())
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .lineLimit(1)
+            Text(row.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.upload.object.status.\(row.id)")
+    }
+
+    private func remoteUploadSessionRow(_ record: HFCreatorRemoteUploadSessionRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.state == "cancelled" ? "xmark.bin.fill" : "key.viewfinder")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(record.state == "cancelled" ? HFColors.redAccent : HFColors.cyanGlow)
+                .frame(width: 38, height: 38)
+                .background((record.state == "cancelled" ? HFColors.redAccent : HFColors.cyanGlow).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.filename)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(record.state.capitalized)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text("\(record.assetKind) • \(record.expectedSizeBytes) bytes • expires \(record.expiresAt)")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                Text(record.uploadURL)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(1)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.upload.object.session.\(record.id)")
+    }
+
+    private func remoteUploadedAssetRow(_ record: HFCreatorRemoteUploadedAssetRecord) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: record.duplicateOf == nil ? "shippingbox.fill" : "doc.on.doc.fill")
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(record.duplicateOf == nil ? HFColors.gold : HFColors.violet)
+                .frame(width: 38, height: 38)
+                .background((record.duplicateOf == nil ? HFColors.gold : HFColors.violet).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(record.filename)
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(record.duplicateOf == nil ? "Stored" : "Duplicate")
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.gold)
+                        .lineLimit(1)
+                }
+                Text("\(record.assetKind) • \(record.storageProvider) • \(record.sizeBytes) bytes")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                Text("Checksum \(record.checksumSHA256.prefix(12)) • \(record.objectKey)")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(HFColors.cyanGlow)
+                    .lineLimit(2)
+            }
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.upload.object.asset.\(record.id)")
     }
 
     private func draftRevisionRow(_ record: HFCreatorDraftRevisionRecord) -> some View {

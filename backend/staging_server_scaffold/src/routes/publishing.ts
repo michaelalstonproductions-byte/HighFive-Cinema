@@ -233,6 +233,11 @@ export function creatorDraftSyncQueue(authorizationHeader: string | undefined): 
   };
 }
 
+export function canAccessCreatorProject(session: IdentitySession, projectID: string): boolean {
+  if (session.role === "admin") return true;
+  return accessibleDrafts(session).some((draft) => draft.id === projectID);
+}
+
 function seedDrafts(): void {
   if (drafts.size > 0) return;
   for (const project of catalogSeed.publishing_projects) {

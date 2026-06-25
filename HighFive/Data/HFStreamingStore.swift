@@ -435,6 +435,122 @@ struct HFCreatorUploadPreflightRecord: Identifiable, Hashable {
     var systemImage: String
 }
 
+enum HFCreatorRemoteUploadState: String, Hashable {
+    case disabled = "Local Only"
+    case sessionReady = "Session Ready"
+    case uploading = "Uploading"
+    case uploaded = "Uploaded"
+    case duplicate = "Duplicate"
+    case cancelled = "Cancelled"
+    case failed = "Upload Failed"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFCreatorRemoteUploadRuntimeSnapshot: Hashable {
+    var state: HFCreatorRemoteUploadState
+    var endpoint: String
+    var sessionCount: Int
+    var uploadedAssetCount: Int
+    var duplicateCount: Int
+    var lastChecksumPrefix: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.statusLabel }
+
+    static func local(reason: String) -> HFCreatorRemoteUploadRuntimeSnapshot {
+        HFCreatorRemoteUploadRuntimeSnapshot(
+            state: .disabled,
+            endpoint: "Local media runtime",
+            sessionCount: 0,
+            uploadedAssetCount: 0,
+            duplicateCount: 0,
+            lastChecksumPrefix: "None",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFCreatorRemoteUploadSessionRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var projectID: String
+    var creatorID: String?
+    var assetKind: String
+    var filename: String
+    var contentType: String
+    var expectedSizeBytes: Int
+    var expectedChecksumSHA256: String?
+    var uploadURL: String
+    var expiresAt: String
+    var createdAt: String
+    var completedAt: String?
+    var state: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case projectID = "project_id"
+        case creatorID = "creator_id"
+        case assetKind = "asset_kind"
+        case filename
+        case contentType = "content_type"
+        case expectedSizeBytes = "expected_size_bytes"
+        case expectedChecksumSHA256 = "expected_checksum_sha256"
+        case uploadURL = "upload_url"
+        case expiresAt = "expires_at"
+        case createdAt = "created_at"
+        case completedAt = "completed_at"
+        case state
+    }
+}
+
+struct HFCreatorRemoteUploadedAssetRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var uploadSessionID: String
+    var projectID: String
+    var creatorID: String?
+    var assetKind: String
+    var filename: String
+    var contentType: String
+    var sizeBytes: Int
+    var checksumSHA256: String
+    var objectKey: String
+    var storageProvider: String
+    var uploadState: String
+    var duplicateOf: String?
+    var createdAt: String
+    var completedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case uploadSessionID = "upload_session_id"
+        case projectID = "project_id"
+        case creatorID = "creator_id"
+        case assetKind = "asset_kind"
+        case filename
+        case contentType = "content_type"
+        case sizeBytes = "size_bytes"
+        case checksumSHA256 = "checksum_sha256"
+        case objectKey = "object_key"
+        case storageProvider = "storage_provider"
+        case uploadState = "upload_state"
+        case duplicateOf = "duplicate_of"
+        case createdAt = "created_at"
+        case completedAt = "completed_at"
+    }
+}
+
+struct HFCreatorRemoteUploadStatusRow: Identifiable, Hashable {
+    var id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
 struct HFCreatorProjectRuntimeSnapshot: Hashable {
     var projectCount: Int
     var manifestCount: Int
@@ -2553,6 +2669,11 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-cloud-catalog-cache")
             || arguments.contains("--hf-cloud-catalog-delta")
             || arguments.contains("--hf-cloud-catalog-diagnostics")
+            || arguments.contains("--hf-start-creator-upload-object-storage")
+            || arguments.contains("--hf-upload-object-session")
+            || arguments.contains("--hf-upload-object-assets")
+            || arguments.contains("--hf-upload-object-duplicates")
+            || arguments.contains("--hf-upload-object-cancel")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -2930,6 +3051,162 @@ struct HFRemoteCreatorDraftUpdatePayload: Encodable {
         metadataStatus = draft.metadataStatus.remoteRawValue
         artworkStatus = draft.artworkStatus.remoteRawValue
         self.baseVersion = baseVersion
+    }
+}
+
+struct HFRemoteUploadSessionRequest: Encodable {
+    var projectID: String
+    var assetKind: String
+    var filename: String
+    var contentType: String
+    var sizeBytes: Int
+    var checksumSHA256: String
+
+    private enum CodingKeys: String, CodingKey {
+        case projectID = "project_id"
+        case assetKind = "asset_kind"
+        case filename
+        case contentType = "content_type"
+        case sizeBytes = "size_bytes"
+        case checksumSHA256 = "checksum_sha256"
+    }
+}
+
+struct HFRemoteUploadSessionResponse: Decodable {
+    var status: String
+    var session: HFCreatorRemoteUploadSessionRecord
+    var assetRecord: HFCreatorRemoteUploadedAssetRecord?
+    var detail: String
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case session
+        case assetRecord = "asset_record"
+        case detail
+    }
+}
+
+struct HFRemoteUploadBlobResponse: Decodable {
+    var status: String
+    var session: HFCreatorRemoteUploadSessionRecord
+    var assetRecord: HFCreatorRemoteUploadedAssetRecord
+    var duplicateDetected: Bool
+    var detail: String
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case session
+        case assetRecord = "asset_record"
+        case duplicateDetected = "duplicate_detected"
+        case detail
+    }
+}
+
+struct HFRemoteUploadedAssetsResponse: Decodable {
+    var status: String
+    var assets: [HFCreatorRemoteUploadedAssetRecord]
+}
+
+struct HFRemoteUploadCancelResponse: Decodable {
+    var status: String
+    var session: HFCreatorRemoteUploadSessionRecord
+    var detail: String
+}
+
+struct HFRemoteCreatorUploadAPIClient {
+    var baseURL: URL
+    var session: URLSession = .shared
+
+    func createDevelopmentSession(role: String = "creator") async throws -> String {
+        let response: HFRemoteIdentitySignInResponse = try await jsonRequest(
+            path: "/v1/identity/dev/sign-in",
+            method: "POST",
+            sessionID: nil,
+            body: ["role": role]
+        )
+        return response.session.sessionID
+    }
+
+    func createUploadSession(
+        projectID: String,
+        assetKind: String,
+        filename: String,
+        contentType: String,
+        data: Data,
+        sessionID: String
+    ) async throws -> HFRemoteUploadSessionResponse {
+        let payload = HFRemoteUploadSessionRequest(
+            projectID: projectID,
+            assetKind: assetKind,
+            filename: filename,
+            contentType: contentType,
+            sizeBytes: data.count,
+            checksumSHA256: Self.sha256Hex(for: data)
+        )
+        return try await jsonRequest(path: "/v1/creator/uploads/sessions", method: "POST", sessionID: sessionID, body: payload)
+    }
+
+    func uploadBlob(to uploadURL: String, data: Data, sessionID: String) async throws -> HFRemoteUploadBlobResponse {
+        guard let resolvedURL = URL(string: uploadURL, relativeTo: baseURL) else {
+            throw HFRemoteCreatorDraftAPIError.invalidURL(uploadURL)
+        }
+        var request = URLRequest(url: resolvedURL)
+        request.httpMethod = "PUT"
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("HighFiveSession \(sessionID)", forHTTPHeaderField: "Authorization")
+        let (responseData, response) = try await session.upload(for: request, from: data)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw HFRemoteCreatorDraftAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let detail = String(data: responseData, encoding: .utf8) ?? "No response body"
+            throw HFRemoteCreatorDraftAPIError.httpStatus(httpResponse.statusCode, detail)
+        }
+        return try JSONDecoder().decode(HFRemoteUploadBlobResponse.self, from: responseData)
+    }
+
+    func listUploadedAssets(sessionID: String) async throws -> HFRemoteUploadedAssetsResponse {
+        try await jsonRequest(path: "/v1/creator/uploads/assets", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func cancelUpload(uploadURL: String, sessionID: String) async throws -> HFRemoteUploadCancelResponse {
+        let cancelPath = uploadURL.replacingOccurrences(of: "/blob", with: "/cancel")
+        return try await jsonRequest(path: cancelPath, method: "POST", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    private func jsonRequest<Response: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        sessionID: String?,
+        body: Body?
+    ) async throws -> Response {
+        guard let url = URL(string: path, relativeTo: baseURL) else {
+            throw HFRemoteCreatorDraftAPIError.invalidURL(path)
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let sessionID {
+            request.setValue("HighFiveSession \(sessionID)", forHTTPHeaderField: "Authorization")
+        }
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw HFRemoteCreatorDraftAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let detail = String(data: data, encoding: .utf8) ?? "No response body"
+            throw HFRemoteCreatorDraftAPIError.httpStatus(httpResponse.statusCode, detail)
+        }
+        return try JSONDecoder().decode(Response.self, from: data)
+    }
+
+    static func sha256Hex(for data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 }
 
@@ -3439,6 +3716,9 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var creatorDraftSyncRuntimeSnapshot: HFCreatorDraftSyncRuntimeSnapshot
     @Published private(set) var creatorDraftSyncQueueRecords: [HFCreatorDraftSyncQueueRecord] = []
     @Published private(set) var creatorDraftRevisionRecords: [HFCreatorDraftRevisionRecord] = []
+    @Published private(set) var creatorRemoteUploadRuntimeSnapshot: HFCreatorRemoteUploadRuntimeSnapshot
+    @Published private(set) var creatorRemoteUploadSessionRecords: [HFCreatorRemoteUploadSessionRecord] = []
+    @Published private(set) var creatorRemoteUploadedAssetRecords: [HFCreatorRemoteUploadedAssetRecord] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -3470,6 +3750,7 @@ final class HFStreamingStore: ObservableObject {
     private var catalogRuntimeGeneration = 0
     private var creatorDraftRemoteVersions: [String: Int] = [:]
     private var lastRemotePublishingSessionID: String?
+    private var lastRemoteUploadSessionID: String?
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -3539,6 +3820,9 @@ final class HFStreamingStore: ObservableObject {
         creatorDraftSyncRuntimeSnapshot = .local(
             snapshot: loadedContentSnapshot,
             reason: "Creator draft sync disabled until the loopback backend is enabled."
+        )
+        creatorRemoteUploadRuntimeSnapshot = .local(
+            reason: "Creator upload object storage disabled until the loopback backend is enabled."
         )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
@@ -4498,6 +4782,13 @@ final class HFStreamingStore: ObservableObject {
         return sessionID
     }
 
+    private func remoteUploadSessionID(client: HFRemoteCreatorUploadAPIClient) async throws -> String {
+        if let lastRemoteUploadSessionID { return lastRemoteUploadSessionID }
+        let sessionID = try await client.createDevelopmentSession(role: "creator")
+        lastRemoteUploadSessionID = sessionID
+        return sessionID
+    }
+
     private func applyRemoteDraftList(_ response: HFRemoteCreatorDraftListResponse) {
         for draft in response.drafts {
             upsertRemoteDraft(draft)
@@ -5193,8 +5484,206 @@ final class HFStreamingStore: ObservableObject {
             HFCreatorUploadPreflightRecord(id: "manifest", title: "Package Manifest", detail: "\(manifests.count) in-memory manifests prepared from publishing records.", result: manifests.isEmpty ? "Empty" : "Prepared", isPassed: !manifests.isEmpty, systemImage: "doc.text.magnifyingglass"),
             HFCreatorUploadPreflightRecord(id: "review", title: "Review Gate", detail: "\(creatorReadyForReviewProjects.count) projects satisfy local publishing review checks.", result: creatorReadyForReviewProjects.isEmpty ? "Needs Review" : "Ready", isPassed: !creatorReadyForReviewProjects.isEmpty, systemImage: "checkmark.seal.fill"),
             HFCreatorUploadPreflightRecord(id: "placeholder", title: "Placeholder Audit", detail: "\(placeholders) placeholder records remain visible before future upload work.", result: placeholders == 0 ? "Clear" : "Review", isPassed: true, systemImage: "photo.on.rectangle.angled"),
-            HFCreatorUploadPreflightRecord(id: "network-boundary", title: "Transfer Boundary", detail: "No network session, file picker, cloud storage, or media transfer is active.", result: "Local Only", isPassed: true, systemImage: "lock.shield.fill")
+            HFCreatorUploadPreflightRecord(id: "object-storage", title: "Object Storage Boundary", detail: productionCatalogConfiguration.isRemoteEnabled ? "Loopback signed upload sessions are available for local object storage." : "Remote upload service disabled; local package preparation remains available.", result: creatorRemoteUploadRuntimeSnapshot.statusLabel, isPassed: true, systemImage: "externaldrive.connected.to.line.below.fill")
         ]
+    }
+
+    var creatorRemoteUploadStatusRows: [HFCreatorRemoteUploadStatusRow] {
+        [
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-state",
+                title: "Upload Runtime",
+                value: creatorRemoteUploadRuntimeSnapshot.statusLabel,
+                detail: creatorRemoteUploadRuntimeSnapshot.detail,
+                systemImage: creatorRemoteUploadRuntimeSnapshot.state == .uploaded ? "checkmark.icloud.fill" : "externaldrive.fill"
+            ),
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-sessions",
+                title: "Sessions",
+                value: "\(creatorRemoteUploadRuntimeSnapshot.sessionCount)",
+                detail: "Endpoint: \(creatorRemoteUploadRuntimeSnapshot.endpoint)",
+                systemImage: "key.viewfinder"
+            ),
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-assets",
+                title: "Asset Records",
+                value: "\(creatorRemoteUploadRuntimeSnapshot.uploadedAssetCount)",
+                detail: "Last checksum: \(creatorRemoteUploadRuntimeSnapshot.lastChecksumPrefix)",
+                systemImage: "shippingbox.fill"
+            ),
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-duplicates",
+                title: "Duplicates",
+                value: "\(creatorRemoteUploadRuntimeSnapshot.duplicateCount)",
+                detail: creatorRemoteUploadRuntimeSnapshot.lastError ?? "Checksum index is deterministic.",
+                systemImage: creatorRemoteUploadRuntimeSnapshot.duplicateCount > 0 ? "doc.on.doc.fill" : "checkmark.seal.fill"
+            )
+        ]
+    }
+
+    func refreshCreatorRemoteUploads() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteUploadRuntimeSnapshot = .local(
+                reason: "Remote upload object storage disabled. Local import and package workflows remain active."
+            )
+            return
+        }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let response = try await client.listUploadedAssets(sessionID: sessionID)
+            creatorRemoteUploadedAssetRecords = response.assets
+            let duplicates = response.assets.filter { $0.duplicateOf != nil }.count
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: response.assets.isEmpty ? .sessionReady : .uploaded,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: response.assets.count,
+                duplicateCount: duplicates,
+                lastChecksumPrefix: response.assets.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: response.assets.isEmpty ? "Upload endpoint reachable; no asset records yet." : "Uploaded asset records loaded from local object storage.",
+                lastError: nil,
+                updatedAtLabel: "Remote assets refreshed"
+            )
+        } catch {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: creatorRemoteUploadedAssetRecords.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: "Remote upload endpoint unavailable. Local media runtime remains available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Upload refresh failed"
+            )
+        }
+    }
+
+    @discardableResult
+    func runCreatorRemoteUploadFixture(duplicate: Bool = false) async -> HFCreatorRemoteUploadedAssetRecord? {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteUploadRuntimeSnapshot = .local(
+                reason: "Remote upload fixture skipped because the loopback backend is disabled."
+            )
+            return nil
+        }
+        guard let projectID = primaryImportProjectID() else {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: "None",
+                detail: "No active creator project is available for upload.",
+                lastError: "Missing project",
+                updatedAtLabel: "Upload blocked"
+            )
+            return nil
+        }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let data = Self.mediaInspectionFixturePNGData()
+            let filename = duplicate ? "highfive-duplicate-poster.png" : "highfive-remote-poster.png"
+            let created = try await client.createUploadSession(
+                projectID: projectID,
+                assetKind: "poster",
+                filename: filename,
+                contentType: "image/png",
+                data: data,
+                sessionID: sessionID
+            )
+            creatorRemoteUploadSessionRecords.insert(created.session, at: 0)
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .sessionReady,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: HFRemoteCreatorUploadAPIClient.sha256Hex(for: data).prefix(12).description,
+                detail: "Signed upload session ready for \(filename).",
+                lastError: nil,
+                updatedAtLabel: "Session ready"
+            )
+            let uploaded = try await client.uploadBlob(to: created.session.uploadURL, data: data, sessionID: sessionID)
+            creatorRemoteUploadSessionRecords.removeAll { $0.id == uploaded.session.id }
+            creatorRemoteUploadSessionRecords.insert(uploaded.session, at: 0)
+            creatorRemoteUploadedAssetRecords.removeAll { $0.id == uploaded.assetRecord.id }
+            creatorRemoteUploadedAssetRecords.insert(uploaded.assetRecord, at: 0)
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: uploaded.duplicateDetected ? .duplicate : .uploaded,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: uploaded.assetRecord.checksumSHA256.prefix(12).description,
+                detail: uploaded.detail,
+                lastError: nil,
+                updatedAtLabel: uploaded.duplicateDetected ? "Duplicate detected" : "Upload complete"
+            )
+            return uploaded.assetRecord
+        } catch {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: creatorRemoteUploadedAssetRecords.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: "Upload fixture could not complete. Local media runtime remains available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Upload failed"
+            )
+            return nil
+        }
+    }
+
+    func runCreatorRemoteUploadDuplicateFixture() async {
+        _ = await runCreatorRemoteUploadFixture(duplicate: false)
+        _ = await runCreatorRemoteUploadFixture(duplicate: true)
+    }
+
+    func runCreatorRemoteUploadCancelFixture() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteUploadRuntimeSnapshot = .local(reason: "Cancel fixture skipped because the loopback backend is disabled.")
+            return
+        }
+        guard let projectID = primaryImportProjectID() else { return }
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let data = Self.mediaInspectionFixturePNGData()
+            let created = try await client.createUploadSession(projectID: projectID, assetKind: "poster", filename: "cancelled-upload.png", contentType: "image/png", data: data, sessionID: sessionID)
+            let cancelled = try await client.cancelUpload(uploadURL: created.session.uploadURL, sessionID: sessionID)
+            creatorRemoteUploadSessionRecords.insert(cancelled.session, at: 0)
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .cancelled,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: HFRemoteCreatorUploadAPIClient.sha256Hex(for: data).prefix(12).description,
+                detail: cancelled.detail,
+                lastError: nil,
+                updatedAtLabel: "Upload cancelled"
+            )
+        } catch {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: creatorRemoteUploadedAssetRecords.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: "Cancel fixture could not complete.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Cancel failed"
+            )
+        }
     }
 
     var creatorProjectRuntimeSnapshot: HFCreatorProjectRuntimeSnapshot {

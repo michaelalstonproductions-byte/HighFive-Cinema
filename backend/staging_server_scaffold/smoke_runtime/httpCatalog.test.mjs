@@ -13,7 +13,10 @@ test("catalog: GET /ready reports seed catalog readiness", async () => {
   assert.equal(result.json.role_authorization, true);
   assert.equal(result.json.catalog_sync_enabled, true);
   assert.equal(result.json.delta_sync_enabled, true);
-  assert.equal(result.json.uploads_enabled, false);
+  assert.equal(result.json.uploads_enabled, true);
+  assert.equal(result.json.signed_upload_sessions, true);
+  assert.equal(result.json.local_object_storage, true);
+  assert.equal(result.json.upload_checksum_validation, true);
   assert.equal(result.json.payments_enabled, false);
 });
 

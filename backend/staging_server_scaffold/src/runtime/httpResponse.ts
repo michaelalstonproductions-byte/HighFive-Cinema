@@ -50,6 +50,23 @@ export async function readBoundedJsonBody(request: IncomingMessage, bodyLimitByt
   }
 }
 
+export async function readBoundedBinaryBody(request: IncomingMessage, bodyLimitBytes: number): Promise<Buffer> {
+  const chunks: Uint8Array[] = [];
+  let byteCount = 0;
+  for await (const chunk of request) {
+    const nextChunk = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    byteCount += nextChunk.length;
+    if (byteCount > bodyLimitBytes) {
+      throw new ContractError("payload_too_large", "Upload body exceeds local staging limit", 413);
+    }
+    chunks.push(nextChunk);
+  }
+  if (chunks.length === 0) {
+    throw new ContractError("empty_upload_body", "Upload request must contain asset bytes", 400);
+  }
+  return Buffer.concat(chunks);
+}
+
 export function errorResponse(error: unknown): JsonResponse {
   if (error instanceof Error && error.name === "UnauthorizedIdentityAccess") {
     return {

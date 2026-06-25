@@ -169,6 +169,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || Self.shouldStartInCreatorDraftSync
+            || Self.shouldStartInCreatorUploadObjectStorage
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -239,6 +240,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || Self.shouldStartInCreatorDraftSync
+            || Self.shouldStartInCreatorUploadObjectStorage
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -366,6 +368,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
             || Self.shouldStartInCreatorDraftSync
+            || Self.shouldStartInCreatorUploadObjectStorage
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -572,6 +575,21 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-draft-sync-queue")
             || arguments.contains("--hf-draft-sync-conflict")
             || arguments.contains("--hf-draft-sync-revisions")
+    }
+
+    private static var shouldStartInCreatorUploadObjectStorage: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-creator-upload")
+            || arguments.contains("--hf-upload-selection")
+            || arguments.contains("--hf-upload-validation")
+            || arguments.contains("--hf-upload-manifest")
+            || arguments.contains("--hf-upload-queue")
+            || arguments.contains("--hf-upload-preflight")
+            || arguments.contains("--hf-start-creator-upload-object-storage")
+            || arguments.contains("--hf-upload-object-session")
+            || arguments.contains("--hf-upload-object-assets")
+            || arguments.contains("--hf-upload-object-duplicates")
+            || arguments.contains("--hf-upload-object-cancel")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

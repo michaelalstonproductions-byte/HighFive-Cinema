@@ -10,6 +10,9 @@ import {
   creatorDraftSyncQueuePath,
   creatorWorkspacePath,
   creatorDetailPath,
+  creatorUploadAssetsPath,
+  creatorUploadDetailPath,
+  creatorUploadSessionsPath,
   entitlementValidationPath,
   identityAppleExchangePath,
   identityAuditPath,
@@ -53,9 +56,17 @@ import {
   errorResponse,
   methodNotAllowed,
   readBoundedJsonBody,
+  readBoundedBinaryBody,
   routeNotFound,
   writeJson
 } from "./httpResponse.js";
+import {
+  cancelCreatorUploadSession,
+  createCreatorUploadSession,
+  listCreatorUploadedAssets,
+  putCreatorUploadBlob,
+  uploadReadinessSummary
+} from "../routes/uploads.js";
 import type { RuntimeConfig } from "./runtimeConfig.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
@@ -230,6 +241,53 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === creatorUploadSessionsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorUploadSession(authHeader(request.headers.authorization), body, originFor(request, config)));
+        return;
+      }
+
+      if (path === creatorUploadAssetsPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, listCreatorUploadedAssets(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path.startsWith(creatorUploadDetailPath)) {
+        const uploadRoute = creatorUploadRoute(path);
+        if (uploadRoute.action === "blob") {
+          if (request.method !== "PUT") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          const data = await readBoundedBinaryBody(request, config.uploadBodyLimitBytes);
+          writeJson(response, 200, await putCreatorUploadBlob(authHeader(request.headers.authorization), uploadRoute.id, data));
+          return;
+        }
+        if (uploadRoute.action === "cancel") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          writeJson(response, 200, await cancelCreatorUploadSession(authHeader(request.headers.authorization), uploadRoute.id));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
       if (path.startsWith(creatorDraftDetailPath)) {
         const draftRoute = creatorDraftRoute(path);
         if (draftRoute.action === "archive") {
@@ -352,6 +410,8 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     catalog_path: catalogPath,
     catalog_sync_path: catalogSyncPath,
     catalog_delta_path: catalogDeltaPath,
+    creator_upload_sessions_path: creatorUploadSessionsPath,
+    creator_upload_assets_path: creatorUploadAssetsPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -362,6 +422,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const summary = catalogSummary();
   const identity = identityReadinessSummary();
   const publishing = publishingReadinessSummary();
+  const uploads = uploadReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -373,7 +434,11 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     catalog_collections: summary.total_collections,
     catalog_sync_enabled: true,
     delta_sync_enabled: true,
-    uploads_enabled: false,
+    uploads_enabled: true,
+    signed_upload_sessions: Boolean(uploads.signed_upload_sessions),
+    local_object_storage: Boolean(uploads.local_object_storage),
+    upload_checksum_validation: Boolean(uploads.checksum_validation),
+    uploaded_asset_records: Number(uploads.uploaded_assets),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
@@ -394,6 +459,15 @@ function creatorDraftRoute(path: string): { id: string; action: string | null } 
   };
 }
 
+function creatorUploadRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(creatorUploadDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
+  };
+}
+
 function routeID(path: string, prefix: string): string {
   return decodeURIComponent(path.slice(prefix.length));
 }
@@ -406,4 +480,9 @@ function queryValue(rawURL: string | undefined, name: string): string | null {
   if (!rawURL) return null;
   const url = new URL(rawURL, "http://127.0.0.1");
   return url.searchParams.get(name);
+}
+
+function originFor(request: { headers: { host?: string | string[] | undefined } }, config: RuntimeConfig): string {
+  const host = authHeader(request.headers.host) ?? `${config.host}:${config.port}`;
+  return `http://${host}`;
 }

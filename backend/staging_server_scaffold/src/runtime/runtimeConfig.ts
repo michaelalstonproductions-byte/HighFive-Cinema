@@ -11,9 +11,11 @@ export type RuntimeConfig = {
   mockDescriptorMode: MockDescriptorMode;
   deploymentStatus: "not_deployed";
   bodyLimitBytes: number;
+  uploadBodyLimitBytes: number;
 };
 
 const defaultBodyLimitBytes = 64 * 1024;
+const defaultUploadBodyLimitBytes = 10 * 1024 * 1024;
 
 export function readRuntimeConfig(source: Record<string, string | undefined>): RuntimeConfig {
   return {
@@ -24,7 +26,8 @@ export function readRuntimeConfig(source: Record<string, string | undefined>): R
     mockEntitlementMode: readEntitlementMode(source.HIGHFIVE_MOCK_ENTITLEMENT_MODE),
     mockDescriptorMode: readDescriptorMode(source.HIGHFIVE_MOCK_DESCRIPTOR_MODE),
     deploymentStatus: "not_deployed",
-    bodyLimitBytes: defaultBodyLimitBytes
+    bodyLimitBytes: defaultBodyLimitBytes,
+    uploadBodyLimitBytes: readPositiveInteger(source.HIGHFIVE_UPLOAD_BODY_LIMIT_BYTES, defaultUploadBodyLimitBytes)
   };
 }
 
@@ -58,4 +61,11 @@ function readEntitlementMode(value: string | undefined): MockEntitlementMode {
 function readDescriptorMode(value: string | undefined): MockDescriptorMode {
   if (value === "ready" || value === "unavailable") return value;
   return "unavailable";
+}
+
+function readPositiveInteger(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return fallback;
+  return parsed;
 }

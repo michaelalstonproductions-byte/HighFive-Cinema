@@ -56,7 +56,23 @@ declare module "node:fs" {
   export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
 }
 
+declare module "node:fs/promises" {
+  export function mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
+  export function writeFile(path: string, data: Uint8Array | string): Promise<void>;
+  export function rename(oldPath: string, newPath: string): Promise<void>;
+  export function rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
+}
+
 declare module "node:path" {
   export function dirname(path: string): string;
+  export function join(...paths: string[]): string;
   export function resolve(...paths: string[]): string;
+}
+
+declare module "node:crypto" {
+  export function randomUUID(): string;
+  export function createHash(algorithm: string): {
+    update(data: Uint8Array | string): { digest(encoding: "hex"): string };
+    digest(encoding: "hex"): string;
+  };
 }
