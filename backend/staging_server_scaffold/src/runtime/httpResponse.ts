@@ -14,6 +14,14 @@ export function writeJson(response: ServerResponse, statusCode: number, body: un
   response.end(JSON.stringify(body));
 }
 
+export function writeText(response: ServerResponse, statusCode: number, body: string, contentType: string): void {
+  response.writeHead(statusCode, {
+    "Content-Type": contentType,
+    "Cache-Control": "no-store"
+  });
+  response.end(body);
+}
+
 export function methodNotAllowed(): JsonResponse {
   return { statusCode: 405, body: { error: "method_not_allowed" } };
 }

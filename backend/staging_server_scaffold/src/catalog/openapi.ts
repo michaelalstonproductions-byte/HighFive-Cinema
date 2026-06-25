@@ -14,6 +14,8 @@ import {
   creatorUploadDetailPath,
   creatorUploadSessionsPath,
   openAPIPath,
+  playbackDescriptorPath,
+  playbackHLSPath,
   readinessPath
 } from "../contracts.js";
 
@@ -55,6 +57,8 @@ export function openAPISpec(): Record<string, unknown> {
         post: { summary: "Create local media processing job for uploaded asset" }
       },
       [`${creatorProcessingJobDetailPath}{id}/retry`]: { post: { summary: "Retry a failed or completed media processing job idempotently" } },
+      [playbackDescriptorPath]: { post: { summary: "Resolve a short-lived playback descriptor for entitled content" } },
+      [`${playbackHLSPath}{id}/master.m3u8`]: { get: { summary: "Fetch signed local HLS master manifest for a processed asset" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

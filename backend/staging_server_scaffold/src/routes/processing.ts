@@ -26,8 +26,20 @@ type ProcessingJobRecord = {
   logs: string[];
 };
 
+type ProcessedPlaybackDescriptor = {
+  playback_url_or_token_reference: string;
+  expires_at: string;
+  refresh_after: string;
+  processing_job_id: string;
+  hls_master_object_key: string;
+};
+
 const processingJobs = new Map<string, ProcessingJobRecord>();
 const assetJobIndex = new Map<string, string>();
+const movieProjectIDs = new Map<string, string>([
+  ["friendly", "project-behind-the-vision"],
+  ["behind-vision", "project-behind-the-vision"]
+]);
 
 export function processingReadinessSummary(): JsonObject {
   return {
@@ -35,10 +47,50 @@ export function processingReadinessSummary(): JsonObject {
     ffprobe_inspection_contract: true,
     ffmpeg_processing_contract: true,
     hls_output_contract: true,
+    playback_descriptor_resolution: true,
     job_progress: true,
     retry: true,
     idempotency: true,
     jobs: processingJobs.size
+  };
+}
+
+export function processedPlaybackDescriptorForMovie(movieID: string, origin: string): ProcessedPlaybackDescriptor | null {
+  const job = completedProcessingJobForMovie(movieID);
+  const output = job?.output;
+  if (!job || !output || typeof output.hls_master_object_key !== "string") return null;
+
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const refreshAfter = new Date(Date.now() + 8 * 60 * 1000).toISOString();
+  const signature = playbackSignature(job, expiresAt);
+  const encodedExpires = encodeURIComponent(expiresAt);
+  const encodedSignature = encodeURIComponent(signature);
+
+  return {
+    playback_url_or_token_reference: `${origin}/v1/playback/hls/${encodeURIComponent(job.id)}/master.m3u8?expires_at=${encodedExpires}&signature=${encodedSignature}`,
+    expires_at: expiresAt,
+    refresh_after: refreshAfter,
+    processing_job_id: job.id,
+    hls_master_object_key: output.hls_master_object_key
+  };
+}
+
+export function processedPlaybackManifest(
+  jobID: string,
+  expiresAt: string | null,
+  signature: string | null
+): { statusCode: number; contentType: string; body: string } {
+  const job = processingJobs.get(jobID);
+  if (!job || job.state !== "completed" || !job.output) {
+    return { statusCode: 404, contentType: "application/json", body: JSON.stringify({ error: "processed_playback_not_found" }) };
+  }
+  if (!expiresAt || !signature || Date.parse(expiresAt) <= Date.now() || signature !== playbackSignature(job, expiresAt)) {
+    return { statusCode: 403, contentType: "application/json", body: JSON.stringify({ error: "playback_signature_invalid_or_expired" }) };
+  }
+  return {
+    statusCode: 200,
+    contentType: "application/vnd.apple.mpegurl",
+    body: "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-STREAM-INF:BANDWIDTH=4500000,RESOLUTION=1920x1080,CODECS=\"avc1.640028,mp4a.40.2\"\nvariant-1080p.m3u8\n"
   };
 }
 
@@ -216,6 +268,22 @@ function transition(job: ProcessingJobRecord, state: ProcessingState, progress: 
 
 function sanitizeProcessingJob(job: ProcessingJobRecord): JsonObject {
   return { ...job };
+}
+
+function completedProcessingJobForMovie(movieID: string): ProcessingJobRecord | null {
+  const projectID = movieProjectIDs.get(movieID);
+  const completedJobs = Array.from(processingJobs.values())
+    .filter((job) => job.state === "completed" && job.output)
+    .sort((lhs, rhs) => (rhs.completed_at ?? rhs.updated_at).localeCompare(lhs.completed_at ?? lhs.updated_at));
+  if (projectID) {
+    return completedJobs.find((job) => job.project_id === projectID) ?? completedJobs[0] ?? null;
+  }
+  return completedJobs[0] ?? null;
+}
+
+function playbackSignature(job: ProcessingJobRecord, expiresAt: string): string {
+  const checksum = typeof job.output?.package_checksum_sha256 === "string" ? job.output.package_checksum_sha256 : job.id;
+  return createHash("sha256").update(`${job.id}:${expiresAt}:${checksum}`).digest("hex");
 }
 
 function parseProcessingJobInput(body: unknown): { asset_id: string } {

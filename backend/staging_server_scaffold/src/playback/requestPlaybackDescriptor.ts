@@ -7,10 +7,12 @@ import { createAuditRecord, findAuditRecord } from "../audit.js";
 import { ContractError } from "../errors.js";
 import { productMatchesMovie } from "../productMapping.js";
 import type { PlaybackDescriptorSigner } from "../providers/providerInterfaces.js";
+import { processedPlaybackDescriptorForMovie } from "../routes/processing.js";
 
 export async function requestPlaybackDescriptor(
   body: unknown,
-  signer: PlaybackDescriptorSigner
+  signer: PlaybackDescriptorSigner,
+  origin: string
 ): Promise<PlaybackDescriptorResponse> {
   if (!isPlaybackDescriptorRequest(body)) {
     throw new ContractError("invalid_playback_descriptor_request", "Playback descriptor request shape is invalid");
@@ -51,6 +53,28 @@ export async function requestPlaybackDescriptor(
       detail: "Descriptor signer unavailable"
     });
     return unavailableResponse(request.audit_id, "descriptor_signer_unavailable");
+  }
+
+  const processedPlayback = processedPlaybackDescriptorForMovie(request.movie_id, origin);
+  if (processedPlayback) {
+    await createAuditRecord({
+      event_name: "playback_descriptor_issued",
+      movie_id: request.movie_id,
+      storekit_product_id: request.storekit_product_id,
+      detail: "Short-lived processed HLS playback descriptor issued"
+    });
+    return {
+      playback_descriptor_status: "descriptor_ready",
+      playback_url_or_token_reference: processedPlayback.playback_url_or_token_reference,
+      expires_at: processedPlayback.expires_at,
+      refresh_after: processedPlayback.refresh_after,
+      denial_reason: null,
+      audit_id: request.audit_id,
+      playback_format: "hls",
+      playback_source: "processed_hls",
+      processing_job_id: processedPlayback.processing_job_id,
+      hls_master_object_key: processedPlayback.hls_master_object_key
+    };
   }
 
   await createAuditRecord({

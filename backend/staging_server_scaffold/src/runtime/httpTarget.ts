@@ -24,6 +24,7 @@ import {
   identityRefreshPath,
   identitySignOutPath,
   openAPIPath,
+  playbackHLSPath,
   playbackDescriptorPath,
   readinessPath
 } from "../contracts.js";
@@ -60,7 +61,8 @@ import {
   readBoundedJsonBody,
   readBoundedBinaryBody,
   routeNotFound,
-  writeJson
+  writeJson,
+  writeText
 } from "./httpResponse.js";
 import {
   cancelCreatorUploadSession,
@@ -72,6 +74,7 @@ import {
 import {
   createProcessingJob,
   listProcessingJobs,
+  processedPlaybackManifest,
   processingReadinessSummary,
   retryProcessingJob
 } from "../routes/processing.js";
@@ -421,8 +424,24 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
-        const route = createPlaybackRoute(descriptorSignerForRequest(request, config));
+        const route = createPlaybackRoute(descriptorSignerForRequest(request, config), originFor(request, config));
         writeJson(response, 200, await route(body));
+        return;
+      }
+
+      if (path.startsWith(playbackHLSPath)) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const jobID = playbackHLSJobID(path);
+        const result = processedPlaybackManifest(
+          jobID,
+          queryValue(request.url, "expires_at"),
+          queryValue(request.url, "signature")
+        );
+        writeText(response, result.statusCode, result.body, result.contentType);
         return;
       }
 
@@ -452,6 +471,7 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     creator_upload_sessions_path: creatorUploadSessionsPath,
     creator_upload_assets_path: creatorUploadAssetsPath,
     creator_processing_jobs_path: creatorProcessingJobsPath,
+    playback_hls_path: playbackHLSPath,
     credentials_required: false,
     external_network_allowed: false,
     local_preview_fallback_preserved: true
@@ -484,6 +504,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     ffprobe_inspection_contract: Boolean(processing.ffprobe_inspection_contract),
     ffmpeg_processing_contract: Boolean(processing.ffmpeg_processing_contract),
     hls_output_contract: Boolean(processing.hls_output_contract),
+    playback_descriptor_resolution: Boolean(processing.playback_descriptor_resolution),
     processing_jobs: Number(processing.jobs),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
@@ -525,6 +546,12 @@ function creatorUploadRoute(path: string): { id: string; action: string | null }
 
 function routeID(path: string, prefix: string): string {
   return decodeURIComponent(path.slice(prefix.length));
+}
+
+function playbackHLSJobID(path: string): string {
+  const suffix = path.slice(playbackHLSPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return parts[0] ?? "";
 }
 
 function authHeader(value: string | string[] | undefined): string | undefined {

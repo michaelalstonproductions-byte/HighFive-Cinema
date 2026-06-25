@@ -52,7 +52,11 @@ export async function requestJson(path, options = {}) {
   const text = await response.text();
   let json = null;
   if (text.length > 0) {
-    json = JSON.parse(text);
+    try {
+      json = JSON.parse(text);
+    } catch {
+      json = null;
+    }
   }
   return {
     status: response.status,

@@ -1067,6 +1067,7 @@ struct HFPlayerServiceSheet: View {
     @State private var showsProtectedDepthPreview = false
     @State private var showsPlayerDetails = false
     @State private var isSceneReady = false
+    @State private var didRequestPlaybackRuntime = false
     @State private var selectedSurface: HFPlayerSurfaceFocus
 
     init(movie: Movie, initialSurface: HFPlayerSurfaceFocus = .cinema) {
@@ -1083,6 +1084,10 @@ struct HFPlayerServiceSheet: View {
         streamingStore.entitlementGatedPlaybackDescriptor(for: catalogMovie)
     }
 
+    private var playbackRuntimeSnapshot: HFStreamingPlaybackRuntimeSnapshot {
+        streamingStore.streamingPlaybackRuntimeSnapshot
+    }
+
     var body: some View {
         ZStack {
             HFColors.screenBackground
@@ -1094,6 +1099,7 @@ struct HFPlayerServiceSheet: View {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
                     header
                     playerPreview
+                    playbackRuntimeSurface
                     routeSpotlight
                     premiumTimeline
                     floatingControls
@@ -1118,6 +1124,11 @@ struct HFPlayerServiceSheet: View {
             withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isSceneReady = true
             }
+        }
+        .task {
+            guard !didRequestPlaybackRuntime else { return }
+            didRequestPlaybackRuntime = true
+            await streamingStore.runStreamingPlaybackRuntimeFixture(for: catalogMovie)
         }
         .hfSpatialSceneEntrance(isActive: isSceneReady, reduceMotion: reduceMotion)
         .hfSpatialFocalHandoff("hf.spatial.handoff.movieToPlayer")
@@ -1162,9 +1173,11 @@ struct HFPlayerServiceSheet: View {
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
-                Text("Local Preview destination")
+                Text(playbackRuntimeSnapshot.detail)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
@@ -1213,7 +1226,7 @@ struct HFPlayerServiceSheet: View {
                         .shadow(color: HFColors.amberGlow.opacity(0.42), radius: 18)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Local Preview")
+                        Text(playbackRuntimeSnapshot.statusLabel)
                             .font(HFTypography.cardTitle)
                             .foregroundStyle(HFColors.textPrimary)
                         Text(catalogMovie.metadataLine)
@@ -1224,7 +1237,7 @@ struct HFPlayerServiceSheet: View {
 
                 HStack(spacing: HFSpacing.xs) {
                     HFPlayerStatusPill(title: "Cinema Mode", color: HFColors.gold)
-                    HFPlayerStatusPill(title: "Local", color: HFColors.cyanGlow)
+                    HFPlayerStatusPill(title: playbackRuntimeSnapshot.playbackFormat, color: HFColors.cyanGlow)
                     HFPlayerStatusPill(title: gatedPlaybackDescriptor.gateStatus.statusLabel, color: HFColors.gold)
                 }
             }
@@ -1242,9 +1255,100 @@ struct HFPlayerServiceSheet: View {
                 .padding(HFSpacing.md)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Player frame, \(catalogMovie.title), Local Preview")
+        .accessibilityLabel("Player frame, \(catalogMovie.title), \(playbackRuntimeSnapshot.statusLabel)")
         .accessibilitySortPriority(9)
         .accessibilityIdentifier("hf.player.cinematicFrame")
+    }
+
+    private var playbackRuntimeSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: 26, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    Image(systemName: playbackRuntimeSnapshot.state == .descriptorReady ? "play.rectangle.on.rectangle.fill" : "play.slash.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(playbackRuntimeSnapshot.state == .descriptorReady ? HFColors.gold : HFColors.cyanGlow)
+                        .frame(width: 44, height: 44)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Streaming Playback Runtime")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text(playbackRuntimeSnapshot.updatedAtLabel)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.gold)
+                    }
+                    Spacer()
+                    HFPlayerStatusPill(title: playbackRuntimeSnapshot.statusLabel, color: HFColors.gold)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    ForEach(streamingStore.streamingPlaybackRuntimeStatusRows) { row in
+                        playbackRuntimeMetric(row)
+                    }
+                }
+
+                if let session = streamingStore.streamingPlaybackSessionRecords.first {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Active Session")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textSecondary)
+                        Text(session.detail)
+                            .font(HFTypography.caption.weight(.semibold))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(playbackRuntimeSnapshot.lastManifestPreview)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                    }
+                    .padding(HFSpacing.sm)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(HFColors.cyanGlow.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .accessibilityIdentifier("hf.playback.session.\(session.id)")
+                }
+
+                if let error = playbackRuntimeSnapshot.lastError {
+                    Text(error)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .padding(HFSpacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .accessibilityIdentifier("hf.playback.error")
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.playback.runtime")
+    }
+
+    private func playbackRuntimeMetric(_ row: HFStreamingPlaybackStatusRow) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(row.title, systemImage: row.systemImage)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+            Text(row.value)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+            Text(row.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .padding(HFSpacing.sm)
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(row.id == "hls" ? "hf.playback.hls" : "hf.playback.runtime.\(row.id)")
     }
 
     @ViewBuilder
@@ -1369,14 +1473,14 @@ struct HFPlayerServiceSheet: View {
     private var viewerIntelligenceStrip: some View {
         HFOpticalGlassSurface(cornerRadius: 26, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
             HStack(spacing: HFSpacing.sm) {
-                HFPlayerInsight(title: "Local Signal", value: "Ready", systemImage: "antenna.radiowaves.left.and.right", color: HFColors.cyanGlow)
+                HFPlayerInsight(title: "Runtime", value: playbackRuntimeSnapshot.statusLabel, systemImage: "antenna.radiowaves.left.and.right", color: HFColors.cyanGlow)
                 HFPlayerInsight(title: "Best Scene", value: "Opening", systemImage: "sparkles.tv.fill", color: HFColors.gold)
-                HFPlayerInsight(title: "Room Fit", value: "3 viewers", systemImage: "person.2.fill", color: HFColors.cyanGlow)
+                HFPlayerInsight(title: "Format", value: playbackRuntimeSnapshot.playbackFormat, systemImage: "play.rectangle.on.rectangle.fill", color: HFColors.cyanGlow)
             }
             .padding(HFSpacing.md)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Viewer Intelligence, Local Signal Ready, Best Scene Opening, Room Fit 3 viewers")
+        .accessibilityLabel("Viewer Intelligence, Runtime \(playbackRuntimeSnapshot.statusLabel), Best Scene Opening, Format \(playbackRuntimeSnapshot.playbackFormat)")
         .accessibilityIdentifier("hf.player.viewerIntelligence")
     }
 
@@ -1460,10 +1564,10 @@ struct HFPlayerServiceSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
-                    metadataItem(title: "Format", value: "Cinematic")
-                    metadataItem(title: "Preview", value: "Local")
+                    metadataItem(title: "Format", value: playbackRuntimeSnapshot.playbackFormat)
+                    metadataItem(title: "Source", value: playbackRuntimeSnapshot.playbackSource)
                     metadataItem(title: "Access", value: gatedPlaybackDescriptor.gateStatus.statusLabel)
-                    metadataItem(title: "Room", value: "Ready")
+                    metadataItem(title: "Session", value: "\(playbackRuntimeSnapshot.sessionCount)")
                 }
             }
             .padding(HFSpacing.lg)
@@ -1501,6 +1605,7 @@ struct HFPlayerServiceSheet: View {
                             .foregroundStyle(HFColors.textSecondary)
                     }
                     metadataSurface
+                    playbackRuntimeSurface
                     viewerIntelligenceStrip
                 }
                 .padding(HFSpacing.lg)

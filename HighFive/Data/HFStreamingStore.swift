@@ -702,6 +702,81 @@ struct HFCreatorRemoteProcessingStatusRow: Identifiable, Hashable {
     var systemImage: String
 }
 
+enum HFStreamingPlaybackRuntimeState: String, Hashable {
+    case localPreview = "Local Preview"
+    case preparing = "Preparing"
+    case descriptorReady = "Descriptor Ready"
+    case refreshRequired = "Refresh Required"
+    case unavailable = "Unavailable"
+    case failed = "Failed"
+
+    var statusLabel: String { rawValue }
+}
+
+struct HFStreamingPlaybackRuntimeSnapshot: Hashable {
+    var state: HFStreamingPlaybackRuntimeState
+    var endpoint: String
+    var movieID: String
+    var descriptorStatus: String
+    var playbackFormat: String
+    var playbackSource: String
+    var processingJobID: String
+    var hlsMasterObjectKey: String
+    var playbackURLReference: String
+    var expiresAt: String?
+    var refreshAfter: String?
+    var sessionCount: Int
+    var lastManifestPreview: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    var statusLabel: String { state.statusLabel }
+
+    static func local(reason: String) -> HFStreamingPlaybackRuntimeSnapshot {
+        HFStreamingPlaybackRuntimeSnapshot(
+            state: .localPreview,
+            endpoint: "Local player shell",
+            movieID: "local-preview",
+            descriptorStatus: "Local Preview",
+            playbackFormat: "Local",
+            playbackSource: "On-device preview",
+            processingJobID: "None",
+            hlsMasterObjectKey: "None",
+            playbackURLReference: "Local Preview",
+            expiresAt: nil,
+            refreshAfter: nil,
+            sessionCount: 0,
+            lastManifestPreview: "No remote manifest requested.",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFStreamingPlaybackSessionRecord: Identifiable, Hashable {
+    var id: String
+    var movieID: String
+    var title: String
+    var state: String
+    var playbackURLReference: String
+    var playbackFormat: String
+    var expiresAt: String?
+    var refreshAfter: String?
+    var processingJobID: String
+    var hlsMasterObjectKey: String
+    var detail: String
+}
+
+struct HFStreamingPlaybackStatusRow: Identifiable, Hashable {
+    var id: String
+    var title: String
+    var value: String
+    var detail: String
+    var systemImage: String
+}
+
 struct HFCreatorProjectRuntimeSnapshot: Hashable {
     var projectCount: Int
     var manifestCount: Int
@@ -2830,6 +2905,10 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-processing-hls")
             || arguments.contains("--hf-processing-status")
             || arguments.contains("--hf-processing-logs")
+            || arguments.contains("--hf-start-streaming-playback-runtime")
+            || arguments.contains("--hf-playback-hls")
+            || arguments.contains("--hf-playback-session")
+            || arguments.contains("--hf-playback-error")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3289,6 +3368,92 @@ struct HFRemoteProcessingJobsResponse: Decodable {
     var jobs: [HFCreatorRemoteProcessingJobRecord]
 }
 
+struct HFRemotePlaybackEntitlementRequest: Encodable {
+    var userID: String?
+    var anonymousSessionID: String?
+    var movieID: String
+    var storeKitProductID: String
+    var entitlementContext: HFPlaybackDescriptorEntitlementContext
+    var playbackProvider: String
+    var deviceContext: [String: String]
+
+    private enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case anonymousSessionID = "anonymous_session_id"
+        case movieID = "movie_id"
+        case storeKitProductID = "storekit_product_id"
+        case entitlementContext = "entitlement_context"
+        case playbackProvider = "playback_provider"
+        case deviceContext = "device_context"
+    }
+}
+
+struct HFRemotePlaybackDescriptorRequest: Encodable {
+    var userID: String?
+    var anonymousSessionID: String?
+    var movieID: String
+    var storeKitProductID: String
+    var entitlementContext: HFPlaybackDescriptorEntitlementContext
+    var playbackProvider: String
+    var deviceContext: [String: String]
+    var auditID: String
+
+    private enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case anonymousSessionID = "anonymous_session_id"
+        case movieID = "movie_id"
+        case storeKitProductID = "storekit_product_id"
+        case entitlementContext = "entitlement_context"
+        case playbackProvider = "playback_provider"
+        case deviceContext = "device_context"
+        case auditID = "audit_id"
+    }
+}
+
+struct HFRemotePlaybackEntitlementResponse: Decodable, Hashable {
+    var entitlementStatus: String
+    var accessDecision: String
+    var denialReason: String?
+    var auditID: String
+    var expiresAt: String?
+    var refreshAfter: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case entitlementStatus = "entitlement_status"
+        case accessDecision = "access_decision"
+        case denialReason = "denial_reason"
+        case auditID = "audit_id"
+        case expiresAt = "expires_at"
+        case refreshAfter = "refresh_after"
+    }
+}
+
+struct HFRemoteStreamingPlaybackDescriptorResponse: Decodable, Hashable {
+    var playbackDescriptorStatus: String
+    var playbackURLOrTokenReference: String?
+    var expiresAt: String?
+    var refreshAfter: String?
+    var denialReason: String?
+    var auditID: String
+    var playbackFormat: String?
+    var playbackSource: String?
+    var processingJobID: String?
+    var hlsMasterObjectKey: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case playbackDescriptorStatus = "playback_descriptor_status"
+        case playbackURLOrTokenReference = "playback_url_or_token_reference"
+        case expiresAt = "expires_at"
+        case refreshAfter = "refresh_after"
+        case denialReason = "denial_reason"
+        case auditID = "audit_id"
+        case playbackFormat = "playback_format"
+        case playbackSource = "playback_source"
+        case processingJobID = "processing_job_id"
+        case hlsMasterObjectKey = "hls_master_object_key"
+    }
+}
+
 struct HFRemoteCreatorUploadAPIClient {
     var baseURL: URL
     var session: URLSession = .shared
@@ -3363,11 +3528,47 @@ struct HFRemoteCreatorUploadAPIClient {
         try await jsonRequest(path: "/v1/creator/processing/jobs/\(jobID)/retry", method: "POST", sessionID: sessionID, body: Optional<[String: String]>.none)
     }
 
+    func validatePlaybackEntitlement(_ request: HFRemotePlaybackEntitlementRequest) async throws -> HFRemotePlaybackEntitlementResponse {
+        try await jsonRequest(
+            path: "/entitlements/validate",
+            method: "POST",
+            sessionID: nil,
+            body: request,
+            extraHeaders: ["x-highfive-smoke-entitlement-mode": "approved"]
+        )
+    }
+
+    func requestStreamingPlaybackDescriptor(_ request: HFRemotePlaybackDescriptorRequest) async throws -> HFRemoteStreamingPlaybackDescriptorResponse {
+        try await jsonRequest(
+            path: "/playback/descriptor",
+            method: "POST",
+            sessionID: nil,
+            body: request,
+            extraHeaders: ["x-highfive-smoke-descriptor-mode": "ready"]
+        )
+    }
+
+    func fetchPlaybackManifest(from urlString: String) async throws -> String {
+        guard let url = URL(string: urlString), url.host == "127.0.0.1" || url.host == "localhost" else {
+            throw HFRemoteCreatorDraftAPIError.invalidURL(urlString)
+        }
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw HFRemoteCreatorDraftAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let detail = String(data: data, encoding: .utf8) ?? "No response body"
+            throw HFRemoteCreatorDraftAPIError.httpStatus(httpResponse.statusCode, detail)
+        }
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
     private func jsonRequest<Response: Decodable, Body: Encodable>(
         path: String,
         method: String,
         sessionID: String?,
-        body: Body?
+        body: Body?,
+        extraHeaders: [String: String] = [:]
     ) async throws -> Response {
         guard let url = URL(string: path, relativeTo: baseURL) else {
             throw HFRemoteCreatorDraftAPIError.invalidURL(path)
@@ -3377,6 +3578,9 @@ struct HFRemoteCreatorUploadAPIClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let sessionID {
             request.setValue("HighFiveSession \(sessionID)", forHTTPHeaderField: "Authorization")
+        }
+        extraHeaders.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
         }
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -3909,6 +4113,8 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var creatorRemoteUploadedAssetRecords: [HFCreatorRemoteUploadedAssetRecord] = []
     @Published private(set) var creatorRemoteProcessingRuntimeSnapshot: HFCreatorRemoteProcessingRuntimeSnapshot
     @Published private(set) var creatorRemoteProcessingJobRecords: [HFCreatorRemoteProcessingJobRecord] = []
+    @Published private(set) var streamingPlaybackRuntimeSnapshot: HFStreamingPlaybackRuntimeSnapshot
+    @Published private(set) var streamingPlaybackSessionRecords: [HFStreamingPlaybackSessionRecord] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -4016,6 +4222,9 @@ final class HFStreamingStore: ObservableObject {
         )
         creatorRemoteProcessingRuntimeSnapshot = .local(
             reason: "Media processing disabled until the loopback backend is enabled."
+        )
+        streamingPlaybackRuntimeSnapshot = .local(
+            reason: "Streaming playback runtime uses Local Preview until the loopback backend and processed HLS output are available."
         )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
@@ -5945,7 +6154,7 @@ final class HFStreamingStore: ObservableObject {
             creatorRemoteProcessingRuntimeSnapshot = .local(reason: "Processing fixture skipped because the loopback backend is disabled.")
             return nil
         }
-        guard let projectID = primaryImportProjectID() else {
+        guard let projectID = productionCatalogConfiguration.isRemoteEnabled ? "project-behind-the-vision" : primaryImportProjectID() else {
             creatorRemoteProcessingRuntimeSnapshot = HFCreatorRemoteProcessingRuntimeSnapshot(
                 state: .failed,
                 endpoint: productionCatalogConfiguration.baseURL.absoluteString,
@@ -6056,6 +6265,189 @@ final class HFStreamingStore: ObservableObject {
             lastError: failed.first?.failureReason,
             updatedAtLabel: updatedAtLabel
         )
+    }
+
+    var streamingPlaybackRuntimeStatusRows: [HFStreamingPlaybackStatusRow] {
+        [
+            HFStreamingPlaybackStatusRow(
+                id: "runtime",
+                title: "Playback Runtime",
+                value: streamingPlaybackRuntimeSnapshot.statusLabel,
+                detail: streamingPlaybackRuntimeSnapshot.detail,
+                systemImage: streamingPlaybackRuntimeSnapshot.state == .descriptorReady ? "play.rectangle.on.rectangle.fill" : "play.slash.fill"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "descriptor",
+                title: "Descriptor",
+                value: streamingPlaybackRuntimeSnapshot.descriptorStatus,
+                detail: streamingPlaybackRuntimeSnapshot.playbackURLReference,
+                systemImage: "link.badge.plus"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "hls",
+                title: "HLS Output",
+                value: streamingPlaybackRuntimeSnapshot.playbackFormat,
+                detail: streamingPlaybackRuntimeSnapshot.hlsMasterObjectKey,
+                systemImage: "waveform.path.ecg.rectangle.fill"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "refresh",
+                title: "Refresh",
+                value: streamingPlaybackRuntimeSnapshot.refreshAfter ?? "Local",
+                detail: streamingPlaybackRuntimeSnapshot.expiresAt.map { "Expires \($0)" } ?? "No signed descriptor active.",
+                systemImage: "arrow.clockwise.circle.fill"
+            )
+        ]
+    }
+
+    @discardableResult
+    func runStreamingPlaybackRuntimeFixture(for movie: Movie) async -> HFStreamingPlaybackSessionRecord? {
+        let catalogMovie = self.movie(id: movie.id) ?? movie
+        guard !ProcessInfo.processInfo.arguments.contains("--hf-playback-error") else {
+            streamingPlaybackRuntimeSnapshot = HFStreamingPlaybackRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                movieID: catalogMovie.id,
+                descriptorStatus: "Fixture Error",
+                playbackFormat: "Unavailable",
+                playbackSource: "Loopback backend",
+                processingJobID: "None",
+                hlsMasterObjectKey: "None",
+                playbackURLReference: "Unavailable",
+                expiresAt: nil,
+                refreshAfter: nil,
+                sessionCount: streamingPlaybackSessionRecords.count,
+                lastManifestPreview: "No manifest fetched.",
+                detail: "Playback error QA route forced a safe failure state.",
+                lastError: "QA forced failure",
+                updatedAtLabel: "Playback failed"
+            )
+            return nil
+        }
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            streamingPlaybackRuntimeSnapshot = .local(
+                reason: "Loopback backend disabled. Local Preview remains active and no playback URL is requested."
+            )
+            return nil
+        }
+
+        streamingPlaybackRuntimeSnapshot = HFStreamingPlaybackRuntimeSnapshot(
+            state: .preparing,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            movieID: catalogMovie.id,
+            descriptorStatus: "Preparing",
+            playbackFormat: "Pending",
+            playbackSource: "Loopback backend",
+            processingJobID: creatorRemoteProcessingJobRecords.first?.id ?? "Pending",
+            hlsMasterObjectKey: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "Pending",
+            playbackURLReference: "Pending descriptor",
+            expiresAt: nil,
+            refreshAfter: nil,
+            sessionCount: streamingPlaybackSessionRecords.count,
+            lastManifestPreview: "Preparing processed HLS output.",
+            detail: "Creating or reusing processed HLS output before requesting playback descriptor.",
+            lastError: nil,
+            updatedAtLabel: "Preparing playback"
+        )
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let processedJob = await runCreatorRemoteProcessingFixture()
+            guard let processedJob, processedJob.state == "completed" else {
+                throw HFRemoteCreatorDraftAPIError.invalidResponse
+            }
+
+            let context = playbackEntitlementContext(for: catalogMovie)
+            let entitlementRequest = HFRemotePlaybackEntitlementRequest(
+                userID: activeProfileID,
+                anonymousSessionID: "local-session-\(activeProfileID)",
+                movieID: catalogMovie.id,
+                storeKitProductID: context.productReference.productIdentifier.rawValue,
+                entitlementContext: context,
+                playbackProvider: "cloudflare_stream",
+                deviceContext: ["platform": "ios_simulator", "runtime": "p35a_streaming_playback"]
+            )
+            let entitlement = try await client.validatePlaybackEntitlement(entitlementRequest)
+            guard entitlement.entitlementStatus == "entitlement_approved" else {
+                throw HFRemoteCreatorDraftAPIError.httpStatus(403, entitlement.denialReason ?? "Entitlement denied")
+            }
+
+            let descriptorRequest = HFRemotePlaybackDescriptorRequest(
+                userID: entitlementRequest.userID,
+                anonymousSessionID: entitlementRequest.anonymousSessionID,
+                movieID: entitlementRequest.movieID,
+                storeKitProductID: entitlementRequest.storeKitProductID,
+                entitlementContext: entitlementRequest.entitlementContext,
+                playbackProvider: entitlementRequest.playbackProvider,
+                deviceContext: entitlementRequest.deviceContext,
+                auditID: entitlement.auditID
+            )
+            let descriptor = try await client.requestStreamingPlaybackDescriptor(descriptorRequest)
+            guard descriptor.playbackDescriptorStatus == "descriptor_ready",
+                  let playbackURL = descriptor.playbackURLOrTokenReference else {
+                throw HFRemoteCreatorDraftAPIError.httpStatus(409, descriptor.denialReason ?? "Descriptor unavailable")
+            }
+
+            let manifest = try await client.fetchPlaybackManifest(from: playbackURL)
+            let manifestPreview = manifest
+                .split(separator: "\n")
+                .prefix(3)
+                .joined(separator: " / ")
+            let session = HFStreamingPlaybackSessionRecord(
+                id: "playback-session-\(descriptor.auditID)",
+                movieID: catalogMovie.id,
+                title: catalogMovie.title,
+                state: "Ready",
+                playbackURLReference: playbackURL,
+                playbackFormat: descriptor.playbackFormat ?? "hls",
+                expiresAt: descriptor.expiresAt,
+                refreshAfter: descriptor.refreshAfter,
+                processingJobID: descriptor.processingJobID ?? processedJob.id,
+                hlsMasterObjectKey: descriptor.hlsMasterObjectKey ?? processedJob.output?.hlsMasterObjectKey ?? "Unknown",
+                detail: "Entitlement, descriptor, and signed HLS manifest resolved through the loopback backend."
+            )
+            streamingPlaybackSessionRecords.removeAll { $0.id == session.id }
+            streamingPlaybackSessionRecords.insert(session, at: 0)
+            streamingPlaybackRuntimeSnapshot = HFStreamingPlaybackRuntimeSnapshot(
+                state: .descriptorReady,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                movieID: catalogMovie.id,
+                descriptorStatus: descriptor.playbackDescriptorStatus,
+                playbackFormat: descriptor.playbackFormat ?? "hls",
+                playbackSource: descriptor.playbackSource ?? "processed_hls",
+                processingJobID: session.processingJobID,
+                hlsMasterObjectKey: session.hlsMasterObjectKey,
+                playbackURLReference: playbackURL,
+                expiresAt: descriptor.expiresAt,
+                refreshAfter: descriptor.refreshAfter,
+                sessionCount: streamingPlaybackSessionRecords.count,
+                lastManifestPreview: manifestPreview,
+                detail: "Processed HLS playback runtime is ready for the premium player shell.",
+                lastError: nil,
+                updatedAtLabel: "Playback descriptor ready"
+            )
+            return session
+        } catch {
+            streamingPlaybackRuntimeSnapshot = HFStreamingPlaybackRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                movieID: catalogMovie.id,
+                descriptorStatus: "Unavailable",
+                playbackFormat: "Unavailable",
+                playbackSource: "Loopback backend",
+                processingJobID: creatorRemoteProcessingJobRecords.first?.id ?? "None",
+                hlsMasterObjectKey: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "None",
+                playbackURLReference: "Unavailable",
+                expiresAt: nil,
+                refreshAfter: nil,
+                sessionCount: streamingPlaybackSessionRecords.count,
+                lastManifestPreview: "No manifest fetched.",
+                detail: "Playback runtime could not resolve a signed descriptor. Local Preview fallback remains available.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Playback failed"
+            )
+            return nil
+        }
     }
 
     var creatorProjectRuntimeSnapshot: HFCreatorProjectRuntimeSnapshot {

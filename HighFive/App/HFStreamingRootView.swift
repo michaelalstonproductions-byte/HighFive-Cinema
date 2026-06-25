@@ -146,6 +146,10 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-player-metadata")
             || arguments.contains("--hf-start-player-watch-together")
             || arguments.contains("--hf-start-player-creator-commentary")
+            || arguments.contains("--hf-start-streaming-playback-runtime")
+            || arguments.contains("--hf-playback-hls")
+            || arguments.contains("--hf-playback-session")
+            || arguments.contains("--hf-playback-error")
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-start-creator-publishing")
@@ -333,10 +337,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-player-metadata")
             || arguments.contains("--hf-start-player-watch-together")
             || arguments.contains("--hf-start-player-creator-commentary")
+            || arguments.contains("--hf-start-streaming-playback-runtime")
+            || arguments.contains("--hf-playback-hls")
+            || arguments.contains("--hf-playback-session")
+            || arguments.contains("--hf-playback-error")
     }
 
     private static var playerInitialSurface: HFPlayerSurfaceFocus {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-start-streaming-playback-runtime") || arguments.contains("--hf-playback-hls") || arguments.contains("--hf-playback-session") || arguments.contains("--hf-playback-error") { return .metadata }
         if arguments.contains("--hf-start-player-controls") { return .controls }
         if arguments.contains("--hf-start-player-metadata") { return .metadata }
         if arguments.contains("--hf-start-player-watch-together") { return .watchTogether }

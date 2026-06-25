@@ -51,10 +51,15 @@ export type PlaybackDescriptorResponse = {
   refresh_after: string | null;
   denial_reason: string | null;
   audit_id: string;
+  playback_format?: string | null;
+  playback_source?: string | null;
+  processing_job_id?: string | null;
+  hls_master_object_key?: string | null;
 };
 
 export const entitlementValidationPath = "/entitlements/validate";
 export const playbackDescriptorPath = "/playback/descriptor";
+export const playbackHLSPath = "/v1/playback/hls/";
 export const readinessPath = "/ready";
 export const openAPIPath = "/openapi.json";
 export const catalogPath = "/v1/catalog";
