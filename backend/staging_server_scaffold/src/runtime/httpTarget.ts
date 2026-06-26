@@ -25,6 +25,13 @@ import {
   socialWatchPartyDetailPath,
   socialWatchSharedLibraryPath,
   socialWatchSummaryPath,
+  creatorEconomyDashboardPath,
+  creatorEconomyMembershipsPath,
+  creatorEconomyPaidCollectionsPath,
+  creatorEconomyPaidPremieresPath,
+  creatorEconomyPayoutsPath,
+  creatorEconomyRevenueSharesPath,
+  creatorEconomyTipsPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -106,6 +113,16 @@ import {
   syncWatchPlayback,
   updateVoiceRoom
 } from "../routes/socialWatch.js";
+import {
+  createPaidCollection,
+  createPaidPremiere,
+  creatorEconomyDashboard,
+  creatorEconomyPayouts,
+  creatorEconomyReadinessSummary,
+  joinCreatorMembership,
+  recordCreatorTip,
+  updateCreatorRevenueShare
+} from "../routes/creatorEconomy.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -449,6 +466,86 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 200, respondWatchInvite(authHeader(request.headers.authorization), route.id, body));
+        return;
+      }
+
+      if (path === creatorEconomyDashboardPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, creatorEconomyDashboard(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === creatorEconomyPayoutsPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, creatorEconomyPayouts(authHeader(request.headers.authorization)));
+          return;
+        }
+        if (request.method === "POST") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 201, creatorEconomyPayouts(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === creatorEconomyRevenueSharesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, updateCreatorRevenueShare(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorEconomyTipsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, recordCreatorTip(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorEconomyMembershipsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, joinCreatorMembership(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorEconomyPaidCollectionsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createPaidCollection(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorEconomyPaidPremieresPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createPaidPremiere(authHeader(request.headers.authorization), body));
         return;
       }
 
@@ -1345,6 +1442,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     social_watch_friends_path: socialWatchFriendsPath,
     social_watch_shared_library_path: socialWatchSharedLibraryPath,
     social_watch_parties_path: socialWatchPartiesPath,
+    creator_economy_dashboard_path: creatorEconomyDashboardPath,
+    creator_economy_payouts_path: creatorEconomyPayoutsPath,
+    creator_economy_tips_path: creatorEconomyTipsPath,
+    creator_economy_memberships_path: creatorEconomyMembershipsPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1388,6 +1489,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const discovery = discoveryReadinessSummary();
   const aiDiscovery = aiDiscoveryReadinessSummary();
   const socialWatch = socialWatchReadinessSummary();
+  const creatorEconomy = creatorEconomyReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1469,6 +1571,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     social_watch_comments_enabled: Boolean(socialWatch.comments),
     social_watch_reactions_enabled: Boolean(socialWatch.reactions),
     social_watch_transport: String(socialWatch.transport),
+    creator_economy_enabled: Boolean(creatorEconomy.creator_economy_enabled),
+    creator_payouts_enabled: Boolean(creatorEconomy.creator_payouts),
+    creator_dashboard_enabled: Boolean(creatorEconomy.creator_dashboard),
+    creator_revenue_sharing_enabled: Boolean(creatorEconomy.revenue_sharing),
+    creator_tips_enabled: Boolean(creatorEconomy.tips),
+    creator_memberships_enabled: Boolean(creatorEconomy.memberships),
+    creator_paid_collections_enabled: Boolean(creatorEconomy.paid_collections),
+    creator_paid_premieres_enabled: Boolean(creatorEconomy.paid_premieres),
+    creator_economy_external_processor_calls: Boolean(creatorEconomy.external_processor_calls),
+    creator_economy_ledger_records: Number(creatorEconomy.ledger_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
