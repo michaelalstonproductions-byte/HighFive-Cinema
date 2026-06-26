@@ -16,6 +16,9 @@ import {
   creatorWorkspacePath,
   creatorDetailPath,
   discoveryQueryPath,
+  aiDiscoveryHomePath,
+  aiDiscoveryMoodPath,
+  aiDiscoverySearchPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -78,6 +81,12 @@ import {
 import { openAPISpec } from "../catalog/openapi.js";
 import { catalogDelta, catalogSummary, catalogSync, collectionDetail, contentDetail, creatorDetail } from "../routes/catalog.js";
 import { discoveryQuery, discoveryReadinessSummary } from "../routes/discovery.js";
+import {
+  aiDiscoveryHome,
+  aiDiscoveryMood,
+  aiDiscoveryReadinessSummary,
+  aiDiscoverySearch
+} from "../routes/aiDiscovery.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -298,6 +307,36 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, discoveryQuery(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === aiDiscoveryHomePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, aiDiscoveryHome(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === aiDiscoverySearchPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, aiDiscoverySearch(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === aiDiscoveryMoodPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, aiDiscoveryMood(request.url, authHeader(request.headers.authorization)));
         return;
       }
 
@@ -1187,6 +1226,9 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     playback_hls_path: playbackHLSPath,
     viewer_library_path: viewerLibraryPath,
     discovery_query_path: discoveryQueryPath,
+    ai_discovery_home_path: aiDiscoveryHomePath,
+    ai_discovery_search_path: aiDiscoverySearchPath,
+    ai_discovery_mood_path: aiDiscoveryMoodPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1228,6 +1270,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const processing = processingReadinessSummary();
   const library = viewerLibraryReadinessSummary();
   const discovery = discoveryReadinessSummary();
+  const aiDiscovery = aiDiscoveryReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1289,6 +1332,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     discovery_recommendations_enabled: Boolean(discovery.recommendations),
     discovery_query_cache_enabled: Boolean(discovery.query_cache),
     discovery_analytics_hook: Boolean(discovery.analytics_hook),
+    ai_discovery_enabled: Boolean(aiDiscovery.ai_discovery_enabled),
+    ai_discovery_external_calls: Boolean(aiDiscovery.external_ai_calls),
+    personalized_recommendations_enabled: Boolean(aiDiscovery.personalized_recommendations),
+    watch_history_learning_enabled: Boolean(aiDiscovery.watch_history_learning),
+    taste_profiles_enabled: Boolean(aiDiscovery.taste_profiles),
+    mood_discovery_enabled: Boolean(aiDiscovery.mood_discovery),
+    creator_affinity_enabled: Boolean(aiDiscovery.creator_affinity),
+    genre_prediction_enabled: Boolean(aiDiscovery.genre_prediction),
+    continue_watching_intelligence_enabled: Boolean(aiDiscovery.continue_watching_intelligence),
+    search_ranking_improvements_enabled: Boolean(aiDiscovery.search_ranking_improvements),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
