@@ -29,6 +29,12 @@ import {
   identityMePath,
   identityRefreshPath,
   identitySignOutPath,
+  notificationDeliveryAuditPath,
+  notificationDetailPath,
+  notificationDevicesPath,
+  notificationInboxPath,
+  notificationPreferencesPath,
+  notificationTestPushPath,
   openAPIPath,
   playbackHLSPath,
   playbackDescriptorPath,
@@ -109,6 +115,15 @@ import {
 } from "../routes/library.js";
 import type { RuntimeConfig } from "./runtimeConfig.js";
 import { analyticsDashboard, analyticsReadinessSummary, ingestAnalyticsEvents } from "../routes/analytics.js";
+import {
+  markNotificationRead,
+  notificationDeliveryAudit,
+  notificationInbox,
+  notificationPreferences,
+  notificationReadinessSummary,
+  registerNotificationDevice,
+  sendTestNotification
+} from "../routes/notifications.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
   return createServer(async (request, response) => {
@@ -246,6 +261,79 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, analyticsDashboard(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === notificationDevicesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, registerNotificationDevice(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === notificationPreferencesPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, notificationPreferences(authHeader(request.headers.authorization)));
+          return;
+        }
+        if (request.method === "PATCH") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, notificationPreferences(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === notificationInboxPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, notificationInbox(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === notificationTestPushPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 202, sendTestNotification(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === notificationDeliveryAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, notificationDeliveryAudit(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path.startsWith(notificationDetailPath)) {
+        const route = notificationRoute(path);
+        if (route.action === "read") {
+          if (request.method !== "POST") {
+            const result = methodNotAllowed();
+            writeJson(response, result.statusCode, result.body);
+            return;
+          }
+          writeJson(response, 200, markNotificationRead(authHeader(request.headers.authorization), route.id));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
         return;
       }
 
@@ -666,6 +754,11 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     discovery_query_path: discoveryQueryPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
+    notification_devices_path: notificationDevicesPath,
+    notification_preferences_path: notificationPreferencesPath,
+    notification_inbox_path: notificationInboxPath,
+    notification_test_push_path: notificationTestPushPath,
+    notification_delivery_audit_path: notificationDeliveryAuditPath,
     admin_review_queue_path: adminReviewQueuePath,
     credentials_required: false,
     external_network_allowed: false,
@@ -682,6 +775,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const library = viewerLibraryReadinessSummary();
   const discovery = discoveryReadinessSummary();
   const analytics = analyticsReadinessSummary();
+  const notifications = notificationReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -718,6 +812,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     analytics_idempotency: Boolean(analytics.idempotency),
     analytics_aggregations: Boolean(analytics.aggregations),
     analytics_events: Number(analytics.event_count),
+    notifications_enabled: Boolean(notifications.notifications_enabled),
+    apns_contract_ready: Boolean(notifications.apns_contract_ready),
+    notification_device_registration: Boolean(notifications.device_registration),
+    notification_preferences: Boolean(notifications.preferences),
+    notification_inbox: Boolean(notifications.inbox),
+    notification_deep_links: Boolean(notifications.deep_links),
+    notification_delivery_audit: Boolean(notifications.delivery_audit),
+    notification_registered_devices: Number(notifications.registered_devices),
+    notification_inbox_items: Number(notifications.inbox_items),
+    external_push_attempted: Boolean(notifications.external_push_attempted),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
@@ -760,6 +864,15 @@ function creatorDraftRoute(path: string): { id: string; action: string | null } 
 
 function creatorUploadRoute(path: string): { id: string; action: string | null } {
   const suffix = path.slice(creatorUploadDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
+  };
+}
+
+function notificationRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(notificationDetailPath.length);
   const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
   return {
     id: parts[0] ?? "",

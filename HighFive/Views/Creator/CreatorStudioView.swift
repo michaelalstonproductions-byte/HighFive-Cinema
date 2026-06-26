@@ -203,6 +203,11 @@ private enum HFCreatorProSpotlight {
     case notificationSeries
     case notificationCollaboration
     case notificationRevenue
+    case productionNotifications
+    case notificationRegistration
+    case notificationInbox
+    case notificationDeliveryAudit
+    case notificationDeepLinks
     case administrationDashboard
     case administrationReview
     case administrationCreators
@@ -347,6 +352,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-notifications-series") { return .notificationSeries }
         if arguments.contains("--hf-notifications-collaboration") { return .notificationCollaboration }
         if arguments.contains("--hf-notifications-revenue") { return .notificationRevenue }
+        if arguments.contains("--hf-start-production-notifications") { return .productionNotifications }
+        if arguments.contains("--hf-notification-registration") { return .notificationRegistration }
+        if arguments.contains("--hf-notification-inbox") { return .notificationInbox }
+        if arguments.contains("--hf-notification-delivery-audit") { return .notificationDeliveryAudit }
+        if arguments.contains("--hf-notification-deeplink") { return .notificationDeepLinks }
         if arguments.contains("--hf-start-admin") { return .administrationDashboard }
         if arguments.contains("--hf-admin-review") { return .administrationReview }
         if arguments.contains("--hf-admin-creators") { return .administrationCreators }
@@ -2386,6 +2396,16 @@ struct CreatorStudioView: View {
             notificationCategorySection("Collaboration")
         case .notificationRevenue:
             notificationCategorySection("Revenue")
+        case .productionNotifications:
+            productionNotificationsSection
+        case .notificationRegistration:
+            notificationRegistrationSection
+        case .notificationInbox:
+            notificationInboxSection
+        case .notificationDeliveryAudit:
+            notificationDeliveryAuditSection
+        case .notificationDeepLinks:
+            notificationDeepLinkSection
         case .administrationDashboard:
             administrationDashboardSection
         case .administrationReview:
@@ -3749,6 +3769,131 @@ struct CreatorStudioView: View {
                     .accessibilityIdentifier("hf.notifications.localOnly")
             }
         }
+    }
+
+    private var productionNotificationsSection: some View {
+        creatorProSpotlight(
+            title: "Production Notifications",
+            detail: streamingStore.productionNotificationRuntimeSnapshot.detail,
+            systemImage: "bell.and.waves.left.and.right.fill",
+            accent: HFColors.gold,
+            identifier: "hf.productionNotifications.dashboard"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionNotificationRuntimeRows) { row in
+                        analyticsEventPipelineCard(row)
+                    }
+                }
+
+                Text("APNs registration, in-app inbox, read state, delivery audit, and deep links are routed through the staging notification service when configured.")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hf.productionNotifications.contract")
+            }
+        }
+    }
+
+    private var notificationRegistrationSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Device Registration",
+                    detail: "Registers a device token suffix with the notification service. Simulator QA uses a deterministic development token; production APNs requires Apple configuration.",
+                    systemImage: "iphone.radiowaves.left.and.right",
+                    accent: HFColors.gold
+                )
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    creatorProStat(title: "Device", value: streamingStore.productionNotificationRuntimeSnapshot.deviceStatus)
+                    creatorProStat(title: "Permission", value: streamingStore.productionNotificationRuntimeSnapshot.permissionStatus)
+                    creatorProStat(title: "State", value: streamingStore.productionNotificationRuntimeSnapshot.state.rawValue)
+                    creatorProStat(title: "Endpoint", value: streamingStore.productionNotificationRuntimeSnapshot.updatedAtLabel)
+                }
+
+                Text(streamingStore.productionNotificationRuntimeSnapshot.endpoint)
+                    .font(HFTypography.micro.monospaced())
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionNotifications.registration")
+    }
+
+    private var notificationInboxSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Notification Inbox",
+                    detail: "Authenticated in-app notification inbox with unread counts and read-state persistence through the staging service.",
+                    systemImage: "tray.full.fill",
+                    accent: HFColors.cyanGlow
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionNotificationRows) { row in
+                        productionNotificationRow(row)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionNotifications.inbox")
+    }
+
+    private var notificationDeliveryAuditSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Delivery Audit",
+                    detail: "Records delivery provider, status, category, and notification ID without persisting full APNs tokens or credential material.",
+                    systemImage: "checklist.checked",
+                    accent: HFColors.violet
+                )
+
+                VStack(spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.notificationDeliveryAuditRows) { row in
+                        notificationDeliveryAuditRow(row)
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionNotifications.deliveryAudit")
+    }
+
+    private var notificationDeepLinkSection: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                sectionLead(
+                    title: "Deep Links",
+                    detail: "Notification payloads carry highfive:// links for creator publishing, processing, series, collaboration, revenue, and upload routes.",
+                    systemImage: "link.circle.fill",
+                    accent: HFColors.gold
+                )
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.productionNotificationRows.prefix(5)) { row in
+                        HFCreatorStudioReadinessRow(
+                            title: row.title,
+                            detail: row.deepLink,
+                            status: row.category,
+                            systemImage: "link",
+                            accent: HFColors.gold
+                        )
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.productionNotifications.deepLinks")
     }
 
     private var productActivityCenterSection: some View {
@@ -7661,6 +7806,85 @@ struct CreatorStudioView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.notifications.activity.\(record.id)")
+    }
+
+    private func productionNotificationRow(_ row: HFProductionNotificationRow) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: row.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(row.isRead ? HFColors.textSecondary : HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background((row.isRead ? HFColors.textSecondary : HFColors.gold).opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(row.category)
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                    Text(row.isRead ? "Read" : "Unread")
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(row.isRead ? HFColors.textSecondary : HFColors.cyanGlow)
+                }
+
+                Text(row.title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+
+                Text(row.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+
+                Text(row.deepLink)
+                    .font(HFTypography.micro.monospaced())
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionNotifications.item.\(row.id)")
+    }
+
+    private func notificationDeliveryAuditRow(_ row: HFNotificationDeliveryAuditRow) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(HFColors.violet)
+                Text(row.status)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Text(row.provider)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .lineLimit(1)
+            }
+
+            Text("\(row.category) • \(row.notificationID)")
+                .font(HFTypography.micro.monospaced())
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+
+            Text(row.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+        }
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.productionNotifications.audit.\(row.id)")
     }
 
     private func notificationCount(for category: String) -> Int {

@@ -5,6 +5,7 @@ import type { JsonObject } from "../contracts.js";
 import { ContractError } from "../errors.js";
 import { recordAnalyticsEvent } from "./analytics.js";
 import { requireCreatorIdentitySession } from "./identity.js";
+import { recordProductNotification } from "./notifications.js";
 import { uploadedAssetForProcessing, uploadObjectStoreRoot, type UploadedAssetRecord } from "./uploads.js";
 
 type ProcessingState = "queued" | "inspecting" | "processing" | "completed" | "failed";
@@ -145,6 +146,13 @@ export async function createProcessingJob(authorizationHeader: string | undefine
       projectID: job.project_id,
       source: "media_processing"
     });
+    recordProductNotification({
+      role: "creator",
+      category: "processing",
+      title: "Media processing complete",
+      body: `${asset.filename} produced playback-ready output for ${job.project_id}.`,
+      deepLink: "highfive://creator/processing"
+    });
   }
   return {
     status: job.state,
@@ -188,6 +196,13 @@ export async function retryProcessingJob(authorizationHeader: string | undefined
       creatorID: job.creator_id,
       projectID: job.project_id,
       source: "media_processing_retry"
+    });
+    recordProductNotification({
+      role: "creator",
+      category: "processing",
+      title: "Processing retry complete",
+      body: `${asset.filename} completed after retry for ${job.project_id}.`,
+      deepLink: "highfive://creator/processing"
     });
   }
   return {

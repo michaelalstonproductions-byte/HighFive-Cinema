@@ -19,6 +19,11 @@ import {
   creatorUploadDetailPath,
   creatorUploadSessionsPath,
   discoveryQueryPath,
+  notificationDeliveryAuditPath,
+  notificationDevicesPath,
+  notificationInboxPath,
+  notificationPreferencesPath,
+  notificationTestPushPath,
   openAPIPath,
   playbackDescriptorPath,
   playbackHLSPath,
@@ -87,6 +92,14 @@ export function openAPISpec(): Record<string, unknown> {
       [discoveryQueryPath]: { get: { summary: "Search, filter, paginate, and recommend catalog content" } },
       [analyticsEventsPath]: { post: { summary: "Ingest versioned analytics event batches with idempotency and privacy controls" } },
       [analyticsDashboardPath]: { get: { summary: "Fetch aggregate analytics for creator and platform dashboards" } },
+      [notificationDevicesPath]: { post: { summary: "Register an APNs device token suffix for the authenticated user" } },
+      [notificationPreferencesPath]: {
+        get: { summary: "Fetch authenticated notification preferences" },
+        patch: { summary: "Update authenticated notification preferences" }
+      },
+      [notificationInboxPath]: { get: { summary: "Fetch authenticated in-app notification inbox" } },
+      [notificationTestPushPath]: { post: { summary: "Queue a development notification and delivery audit record" } },
+      [notificationDeliveryAuditPath]: { get: { summary: "Fetch notification delivery audit records" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

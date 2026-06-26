@@ -94,6 +94,12 @@ export const viewerLibraryProgressPath = "/v1/viewer/library/progress";
 export const viewerLibraryOfflinePath = "/v1/viewer/library/offline";
 export const analyticsEventsPath = "/v1/analytics/events";
 export const analyticsDashboardPath = "/v1/analytics/dashboard";
+export const notificationDevicesPath = "/v1/notifications/devices";
+export const notificationPreferencesPath = "/v1/notifications/preferences";
+export const notificationInboxPath = "/v1/notifications/inbox";
+export const notificationDetailPath = "/v1/notifications/";
+export const notificationTestPushPath = "/v1/notifications/test-push";
+export const notificationDeliveryAuditPath = "/v1/notifications/delivery-audit";
 
 export const contractStates = [
   "entitlement_approved",

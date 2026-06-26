@@ -3,6 +3,7 @@ import type { JsonObject } from "../contracts.js";
 import { ContractError } from "../errors.js";
 import { recordAnalyticsEvent } from "./analytics.js";
 import { requireCreatorIdentitySession, requireIdentitySession, type IdentitySession } from "./identity.js";
+import { recordProductNotification } from "./notifications.js";
 
 type ReleaseState = "draft" | "review" | "scheduled" | "published" | "archived";
 type RevisionAction =
@@ -569,6 +570,14 @@ function mutationResponse(status: string, draft: PublishingDraftRecord, session:
       creatorID: draft.creator_id,
       projectID: draft.id,
       source: "publishing_review"
+    });
+    recordProductNotification({
+      userID: draft.owner_user_id,
+      role: "creator",
+      category: status === "published" ? "release" : "publishing",
+      title: status === "published" ? "Release published" : "Publishing review update",
+      body: `${draft.title} moved to ${status.replaceAll("_", " ")}.`,
+      deepLink: status === "published" ? "highfive://content/release" : "highfive://creator/publishing"
     });
   }
   return {

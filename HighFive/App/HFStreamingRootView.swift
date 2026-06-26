@@ -188,6 +188,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
             || Self.shouldStartInAnalyticsEventPipeline
+            || Self.shouldStartInProductionNotifications
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -261,6 +262,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
             || Self.shouldStartInAnalyticsEventPipeline
+            || Self.shouldStartInProductionNotifications
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -396,6 +398,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
             || Self.shouldStartInAnalyticsEventPipeline
+            || Self.shouldStartInProductionNotifications
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -638,6 +641,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-analytics-events-ingest")
             || arguments.contains("--hf-analytics-events-dashboard")
             || arguments.contains("--hf-analytics-events-privacy")
+    }
+
+    private static var shouldStartInProductionNotifications: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-production-notifications")
+            || arguments.contains("--hf-notification-registration")
+            || arguments.contains("--hf-notification-inbox")
+            || arguments.contains("--hf-notification-delivery-audit")
+            || arguments.contains("--hf-notification-deeplink")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

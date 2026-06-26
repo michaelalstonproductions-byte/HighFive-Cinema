@@ -94,6 +94,12 @@ export function errorResponse(error: unknown): JsonResponse {
       }
     };
   }
+  if (error instanceof Error && error.name === "BadRequest") {
+    return { statusCode: 400, body: { error: error.message } };
+  }
+  if (error instanceof Error && error.name === "NotFound") {
+    return { statusCode: 404, body: { error: error.message } };
+  }
   if (error instanceof ContractError) {
     return { statusCode: error.statusCode, body: errorBody(error) };
   }

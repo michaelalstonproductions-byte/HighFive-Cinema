@@ -1466,6 +1466,63 @@ struct HFAnalyticsEventPipelineRow: Identifiable, Equatable {
     var systemImage: String
 }
 
+enum HFProductionNotificationRuntimeState: String, Hashable {
+    case localFallback = "Local Fallback"
+    case registering = "Registering"
+    case ready = "Ready"
+    case failed = "Failed"
+}
+
+struct HFProductionNotificationRuntimeSnapshot: Equatable {
+    var state: HFProductionNotificationRuntimeState
+    var endpoint: String
+    var deviceStatus: String
+    var permissionStatus: String
+    var inboxCount: Int
+    var unreadCount: Int
+    var deliveryAuditCount: Int
+    var deepLinkCount: Int
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    static func local(reason: String) -> HFProductionNotificationRuntimeSnapshot {
+        HFProductionNotificationRuntimeSnapshot(
+            state: .localFallback,
+            endpoint: "Local activity center",
+            deviceStatus: "Not Registered",
+            permissionStatus: "Local",
+            inboxCount: 0,
+            unreadCount: 0,
+            deliveryAuditCount: 0,
+            deepLinkCount: 0,
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFProductionNotificationRow: Identifiable, Equatable {
+    let id: String
+    var title: String
+    var detail: String
+    var category: String
+    var status: String
+    var deepLink: String
+    var isRead: Bool
+    var systemImage: String
+}
+
+struct HFNotificationDeliveryAuditRow: Identifiable, Equatable {
+    let id: String
+    var notificationID: String
+    var category: String
+    var status: String
+    var provider: String
+    var detail: String
+}
+
 struct HFRevenueMetric: Identifiable {
     let id: String
     var title: String
@@ -3129,6 +3186,11 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-analytics-events-ingest")
             || arguments.contains("--hf-analytics-events-dashboard")
             || arguments.contains("--hf-analytics-events-privacy")
+            || arguments.contains("--hf-start-production-notifications")
+            || arguments.contains("--hf-notification-registration")
+            || arguments.contains("--hf-notification-inbox")
+            || arguments.contains("--hf-notification-delivery-audit")
+            || arguments.contains("--hf-notification-deeplink")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3560,6 +3622,177 @@ struct HFRemoteAnalyticsDashboardResponse: Codable {
     }
 }
 
+struct HFRemoteNotificationDevicePayload: Encodable {
+    var deviceToken: String
+    var platform: String
+    var environment: String
+
+    private enum CodingKeys: String, CodingKey {
+        case deviceToken = "device_token"
+        case platform
+        case environment
+    }
+}
+
+struct HFRemoteNotificationDeviceResponse: Codable {
+    struct Device: Codable {
+        var id: String
+        var deviceTokenSuffix: String
+        var platform: String
+        var environment: String
+        var pushEnabled: Bool
+
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case deviceTokenSuffix = "device_token_suffix"
+            case platform
+            case environment
+            case pushEnabled = "push_enabled"
+        }
+    }
+
+    var status: String
+    var device: Device
+    var apnsContractReady: Bool
+    var detail: String
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case device
+        case apnsContractReady = "apns_contract_ready"
+        case detail
+    }
+}
+
+struct HFRemoteNotificationPreferencePayload: Encodable {
+    var category: String
+    var pushEnabled: Bool
+    var inboxEnabled: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case category
+        case pushEnabled = "push_enabled"
+        case inboxEnabled = "inbox_enabled"
+    }
+}
+
+struct HFRemoteNotificationPreferenceRecord: Codable, Hashable {
+    var id: String
+    var category: String
+    var pushEnabled: Bool
+    var inboxEnabled: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case category
+        case pushEnabled = "push_enabled"
+        case inboxEnabled = "inbox_enabled"
+    }
+}
+
+struct HFRemoteNotificationPreferencesResponse: Codable {
+    var status: String
+    var preferences: [HFRemoteNotificationPreferenceRecord]
+}
+
+struct HFRemoteNotificationRecord: Codable, Hashable {
+    var id: String
+    var category: String
+    var title: String
+    var body: String
+    var deepLink: String
+    var isRead: Bool
+    var deliveryStatus: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case category
+        case title
+        case body
+        case deepLink = "deep_link"
+        case isRead = "is_read"
+        case deliveryStatus = "delivery_status"
+    }
+}
+
+struct HFRemoteNotificationInboxResponse: Codable {
+    var status: String
+    var unreadCount: Int
+    var notifications: [HFRemoteNotificationRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case unreadCount = "unread_count"
+        case notifications
+    }
+}
+
+struct HFRemoteNotificationReadResponse: Codable {
+    var status: String
+    var notification: HFRemoteNotificationRecord
+    var unreadCount: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case notification
+        case unreadCount = "unread_count"
+    }
+}
+
+struct HFRemoteNotificationTestPushPayload: Encodable {
+    var category: String
+    var title: String
+    var body: String
+    var deepLink: String
+
+    private enum CodingKeys: String, CodingKey {
+        case category
+        case title
+        case body
+        case deepLink = "deep_link"
+    }
+}
+
+struct HFRemoteNotificationTestPushResponse: Codable {
+    var status: String
+    var notification: HFRemoteNotificationRecord
+    var deliveryAudit: [HFRemoteNotificationDeliveryAuditRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case notification
+        case deliveryAudit = "delivery_audit"
+    }
+}
+
+struct HFRemoteNotificationDeliveryAuditRecord: Codable, Hashable {
+    var id: String
+    var notificationID: String
+    var category: String
+    var deliveryStatus: String
+    var provider: String
+    var detail: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case notificationID = "notification_id"
+        case category
+        case deliveryStatus = "delivery_status"
+        case provider
+        case detail
+    }
+}
+
+struct HFRemoteNotificationDeliveryAuditResponse: Codable {
+    var status: String
+    var deliveryAudit: [HFRemoteNotificationDeliveryAuditRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case deliveryAudit = "delivery_audit"
+    }
+}
+
 struct HFRemoteIdentitySignInResponse: Codable {
     struct Session: Codable {
         var sessionID: String
@@ -3660,6 +3893,34 @@ struct HFRemoteCreatorDraftAPIClient {
 
     func analyticsDashboard(sessionID: String? = nil) async throws -> HFRemoteAnalyticsDashboardResponse {
         try await request(path: "/v1/analytics/dashboard", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func registerNotificationDevice(_ payload: HFRemoteNotificationDevicePayload, sessionID: String) async throws -> HFRemoteNotificationDeviceResponse {
+        try await request(path: "/v1/notifications/devices", method: "POST", sessionID: sessionID, body: payload)
+    }
+
+    func notificationPreferences(sessionID: String) async throws -> HFRemoteNotificationPreferencesResponse {
+        try await request(path: "/v1/notifications/preferences", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func updateNotificationPreference(_ payload: HFRemoteNotificationPreferencePayload, sessionID: String) async throws -> HFRemoteNotificationPreferencesResponse {
+        try await request(path: "/v1/notifications/preferences", method: "PATCH", sessionID: sessionID, body: payload)
+    }
+
+    func notificationInbox(sessionID: String) async throws -> HFRemoteNotificationInboxResponse {
+        try await request(path: "/v1/notifications/inbox", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func sendTestNotification(_ payload: HFRemoteNotificationTestPushPayload, sessionID: String) async throws -> HFRemoteNotificationTestPushResponse {
+        try await request(path: "/v1/notifications/test-push", method: "POST", sessionID: sessionID, body: payload)
+    }
+
+    func markNotificationRead(id: String, sessionID: String) async throws -> HFRemoteNotificationReadResponse {
+        try await request(path: "/v1/notifications/\(id)/read", method: "POST", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func notificationDeliveryAudit(sessionID: String) async throws -> HFRemoteNotificationDeliveryAuditResponse {
+        try await request(path: "/v1/notifications/delivery-audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
     }
 
     func revisionHistory(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftRevisionResponse {
@@ -4908,6 +5169,9 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var viewerOfflineDownloadRecords: [HFViewerOfflineDownloadRecord] = []
     @Published private(set) var searchDiscoveryRecommendationSnapshot: HFSearchDiscoveryRecommendationSnapshot
     @Published private(set) var analyticsEventPipelineSnapshot: HFAnalyticsEventPipelineSnapshot
+    @Published private(set) var productionNotificationRuntimeSnapshot: HFProductionNotificationRuntimeSnapshot
+    @Published private(set) var productionNotificationRows: [HFProductionNotificationRow] = []
+    @Published private(set) var notificationDeliveryAuditRows: [HFNotificationDeliveryAuditRow] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -5033,6 +5297,9 @@ final class HFStreamingStore: ObservableObject {
         analyticsEventPipelineSnapshot = .local(
             reason: "Analytics event pipeline disabled until the loopback backend is enabled."
         )
+        productionNotificationRuntimeSnapshot = .local(
+            reason: "Production notifications disabled until the loopback backend is enabled."
+        )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -5111,6 +5378,13 @@ final class HFStreamingStore: ObservableObject {
                     || launchArguments.contains("--hf-analytics-events-dashboard")
                     || launchArguments.contains("--hf-analytics-events-privacy") {
                     await self.runAnalyticsEventPipelineFixture()
+                }
+                if launchArguments.contains("--hf-start-production-notifications")
+                    || launchArguments.contains("--hf-notification-registration")
+                    || launchArguments.contains("--hf-notification-inbox")
+                    || launchArguments.contains("--hf-notification-delivery-audit")
+                    || launchArguments.contains("--hf-notification-deeplink") {
+                    await self.runProductionNotificationFixture()
                 }
             }
         }
@@ -10154,6 +10428,161 @@ final class HFStreamingStore: ObservableObject {
             HFAnalyticsEventPipelineRow(id: "creator", title: "Creator", value: "\(analyticsEventPipelineSnapshot.creatorEvents)", detail: "\(analyticsEventPipelineSnapshot.publishingStateChanges) publishing events", systemImage: "person.crop.rectangle.stack.fill"),
             HFAnalyticsEventPipelineRow(id: "library", title: "Library", value: "\(analyticsEventPipelineSnapshot.saves + analyticsEventPipelineSnapshot.favorites)", detail: "\(analyticsEventPipelineSnapshot.favorites) favorites", systemImage: "bookmark.fill")
         ]
+    }
+
+    var productionNotificationRuntimeRows: [HFAnalyticsEventPipelineRow] {
+        [
+            HFAnalyticsEventPipelineRow(id: "device", title: "Device", value: productionNotificationRuntimeSnapshot.deviceStatus, detail: productionNotificationRuntimeSnapshot.permissionStatus, systemImage: "iphone.radiowaves.left.and.right"),
+            HFAnalyticsEventPipelineRow(id: "inbox", title: "Inbox", value: "\(productionNotificationRuntimeSnapshot.inboxCount)", detail: "\(productionNotificationRuntimeSnapshot.unreadCount) unread", systemImage: "tray.full.fill"),
+            HFAnalyticsEventPipelineRow(id: "audit", title: "Audit", value: "\(productionNotificationRuntimeSnapshot.deliveryAuditCount)", detail: "Delivery records", systemImage: "checklist.checked"),
+            HFAnalyticsEventPipelineRow(id: "links", title: "Deep Links", value: "\(productionNotificationRuntimeSnapshot.deepLinkCount)", detail: "highfive:// routes", systemImage: "link.circle.fill")
+        ]
+    }
+
+    @discardableResult
+    func runProductionNotificationFixture() async -> HFProductionNotificationRuntimeSnapshot {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            productionNotificationRuntimeSnapshot = localProductionNotificationSnapshot(reason: "Loopback backend disabled. Existing local activity center remains available.")
+            return productionNotificationRuntimeSnapshot
+        }
+
+        productionNotificationRuntimeSnapshot = HFProductionNotificationRuntimeSnapshot(
+            state: .registering,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            deviceStatus: "Registering",
+            permissionStatus: "Development",
+            inboxCount: productionNotificationRows.count,
+            unreadCount: productionNotificationRows.filter { !$0.isRead }.count,
+            deliveryAuditCount: notificationDeliveryAuditRows.count,
+            deepLinkCount: productionNotificationRows.filter { !$0.deepLink.isEmpty }.count,
+            detail: "Registering development notification device, updating preferences, sending test notification, and loading inbox/audit records.",
+            lastError: nil,
+            updatedAtLabel: "Registering"
+        )
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await client.createDevelopmentSession(role: "creator")
+            let device = try await client.registerNotificationDevice(
+                HFRemoteNotificationDevicePayload(
+                    deviceToken: "ios-simulator-highfive-notification-token-\(activeProfileID)-p40a",
+                    platform: "ios",
+                    environment: "simulator"
+                ),
+                sessionID: sessionID
+            )
+            _ = try await client.updateNotificationPreference(
+                HFRemoteNotificationPreferencePayload(category: "revenue", pushEnabled: false, inboxEnabled: true),
+                sessionID: sessionID
+            )
+            let testPush = try await client.sendTestNotification(
+                HFRemoteNotificationTestPushPayload(
+                    category: "publishing",
+                    title: "Publishing review update",
+                    body: "Your HighFive project has a review update.",
+                    deepLink: "highfive://creator/publishing"
+                ),
+                sessionID: sessionID
+            )
+            var inbox = try await client.notificationInbox(sessionID: sessionID)
+            if let firstUnread = inbox.notifications.first(where: { !$0.isRead }) {
+                _ = try? await client.markNotificationRead(id: firstUnread.id, sessionID: sessionID)
+                inbox = try await client.notificationInbox(sessionID: sessionID)
+            }
+            let audit = try await client.notificationDeliveryAudit(sessionID: sessionID)
+            applyRemoteProductionNotifications(device: device, testPush: testPush, inbox: inbox, audit: audit)
+        } catch {
+            productionNotificationRuntimeSnapshot = localProductionNotificationSnapshot(
+                reason: "Notification endpoint failed. Local P11 activity center remains visible.",
+                error: error.localizedDescription
+            )
+        }
+        return productionNotificationRuntimeSnapshot
+    }
+
+    private func applyRemoteProductionNotifications(
+        device: HFRemoteNotificationDeviceResponse,
+        testPush: HFRemoteNotificationTestPushResponse,
+        inbox: HFRemoteNotificationInboxResponse,
+        audit: HFRemoteNotificationDeliveryAuditResponse
+    ) {
+        productionNotificationRows = inbox.notifications.map { item in
+            HFProductionNotificationRow(
+                id: item.id,
+                title: item.title,
+                detail: item.body,
+                category: item.category.capitalized,
+                status: item.deliveryStatus.replacingOccurrences(of: "_", with: " ").capitalized,
+                deepLink: item.deepLink,
+                isRead: item.isRead,
+                systemImage: notificationSystemImage(for: item.category)
+            )
+        }
+        notificationDeliveryAuditRows = audit.deliveryAudit.map { record in
+            HFNotificationDeliveryAuditRow(
+                id: record.id,
+                notificationID: record.notificationID,
+                category: record.category.capitalized,
+                status: record.deliveryStatus.replacingOccurrences(of: "_", with: " ").capitalized,
+                provider: record.provider.replacingOccurrences(of: "_", with: " ").capitalized,
+                detail: record.detail
+            )
+        }
+        productionNotificationRuntimeSnapshot = HFProductionNotificationRuntimeSnapshot(
+            state: .ready,
+            endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+            deviceStatus: device.status.replacingOccurrences(of: "_", with: " ").capitalized,
+            permissionStatus: device.apnsContractReady ? "APNs Contract Ready" : "Development",
+            inboxCount: inbox.notifications.count,
+            unreadCount: inbox.unreadCount,
+            deliveryAuditCount: audit.deliveryAudit.count + testPush.deliveryAudit.count,
+            deepLinkCount: inbox.notifications.filter { !$0.deepLink.isEmpty }.count,
+            detail: "Backend notification service registered a development device token suffix, queued inbox records, tracked read state, and returned delivery audit records.",
+            lastError: nil,
+            updatedAtLabel: "Remote"
+        )
+    }
+
+    private func localProductionNotificationSnapshot(reason: String, error: String? = nil) -> HFProductionNotificationRuntimeSnapshot {
+        productionNotificationRows = productNotificationRecords.map { record in
+            HFProductionNotificationRow(
+                id: record.id,
+                title: record.title,
+                detail: record.detail,
+                category: record.category,
+                status: record.status,
+                deepLink: "highfive://notifications/\(record.category.lowercased())",
+                isRead: false,
+                systemImage: record.systemImage
+            )
+        }
+        notificationDeliveryAuditRows = []
+        return HFProductionNotificationRuntimeSnapshot(
+            state: error == nil ? .localFallback : .failed,
+            endpoint: "Local activity center",
+            deviceStatus: "Not Registered",
+            permissionStatus: "Local",
+            inboxCount: productionNotificationRows.count,
+            unreadCount: productionNotificationRows.count,
+            deliveryAuditCount: 0,
+            deepLinkCount: productionNotificationRows.count,
+            detail: reason,
+            lastError: error,
+            updatedAtLabel: "Local"
+        )
+    }
+
+    private func notificationSystemImage(for category: String) -> String {
+        switch category.lowercased() {
+        case "publishing": return "paperplane.circle.fill"
+        case "processing": return "gearshape.2.fill"
+        case "release": return "sparkles.tv.fill"
+        case "episode": return "play.square.stack.fill"
+        case "collaboration": return "person.3.sequence.fill"
+        case "revenue": return "dollarsign.circle.fill"
+        case "upload": return "icloud.and.arrow.up.fill"
+        default: return "bell.badge.fill"
+        }
     }
 
     @discardableResult

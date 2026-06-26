@@ -5,6 +5,7 @@ import type { JsonObject } from "../contracts.js";
 import { ContractError, errorBody } from "../errors.js";
 import { recordAnalyticsEvent } from "./analytics.js";
 import { requireCreatorIdentitySession, type IdentitySession } from "./identity.js";
+import { recordProductNotification } from "./notifications.js";
 import { canAccessCreatorProject } from "./publishing.js";
 
 type UploadAssetKind = "poster" | "trailer" | "source_video" | "artwork";
@@ -162,6 +163,14 @@ export async function putCreatorUploadBlob(
     creatorID: asset.creator_id,
     projectID: asset.project_id,
     source: "creator_upload"
+  });
+  recordProductNotification({
+    userID: asset.owner_user_id,
+    role: "creator",
+    category: "upload",
+    title: "Upload stored",
+    body: `${asset.filename} was verified and stored for ${asset.project_id}.`,
+    deepLink: "highfive://creator/uploads"
   });
 
   return {
