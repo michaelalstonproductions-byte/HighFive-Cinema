@@ -19,6 +19,12 @@ import {
   aiDiscoveryHomePath,
   aiDiscoveryMoodPath,
   aiDiscoverySearchPath,
+  socialWatchFriendsPath,
+  socialWatchInviteDetailPath,
+  socialWatchPartiesPath,
+  socialWatchPartyDetailPath,
+  socialWatchSharedLibraryPath,
+  socialWatchSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -87,6 +93,19 @@ import {
   aiDiscoveryReadinessSummary,
   aiDiscoverySearch
 } from "../routes/aiDiscovery.js";
+import {
+  addWatchComment,
+  addWatchReaction,
+  createFriend,
+  createWatchParty,
+  respondWatchInvite,
+  sendWatchInvite,
+  shareLibrary,
+  socialWatchReadinessSummary,
+  socialWatchSummary,
+  syncWatchPlayback,
+  updateVoiceRoom
+} from "../routes/socialWatch.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -337,6 +356,99 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, aiDiscoveryMood(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === socialWatchSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, socialWatchSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === socialWatchFriendsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createFriend(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === socialWatchSharedLibraryPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, shareLibrary(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === socialWatchPartiesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createWatchParty(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path.startsWith(socialWatchPartyDetailPath)) {
+        const route = socialWatchPartyRoute(path);
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        if (route.action === "invite") {
+          writeJson(response, 201, sendWatchInvite(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "playback") {
+          writeJson(response, 200, syncWatchPlayback(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "reactions") {
+          writeJson(response, 201, addWatchReaction(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "comments") {
+          writeJson(response, 201, addWatchComment(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "voice-room") {
+          writeJson(response, 200, updateVoiceRoom(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path.startsWith(socialWatchInviteDetailPath)) {
+        const route = socialWatchInviteRoute(path);
+        if (route.action !== "respond") {
+          const result = routeNotFound();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, respondWatchInvite(authHeader(request.headers.authorization), route.id, body));
         return;
       }
 
@@ -1229,6 +1341,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     ai_discovery_home_path: aiDiscoveryHomePath,
     ai_discovery_search_path: aiDiscoverySearchPath,
     ai_discovery_mood_path: aiDiscoveryMoodPath,
+    social_watch_summary_path: socialWatchSummaryPath,
+    social_watch_friends_path: socialWatchFriendsPath,
+    social_watch_shared_library_path: socialWatchSharedLibraryPath,
+    social_watch_parties_path: socialWatchPartiesPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1271,6 +1387,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const library = viewerLibraryReadinessSummary();
   const discovery = discoveryReadinessSummary();
   const aiDiscovery = aiDiscoveryReadinessSummary();
+  const socialWatch = socialWatchReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1342,6 +1459,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     genre_prediction_enabled: Boolean(aiDiscovery.genre_prediction),
     continue_watching_intelligence_enabled: Boolean(aiDiscovery.continue_watching_intelligence),
     search_ranking_improvements_enabled: Boolean(aiDiscovery.search_ranking_improvements),
+    social_watch_enabled: Boolean(socialWatch.social_watch_enabled),
+    social_watch_parties_enabled: Boolean(socialWatch.watch_parties),
+    social_watch_invites_enabled: Boolean(socialWatch.invites),
+    social_watch_friends_enabled: Boolean(socialWatch.friends),
+    social_watch_shared_libraries_enabled: Boolean(socialWatch.shared_libraries),
+    social_watch_synchronized_playback_enabled: Boolean(socialWatch.synchronized_playback),
+    social_watch_voice_rooms_enabled: Boolean(socialWatch.voice_rooms),
+    social_watch_comments_enabled: Boolean(socialWatch.comments),
+    social_watch_reactions_enabled: Boolean(socialWatch.reactions),
+    social_watch_transport: String(socialWatch.transport),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
@@ -1463,6 +1590,24 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
 
 function adminReviewRoute(path: string): { id: string; action: string | null } {
   const suffix = path.slice(adminReviewDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
+  };
+}
+
+function socialWatchPartyRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(socialWatchPartyDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
+  };
+}
+
+function socialWatchInviteRoute(path: string): { id: string; action: string | null } {
+  const suffix = path.slice(socialWatchInviteDetailPath.length);
   const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
   return {
     id: parts[0] ?? "",
