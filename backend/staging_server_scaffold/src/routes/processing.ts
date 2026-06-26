@@ -46,13 +46,21 @@ const movieProjectIDs = new Map<string, string>([
 export function processingReadinessSummary(): JsonObject {
   return {
     processing_jobs_enabled: true,
+    worker_service: "local_ffmpeg_scaffold",
+    queue_enabled: true,
     ffprobe_inspection_contract: true,
     ffmpeg_processing_contract: true,
     hls_output_contract: true,
+    hls_variants: ["1080p", "720p"],
+    poster_generation: true,
+    thumbnail_generation: true,
+    trailer_derivative: true,
     playback_descriptor_resolution: true,
     job_progress: true,
     retry: true,
     idempotency: true,
+    failure_reasons: true,
+    timeout_policy: "local_worker_30_seconds",
     jobs: processingJobs.size
   };
 }
@@ -249,7 +257,8 @@ function inspectAsset(asset: UploadedAssetRecord): JsonObject {
     video_codec: isVideo ? "h264_contract" : null,
     audio_codec: isVideo ? "aac_contract" : null,
     audio_channel_count: isVideo ? 2 : 0,
-    has_video_track: isVideo || isImage,
+    has_visual_track: isVideo || isImage,
+    has_video_track: isVideo,
     has_audio_track: isVideo,
     ffprobe_contract: "local_scaffold",
     warning_count: isVideo ? 0 : 1,
@@ -259,7 +268,7 @@ function inspectAsset(asset: UploadedAssetRecord): JsonObject {
 
 function validateInspection(inspection: JsonObject): void {
   if (inspection.has_video_track !== true) {
-    throw new ContractError("processing_invalid_media", "Uploaded asset does not contain a usable visual track.", 422);
+    throw new ContractError("processing_requires_video_source", "Uploaded asset does not contain a usable video track for HLS processing.", 422);
   }
 }
 
@@ -273,22 +282,41 @@ async function createHLSOutput(job: ProcessingJobRecord, asset: UploadedAssetRec
   const outputDir = path.join(uploadObjectStoreRoot(), packageKey);
   const masterKey = `${packageKey}/master.m3u8`;
   const variantKey = `${packageKey}/variant-1080p.m3u8`;
+  const variant720Key = `${packageKey}/variant-720p.m3u8`;
+  const posterKey = `${packageKey}/poster-1080.jpg`;
   const thumbnailKey = `${packageKey}/thumbnail-manifest.json`;
+  const trailerKey = `${packageKey}/trailer-preview.m3u8`;
   await mkdir(outputDir, { recursive: true });
   const variantManifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nsegment-00001.ts\n#EXT-X-ENDLIST\n";
-  const masterManifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-STREAM-INF:BANDWIDTH=4500000,RESOLUTION=1920x1080,CODECS=\"avc1.640028,mp4a.40.2\"\nvariant-1080p.m3u8\n";
+  const variant720Manifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nsegment-720p-00001.ts\n#EXT-X-ENDLIST\n";
+  const trailerManifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\ntrailer-segment-00001.ts\n#EXT-X-ENDLIST\n";
+  const masterManifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-STREAM-INF:BANDWIDTH=4500000,RESOLUTION=1920x1080,CODECS=\"avc1.640028,mp4a.40.2\"\nvariant-1080p.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2400000,RESOLUTION=1280x720,CODECS=\"avc1.64001f,mp4a.40.2\"\nvariant-720p.m3u8\n";
   await writeFile(path.join(uploadObjectStoreRoot(), variantKey), variantManifest);
+  await writeFile(path.join(uploadObjectStoreRoot(), variant720Key), variant720Manifest);
   await writeFile(path.join(uploadObjectStoreRoot(), masterKey), masterManifest);
-  await writeFile(path.join(uploadObjectStoreRoot(), thumbnailKey), JSON.stringify({ source_asset_id: asset.id, generated: true }, null, 2));
+  await writeFile(path.join(uploadObjectStoreRoot(), trailerKey), trailerManifest);
+  await writeFile(path.join(uploadObjectStoreRoot(), posterKey), "highfive local poster derivative\n");
+  await writeFile(path.join(uploadObjectStoreRoot(), thumbnailKey), JSON.stringify({
+    source_asset_id: asset.id,
+    generated: true,
+    thumbnails: [
+      { timecode_seconds: 0, object_key: posterKey },
+      { timecode_seconds: 6, object_key: `${packageKey}/thumb-0006.jpg` }
+    ]
+  }, null, 2));
   const checksum = createHash("sha256").update(`${asset.checksum_sha256}:${job.id}:${masterManifest}`).digest("hex");
   return {
     output_state: "playback_ready",
     package_version: "hls_contract_v1",
     hls_master_object_key: masterKey,
     variants: [
-      { quality: "1080p", object_key: variantKey, bandwidth: 4500000, codec: "h264_contract" }
+      { quality: "1080p", object_key: variantKey, bandwidth: 4500000, codec: "h264_contract" },
+      { quality: "720p", object_key: variant720Key, bandwidth: 2400000, codec: "h264_contract" }
     ],
+    segment_count: 2,
     poster_variant_object_key: thumbnailKey,
+    generated_poster_object_key: posterKey,
+    trailer_derivative_object_key: trailerKey,
     captions: [],
     audio_tracks: [{ language: "en", codec: "aac_contract", channels: 2 }],
     package_checksum_sha256: checksum,

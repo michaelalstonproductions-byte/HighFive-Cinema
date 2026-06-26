@@ -289,6 +289,7 @@ private enum HFCreatorProSpotlight {
     case remoteProcessingHLS
     case remoteProcessingStatus
     case remoteProcessingLogs
+    case remoteProcessingFailure
     case projectRuntime
     case projectManifest
     case projectAssets
@@ -445,6 +446,7 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-processing-hls") { return .remoteProcessingHLS }
         if arguments.contains("--hf-processing-status") { return .remoteProcessingStatus }
         if arguments.contains("--hf-processing-logs") { return .remoteProcessingLogs }
+        if arguments.contains("--hf-processing-failure") { return .remoteProcessingFailure }
         if arguments.contains("--hf-start-project-runtime") { return .projectRuntime }
         if arguments.contains("--hf-project-manifest") { return .projectManifest }
         if arguments.contains("--hf-project-assets") { return .projectAssets }
@@ -2579,6 +2581,8 @@ struct CreatorStudioView: View {
             creatorRemoteProcessingStatusSection
         case .remoteProcessingLogs:
             creatorRemoteProcessingLogsSection
+        case .remoteProcessingFailure:
+            creatorRemoteProcessingFailureSection
         case .projectRuntime:
             creatorProjectRuntimeDashboard
         case .projectManifest:
@@ -6790,6 +6794,30 @@ struct CreatorStudioView: View {
         }
     }
 
+    private var creatorRemoteProcessingFailureSection: some View {
+        creatorProSpotlight(
+            title: "Processing Failure",
+            detail: "Poster-only assets are valid uploads but fail HLS processing because playback output requires a video track.",
+            systemImage: "exclamationmark.triangle.fill",
+            accent: HFColors.redAccent,
+            identifier: "hf.processing.failure"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteProcessingStatusRows) { row in
+                        remoteProcessingStatusCard(row)
+                    }
+                }
+                ForEach(streamingStore.creatorRemoteProcessingJobRecords.filter { $0.state == "failed" }.prefix(4)) { record in
+                    remoteProcessingJobRow(record)
+                }
+            }
+        }
+        .task {
+            await streamingStore.runCreatorRemoteProcessingFailureFixture()
+        }
+    }
+
     private var creatorDraftValidationSection: some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -9897,6 +9925,10 @@ struct CreatorStudioView: View {
                 .font(HFTypography.micro)
                 .foregroundStyle(HFColors.textSecondary)
                 .lineLimit(1)
+            Text("Poster \(record.output?.generatedPosterObjectKey ?? "Pending") • trailer \(record.output?.trailerDerivativeObjectKey ?? "Pending")")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
         }
         .padding(HFSpacing.sm)
         .background(Color.white.opacity(0.055))

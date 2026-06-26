@@ -661,7 +661,10 @@ struct HFRemoteProcessingOutput: Codable, Hashable {
     var packageVersion: String
     var hlsMasterObjectKey: String
     var variants: [HFRemoteProcessingVariant]
+    var segmentCount: Int?
     var posterVariantObjectKey: String
+    var generatedPosterObjectKey: String?
+    var trailerDerivativeObjectKey: String?
     var packageChecksumSHA256: String
     var idempotencyKey: String
     var storageProvider: String
@@ -672,7 +675,10 @@ struct HFRemoteProcessingOutput: Codable, Hashable {
         case packageVersion = "package_version"
         case hlsMasterObjectKey = "hls_master_object_key"
         case variants
+        case segmentCount = "segment_count"
         case posterVariantObjectKey = "poster_variant_object_key"
+        case generatedPosterObjectKey = "generated_poster_object_key"
+        case trailerDerivativeObjectKey = "trailer_derivative_object_key"
         case packageChecksumSHA256 = "package_checksum_sha256"
         case idempotencyKey = "idempotency_key"
         case storageProvider = "storage_provider"
@@ -3233,6 +3239,7 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-processing-hls")
             || arguments.contains("--hf-processing-status")
             || arguments.contains("--hf-processing-logs")
+            || arguments.contains("--hf-processing-failure")
             || arguments.contains("--hf-start-streaming-playback-runtime")
             || arguments.contains("--hf-playback-hls")
             || arguments.contains("--hf-playback-session")
@@ -8047,7 +8054,8 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var creatorRemoteProcessingStatusRows: [HFCreatorRemoteProcessingStatusRow] {
-        [
+        let latestOutput = creatorRemoteProcessingJobRecords.first?.output
+        return [
             HFCreatorRemoteProcessingStatusRow(
                 id: "processing-state",
                 title: "Processing Runtime",
@@ -8075,6 +8083,20 @@ final class HFStreamingStore: ObservableObject {
                 value: "\(creatorRemoteProcessingRuntimeSnapshot.failedCount)",
                 detail: creatorRemoteProcessingRuntimeSnapshot.lastError ?? "Retry and idempotency contracts are available.",
                 systemImage: creatorRemoteProcessingRuntimeSnapshot.failedCount > 0 ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"
+            ),
+            HFCreatorRemoteProcessingStatusRow(
+                id: "processing-variants",
+                title: "Variants",
+                value: "\(latestOutput?.variants.count ?? 0)",
+                detail: latestOutput?.variants.map(\.quality).joined(separator: ", ") ?? "Waiting for HLS output.",
+                systemImage: "rectangle.3.group.fill"
+            ),
+            HFCreatorRemoteProcessingStatusRow(
+                id: "processing-derivatives",
+                title: "Derivatives",
+                value: latestOutput?.generatedPosterObjectKey == nil ? "Pending" : "Ready",
+                detail: latestOutput?.trailerDerivativeObjectKey ?? "Poster and trailer derivatives appear after processing.",
+                systemImage: "photo.stack.fill"
             )
         ]
     }
@@ -8191,6 +8213,51 @@ final class HFStreamingStore: ObservableObject {
                 detail: "Processing retry could not complete.",
                 lastError: error.localizedDescription,
                 updatedAtLabel: "Retry failed"
+            )
+        }
+    }
+
+    func runCreatorRemoteProcessingFailureFixture() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteProcessingRuntimeSnapshot = .local(reason: "Processing failure fixture skipped because the loopback backend is disabled.")
+            return
+        }
+        guard let projectID = productionCatalogConfiguration.isRemoteEnabled ? "project-behind-the-vision" : primaryImportProjectID() else { return }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let data = Self.mediaInspectionFixturePNGData()
+            let created = try await client.createUploadSession(
+                projectID: projectID,
+                assetKind: "poster",
+                filename: "highfive-processing-failure-poster.png",
+                contentType: "image/png",
+                data: data,
+                sessionID: sessionID
+            )
+            creatorRemoteUploadSessionRecords.insert(created.session, at: 0)
+            let uploaded = try await client.uploadBlob(to: created.session.uploadURL, data: data, sessionID: sessionID)
+            creatorRemoteUploadedAssetRecords.insert(uploaded.assetRecord, at: 0)
+            let processed = try await client.createProcessingJob(assetID: uploaded.assetRecord.id, sessionID: sessionID)
+            creatorRemoteProcessingJobRecords.removeAll { $0.id == processed.job.id }
+            creatorRemoteProcessingJobRecords.insert(processed.job, at: 0)
+            creatorRemoteProcessingRuntimeSnapshot = processingSnapshot(
+                from: creatorRemoteProcessingJobRecords,
+                detail: processed.job.failureReason ?? processed.detail,
+                updatedAtLabel: "Failure captured"
+            )
+        } catch {
+            creatorRemoteProcessingRuntimeSnapshot = HFCreatorRemoteProcessingRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                jobCount: creatorRemoteProcessingJobRecords.count,
+                completedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "completed" }.count,
+                failedCount: creatorRemoteProcessingJobRecords.filter { $0.state == "failed" }.count,
+                lastOutput: creatorRemoteProcessingJobRecords.first?.output?.hlsMasterObjectKey ?? "None",
+                detail: "Processing failure fixture could not complete.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Failure fixture failed"
             )
         }
     }

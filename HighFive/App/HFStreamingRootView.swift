@@ -634,6 +634,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-processing-hls")
             || arguments.contains("--hf-processing-status")
             || arguments.contains("--hf-processing-logs")
+            || arguments.contains("--hf-processing-failure")
     }
 
     private static var shouldStartInPublishingReview: Bool {
