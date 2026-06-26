@@ -58,6 +58,14 @@ import {
   betaFeedbackPath,
   betaProgramPath,
   betaStabilityPath,
+  publicReleaseAuditPath,
+  publicReleaseCreatorOnboardingPath,
+  publicReleaseCutoverPath,
+  publicReleaseHotfixDetailPath,
+  publicReleaseHotfixPath,
+  publicReleaseMonitorPath,
+  publicReleaseSubmitPath,
+  publicReleaseSummaryPath,
   playbackHLSPath,
   playbackDescriptorPath,
   readinessPath,
@@ -179,6 +187,17 @@ import {
   submitBetaCrashReport,
   submitBetaFeedback
 } from "../routes/beta.js";
+import {
+  onboardPublicReleaseCreator,
+  publicReleaseAuditTrail,
+  publicReleaseMonitor,
+  publicReleaseReadinessSummary,
+  publicReleaseSummary,
+  recordPublicReleaseHotfix,
+  releasePublicRelease,
+  submitPublicRelease,
+  updatePublicReleaseHotfix
+} from "../routes/publicRelease.js";
 import {
   applySecurityHeaders,
   enforceRateLimit,
@@ -652,6 +671,97 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === publicReleaseSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, publicReleaseSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === publicReleaseSubmitPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, submitPublicRelease(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === publicReleaseCutoverPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, releasePublicRelease(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === publicReleaseMonitorPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, publicReleaseMonitor(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === publicReleaseHotfixPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, recordPublicReleaseHotfix(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path.startsWith(publicReleaseHotfixDetailPath)) {
+        const route = releaseRoute(path, publicReleaseHotfixDetailPath);
+        if (route.action !== "update") {
+          const result = routeNotFound();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, updatePublicReleaseHotfix(authHeader(request.headers.authorization), route.id, body));
+        return;
+      }
+
+      if (path === publicReleaseCreatorOnboardingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, onboardPublicReleaseCreator(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === publicReleaseAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, publicReleaseAuditTrail(authHeader(request.headers.authorization)));
+        return;
+      }
+
       if (path === identityDevSignInPath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -1097,6 +1207,12 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     beta_feedback_path: betaFeedbackPath,
     beta_crash_reports_path: betaCrashReportsPath,
     beta_stability_path: betaStabilityPath,
+    public_release_summary_path: publicReleaseSummaryPath,
+    public_release_submit_path: publicReleaseSubmitPath,
+    public_release_cutover_path: publicReleaseCutoverPath,
+    public_release_monitor_path: publicReleaseMonitorPath,
+    public_release_hotfix_path: publicReleaseHotfixPath,
+    public_release_creator_onboarding_path: publicReleaseCreatorOnboardingPath,
     admin_review_queue_path: adminReviewQueuePath,
     credentials_required: false,
     external_network_allowed: false,
@@ -1117,6 +1233,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const monetization = monetizationReadinessSummary();
   const operations = operationsReadinessSummary();
   const beta = betaReadinessSummary();
+  const publicRelease = publicReleaseReadinessSummary();
   const security = securityHardeningReadinessSummary(config);
   return {
     status: "ready",
@@ -1243,6 +1360,19 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     beta_feedback_items: Number(beta.beta_feedback_items),
     beta_crash_reports: Number(beta.beta_crash_reports),
     beta_unresolved_blockers: Number(beta.unresolved_blockers),
+    public_release_operations_enabled: Boolean(publicRelease.public_release_operations_enabled),
+    public_release_submission_record_enabled: Boolean(publicRelease.submission_record_enabled),
+    public_release_cutover_enabled: Boolean(publicRelease.release_cutover_enabled),
+    public_release_monitoring_enabled: Boolean(publicRelease.release_monitoring_enabled),
+    public_release_hotfix_tracking_enabled: Boolean(publicRelease.hotfix_tracking_enabled),
+    public_release_launch_analytics_enabled: Boolean(publicRelease.launch_analytics_enabled),
+    public_release_creator_onboarding_enabled: Boolean(publicRelease.creator_onboarding_enabled),
+    public_release_audit_trail_enabled: Boolean(publicRelease.audit_trail_enabled),
+    public_release_external_submission_required: Boolean(publicRelease.external_submission_required),
+    public_release_external_submission_confirmed: Boolean(publicRelease.external_submission_confirmed),
+    public_release_confirmed: Boolean(publicRelease.public_release_confirmed),
+    public_release_open_hotfixes: Number(publicRelease.open_hotfixes),
+    public_release_onboarded_creators: Number(publicRelease.onboarded_creators),
     security_headers: Boolean(security.security_headers),
     request_id_header: Boolean(security.request_id_header),
     rate_limiting: Boolean(security.rate_limiting),
@@ -1297,6 +1427,15 @@ function platformOperationsRoute(path: string, prefix: string): { id: string; ac
 }
 
 function betaRoute(path: string, prefix: string): { id: string; action: string | null } {
+  const suffix = path.slice(prefix.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
+  };
+}
+
+function releaseRoute(path: string, prefix: string): { id: string; action: string | null } {
   const suffix = path.slice(prefix.length);
   const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
   return {

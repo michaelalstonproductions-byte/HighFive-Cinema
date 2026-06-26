@@ -129,6 +129,14 @@ export const betaCrashReportsPath = "/v1/beta/crashes";
 export const betaCrashDetailPath = "/v1/beta/crashes/";
 export const betaStabilityPath = "/v1/beta/stability";
 export const betaAuditPath = "/v1/beta/audit";
+export const publicReleaseSummaryPath = "/v1/release/public/summary";
+export const publicReleaseSubmitPath = "/v1/release/public/submit";
+export const publicReleaseCutoverPath = "/v1/release/public/cutover";
+export const publicReleaseMonitorPath = "/v1/release/public/monitor";
+export const publicReleaseHotfixPath = "/v1/release/public/hotfixes";
+export const publicReleaseHotfixDetailPath = "/v1/release/public/hotfixes/";
+export const publicReleaseCreatorOnboardingPath = "/v1/release/public/creator-onboarding";
+export const publicReleaseAuditPath = "/v1/release/public/audit";
 
 export const contractStates = [
   "entitlement_approved",
