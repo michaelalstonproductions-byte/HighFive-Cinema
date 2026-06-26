@@ -52,6 +52,11 @@ import {
   deviceExpansionProfileDetailPath,
   deviceExpansionProfilesPath,
   deviceExpansionSummaryPath,
+  enterpriseStudioAnalyticsPath,
+  enterpriseStudioBulkPublishingPath,
+  enterpriseStudioDistributionReportPath,
+  enterpriseStudioRightsReportPath,
+  enterpriseStudioSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -184,6 +189,14 @@ import {
   deviceProfileDetail,
   deviceProfiles
 } from "../routes/deviceExpansion.js";
+import {
+  createBulkPublishingBatch,
+  enterpriseDistributionReport,
+  enterpriseRightsReport,
+  enterpriseStudioAnalytics,
+  enterpriseStudioReadinessSummary,
+  enterpriseStudioSummary
+} from "../routes/enterpriseStudio.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -874,6 +887,57 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 201, createDeviceHandoff(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === enterpriseStudioSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, enterpriseStudioSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === enterpriseStudioAnalyticsPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, enterpriseStudioAnalytics(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === enterpriseStudioBulkPublishingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createBulkPublishingBatch(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === enterpriseStudioRightsReportPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, enterpriseRightsReport(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === enterpriseStudioDistributionReportPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, enterpriseDistributionReport(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -1787,6 +1851,11 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     device_expansion_profiles_path: deviceExpansionProfilesPath,
     device_expansion_airplay_sessions_path: deviceExpansionAirPlaySessionsPath,
     device_expansion_handoff_path: deviceExpansionHandoffPath,
+    enterprise_studio_summary_path: enterpriseStudioSummaryPath,
+    enterprise_studio_analytics_path: enterpriseStudioAnalyticsPath,
+    enterprise_studio_bulk_publishing_path: enterpriseStudioBulkPublishingPath,
+    enterprise_studio_rights_report_path: enterpriseStudioRightsReportPath,
+    enterprise_studio_distribution_report_path: enterpriseStudioDistributionReportPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1835,6 +1904,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const studioCollaboration = studioCollaborationReadinessSummary();
   const livePremieres = livePremiereReadinessSummary();
   const deviceExpansion = deviceExpansionReadinessSummary();
+  const enterpriseStudio = enterpriseStudioReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1967,6 +2037,14 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     device_expansion_profile_count: Number(deviceExpansion.profile_count),
     device_expansion_airplay_sessions: Number(deviceExpansion.airplay_sessions),
     device_expansion_handoffs: Number(deviceExpansion.handoffs),
+    enterprise_studio_enabled: Boolean(enterpriseStudio.enterprise_studio_enabled),
+    enterprise_studio_analytics: Boolean(enterpriseStudio.studio_analytics),
+    enterprise_studio_bulk_publishing: Boolean(enterpriseStudio.bulk_publishing),
+    enterprise_studio_rights_management_reporting: Boolean(enterpriseStudio.rights_management_reporting),
+    enterprise_studio_distribution_reporting: Boolean(enterpriseStudio.distribution_reporting),
+    enterprise_studio_dashboards: Boolean(enterpriseStudio.enterprise_dashboards),
+    enterprise_studio_external_services: Boolean(enterpriseStudio.external_enterprise_services),
+    enterprise_studio_bulk_batches: Number(enterpriseStudio.bulk_batches),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
