@@ -12042,7 +12042,7 @@ final class HFStreamingStore: ObservableObject {
             uploads: analyticsEventPipelineSnapshot.uploads,
             processingCompletions: analyticsEventPipelineSnapshot.processingCompletions,
             publishingStateChanges: analyticsEventPipelineSnapshot.publishingStateChanges,
-            detail: "Sending versioned playback, discovery, library, upload, processing, and publishing events to the loopback analytics endpoint.",
+            detail: "Sending versioned playback, retention, discovery, library, upload, processing, publishing, and revenue events to the loopback analytics endpoint.",
             lastError: nil,
             updatedAtLabel: "Sending"
         )
@@ -12051,13 +12051,14 @@ final class HFStreamingStore: ObservableObject {
             let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
             let viewerSessionID = try await client.createDevelopmentSession(role: "viewer")
             let creatorSessionID = try await client.createDevelopmentSession(role: "creator")
-            let events = analyticsPipelineFixtureEvents()
+            let fixtureRunID = UUID().uuidString.lowercased()
+            let events = analyticsPipelineFixtureEvents(runID: fixtureRunID)
             let ingest = try await client.ingestAnalyticsEvents(events, sessionID: viewerSessionID)
             _ = try? await client.ingestAnalyticsEvents([events[0]], sessionID: viewerSessionID)
             _ = try? await client.ingestAnalyticsEvents([
                 HFRemoteAnalyticsEventPayload(
-                    eventID: "ios-p39-publishing-state",
-                    idempotencyKey: "ios-p39-publishing-state",
+                    eventID: "ios-lp9-\(fixtureRunID)-publishing-state",
+                    idempotencyKey: "ios-lp9-\(fixtureRunID)-publishing-state",
                     eventName: "publishing_state_change",
                     contentID: featuredMovie.id,
                     creatorID: creatorID(for: featuredMovie.creatorName),
@@ -12065,6 +12066,17 @@ final class HFStreamingStore: ObservableObject {
                     projectID: "project-\(featuredMovie.id)",
                     source: "ios_creator_fixture",
                     properties: ["state": "submitted_for_review"]
+                ),
+                HFRemoteAnalyticsEventPayload(
+                    eventID: "ios-lp9-\(fixtureRunID)-revenue-estimate",
+                    idempotencyKey: "ios-lp9-\(fixtureRunID)-revenue-estimate",
+                    eventName: "revenue_estimate",
+                    contentID: featuredMovie.id,
+                    creatorID: creatorID(for: featuredMovie.creatorName),
+                    collectionID: nil,
+                    projectID: "project-\(featuredMovie.id)",
+                    source: "ios_creator_fixture",
+                    properties: ["revenue_cents": "525", "share_count": "3"]
                 )
             ], sessionID: creatorSessionID)
             let dashboard = try await client.analyticsDashboard(sessionID: viewerSessionID)
@@ -12099,7 +12111,7 @@ final class HFStreamingStore: ObservableObject {
             uploads: aggregate.uploads,
             processingCompletions: aggregate.processingCompletions,
             publishingStateChanges: aggregate.publishingStateChanges,
-            detail: "Backend analytics accepted event batches, applied idempotency, sanitized payloads, and returned aggregate creator/viewer metrics.",
+            detail: "Backend analytics accepted event batches, applied idempotency, sanitized payloads, and returned playback, retention, discovery, creator, and revenue metrics.",
             lastError: nil,
             updatedAtLabel: "Remote"
         )
@@ -12134,18 +12146,21 @@ final class HFStreamingStore: ObservableObject {
         )
     }
 
-    private func analyticsPipelineFixtureEvents() -> [HFRemoteAnalyticsEventPayload] {
+    private func analyticsPipelineFixtureEvents(runID: String) -> [HFRemoteAnalyticsEventPayload] {
         let movie = featuredMovie
         let creatorID = creatorID(for: movie.creatorName)
         return [
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-playback-start", idempotencyKey: "ios-p39-playback-start", eventName: "playback_start", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-playback-progress", idempotencyKey: "ios-p39-playback-progress", eventName: "playback_progress", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0.64"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-playback-complete", idempotencyKey: "ios-p39-playback-complete", eventName: "playback_complete", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "1"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-search", idempotencyKey: "ios-p39-search", eventName: "search", contentID: nil, creatorID: nil, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["query": movie.title, "result_count": "1"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-click", idempotencyKey: "ios-p39-click", eventName: "search_result_click", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["rank": "1"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-favorite", idempotencyKey: "ios-p39-favorite", eventName: "favorite", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["state": "favorite"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-collection", idempotencyKey: "ios-p39-collection", eventName: "collection_open", contentID: nil, creatorID: nil, collectionID: "featured", projectID: nil, source: "ios_fixture", properties: ["surface": "featured"]),
-            HFRemoteAnalyticsEventPayload(eventID: "ios-p39-creator-open", idempotencyKey: "ios-p39-creator-open", eventName: "creator_profile_open", contentID: nil, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["profile": movie.creatorName])
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-playback-start", idempotencyKey: "ios-lp9-\(runID)-playback-start", eventName: "playback_start", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0", "watch_time_seconds": "0"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-playback-progress", idempotencyKey: "ios-lp9-\(runID)-playback-progress", eventName: "playback_progress", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0.64", "watch_time_seconds": "2440"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-playback-pause", idempotencyKey: "ios-lp9-\(runID)-playback-pause", eventName: "playback_pause", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "0.72", "watch_time_seconds": "2725"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-playback-complete", idempotencyKey: "ios-lp9-\(runID)-playback-complete", eventName: "playback_complete", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["progress": "1", "watch_time_seconds": "5400"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-search", idempotencyKey: "ios-lp9-\(runID)-search", eventName: "search", contentID: nil, creatorID: nil, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["query": movie.title, "result_count": "1"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-click", idempotencyKey: "ios-lp9-\(runID)-click", eventName: "search_result_click", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["rank": "1"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-favorite", idempotencyKey: "ios-lp9-\(runID)-favorite", eventName: "favorite", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["state": "favorite"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-collection", idempotencyKey: "ios-lp9-\(runID)-collection", eventName: "collection_open", contentID: nil, creatorID: nil, collectionID: "featured", projectID: nil, source: "ios_fixture", properties: ["surface": "featured"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-creator-open", idempotencyKey: "ios-lp9-\(runID)-creator-open", eventName: "creator_profile_open", contentID: nil, creatorID: creatorID, collectionID: nil, projectID: nil, source: "ios_fixture", properties: ["profile": movie.creatorName]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-upload", idempotencyKey: "ios-lp9-\(runID)-upload", eventName: "upload", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: "project-\(movie.id)", source: "ios_fixture", properties: ["asset_type": "source"]),
+            HFRemoteAnalyticsEventPayload(eventID: "ios-lp9-\(runID)-processing-complete", idempotencyKey: "ios-lp9-\(runID)-processing-complete", eventName: "processing_complete", contentID: movie.id, creatorID: creatorID, collectionID: nil, projectID: "project-\(movie.id)", source: "ios_fixture", properties: ["variant_count": "3"])
         ]
     }
 

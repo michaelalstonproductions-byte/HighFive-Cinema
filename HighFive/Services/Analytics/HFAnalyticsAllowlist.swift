@@ -19,6 +19,7 @@ enum HFAnalyticsAllowlist {
         "upload",
         "processing_complete",
         "publishing_state_change",
+        "revenue_estimate",
         "creator_studio_opened",
         "social_kit_reviewed",
         "vod_package_reviewed"
