@@ -1,0 +1,12 @@
+// HighFive Cinema production signing configuration.
+// Copy this file outside source control or inject these values in CI.
+
+DEVELOPMENT_TEAM = 4N9QF424Z8
+PRODUCT_BUNDLE_IDENTIFIER = com.higherkey.HighFiveCinemaClean.HighFive
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_ENTITLEMENTS = HighFive/Config/HighFiveProduction.entitlements
+HIGHFIVE_APNS_ENVIRONMENT = production
+
+// Optional CI overrides:
+// PROVISIONING_PROFILE_SPECIFIER = HighFive Cinema App Store
+// CODE_SIGN_IDENTITY = Apple Distribution
