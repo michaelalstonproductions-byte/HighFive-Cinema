@@ -4,11 +4,12 @@ import { recordAnalyticsEvent } from "./analytics.js";
 import { operationsGovernedCatalogSeed } from "./operations.js";
 import { governedCatalogSeed } from "./publishing.js";
 
-export function catalogSummary(seed: CatalogSeed = catalogSeed) {
-  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed));
+export function catalogSummary(seed: CatalogSeed = catalogSeed, territory = "US") {
+  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed), territory);
   return {
     generated_at: seed.generated_at,
     source: "local_seed",
+    territory,
     total_titles: seed.movies.length,
     total_creators: seed.creators.length,
     total_series: seed.series.length,
@@ -20,10 +21,10 @@ export function catalogSummary(seed: CatalogSeed = catalogSeed) {
   };
 }
 
-export function catalogSync(cursor: string | null, seed: CatalogSeed = catalogSeed) {
-  const syncedSeed = operationsGovernedCatalogSeed(syncedCatalogSeed(governedCatalogSeed(seed)));
+export function catalogSync(cursor: string | null, seed: CatalogSeed = catalogSeed, territory = "US") {
+  const syncedSeed = operationsGovernedCatalogSeed(syncedCatalogSeed(governedCatalogSeed(seed)), territory);
   return {
-    ...catalogSummary(syncedSeed),
+    ...catalogSummary(syncedSeed, territory),
     source: "local_seed_sync",
     catalog_version: 31,
     previous_cursor: cursor,
@@ -92,8 +93,8 @@ export function catalogDelta(cursor: string | null, seed: CatalogSeed = catalogS
   };
 }
 
-export function contentDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string): CatalogMovie {
-  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed));
+export function contentDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string, territory = "US"): CatalogMovie {
+  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed), territory);
   const movie = seed.movies.find((candidate) => candidate.id === id);
   if (!movie) {
     throw new ContractError("content_not_found", "Catalog content was not found", 404);
@@ -102,8 +103,8 @@ export function contentDetail(id: string, seed: CatalogSeed = catalogSeed, autho
   return movie;
 }
 
-export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string): CatalogSeed["creators"][number] & { titles: CatalogMovie[] } {
-  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed));
+export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string, territory = "US"): CatalogSeed["creators"][number] & { titles: CatalogMovie[] } {
+  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed), territory);
   const creator = seed.creators.find((candidate) => candidate.id === id);
   if (!creator) {
     throw new ContractError("creator_not_found", "Catalog creator was not found", 404);
@@ -115,8 +116,8 @@ export function creatorDetail(id: string, seed: CatalogSeed = catalogSeed, autho
   };
 }
 
-export function collectionDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string): CatalogCollection & { titles: CatalogMovie[] } {
-  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed));
+export function collectionDetail(id: string, seed: CatalogSeed = catalogSeed, authorizationHeader?: string, territory = "US"): CatalogCollection & { titles: CatalogMovie[] } {
+  seed = operationsGovernedCatalogSeed(governedCatalogSeed(seed), territory);
   const collection = seed.collections.find((candidate) => candidate.id === id);
   if (!collection) {
     throw new ContractError("collection_not_found", "Catalog collection was not found", 404);

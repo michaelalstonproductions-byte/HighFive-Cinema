@@ -27,7 +27,42 @@ test("operations: admin can inspect rights, moderation, health, and audit summar
   assertJsonResponse(ready, 200);
   assert.equal(ready.json.rights_windows_enabled, true);
   assert.equal(ready.json.availability_enforcement_enabled, true);
+  assert.equal(ready.json.date_window_enforcement_enabled, true);
+  assert.equal(ready.json.licensing_packages_enabled, true);
+  assert.equal(ready.json.catalog_visibility_filter_enabled, true);
   assert.equal(ready.json.moderation_queue_enabled, true);
+});
+
+test("operations: territory availability filters catalog, detail, creator, and collection reads", async () => {
+  const adminSession = await developmentSession("admin");
+  const headers = auth(adminSession);
+
+  const rights = await requestJson("/v1/admin/operations/rights?territory=GB", { headers });
+  assertJsonResponse(rights, 200);
+  assert.equal(rights.json.territory, "GB");
+  assert.ok(rights.json.licensing_packages.length >= 1);
+  const paranormallAvailability = rights.json.availability.find((record) => record.content_id === "paranormall-s1");
+  assert.equal(paranormallAvailability.available, false);
+  assert.equal(paranormallAvailability.denial_reasons.includes("territory_unavailable"), true);
+  assert.equal(typeof paranormallAvailability.licensing_package_id, "string");
+
+  const catalog = await requestJson("/v1/catalog?territory=GB");
+  assertJsonResponse(catalog, 200);
+  assert.equal(catalog.json.territory, "GB");
+  assert.equal(catalog.json.movies.some((movie) => movie.id === "paranormall-s1"), false);
+  assert.equal(catalog.json.collections.some((collection) => collection.movie_ids.includes("paranormall-s1")), false);
+
+  const detail = await requestJson("/v1/content/paranormall-s1?territory=GB");
+  assertJsonResponse(detail, 404);
+  assert.equal(detail.json.error, "content_not_found");
+
+  const creator = await requestJson("/v1/creators/noah-vale?territory=GB", { headers });
+  assertJsonResponse(creator, 200);
+  assert.equal(creator.json.titles.some((movie) => movie.id === "paranormall-s1"), false);
+
+  const collection = await requestJson("/v1/collections/series?territory=GB", { headers });
+  assertJsonResponse(collection, 404);
+  assert.equal(collection.json.error, "collection_not_found");
 });
 
 test("operations: viewer cannot administer platform operations", async () => {

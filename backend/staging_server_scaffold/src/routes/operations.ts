@@ -55,7 +55,10 @@ export function operationsReadinessSummary(): JsonObject {
   return {
     rights_windows: true,
     territory_enforcement: true,
+    date_window_enforcement: true,
     availability_enforcement: true,
+    licensing_packages: true,
+    catalog_visibility_filter: true,
     moderation_queue: true,
     takedown_supported: true,
     restore_supported: true,
@@ -66,26 +69,29 @@ export function operationsReadinessSummary(): JsonObject {
   };
 }
 
-export function operationsSummary(authorizationHeader: string | undefined): JsonObject {
+export function operationsSummary(authorizationHeader: string | undefined, territory = "US"): JsonObject {
   const session = requireAdminSession(authorizationHeader);
   recordAudit("operations_summary", session, null, "allowed", "Admin inspected rights, moderation, and platform operations.");
   return {
     status: "ready",
+    territory,
     rights_windows: Array.from(rightsWindows.values()).map(sanitizeRightsWindow),
     moderation_cases: Array.from(moderationCases.values()).map(sanitizeModerationCase),
     platform_health: platformHealth(),
-    availability: catalogSeed.movies.map((movie) => availabilityRecord(movie.id, "US")),
+    availability: catalogSeed.movies.map((movie) => availabilityRecord(movie.id, territory)),
     audit_records: auditRecords.slice(-25)
   };
 }
 
-export function rightsLedger(authorizationHeader: string | undefined): JsonObject {
+export function rightsLedger(authorizationHeader: string | undefined, territory = "US"): JsonObject {
   const session = requireAdminSession(authorizationHeader);
   recordAudit("rights_ledger", session, null, "allowed", "Admin inspected rights windows and territory rules.");
   return {
     status: "ready",
+    territory,
     rights_windows: Array.from(rightsWindows.values()).map(sanitizeRightsWindow),
-    availability: catalogSeed.movies.map((movie) => availabilityRecord(movie.id, "US"))
+    licensing_packages: Array.from(rightsWindows.values()).map(licensingPackageRecord),
+    availability: catalogSeed.movies.map((movie) => availabilityRecord(movie.id, territory))
   };
 }
 
@@ -205,11 +211,14 @@ export function availabilityRecord(contentID: string, territory = "US"): JsonObj
   const movie = catalogSeed.movies.find((candidate) => candidate.id === contentID);
   const rights = rightsWindows.get(contentID);
   const moderation = Array.from(moderationCases.values()).find((record) => record.content_id === contentID && record.state === "takedown");
+  const currentTime = Date.now();
   const deniedReasons: string[] = [];
 
   if (!movie && !rights) deniedReasons.push("content_not_found");
   if (!rights) deniedReasons.push("rights_window_missing");
   if (rights && rights.state !== "active") deniedReasons.push(`rights_${rights.state}`);
+  if (rights && Number.isFinite(Date.parse(rights.starts_at)) && Date.parse(rights.starts_at) > currentTime) deniedReasons.push("rights_window_not_started");
+  if (rights && Number.isFinite(Date.parse(rights.ends_at)) && Date.parse(rights.ends_at) <= currentTime) deniedReasons.push("rights_window_expired");
   if (rights && !rights.territories.includes(territory)) deniedReasons.push("territory_unavailable");
   if (moderation) deniedReasons.push("moderation_takedown");
 
@@ -220,7 +229,9 @@ export function availabilityRecord(contentID: string, territory = "US"): JsonObj
     available: deniedReasons.length === 0,
     denial_reasons: deniedReasons,
     rights_window_id: rights?.id ?? null,
-    moderation_case_id: moderation?.id ?? null
+    moderation_case_id: moderation?.id ?? null,
+    licensing_package_id: rights?.licensing_package_id ?? null,
+    rights_holder: rights?.rights_holder ?? null
   };
 }
 
@@ -360,6 +371,20 @@ function sanitizeRightsWindow(record: RightsWindowRecord): JsonObject {
 
 function sanitizeModerationCase(record: ModerationCaseRecord): JsonObject {
   return { ...record };
+}
+
+function licensingPackageRecord(record: RightsWindowRecord): JsonObject {
+  return {
+    id: record.licensing_package_id,
+    content_id: record.content_id,
+    title: record.title,
+    rights_window_id: record.id,
+    territories: record.territories,
+    rights_holder: record.rights_holder,
+    state: record.state,
+    availability_policy: "rights_window_and_moderation_required",
+    updated_at: record.updated_at
+  };
 }
 
 function requireAdminSession(authorizationHeader: string | undefined): IdentitySession {

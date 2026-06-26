@@ -219,7 +219,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, catalogSummary());
+        writeJson(response, 200, catalogSummary(undefined, territoryFor(request.url)));
         return;
       }
 
@@ -229,7 +229,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, catalogSync(queryValue(request.url, "cursor")));
+        writeJson(response, 200, catalogSync(queryValue(request.url, "cursor"), undefined, territoryFor(request.url)));
         return;
       }
 
@@ -458,7 +458,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, operationsSummary(authHeader(request.headers.authorization)));
+        writeJson(response, 200, operationsSummary(authHeader(request.headers.authorization), territoryFor(request.url)));
         return;
       }
 
@@ -468,7 +468,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, rightsLedger(authHeader(request.headers.authorization)));
+        writeJson(response, 200, rightsLedger(authHeader(request.headers.authorization), territoryFor(request.url)));
         return;
       }
 
@@ -868,7 +868,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, contentDetail(routeID(path, contentDetailPath), undefined, authHeader(request.headers.authorization)));
+        writeJson(response, 200, contentDetail(routeID(path, contentDetailPath), undefined, authHeader(request.headers.authorization), territoryFor(request.url)));
         return;
       }
 
@@ -878,7 +878,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, creatorDetail(routeID(path, creatorDetailPath), undefined, authHeader(request.headers.authorization)));
+        writeJson(response, 200, creatorDetail(routeID(path, creatorDetailPath), undefined, authHeader(request.headers.authorization), territoryFor(request.url)));
         return;
       }
 
@@ -888,7 +888,7 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           writeJson(response, result.statusCode, result.body);
           return;
         }
-        writeJson(response, 200, collectionDetail(routeID(path, collectionDetailPath), undefined, authHeader(request.headers.authorization)));
+        writeJson(response, 200, collectionDetail(routeID(path, collectionDetailPath), undefined, authHeader(request.headers.authorization), territoryFor(request.url)));
         return;
       }
 
@@ -1100,6 +1100,9 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     transaction_records: Number(monetization.transaction_records),
     rights_windows_enabled: Boolean(operations.rights_windows),
     territory_enforcement_enabled: Boolean(operations.territory_enforcement),
+    date_window_enforcement_enabled: Boolean(operations.date_window_enforcement),
+    licensing_packages_enabled: Boolean(operations.licensing_packages),
+    catalog_visibility_filter_enabled: Boolean(operations.catalog_visibility_filter),
     availability_enforcement_enabled: Boolean(operations.availability_enforcement),
     moderation_queue_enabled: Boolean(operations.moderation_queue),
     takedown_supported: Boolean(operations.takedown_supported),
@@ -1212,6 +1215,10 @@ function queryValue(rawURL: string | undefined, name: string): string | null {
   if (!rawURL) return null;
   const url = new URL(rawURL, "http://127.0.0.1");
   return url.searchParams.get(name);
+}
+
+function territoryFor(rawURL: string | undefined): string {
+  return (queryValue(rawURL, "territory") ?? "US").trim().toUpperCase() || "US";
 }
 
 function originFor(request: { headers: { host?: string | string[] | undefined } }, config: RuntimeConfig): string {
