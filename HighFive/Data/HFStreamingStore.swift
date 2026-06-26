@@ -1523,6 +1523,74 @@ struct HFNotificationDeliveryAuditRow: Identifiable, Equatable {
     var detail: String
 }
 
+enum HFMonetizationRuntimeState: String, Codable, Equatable {
+    case localFallback = "Local Fallback"
+    case loading = "Loading"
+    case ready = "Ready"
+    case purchasePending = "Purchase Pending"
+    case purchaseRecorded = "Purchase Recorded"
+    case restored = "Restored"
+    case failed = "Failed"
+}
+
+struct HFMonetizationRuntimeSnapshot: Codable, Equatable {
+    var state: HFMonetizationRuntimeState
+    var storeKitStatus: String
+    var backendStatus: String
+    var entitlementStatus: String
+    var productCount: Int
+    var activeEntitlementCount: Int
+    var transactionCount: Int
+    var restoreState: String
+    var detail: String
+    var lastError: String?
+    var updatedAtLabel: String
+
+    static func local(reason: String) -> HFMonetizationRuntimeSnapshot {
+        HFMonetizationRuntimeSnapshot(
+            state: .localFallback,
+            storeKitStatus: "StoreKit Unconfigured",
+            backendStatus: "Local Preview",
+            entitlementStatus: "Local Preview Access",
+            productCount: 0,
+            activeEntitlementCount: 0,
+            transactionCount: 0,
+            restoreState: "Not Restored",
+            detail: reason,
+            lastError: nil,
+            updatedAtLabel: "Local"
+        )
+    }
+}
+
+struct HFMonetizationProductRow: Identifiable, Codable, Equatable {
+    let id: String
+    var productID: String
+    var title: String
+    var kind: String
+    var displayPrice: String
+    var entitlementScope: String
+    var detail: String
+}
+
+struct HFMonetizationEntitlementRow: Identifiable, Codable, Equatable {
+    let id: String
+    var productID: String
+    var scope: String
+    var status: String
+    var source: String
+    var transactionID: String
+    var expiresAt: String?
+}
+
+struct HFMonetizationAuditRow: Identifiable, Codable, Equatable {
+    let id: String
+    var action: String
+    var productID: String?
+    var detail: String
+    var createdAt: String
+}
+
 struct HFRevenueMetric: Identifiable {
     let id: String
     var title: String
@@ -3191,6 +3259,11 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-notification-inbox")
             || arguments.contains("--hf-notification-delivery-audit")
             || arguments.contains("--hf-notification-deeplink")
+            || arguments.contains("--hf-start-monetization")
+            || arguments.contains("--hf-monetization-products")
+            || arguments.contains("--hf-monetization-purchase")
+            || arguments.contains("--hf-monetization-restore")
+            || arguments.contains("--hf-monetization-entitlements")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -3793,6 +3866,160 @@ struct HFRemoteNotificationDeliveryAuditResponse: Codable {
     }
 }
 
+struct HFRemoteMonetizationProduct: Codable, Hashable {
+    var id: String
+    var productID: String
+    var title: String
+    var kind: String
+    var displayPrice: String
+    var entitlementScope: String
+    var detail: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case productID = "product_id"
+        case title
+        case kind
+        case displayPrice = "display_price"
+        case entitlementScope = "entitlement_scope"
+        case detail
+    }
+}
+
+struct HFRemoteMonetizationProductsResponse: Codable {
+    var status: String
+    var products: [HFRemoteMonetizationProduct]
+    var storeKit2Contract: Bool
+    var appStoreServerAPIContract: Bool
+    var directCardCollection: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case products
+        case storeKit2Contract = "storekit2_contract"
+        case appStoreServerAPIContract = "app_store_server_api_contract"
+        case directCardCollection = "direct_card_collection"
+    }
+}
+
+struct HFRemoteMonetizationEntitlement: Codable, Hashable {
+    var id: String
+    var userID: String
+    var productID: String
+    var scope: String
+    var status: String
+    var source: String
+    var transactionID: String
+    var expiresAt: String?
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case productID = "product_id"
+        case scope
+        case status
+        case source
+        case transactionID = "transaction_id"
+        case expiresAt = "expires_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteMonetizationEntitlementsResponse: Codable {
+    var status: String
+    var userID: String
+    var entitlements: [HFRemoteMonetizationEntitlement]
+    var activeEntitlements: [HFRemoteMonetizationEntitlement]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case userID = "user_id"
+        case entitlements
+        case activeEntitlements = "active_entitlements"
+    }
+}
+
+struct HFRemoteStoreKitTransactionPayload: Encodable {
+    var productID: String
+    var transactionID: String
+    var originalTransactionID: String
+    var environment: String
+    var purchaseDate: String?
+    var expirationDate: String?
+    var revocationDate: String?
+    var appAccountToken: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case productID = "product_id"
+        case transactionID = "transaction_id"
+        case originalTransactionID = "original_transaction_id"
+        case environment
+        case purchaseDate = "purchase_date"
+        case expirationDate = "expiration_date"
+        case revocationDate = "revocation_date"
+        case appAccountToken = "app_account_token"
+    }
+
+    init(transaction: HFStoreKitRuntimeTransaction) {
+        productID = transaction.productID
+        transactionID = transaction.transactionID
+        originalTransactionID = transaction.originalTransactionID
+        environment = transaction.environment
+        purchaseDate = transaction.purchaseDate
+        expirationDate = transaction.expirationDate
+        revocationDate = transaction.revocationDate
+        appAccountToken = transaction.appAccountToken
+    }
+}
+
+struct HFRemoteMonetizationTransactionResponse: Codable {
+    var status: String
+    var entitlement: HFRemoteMonetizationEntitlement
+    var appStoreServerAPIContract: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case entitlement
+        case appStoreServerAPIContract = "app_store_server_api_contract"
+    }
+}
+
+struct HFRemoteMonetizationRestoreResponse: Codable {
+    var status: String
+    var restoredEntitlements: [HFRemoteMonetizationEntitlement]
+    var restoreSupported: Bool
+    var appStoreServerAPIContract: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case restoredEntitlements = "restored_entitlements"
+        case restoreSupported = "restore_supported"
+        case appStoreServerAPIContract = "app_store_server_api_contract"
+    }
+}
+
+struct HFRemoteMonetizationAuditRecord: Codable, Hashable {
+    var id: String
+    var action: String
+    var productID: String?
+    var detail: String
+    var createdAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case action
+        case productID = "product_id"
+        case detail
+        case createdAt = "created_at"
+    }
+}
+
+struct HFRemoteMonetizationAuditResponse: Codable {
+    var status: String
+    var events: [HFRemoteMonetizationAuditRecord]
+}
+
 struct HFRemoteIdentitySignInResponse: Codable {
     struct Session: Codable {
         var sessionID: String
@@ -3921,6 +4148,26 @@ struct HFRemoteCreatorDraftAPIClient {
 
     func notificationDeliveryAudit(sessionID: String) async throws -> HFRemoteNotificationDeliveryAuditResponse {
         try await request(path: "/v1/notifications/delivery-audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func monetizationProducts() async throws -> HFRemoteMonetizationProductsResponse {
+        try await request(path: "/v1/monetization/products", method: "GET", sessionID: nil, body: Optional<[String: String]>.none)
+    }
+
+    func monetizationEntitlements(sessionID: String) async throws -> HFRemoteMonetizationEntitlementsResponse {
+        try await request(path: "/v1/monetization/entitlements", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func recordStoreKitTransaction(_ payload: HFRemoteStoreKitTransactionPayload, sessionID: String) async throws -> HFRemoteMonetizationTransactionResponse {
+        try await request(path: "/v1/monetization/transactions", method: "POST", sessionID: sessionID, body: payload)
+    }
+
+    func restoreMonetizationEntitlements(sessionID: String) async throws -> HFRemoteMonetizationRestoreResponse {
+        try await request(path: "/v1/monetization/restore", method: "POST", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func monetizationAudit(sessionID: String) async throws -> HFRemoteMonetizationAuditResponse {
+        try await request(path: "/v1/monetization/audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
     }
 
     func revisionHistory(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftRevisionResponse {
@@ -5172,6 +5419,10 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var productionNotificationRuntimeSnapshot: HFProductionNotificationRuntimeSnapshot
     @Published private(set) var productionNotificationRows: [HFProductionNotificationRow] = []
     @Published private(set) var notificationDeliveryAuditRows: [HFNotificationDeliveryAuditRow] = []
+    @Published private(set) var monetizationRuntimeSnapshot: HFMonetizationRuntimeSnapshot
+    @Published private(set) var monetizationProductRows: [HFMonetizationProductRow] = []
+    @Published private(set) var monetizationEntitlementRows: [HFMonetizationEntitlementRow] = []
+    @Published private(set) var monetizationAuditRows: [HFMonetizationAuditRow] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -5300,6 +5551,9 @@ final class HFStreamingStore: ObservableObject {
         productionNotificationRuntimeSnapshot = .local(
             reason: "Production notifications disabled until the loopback backend is enabled."
         )
+        monetizationRuntimeSnapshot = .local(
+            reason: "Monetization uses Local Preview until StoreKit configuration and the loopback entitlement ledger are enabled."
+        )
         let profiles = Self.makeLocalProfiles(defaults: defaults)
         let storedActiveProfileID = defaults.string(forKey: activeProfileKey)
         let resolvedActiveProfileID = profiles.contains { $0.id == storedActiveProfileID } ? storedActiveProfileID ?? profiles[0].id : profiles[0].id
@@ -5385,6 +5639,13 @@ final class HFStreamingStore: ObservableObject {
                     || launchArguments.contains("--hf-notification-delivery-audit")
                     || launchArguments.contains("--hf-notification-deeplink") {
                     await self.runProductionNotificationFixture()
+                }
+                if launchArguments.contains("--hf-start-monetization")
+                    || launchArguments.contains("--hf-monetization-products")
+                    || launchArguments.contains("--hf-monetization-purchase")
+                    || launchArguments.contains("--hf-monetization-restore")
+                    || launchArguments.contains("--hf-monetization-entitlements") {
+                    await self.runMonetizationEntitlementFixture()
                 }
             }
         }
@@ -10437,6 +10698,191 @@ final class HFStreamingStore: ObservableObject {
             HFAnalyticsEventPipelineRow(id: "audit", title: "Audit", value: "\(productionNotificationRuntimeSnapshot.deliveryAuditCount)", detail: "Delivery records", systemImage: "checklist.checked"),
             HFAnalyticsEventPipelineRow(id: "links", title: "Deep Links", value: "\(productionNotificationRuntimeSnapshot.deepLinkCount)", detail: "highfive:// routes", systemImage: "link.circle.fill")
         ]
+    }
+
+    var monetizationRuntimeRows: [HFAnalyticsEventPipelineRow] {
+        [
+            HFAnalyticsEventPipelineRow(id: "storekit", title: "StoreKit", value: monetizationRuntimeSnapshot.productCount > 0 ? "Products" : "Setup", detail: "\(monetizationRuntimeSnapshot.productCount) products", systemImage: "cart.badge.plus"),
+            HFAnalyticsEventPipelineRow(id: "backend", title: "Backend", value: "Ledger", detail: monetizationRuntimeSnapshot.backendStatus, systemImage: "server.rack"),
+            HFAnalyticsEventPipelineRow(id: "entitlements", title: "Entitlements", value: "\(monetizationRuntimeSnapshot.activeEntitlementCount)", detail: monetizationRuntimeSnapshot.entitlementStatus, systemImage: "checkmark.shield.fill"),
+            HFAnalyticsEventPipelineRow(id: "restore", title: "Restore", value: monetizationRuntimeSnapshot.restoreState, detail: "\(monetizationRuntimeSnapshot.transactionCount) transactions", systemImage: "arrow.counterclockwise.circle.fill")
+        ]
+    }
+
+    @discardableResult
+    func runMonetizationEntitlementFixture() async -> HFMonetizationRuntimeSnapshot {
+        monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+            state: .loading,
+            storeKitStatus: "Loading",
+            backendStatus: productionCatalogConfiguration.isRemoteEnabled ? "Connecting" : "Local Preview",
+            entitlementStatus: "Checking",
+            productCount: monetizationProductRows.count,
+            activeEntitlementCount: monetizationEntitlementRows.count,
+            transactionCount: 0,
+            restoreState: "Not Restored",
+            detail: "Loading StoreKit 2 products, backend product contracts, transaction ledger, restore state, and entitlement records.",
+            lastError: nil,
+            updatedAtLabel: "Loading"
+        )
+
+        let storeKitRuntime = HFStoreKitMonetizationRuntime()
+        let (storeKitProducts, storeKitSnapshot) = await storeKitRuntime.loadProducts()
+
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            monetizationProductRows = localMonetizationProductRows(storeKitProducts: storeKitProducts)
+            monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+                state: .localFallback,
+                storeKitStatus: storeKitSnapshot.status,
+                backendStatus: "Loopback Disabled",
+                entitlementStatus: "Local Preview Access",
+                productCount: monetizationProductRows.count,
+                activeEntitlementCount: storeKitSnapshot.activeEntitlementCount,
+                transactionCount: 0,
+                restoreState: storeKitSnapshot.restoreState,
+                detail: "Loopback monetization backend disabled. StoreKit products can still be inspected when configured.",
+                lastError: nil,
+                updatedAtLabel: storeKitSnapshot.updatedAt
+            )
+            return monetizationRuntimeSnapshot
+        }
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await client.createDevelopmentSession(role: "viewer")
+            let products = try await client.monetizationProducts()
+            monetizationProductRows = products.products.map { product in
+                HFMonetizationProductRow(
+                    id: product.id,
+                    productID: product.productID,
+                    title: product.title,
+                    kind: product.kind.capitalized,
+                    displayPrice: product.displayPrice,
+                    entitlementScope: product.entitlementScope,
+                    detail: product.detail
+                )
+            }
+            if monetizationProductRows.isEmpty {
+                monetizationProductRows = localMonetizationProductRows(storeKitProducts: storeKitProducts)
+            }
+
+            let developmentTransaction = storeKitRuntime.developmentTransaction(productID: "com.highfive.pass.monthly", userID: activeProfileID)
+            let recorded = try await client.recordStoreKitTransaction(HFRemoteStoreKitTransactionPayload(transaction: developmentTransaction), sessionID: sessionID)
+            let restore = try await client.restoreMonetizationEntitlements(sessionID: sessionID)
+            let entitlements = try await client.monetizationEntitlements(sessionID: sessionID)
+            let audit = try await client.monetizationAudit(sessionID: sessionID)
+            applyRemoteMonetizationState(
+                storeKitSnapshot: storeKitSnapshot,
+                recorded: recorded,
+                restore: restore,
+                entitlements: entitlements,
+                audit: audit
+            )
+        } catch {
+            monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+                state: .failed,
+                storeKitStatus: storeKitSnapshot.status,
+                backendStatus: "Backend Error",
+                entitlementStatus: "Local Preview Access",
+                productCount: monetizationProductRows.count,
+                activeEntitlementCount: 0,
+                transactionCount: 0,
+                restoreState: "Not Restored",
+                detail: "Monetization endpoint failed. Local Preview Access remains active.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: storeKitSnapshot.updatedAt
+            )
+        }
+
+        return monetizationRuntimeSnapshot
+    }
+
+    func purchaseDevelopmentHighFivePass() async {
+        _ = await runMonetizationEntitlementFixture()
+    }
+
+    func restoreMonetizationRuntime() async {
+        _ = await runMonetizationEntitlementFixture()
+    }
+
+    private func applyRemoteMonetizationState(
+        storeKitSnapshot: HFStoreKitRuntimeSnapshot,
+        recorded: HFRemoteMonetizationTransactionResponse,
+        restore: HFRemoteMonetizationRestoreResponse,
+        entitlements: HFRemoteMonetizationEntitlementsResponse,
+        audit: HFRemoteMonetizationAuditResponse
+    ) {
+        monetizationEntitlementRows = entitlements.entitlements.map { record in
+            HFMonetizationEntitlementRow(
+                id: record.id,
+                productID: record.productID,
+                scope: record.scope,
+                status: record.status.capitalized,
+                source: record.source,
+                transactionID: record.transactionID,
+                expiresAt: record.expiresAt
+            )
+        }
+        monetizationAuditRows = audit.events.map { event in
+            HFMonetizationAuditRow(
+                id: event.id,
+                action: event.action.replacingOccurrences(of: "_", with: " ").capitalized,
+                productID: event.productID,
+                detail: event.detail,
+                createdAt: event.createdAt
+            )
+        }
+        monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+            state: .purchaseRecorded,
+            storeKitStatus: storeKitSnapshot.status,
+            backendStatus: "Entitlement Ledger Ready",
+            entitlementStatus: recorded.entitlement.status.capitalized,
+            productCount: monetizationProductRows.count,
+            activeEntitlementCount: restore.restoredEntitlements.count,
+            transactionCount: monetizationAuditRows.filter { $0.action.localizedCaseInsensitiveContains("Transaction") }.count,
+            restoreState: restore.status.capitalized,
+            detail: "StoreKit 2 product contract, backend transaction recording, restore, and entitlement validation ledger are connected through the staging service.",
+            lastError: nil,
+            updatedAtLabel: "Remote"
+        )
+        entitlementRuntimeStatus = HFEntitlementRuntimeStatus(
+            accessState: .accessReady,
+            restoreState: .validationRequired,
+            purchaseEligibility: HFPurchaseEligibility(
+                isEligible: true,
+                statusLabel: "StoreKit 2 Ready",
+                detail: "Backend entitlement record \(recorded.entitlement.id) is active for \(recorded.entitlement.productID)."
+            ),
+            paymentProvider: .storeKit,
+            entitlementProvider: .backendValidated,
+            boundary: .pricing,
+            detail: "StoreKit transaction recorded and backend entitlement validation is active for the current development session."
+        )
+    }
+
+    private func localMonetizationProductRows(storeKitProducts: [HFStoreKitRuntimeProduct]) -> [HFMonetizationProductRow] {
+        let configured = storeKitProducts.map { product in
+            HFMonetizationProductRow(
+                id: product.id,
+                productID: product.productID,
+                title: product.displayName,
+                kind: product.kind,
+                displayPrice: product.displayPrice,
+                entitlementScope: "storekit2",
+                detail: product.detail
+            )
+        }
+        if !configured.isEmpty { return configured }
+        return HFStoreKitPaywallCatalog.mappings.prefix(4).map { mapping in
+            HFMonetizationProductRow(
+                id: mapping.id,
+                productID: mapping.productIdentifier.rawValue,
+                title: mapping.referenceName,
+                kind: mapping.kind.rawValue,
+                displayPrice: mapping.displayPrice,
+                entitlementScope: mapping.currentMovieID,
+                detail: mapping.detail
+            )
+        }
     }
 
     @discardableResult

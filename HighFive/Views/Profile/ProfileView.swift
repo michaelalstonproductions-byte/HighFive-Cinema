@@ -117,6 +117,7 @@ struct ProfileView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 header
+                monetizationEntitlementsPanel
                 activeProfileCard
                 membershipPassEntry
                 accountPanel
@@ -781,6 +782,130 @@ struct ProfileView: View {
         .accessibilityIdentifier("hf.profile.paymentReadiness")
     }
 
+    private var monetizationEntitlementsPanel: some View {
+        let snapshot = streamingStore.monetizationRuntimeSnapshot
+        return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "storefront.fill")
+                        .font(.system(size: 20, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Monetization & Entitlements")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.78)
+                        Text(snapshot.state.rawValue)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                            .accessibilityIdentifier("hf.monetization.status")
+                        Text(snapshot.detail)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.monetizationRuntimeRows) { row in
+                        monetizationMetricCard(row)
+                    }
+                }
+                .accessibilityIdentifier("hf.monetization.dashboard")
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("StoreKit Products")
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.gold)
+                    ForEach(streamingStore.monetizationProductRows.prefix(4)) { product in
+                        HFAccountReadinessRow(
+                            title: product.title,
+                            detail: "\(product.productID) • \(product.entitlementScope)",
+                            status: product.displayPrice,
+                            systemImage: product.kind.localizedCaseInsensitiveContains("subscription") ? "crown.fill" : "play.rectangle.fill",
+                            identifier: "hf.monetization.product.\(product.id)"
+                        )
+                    }
+                }
+                .accessibilityIdentifier("hf.monetization.products")
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Backend Entitlements")
+                        .font(HFTypography.caption.weight(.bold))
+                        .foregroundStyle(HFColors.cyanGlow)
+                    if streamingStore.monetizationEntitlementRows.isEmpty {
+                        HFAccountReadinessRow(
+                            title: "No active entitlement yet",
+                            detail: "Run the development purchase to record a StoreKit entitlement in the staging backend ledger.",
+                            status: "Ready",
+                            systemImage: "checkmark.shield.fill",
+                            identifier: "hf.monetization.entitlements.empty"
+                        )
+                    } else {
+                        ForEach(streamingStore.monetizationEntitlementRows.prefix(5)) { entitlement in
+                            HFAccountReadinessRow(
+                                title: entitlement.scope,
+                                detail: "\(entitlement.productID) • \(entitlement.transactionID)",
+                                status: entitlement.status,
+                                systemImage: entitlement.status == "Active" ? "checkmark.shield.fill" : "xmark.shield.fill",
+                                identifier: "hf.monetization.entitlement.\(entitlement.id)"
+                            )
+                        }
+                    }
+                }
+                .accessibilityIdentifier("hf.monetization.entitlements")
+
+                HStack(spacing: HFSpacing.sm) {
+                    Button {
+                        Task { await streamingStore.purchaseDevelopmentHighFivePass() }
+                    } label: {
+                        Text("Development Purchase")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.monetization.purchase")
+
+                    Button {
+                        Task { await streamingStore.restoreMonetizationRuntime() }
+                    } label: {
+                        Text("Restore")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                            .background(HFColors.surfaceElevated.opacity(0.72))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.monetization.restore")
+                }
+
+                if let lastAudit = streamingStore.monetizationAuditRows.last {
+                    HFAccountReadinessRow(
+                        title: "Entitlement Audit",
+                        detail: lastAudit.detail,
+                        status: lastAudit.action,
+                        systemImage: "list.bullet.clipboard.fill",
+                        identifier: "hf.monetization.audit"
+                    )
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.monetization.panel")
+    }
+
     private var playbackDescriptorReadinessPanel: some View {
         let rows = streamingStore.playbackDescriptorReadinessRows
         return HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
@@ -838,6 +963,37 @@ struct ProfileView: View {
         default:
             return "hf.playback.descriptorBoundary"
         }
+    }
+
+    private func monetizationMetricCard(_ row: HFAnalyticsEventPipelineRow) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: row.systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(HFColors.gold)
+
+            Text(row.value)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.58)
+
+            Text(row.title)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+
+            Text(row.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(2)
+                .minimumScaleFactor(0.74)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.monetization.metric.\(row.id)")
     }
 
     private var downloadReadinessPanel: some View {

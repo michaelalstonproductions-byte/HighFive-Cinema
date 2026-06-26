@@ -24,6 +24,12 @@ import {
   notificationInboxPath,
   notificationPreferencesPath,
   notificationTestPushPath,
+  monetizationAuditPath,
+  monetizationEntitlementsPath,
+  monetizationProductsPath,
+  monetizationRestorePath,
+  monetizationRevokePath,
+  monetizationTransactionsPath,
   openAPIPath,
   playbackDescriptorPath,
   playbackHLSPath,
@@ -100,6 +106,12 @@ export function openAPISpec(): Record<string, unknown> {
       [notificationInboxPath]: { get: { summary: "Fetch authenticated in-app notification inbox" } },
       [notificationTestPushPath]: { post: { summary: "Queue a development notification and delivery audit record" } },
       [notificationDeliveryAuditPath]: { get: { summary: "Fetch notification delivery audit records" } },
+      [monetizationProductsPath]: { get: { summary: "Fetch StoreKit 2 product catalog and entitlement scopes" } },
+      [monetizationEntitlementsPath]: { get: { summary: "Fetch authenticated backend entitlement records" } },
+      [monetizationTransactionsPath]: { post: { summary: "Record verified StoreKit 2 transaction state" } },
+      [monetizationRestorePath]: { post: { summary: "Restore authenticated active entitlement records" } },
+      [monetizationRevokePath]: { post: { summary: "Revoke authenticated product entitlement" } },
+      [monetizationAuditPath]: { get: { summary: "Fetch authenticated monetization audit events" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

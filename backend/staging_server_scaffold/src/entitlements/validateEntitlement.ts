@@ -7,6 +7,7 @@ import { createAuditRecord } from "../audit.js";
 import { ContractError } from "../errors.js";
 import { productMatchesMovie } from "../productMapping.js";
 import type { EntitlementProvider } from "../providers/providerInterfaces.js";
+import { activeEntitlementForRequest } from "../routes/monetization.js";
 
 export async function validateEntitlement(
   body: unknown,
@@ -38,6 +39,24 @@ export async function validateEntitlement(
     storekit_product_id: request.storekit_product_id,
     detail: "Server-side entitlement validation requested"
   });
+
+  const activeEntitlement = activeEntitlementForRequest(request);
+  if (activeEntitlement) {
+    const audit = await createAuditRecord({
+      event_name: "entitlement_validation_approved",
+      movie_id: request.movie_id,
+      storekit_product_id: request.storekit_product_id,
+      detail: `Backend entitlement record ${activeEntitlement.id} approved access`
+    });
+    return {
+      entitlement_status: "entitlement_approved",
+      access_decision: "entitlement_approved",
+      denial_reason: null,
+      audit_id: audit.audit_id,
+      expires_at: activeEntitlement.expires_at ?? new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      refresh_after: new Date(Date.now() + 20 * 60 * 1000).toISOString()
+    };
+  }
 
   const providerResult = await provider.validate(request);
   if (providerResult.status !== "entitlement_approved") {

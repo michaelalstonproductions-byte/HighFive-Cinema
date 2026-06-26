@@ -100,6 +100,12 @@ export const notificationInboxPath = "/v1/notifications/inbox";
 export const notificationDetailPath = "/v1/notifications/";
 export const notificationTestPushPath = "/v1/notifications/test-push";
 export const notificationDeliveryAuditPath = "/v1/notifications/delivery-audit";
+export const monetizationProductsPath = "/v1/monetization/products";
+export const monetizationEntitlementsPath = "/v1/monetization/entitlements";
+export const monetizationTransactionsPath = "/v1/monetization/transactions";
+export const monetizationRestorePath = "/v1/monetization/restore";
+export const monetizationRevokePath = "/v1/monetization/revoke";
+export const monetizationAuditPath = "/v1/monetization/audit";
 
 export const contractStates = [
   "entitlement_approved",

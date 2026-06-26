@@ -189,6 +189,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInPublishingReview
             || Self.shouldStartInAnalyticsEventPipeline
             || Self.shouldStartInProductionNotifications
+            || Self.shouldStartInMonetizationEntitlements
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -263,6 +264,7 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInPublishingReview
             || Self.shouldStartInAnalyticsEventPipeline
             || Self.shouldStartInProductionNotifications
+            || Self.shouldStartInMonetizationEntitlements
             || arguments.contains("--hf-start-analytics")
             || arguments.contains("--hf-analytics-viewers")
             || arguments.contains("--hf-analytics-content")
@@ -650,6 +652,15 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-notification-inbox")
             || arguments.contains("--hf-notification-delivery-audit")
             || arguments.contains("--hf-notification-deeplink")
+    }
+
+    private static var shouldStartInMonetizationEntitlements: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-monetization")
+            || arguments.contains("--hf-monetization-products")
+            || arguments.contains("--hf-monetization-purchase")
+            || arguments.contains("--hf-monetization-restore")
+            || arguments.contains("--hf-monetization-entitlements")
     }
 
     private static var shouldStartInSocialMediaKit: Bool {

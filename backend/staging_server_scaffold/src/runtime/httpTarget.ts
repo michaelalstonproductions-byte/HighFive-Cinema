@@ -35,6 +35,12 @@ import {
   notificationInboxPath,
   notificationPreferencesPath,
   notificationTestPushPath,
+  monetizationAuditPath,
+  monetizationEntitlementsPath,
+  monetizationProductsPath,
+  monetizationRestorePath,
+  monetizationRevokePath,
+  monetizationTransactionsPath,
   openAPIPath,
   playbackHLSPath,
   playbackDescriptorPath,
@@ -124,6 +130,15 @@ import {
   registerNotificationDevice,
   sendTestNotification
 } from "../routes/notifications.js";
+import {
+  monetizationAudit,
+  monetizationEntitlements,
+  monetizationProducts,
+  monetizationReadinessSummary,
+  recordStoreKitTransaction,
+  restoreMonetizationEntitlements,
+  revokeMonetizationEntitlement
+} from "../routes/monetization.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
   return createServer(async (request, response) => {
@@ -334,6 +349,68 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const result = routeNotFound();
         writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === monetizationProductsPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, monetizationProducts());
+        return;
+      }
+
+      if (path === monetizationEntitlementsPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, monetizationEntitlements(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === monetizationTransactionsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, recordStoreKitTransaction(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === monetizationRestorePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, restoreMonetizationEntitlements(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === monetizationRevokePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, revokeMonetizationEntitlement(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === monetizationAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, monetizationAudit(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -759,6 +836,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     notification_inbox_path: notificationInboxPath,
     notification_test_push_path: notificationTestPushPath,
     notification_delivery_audit_path: notificationDeliveryAuditPath,
+    monetization_products_path: monetizationProductsPath,
+    monetization_entitlements_path: monetizationEntitlementsPath,
+    monetization_transactions_path: monetizationTransactionsPath,
+    monetization_restore_path: monetizationRestorePath,
     admin_review_queue_path: adminReviewQueuePath,
     credentials_required: false,
     external_network_allowed: false,
@@ -776,6 +857,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const discovery = discoveryReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
+  const monetization = monetizationReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -822,6 +904,15 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     notification_registered_devices: Number(notifications.registered_devices),
     notification_inbox_items: Number(notifications.inbox_items),
     external_push_attempted: Boolean(notifications.external_push_attempted),
+    storekit2_products: Boolean(monetization.storekit2_products),
+    storekit_purchase_recording: Boolean(monetization.purchase_recording),
+    storekit_restore_supported: Boolean(monetization.restore_supported),
+    storekit_revocation_supported: Boolean(monetization.revocation_supported),
+    backend_entitlement_records: Boolean(monetization.backend_entitlement_records),
+    app_store_server_api_contract: Boolean(monetization.app_store_server_api_contract),
+    direct_card_collection: Boolean(monetization.direct_card_collection),
+    active_entitlements: Number(monetization.active_entitlements),
+    transaction_records: Number(monetization.transaction_records),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
@@ -831,7 +922,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     draft_role_enforcement: Boolean(publishing.role_enforcement),
     admin_review_workflow: Boolean(publishing.admin_review_queue),
     catalog_visibility_transaction: Boolean(publishing.catalog_visibility_transaction),
-    payments_enabled: false
+    payments_enabled: true
   };
 }
 
