@@ -1581,6 +1581,7 @@ struct HFMonetizationProductRow: Identifiable, Codable, Equatable {
     var kind: String
     var displayPrice: String
     var entitlementScope: String
+    var subscriptionManagementLink: String?
     var detail: String
 }
 
@@ -1592,6 +1593,10 @@ struct HFMonetizationEntitlementRow: Identifiable, Codable, Equatable {
     var source: String
     var transactionID: String
     var expiresAt: String?
+    var gracePeriodExpiresAt: String?
+    var billingRetry: Bool
+    var familyShared: Bool
+    var subscriptionManagementLink: String?
 }
 
 struct HFMonetizationAuditRow: Identifiable, Codable, Equatable {
@@ -3894,6 +3899,7 @@ struct HFRemoteMonetizationProduct: Codable, Hashable {
     var kind: String
     var displayPrice: String
     var entitlementScope: String
+    var subscriptionManagementLink: String?
     var detail: String
 
     private enum CodingKeys: String, CodingKey {
@@ -3903,6 +3909,7 @@ struct HFRemoteMonetizationProduct: Codable, Hashable {
         case kind
         case displayPrice = "display_price"
         case entitlementScope = "entitlement_scope"
+        case subscriptionManagementLink = "subscription_management_link"
         case detail
     }
 }
@@ -3932,6 +3939,10 @@ struct HFRemoteMonetizationEntitlement: Codable, Hashable {
     var source: String
     var transactionID: String
     var expiresAt: String?
+    var gracePeriodExpiresAt: String?
+    var billingRetry: Bool?
+    var familyShared: Bool?
+    var subscriptionManagementLink: String?
     var updatedAt: String
 
     private enum CodingKeys: String, CodingKey {
@@ -3943,6 +3954,10 @@ struct HFRemoteMonetizationEntitlement: Codable, Hashable {
         case source
         case transactionID = "transaction_id"
         case expiresAt = "expires_at"
+        case gracePeriodExpiresAt = "grace_period_expires_at"
+        case billingRetry = "billing_retry"
+        case familyShared = "family_shared"
+        case subscriptionManagementLink = "subscription_management_link"
         case updatedAt = "updated_at"
     }
 }
@@ -3969,6 +3984,9 @@ struct HFRemoteStoreKitTransactionPayload: Encodable {
     var purchaseDate: String?
     var expirationDate: String?
     var revocationDate: String?
+    var gracePeriodExpiresAt: String?
+    var billingRetry: Bool
+    var familyShared: Bool
     var appAccountToken: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -3979,7 +3997,36 @@ struct HFRemoteStoreKitTransactionPayload: Encodable {
         case purchaseDate = "purchase_date"
         case expirationDate = "expiration_date"
         case revocationDate = "revocation_date"
+        case gracePeriodExpiresAt = "grace_period_expires_at"
+        case billingRetry = "billing_retry"
+        case familyShared = "family_shared"
         case appAccountToken = "app_account_token"
+    }
+
+    init(
+        productID: String,
+        transactionID: String,
+        originalTransactionID: String,
+        environment: String,
+        purchaseDate: String?,
+        expirationDate: String?,
+        revocationDate: String?,
+        gracePeriodExpiresAt: String?,
+        billingRetry: Bool,
+        familyShared: Bool,
+        appAccountToken: String?
+    ) {
+        self.productID = productID
+        self.transactionID = transactionID
+        self.originalTransactionID = originalTransactionID
+        self.environment = environment
+        self.purchaseDate = purchaseDate
+        self.expirationDate = expirationDate
+        self.revocationDate = revocationDate
+        self.gracePeriodExpiresAt = gracePeriodExpiresAt
+        self.billingRetry = billingRetry
+        self.familyShared = familyShared
+        self.appAccountToken = appAccountToken
     }
 
     init(transaction: HFStoreKitRuntimeTransaction) {
@@ -3990,6 +4037,9 @@ struct HFRemoteStoreKitTransactionPayload: Encodable {
         purchaseDate = transaction.purchaseDate
         expirationDate = transaction.expirationDate
         revocationDate = transaction.revocationDate
+        gracePeriodExpiresAt = nil
+        billingRetry = false
+        familyShared = false
         appAccountToken = transaction.appAccountToken
     }
 }
@@ -11543,10 +11593,12 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var monetizationRuntimeRows: [HFAnalyticsEventPipelineRow] {
-        [
+        let gracePeriodCount = monetizationEntitlementRows.filter { $0.status.localizedCaseInsensitiveContains("Grace") }.count
+        return [
             HFAnalyticsEventPipelineRow(id: "storekit", title: "StoreKit", value: monetizationRuntimeSnapshot.productCount > 0 ? "Products" : "Setup", detail: "\(monetizationRuntimeSnapshot.productCount) products", systemImage: "cart.badge.plus"),
             HFAnalyticsEventPipelineRow(id: "backend", title: "Backend", value: "Ledger", detail: monetizationRuntimeSnapshot.backendStatus, systemImage: "server.rack"),
             HFAnalyticsEventPipelineRow(id: "entitlements", title: "Entitlements", value: "\(monetizationRuntimeSnapshot.activeEntitlementCount)", detail: monetizationRuntimeSnapshot.entitlementStatus, systemImage: "checkmark.shield.fill"),
+            HFAnalyticsEventPipelineRow(id: "lifecycle", title: "Lifecycle", value: monetizationEntitlementRows.contains(where: { $0.billingRetry }) ? "Retry" : "Current", detail: "\(gracePeriodCount) grace records", systemImage: "clock.badge.exclamationmark.fill"),
             HFAnalyticsEventPipelineRow(id: "restore", title: "Restore", value: monetizationRuntimeSnapshot.restoreState, detail: "\(monetizationRuntimeSnapshot.transactionCount) transactions", systemImage: "arrow.counterclockwise.circle.fill")
         ]
     }
@@ -11600,6 +11652,7 @@ final class HFStreamingStore: ObservableObject {
                     kind: product.kind.capitalized,
                     displayPrice: product.displayPrice,
                     entitlementScope: product.entitlementScope,
+                    subscriptionManagementLink: product.subscriptionManagementLink,
                     detail: product.detail
                 )
             }
@@ -11609,6 +11662,20 @@ final class HFStreamingStore: ObservableObject {
 
             let developmentTransaction = storeKitRuntime.developmentTransaction(productID: "com.highfive.pass.monthly", userID: activeProfileID)
             let recorded = try await client.recordStoreKitTransaction(HFRemoteStoreKitTransactionPayload(transaction: developmentTransaction), sessionID: sessionID)
+            let graceTransaction = HFRemoteStoreKitTransactionPayload(
+                productID: "com.highfive.pass.annual",
+                transactionID: "development-grace-\(activeProfileID)-lp11",
+                originalTransactionID: "development-original-grace-\(activeProfileID)-lp11",
+                environment: "development",
+                purchaseDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-31 * 24 * 60 * 60)),
+                expirationDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-60 * 60)),
+                revocationDate: nil,
+                gracePeriodExpiresAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(2 * 24 * 60 * 60)),
+                billingRetry: true,
+                familyShared: true,
+                appAccountToken: activeProfileID
+            )
+            _ = try await client.recordStoreKitTransaction(graceTransaction, sessionID: sessionID)
             let restore = try await client.restoreMonetizationEntitlements(sessionID: sessionID)
             let entitlements = try await client.monetizationEntitlements(sessionID: sessionID)
             let audit = try await client.monetizationAudit(sessionID: sessionID)
@@ -11723,7 +11790,7 @@ final class HFStreamingStore: ObservableObject {
                 title: record.title,
                 value: record.value,
                 detail: record.detail,
-                status: record.status.capitalized,
+                status: record.status.replacingOccurrences(of: "_", with: " ").capitalized,
                 systemImage: platformOperationsSystemImage(for: record.id)
             )
         } + [
@@ -11804,7 +11871,11 @@ final class HFStreamingStore: ObservableObject {
                 status: record.status.capitalized,
                 source: record.source,
                 transactionID: record.transactionID,
-                expiresAt: record.expiresAt
+                expiresAt: record.expiresAt,
+                gracePeriodExpiresAt: record.gracePeriodExpiresAt,
+                billingRetry: record.billingRetry ?? false,
+                familyShared: record.familyShared ?? false,
+                subscriptionManagementLink: record.subscriptionManagementLink
             )
         }
         monetizationAuditRows = audit.events.map { event in
@@ -11853,6 +11924,7 @@ final class HFStreamingStore: ObservableObject {
                 kind: product.kind,
                 displayPrice: product.displayPrice,
                 entitlementScope: "storekit2",
+                subscriptionManagementLink: nil,
                 detail: product.detail
             )
         }
@@ -11865,6 +11937,7 @@ final class HFStreamingStore: ObservableObject {
                 kind: mapping.kind.rawValue,
                 displayPrice: mapping.displayPrice,
                 entitlementScope: mapping.currentMovieID,
+                subscriptionManagementLink: mapping.kind == .appUnlock ? "app-store-subscription-management" : nil,
                 detail: mapping.detail
             )
         }

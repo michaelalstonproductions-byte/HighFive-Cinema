@@ -28,6 +28,14 @@ test("monetization: products and readiness expose StoreKit contracts", async () 
   assertJsonResponse(readiness, 200);
   assert.equal(readiness.json.storekit2_products, true);
   assert.equal(readiness.json.backend_entitlement_records, true);
+  assert.equal(readiness.json.storekit_transaction_updates, true);
+  assert.equal(readiness.json.storekit_expiration_supported, true);
+  assert.equal(readiness.json.storekit_grace_period_supported, true);
+  assert.equal(readiness.json.storekit_billing_retry_supported, true);
+  assert.equal(readiness.json.storekit_family_sharing_supported, true);
+  assert.equal(readiness.json.subscription_management_link, true);
+  assert.equal(readiness.json.playback_entitlement_checks, true);
+  assert.equal(readiness.json.download_entitlement_checks, true);
   assert.equal(readiness.json.payments_enabled, true);
 });
 
@@ -70,6 +78,52 @@ test("monetization: backend entitlement record approves existing validation path
   assertJsonResponse(validation, 200);
   assert.equal(validation.json.entitlement_status, "entitlement_approved");
   assert.equal(validation.json.denial_reason, null);
+});
+
+test("monetization: subscription grace period remains access-granting with lifecycle metadata", async () => {
+  const sessionID = await developmentSession("viewer");
+  const now = Date.now();
+  const transaction = await postJson("/v1/monetization/transactions", {
+    product_id: "com.highfive.pass.annual",
+    transaction_id: transactionID("transaction-pass-grace"),
+    original_transaction_id: transactionID("original-pass-grace"),
+    environment: "sandbox",
+    purchase_date: new Date(now - 31 * 24 * 60 * 60 * 1000).toISOString(),
+    expiration_date: new Date(now - 60 * 60 * 1000).toISOString(),
+    grace_period_expires_at: new Date(now + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    billing_retry: true,
+    family_shared: true
+  }, auth(sessionID));
+  assertJsonResponse(transaction, 201);
+  assert.equal(transaction.json.entitlement.status, "grace_period");
+  assert.equal(transaction.json.entitlement.billing_retry, true);
+  assert.equal(transaction.json.entitlement.family_shared, true);
+  assert.equal(transaction.json.subscription_management_link, "app-store-subscription-management");
+
+  const validation = await postJson("/entitlements/validate", friendlyRequest({ user_id: "local-viewer" }), {
+    "x-highfive-smoke-entitlement-mode": "denied"
+  });
+  assertJsonResponse(validation, 200);
+  assert.equal(validation.json.entitlement_status, "entitlement_approved");
+});
+
+test("monetization: expired subscription does not restore active access", async () => {
+  const sessionID = await developmentSession("viewer");
+  const now = Date.now();
+  const transaction = await postJson("/v1/monetization/transactions", {
+    product_id: "com.highfive.pass.monthly",
+    transaction_id: transactionID("transaction-pass-expired"),
+    original_transaction_id: transactionID("original-pass-expired"),
+    environment: "sandbox",
+    purchase_date: new Date(now - 60 * 24 * 60 * 60 * 1000).toISOString(),
+    expiration_date: new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString()
+  }, auth(sessionID));
+  assertJsonResponse(transaction, 201);
+  assert.equal(transaction.json.entitlement.status, "expired");
+
+  const restore = await postJson("/v1/monetization/restore", {}, auth(sessionID));
+  assertJsonResponse(restore, 200);
+  assert.equal(restore.json.restored_entitlements.some((record) => record.product_id === "com.highfive.pass.monthly"), false);
 });
 
 test("monetization: revocation removes entitlement access", async () => {

@@ -859,7 +859,11 @@ struct ProfileView: View {
                     ForEach(streamingStore.monetizationProductRows.prefix(4)) { product in
                         HFAccountReadinessRow(
                             title: product.title,
-                            detail: "\(product.productID) • \(product.entitlementScope)",
+                            detail: [
+                                product.productID,
+                                product.entitlementScope,
+                                product.subscriptionManagementLink ?? ""
+                            ].filter { !$0.isEmpty }.joined(separator: " • "),
                             status: product.displayPrice,
                             systemImage: product.kind.localizedCaseInsensitiveContains("subscription") ? "crown.fill" : "play.rectangle.fill",
                             identifier: "hf.monetization.product.\(product.id)"
@@ -884,9 +888,9 @@ struct ProfileView: View {
                         ForEach(streamingStore.monetizationEntitlementRows.prefix(5)) { entitlement in
                             HFAccountReadinessRow(
                                 title: entitlement.scope,
-                                detail: "\(entitlement.productID) • \(entitlement.transactionID)",
+                                detail: monetizationEntitlementDetail(entitlement),
                                 status: entitlement.status,
-                                systemImage: entitlement.status == "Active" ? "checkmark.shield.fill" : "xmark.shield.fill",
+                                systemImage: monetizationEntitlementIcon(entitlement),
                                 identifier: "hf.monetization.entitlement.\(entitlement.id)"
                             )
                         }
@@ -1028,6 +1032,31 @@ struct ProfileView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hf.monetization.metric.\(row.id)")
+    }
+
+    private func monetizationEntitlementDetail(_ entitlement: HFMonetizationEntitlementRow) -> String {
+        var parts = [entitlement.productID, entitlement.transactionID]
+        if entitlement.billingRetry {
+            parts.append("billing retry")
+        }
+        if entitlement.familyShared {
+            parts.append("family sharing")
+        }
+        if let grace = entitlement.gracePeriodExpiresAt {
+            parts.append("grace \(grace)")
+        } else if let expires = entitlement.expiresAt {
+            parts.append("expires \(expires)")
+        }
+        if let management = entitlement.subscriptionManagementLink {
+            parts.append(management)
+        }
+        return parts.joined(separator: " • ")
+    }
+
+    private func monetizationEntitlementIcon(_ entitlement: HFMonetizationEntitlementRow) -> String {
+        if entitlement.status == "Active" { return "checkmark.shield.fill" }
+        if entitlement.status.localizedCaseInsensitiveContains("Grace") { return "clock.badge.exclamationmark.fill" }
+        return "xmark.shield.fill"
     }
 
     private var downloadReadinessPanel: some View {
