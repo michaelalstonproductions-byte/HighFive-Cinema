@@ -47,6 +47,11 @@ import {
   livePremiereEventDetailPath,
   livePremiereEventsPath,
   livePremiereSummaryPath,
+  deviceExpansionAirPlaySessionsPath,
+  deviceExpansionHandoffPath,
+  deviceExpansionProfileDetailPath,
+  deviceExpansionProfilesPath,
+  deviceExpansionSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -171,6 +176,14 @@ import {
   updateLivePremiereCountdown,
   updateLivePremiereRoom
 } from "../routes/livePremieres.js";
+import {
+  createAirPlaySession,
+  createDeviceHandoff,
+  deviceExpansionReadinessSummary,
+  deviceExpansionSummary,
+  deviceProfileDetail,
+  deviceProfiles
+} from "../routes/deviceExpansion.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -809,6 +822,58 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const result = routeNotFound();
         writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === deviceExpansionSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, deviceExpansionSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === deviceExpansionProfilesPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, deviceProfiles(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path.startsWith(deviceExpansionProfileDetailPath)) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, deviceProfileDetail(authHeader(request.headers.authorization), routeID(path, deviceExpansionProfileDetailPath)));
+        return;
+      }
+
+      if (path === deviceExpansionAirPlaySessionsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAirPlaySession(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === deviceExpansionHandoffPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createDeviceHandoff(authHeader(request.headers.authorization), body));
         return;
       }
 
@@ -1718,6 +1783,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     studio_collaboration_projects_path: studioCollaborationProjectsPath,
     live_premiere_summary_path: livePremiereSummaryPath,
     live_premiere_events_path: livePremiereEventsPath,
+    device_expansion_summary_path: deviceExpansionSummaryPath,
+    device_expansion_profiles_path: deviceExpansionProfilesPath,
+    device_expansion_airplay_sessions_path: deviceExpansionAirPlaySessionsPath,
+    device_expansion_handoff_path: deviceExpansionHandoffPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1765,6 +1834,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const creatorAssistant = creatorAssistantReadinessSummary();
   const studioCollaboration = studioCollaborationReadinessSummary();
   const livePremieres = livePremiereReadinessSummary();
+  const deviceExpansion = deviceExpansionReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1886,6 +1956,17 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     live_premiere_external_services: Boolean(livePremieres.external_services),
     live_premiere_events: Number(livePremieres.events),
     live_premiere_rooms_count: Number(livePremieres.rooms),
+    device_expansion_enabled: Boolean(deviceExpansion.device_expansion_enabled),
+    device_expansion_apple_tv_profile: Boolean(deviceExpansion.apple_tv_profile),
+    device_expansion_ipad_profile: Boolean(deviceExpansion.ipad_profile),
+    device_expansion_mac_profile: Boolean(deviceExpansion.mac_profile),
+    device_expansion_carplay_consideration: Boolean(deviceExpansion.carplay_consideration),
+    device_expansion_airplay_session_planning: Boolean(deviceExpansion.airplay_session_planning),
+    device_expansion_handoff_records: Boolean(deviceExpansion.handoff_records),
+    device_expansion_external_services: Boolean(deviceExpansion.external_device_services),
+    device_expansion_profile_count: Number(deviceExpansion.profile_count),
+    device_expansion_airplay_sessions: Number(deviceExpansion.airplay_sessions),
+    device_expansion_handoffs: Number(deviceExpansion.handoffs),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
