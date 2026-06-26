@@ -32,6 +32,13 @@ import {
   creatorEconomyPayoutsPath,
   creatorEconomyRevenueSharesPath,
   creatorEconomyTipsPath,
+  creatorAssistantMetadataPath,
+  creatorAssistantPosterPath,
+  creatorAssistantPublishingPath,
+  creatorAssistantRightsPath,
+  creatorAssistantSEOPath,
+  creatorAssistantSummaryPath,
+  creatorAssistantTrailerPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -123,6 +130,16 @@ import {
   recordCreatorTip,
   updateCreatorRevenueShare
 } from "../routes/creatorEconomy.js";
+import {
+  creatorAssistantMetadata,
+  creatorAssistantPoster,
+  creatorAssistantPublishing,
+  creatorAssistantReadinessSummary,
+  creatorAssistantRights,
+  creatorAssistantSEO,
+  creatorAssistantSummary,
+  creatorAssistantTrailer
+} from "../routes/creatorAssistant.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -546,6 +563,87 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 201, createPaidPremiere(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorAssistantSummaryPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, creatorAssistantSummary(authHeader(request.headers.authorization), {}));
+          return;
+        }
+        if (request.method === "POST") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 200, creatorAssistantSummary(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === creatorAssistantMetadataPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, creatorAssistantMetadata(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorAssistantPosterPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, creatorAssistantPoster(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorAssistantTrailerPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, creatorAssistantTrailer(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorAssistantPublishingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, creatorAssistantPublishing(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorAssistantSEOPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, creatorAssistantSEO(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === creatorAssistantRightsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, creatorAssistantRights(authHeader(request.headers.authorization), body));
         return;
       }
 
@@ -1446,6 +1544,9 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     creator_economy_payouts_path: creatorEconomyPayoutsPath,
     creator_economy_tips_path: creatorEconomyTipsPath,
     creator_economy_memberships_path: creatorEconomyMembershipsPath,
+    creator_assistant_summary_path: creatorAssistantSummaryPath,
+    creator_assistant_metadata_path: creatorAssistantMetadataPath,
+    creator_assistant_publishing_path: creatorAssistantPublishingPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1490,6 +1591,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const aiDiscovery = aiDiscoveryReadinessSummary();
   const socialWatch = socialWatchReadinessSummary();
   const creatorEconomy = creatorEconomyReadinessSummary();
+  const creatorAssistant = creatorAssistantReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1581,6 +1683,15 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     creator_paid_premieres_enabled: Boolean(creatorEconomy.paid_premieres),
     creator_economy_external_processor_calls: Boolean(creatorEconomy.external_processor_calls),
     creator_economy_ledger_records: Number(creatorEconomy.ledger_records),
+    creator_assistant_enabled: Boolean(creatorAssistant.creator_assistant_enabled),
+    creator_assistant_external_calls: Boolean(creatorAssistant.external_ai_calls),
+    creator_assistant_metadata_generation: Boolean(creatorAssistant.metadata_generation),
+    creator_assistant_poster_suggestions: Boolean(creatorAssistant.poster_suggestions),
+    creator_assistant_trailer_suggestions: Boolean(creatorAssistant.trailer_suggestions),
+    creator_assistant_publishing_assistant: Boolean(creatorAssistant.publishing_assistant),
+    creator_assistant_seo_assistant: Boolean(creatorAssistant.seo_assistant),
+    creator_assistant_rights_assistant: Boolean(creatorAssistant.rights_assistant),
+    creator_assistant_deterministic_local_rules: Boolean(creatorAssistant.deterministic_local_rules),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
