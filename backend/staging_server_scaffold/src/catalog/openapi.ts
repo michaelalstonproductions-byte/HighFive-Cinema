@@ -19,6 +19,9 @@ import {
   creatorUploadDetailPath,
   creatorUploadSessionsPath,
   discoveryQueryPath,
+  identityDataExportPath,
+  identityDeleteRequestPath,
+  identityMePath,
   notificationDeliveryAuditPath,
   notificationDevicesPath,
   notificationInboxPath,
@@ -41,6 +44,7 @@ import {
   playbackDescriptorPath,
   playbackHLSPath,
   readinessPath,
+  securityRateLimitProbePath,
   viewerLibraryOfflinePath,
   viewerLibraryPath,
   viewerLibraryProgressPath,
@@ -130,6 +134,10 @@ export function openAPISpec(): Record<string, unknown> {
       [`${platformOperationsModerationDetailPath}{id}/takedown`]: { post: { summary: "Apply moderation takedown and remove catalog availability" } },
       [`${platformOperationsModerationDetailPath}{id}/restore`]: { post: { summary: "Restore content from moderation takedown" } },
       [platformOperationsAuditPath]: { get: { summary: "Fetch platform operations audit trail" } },
+      [identityMePath]: { get: { summary: "Fetch authenticated session and permission summary" } },
+      [identityDataExportPath]: { get: { summary: "Export sanitized local account, session, and audit data" } },
+      [identityDeleteRequestPath]: { post: { summary: "Request account deletion and revoke local sessions" } },
+      [securityRateLimitProbePath]: { get: { summary: "Exercise route-scoped rate limiting for security smoke tests" } },
       [openAPIPath]: { get: { summary: "Fetch OpenAPI document" } }
     }
   };

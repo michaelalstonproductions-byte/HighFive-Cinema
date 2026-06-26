@@ -24,6 +24,7 @@ import {
   entitlementValidationPath,
   identityAppleExchangePath,
   identityAuditPath,
+  identityDataExportPath,
   identityDeleteRequestPath,
   identityDevSignInPath,
   identityMePath,
@@ -52,6 +53,7 @@ import {
   playbackHLSPath,
   playbackDescriptorPath,
   readinessPath,
+  securityRateLimitProbePath,
   viewerLibraryOfflinePath,
   viewerLibraryPath,
   viewerLibraryProgressPath,
@@ -65,6 +67,7 @@ import {
   creatorWorkspaceMutation,
   currentIdentitySession,
   exchangeAppleIdentity,
+  exportIdentityData,
   identityAuditTrail,
   identityReadinessSummary,
   refreshIdentitySession,
@@ -157,11 +160,18 @@ import {
   restoreRightsWindow,
   rightsLedger
 } from "../routes/operations.js";
+import {
+  applySecurityHeaders,
+  enforceRateLimit,
+  securityHardeningReadinessSummary
+} from "./securityHardening.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
   return createServer(async (request, response) => {
+    applySecurityHeaders(response);
     try {
       const path = request.url?.split("?")[0] ?? "/";
+      enforceRateLimit(request, config);
 
       if (path === "/health") {
         if (request.method !== "GET") {
@@ -190,6 +200,16 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, openAPISpec());
+        return;
+      }
+
+      if (path === securityRateLimitProbePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, { status: "ok", route: "rate_limit_probe" });
         return;
       }
 
@@ -565,6 +585,16 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, currentIdentitySession(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === identityDataExportPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, exportIdentityData(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -965,6 +995,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
   const operations = operationsReadinessSummary();
+  const security = securityHardeningReadinessSummary(config);
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -1027,9 +1058,20 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     takedown_supported: Boolean(operations.takedown_supported),
     operations_audit_trail: Boolean(operations.audit_trail),
     operations_admin_role_enforcement: Boolean(operations.admin_role_enforcement),
+    security_headers: Boolean(security.security_headers),
+    request_id_header: Boolean(security.request_id_header),
+    rate_limiting: Boolean(security.rate_limiting),
+    rate_limit_requests: Number(security.rate_limit_requests),
+    rate_limit_window_ms: Number(security.rate_limit_window_ms),
+    privacy_export: Boolean(security.privacy_export),
+    account_deletion_revokes_sessions: Boolean(security.account_deletion_revokes_sessions),
+    credential_redaction_contract: Boolean(security.credential_redaction_contract),
+    backup_restore_runbook: Boolean(security.backup_restore_runbook),
+    rollback_runbook: Boolean(security.rollback_runbook),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
+    identity_data_export: Boolean(identity.data_export),
     role_authorization: Boolean(identity.role_authorization),
     creator_draft_sync_enabled: Boolean(publishing.creator_draft_sync_enabled),
     optimistic_concurrency: Boolean(publishing.optimistic_concurrency),

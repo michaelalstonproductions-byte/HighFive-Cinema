@@ -9,6 +9,12 @@
 - Descriptor reference is not persisted by the app.
 - Server credentials never return to the app.
 - Rollback is done by removing runtime config or returning `local_preview_fallback`.
+- P43A adds response security headers to every local staging HTTP response.
+- P43A adds route-scoped rate limiting with readiness reporting.
+- P43A adds authenticated privacy export without reusable session tokens.
+- P43A account deletion request revokes local sessions immediately.
+- Backup/restore, object-storage recovery, and secret rotation runbooks live in
+  `docs/production_services/HIGHFIVE_SECURITY_PRIVACY_RELIABILITY_HARDENING.md`.
 
 ## Server-Only Names
 

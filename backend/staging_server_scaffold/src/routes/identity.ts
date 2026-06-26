@@ -91,14 +91,46 @@ export function currentIdentitySession(authorizationHeader: string | undefined):
   return sessionResponse(session, "Session active");
 }
 
+export function exportIdentityData(authorizationHeader: string | undefined): JsonObject {
+  const session = requireIdentitySession(authorizationHeader);
+  recordAudit("data_export", session, "Privacy export generated for local account data.");
+  const userSessions = Array.from(sessions.values()).filter((candidate) => candidate.user_id === session.user_id);
+  return {
+    status: "export_ready",
+    user: {
+      user_id: session.user_id,
+      display_name: session.display_name,
+      role: session.role,
+      creator_id: session.creator_id,
+      workspace_id: session.workspace_id,
+      provider: session.provider
+    },
+    active_sessions: userSessions.map((candidate) => ({
+      session_id_suffix: candidate.session_id.slice(-8),
+      issued_at: candidate.issued_at,
+      expires_at: candidate.expires_at,
+      role: candidate.role,
+      provider: candidate.provider
+    })),
+    audit_events: auditEvents.filter((event) => event.user_id === session.user_id).slice(-25),
+    retention_policy: {
+      deletion_request_revokes_sessions: true,
+      audit_retention: "local rolling audit, last 100 identity events",
+      external_identity_provider_confirmation_required: session.provider === "apple"
+    }
+  };
+}
+
 export function requestAccountDeletion(authorizationHeader: string | undefined): JsonObject {
   const session = requireIdentitySession(authorizationHeader);
-  recordAudit("delete_request", session, "Account deletion request recorded for manual policy handling.");
+  const revokedSessions = revokeSessionsForUser(session.user_id);
+  recordAudit("delete_request", session, `Account deletion request recorded and ${revokedSessions} local sessions revoked.`);
   return {
     status: "deletion_requested",
     user_id: session.user_id,
     role: session.role,
-    detail: "Deletion request recorded. Production retention policy and identity-provider confirmation are required before deletion.",
+    revoked_sessions: revokedSessions,
+    detail: "Deletion request recorded. Local sessions were revoked; production retention policy and identity-provider confirmation are required before permanent deletion.",
     audit_events: auditEvents.slice(-5)
   };
 }
@@ -146,9 +178,22 @@ export function identityReadinessSummary(): JsonObject {
     development_identity_mode: true,
     roles: ["viewer", "creator", "admin"],
     session_refresh: true,
+    data_export: true,
     account_deletion_request: true,
+    account_deletion_revokes_sessions: true,
     role_authorization: true
   };
+}
+
+function revokeSessionsForUser(userID: string): number {
+  let revoked = 0;
+  for (const [sessionID, session] of sessions.entries()) {
+    if (session.user_id === userID) {
+      sessions.delete(sessionID);
+      revoked += 1;
+    }
+  }
+  return revoked;
 }
 
 function sessionResponse(session: IdentitySession, detail: string): JsonObject {

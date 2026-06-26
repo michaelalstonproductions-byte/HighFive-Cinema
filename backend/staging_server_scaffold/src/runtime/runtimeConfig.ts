@@ -12,10 +12,14 @@ export type RuntimeConfig = {
   deploymentStatus: "not_deployed";
   bodyLimitBytes: number;
   uploadBodyLimitBytes: number;
+  rateLimitRequests: number;
+  rateLimitWindowMs: number;
 };
 
 const defaultBodyLimitBytes = 64 * 1024;
 const defaultUploadBodyLimitBytes = 10 * 1024 * 1024;
+const defaultRateLimitRequests = 240;
+const defaultRateLimitWindowMs = 60 * 1000;
 
 export function readRuntimeConfig(source: Record<string, string | undefined>): RuntimeConfig {
   return {
@@ -27,7 +31,9 @@ export function readRuntimeConfig(source: Record<string, string | undefined>): R
     mockDescriptorMode: readDescriptorMode(source.HIGHFIVE_MOCK_DESCRIPTOR_MODE),
     deploymentStatus: "not_deployed",
     bodyLimitBytes: defaultBodyLimitBytes,
-    uploadBodyLimitBytes: readPositiveInteger(source.HIGHFIVE_UPLOAD_BODY_LIMIT_BYTES, defaultUploadBodyLimitBytes)
+    uploadBodyLimitBytes: readPositiveInteger(source.HIGHFIVE_UPLOAD_BODY_LIMIT_BYTES, defaultUploadBodyLimitBytes),
+    rateLimitRequests: readPositiveInteger(source.HIGHFIVE_RATE_LIMIT_REQUESTS, defaultRateLimitRequests),
+    rateLimitWindowMs: readPositiveInteger(source.HIGHFIVE_RATE_LIMIT_WINDOW_MS, defaultRateLimitWindowMs)
   };
 }
 

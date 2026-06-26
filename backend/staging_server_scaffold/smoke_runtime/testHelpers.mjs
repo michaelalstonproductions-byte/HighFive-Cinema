@@ -61,6 +61,7 @@ export async function requestJson(path, options = {}) {
   return {
     status: response.status,
     contentType: response.headers.get("content-type") ?? "",
+    headers: response.headers,
     json,
     text
   };
@@ -123,4 +124,13 @@ export function assertShortLived(expiresAt, now = Date.now()) {
 
 export function readTextFile(path) {
   return readFileSync(path, "utf8");
+}
+
+export function readOptionalTextFile(path) {
+  try {
+    return readFileSync(path, "utf8");
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return "";
+    throw error;
+  }
 }
