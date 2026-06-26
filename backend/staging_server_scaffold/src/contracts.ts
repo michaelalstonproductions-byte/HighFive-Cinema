@@ -121,6 +121,14 @@ export const platformOperationsModerationFlagsPath = "/v1/admin/operations/moder
 export const platformOperationsModerationDetailPath = "/v1/admin/operations/moderation/";
 export const platformOperationsRightsDetailPath = "/v1/admin/operations/rights/";
 export const platformOperationsAuditPath = "/v1/admin/operations/audit";
+export const betaProgramPath = "/v1/beta/program";
+export const betaEnrollPath = "/v1/beta/enroll";
+export const betaFeedbackPath = "/v1/beta/feedback";
+export const betaFeedbackDetailPath = "/v1/beta/feedback/";
+export const betaCrashReportsPath = "/v1/beta/crashes";
+export const betaCrashDetailPath = "/v1/beta/crashes/";
+export const betaStabilityPath = "/v1/beta/stability";
+export const betaAuditPath = "/v1/beta/audit";
 
 export const contractStates = [
   "entitlement_approved",
