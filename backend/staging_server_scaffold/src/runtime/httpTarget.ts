@@ -39,6 +39,11 @@ import {
   creatorAssistantSEOPath,
   creatorAssistantSummaryPath,
   creatorAssistantTrailerPath,
+  studioCollaborationCompaniesPath,
+  studioCollaborationProjectDetailPath,
+  studioCollaborationProjectsPath,
+  studioCollaborationSummaryPath,
+  studioCollaborationWorkspacesPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -140,6 +145,17 @@ import {
   creatorAssistantSummary,
   creatorAssistantTrailer
 } from "../routes/creatorAssistant.js";
+import {
+  addStudioCollaborator,
+  createProductionCompany,
+  createStudioWorkspace,
+  decideStudioApproval,
+  recordStudioEdit,
+  requestStudioApproval,
+  shareStudioProject,
+  studioCollaborationReadinessSummary,
+  studioCollaborationSummary
+} from "../routes/studioCollaboration.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -644,6 +660,78 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 200, creatorAssistantRights(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === studioCollaborationSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, studioCollaborationSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === studioCollaborationCompaniesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionCompany(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === studioCollaborationWorkspacesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createStudioWorkspace(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === studioCollaborationProjectsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, shareStudioProject(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path.startsWith(studioCollaborationProjectDetailPath)) {
+        const route = studioCollaborationProjectRoute(path);
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        if (route.action === "collaborators") {
+          writeJson(response, 201, addStudioCollaborator(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "edits") {
+          writeJson(response, 201, recordStudioEdit(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "approvals" && route.childID === null) {
+          writeJson(response, 201, requestStudioApproval(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "approvals" && route.childAction === "decision" && route.childID) {
+          writeJson(response, 200, decideStudioApproval(authHeader(request.headers.authorization), route.id, route.childID, body));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
         return;
       }
 
@@ -1547,6 +1635,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     creator_assistant_summary_path: creatorAssistantSummaryPath,
     creator_assistant_metadata_path: creatorAssistantMetadataPath,
     creator_assistant_publishing_path: creatorAssistantPublishingPath,
+    studio_collaboration_summary_path: studioCollaborationSummaryPath,
+    studio_collaboration_companies_path: studioCollaborationCompaniesPath,
+    studio_collaboration_workspaces_path: studioCollaborationWorkspacesPath,
+    studio_collaboration_projects_path: studioCollaborationProjectsPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1592,6 +1684,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const socialWatch = socialWatchReadinessSummary();
   const creatorEconomy = creatorEconomyReadinessSummary();
   const creatorAssistant = creatorAssistantReadinessSummary();
+  const studioCollaboration = studioCollaborationReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1692,6 +1785,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     creator_assistant_seo_assistant: Boolean(creatorAssistant.seo_assistant),
     creator_assistant_rights_assistant: Boolean(creatorAssistant.rights_assistant),
     creator_assistant_deterministic_local_rules: Boolean(creatorAssistant.deterministic_local_rules),
+    studio_collaboration_enabled: Boolean(studioCollaboration.studio_collaboration_enabled),
+    studio_collaboration_production_companies: Boolean(studioCollaboration.production_companies),
+    studio_collaboration_workspaces: Boolean(studioCollaboration.studio_workspaces),
+    studio_collaboration_multi_user_editing: Boolean(studioCollaboration.multi_user_editing),
+    studio_collaboration_role_permissions: Boolean(studioCollaboration.role_permissions),
+    studio_collaboration_approvals: Boolean(studioCollaboration.approvals),
+    studio_collaboration_shared_projects: Boolean(studioCollaboration.shared_projects),
+    studio_collaboration_notifications: Boolean(studioCollaboration.notifications),
+    studio_collaboration_external_services: Boolean(studioCollaboration.external_services),
+    studio_collaboration_projects: Number(studioCollaboration.projects),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
@@ -1835,6 +1938,17 @@ function socialWatchInviteRoute(path: string): { id: string; action: string | nu
   return {
     id: parts[0] ?? "",
     action: parts[1] ?? null
+  };
+}
+
+function studioCollaborationProjectRoute(path: string): { id: string; action: string | null; childID: string | null; childAction: string | null } {
+  const suffix = path.slice(studioCollaborationProjectDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null,
+    childID: parts[2] ?? null,
+    childAction: parts[3] ?? null
   };
 }
 
