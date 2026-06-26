@@ -44,6 +44,9 @@ import {
   studioCollaborationProjectsPath,
   studioCollaborationSummaryPath,
   studioCollaborationWorkspacesPath,
+  livePremiereEventDetailPath,
+  livePremiereEventsPath,
+  livePremiereSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -156,6 +159,18 @@ import {
   studioCollaborationReadinessSummary,
   studioCollaborationSummary
 } from "../routes/studioCollaboration.js";
+import {
+  answerLivePremiereQuestion,
+  createLivePremiereEvent,
+  livePremiereReadinessSummary,
+  livePremiereSummary,
+  postLivePremiereChat,
+  postLivePremiereIntro,
+  postLivePremiereQuestion,
+  publishLivePremiereReplay,
+  updateLivePremiereCountdown,
+  updateLivePremiereRoom
+} from "../routes/livePremieres.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -728,6 +743,68 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         if (route.action === "approvals" && route.childAction === "decision" && route.childID) {
           writeJson(response, 200, decideStudioApproval(authHeader(request.headers.authorization), route.id, route.childID, body));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === livePremiereSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, livePremiereSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === livePremiereEventsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createLivePremiereEvent(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path.startsWith(livePremiereEventDetailPath)) {
+        const route = livePremiereEventRoute(path);
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        if (route.action === "room") {
+          writeJson(response, 200, updateLivePremiereRoom(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "countdown") {
+          writeJson(response, 200, updateLivePremiereCountdown(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "chat") {
+          writeJson(response, 201, postLivePremiereChat(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "intro") {
+          writeJson(response, 201, postLivePremiereIntro(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "qa" && route.childID === null) {
+          writeJson(response, 201, postLivePremiereQuestion(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "qa" && route.childAction === "answer" && route.childID) {
+          writeJson(response, 200, answerLivePremiereQuestion(authHeader(request.headers.authorization), route.id, route.childID, body));
+          return;
+        }
+        if (route.action === "replay") {
+          writeJson(response, 201, publishLivePremiereReplay(authHeader(request.headers.authorization), route.id, body));
           return;
         }
         const result = routeNotFound();
@@ -1639,6 +1716,8 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     studio_collaboration_companies_path: studioCollaborationCompaniesPath,
     studio_collaboration_workspaces_path: studioCollaborationWorkspacesPath,
     studio_collaboration_projects_path: studioCollaborationProjectsPath,
+    live_premiere_summary_path: livePremiereSummaryPath,
+    live_premiere_events_path: livePremiereEventsPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1685,6 +1764,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const creatorEconomy = creatorEconomyReadinessSummary();
   const creatorAssistant = creatorAssistantReadinessSummary();
   const studioCollaboration = studioCollaborationReadinessSummary();
+  const livePremieres = livePremiereReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -1795,6 +1875,17 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     studio_collaboration_notifications: Boolean(studioCollaboration.notifications),
     studio_collaboration_external_services: Boolean(studioCollaboration.external_services),
     studio_collaboration_projects: Number(studioCollaboration.projects),
+    live_premieres_enabled: Boolean(livePremieres.live_premieres_enabled),
+    live_premiere_countdowns: Boolean(livePremieres.countdowns),
+    live_premiere_rooms: Boolean(livePremieres.premiere_rooms),
+    live_premiere_creator_introductions: Boolean(livePremieres.creator_introductions),
+    live_premiere_qa: Boolean(livePremieres.qa),
+    live_premiere_chat: Boolean(livePremieres.chat),
+    live_premiere_replay: Boolean(livePremieres.replay),
+    live_premiere_transport: String(livePremieres.synchronized_transport),
+    live_premiere_external_services: Boolean(livePremieres.external_services),
+    live_premiere_events: Number(livePremieres.events),
+    live_premiere_rooms_count: Number(livePremieres.rooms),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
@@ -1943,6 +2034,17 @@ function socialWatchInviteRoute(path: string): { id: string; action: string | nu
 
 function studioCollaborationProjectRoute(path: string): { id: string; action: string | null; childID: string | null; childAction: string | null } {
   const suffix = path.slice(studioCollaborationProjectDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null,
+    childID: parts[2] ?? null,
+    childAction: parts[3] ?? null
+  };
+}
+
+function livePremiereEventRoute(path: string): { id: string; action: string | null; childID: string | null; childAction: string | null } {
+  const suffix = path.slice(livePremiereEventDetailPath.length);
   const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
   return {
     id: parts[0] ?? "",
