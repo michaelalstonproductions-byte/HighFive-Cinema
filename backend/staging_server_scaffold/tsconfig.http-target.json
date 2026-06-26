@@ -34,6 +34,7 @@
     "src/runtime/providerFactory.ts",
     "src/runtime/httpResponse.ts",
     "src/runtime/httpTarget.ts",
+    "src/runtime/mediaWorker.ts",
     "src/runtime/start.ts",
     "src/server.ts"
   ],

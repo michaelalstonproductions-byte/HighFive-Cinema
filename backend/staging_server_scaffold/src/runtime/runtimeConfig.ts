@@ -1,15 +1,18 @@
 export type ProviderMode = "mock";
 export type MockEntitlementMode = "approved" | "denied" | "pending";
 export type MockDescriptorMode = "ready" | "unavailable";
+export type BackendEnv = "local_smoke" | "production";
+export type ServerHost = "127.0.0.1" | "0.0.0.0";
+export type DeploymentStatus = "not_deployed" | "production_infrastructure_ready";
 
 export type RuntimeConfig = {
-  host: "127.0.0.1";
+  host: ServerHost;
   port: number;
-  backendEnv: "local_smoke";
+  backendEnv: BackendEnv;
   providerMode: ProviderMode;
   mockEntitlementMode: MockEntitlementMode;
   mockDescriptorMode: MockDescriptorMode;
-  deploymentStatus: "not_deployed";
+  deploymentStatus: DeploymentStatus;
   bodyLimitBytes: number;
   uploadBodyLimitBytes: number;
   rateLimitRequests: number;
@@ -29,7 +32,7 @@ export function readRuntimeConfig(source: Record<string, string | undefined>): R
     providerMode: readProviderMode(source.HIGHFIVE_PROVIDER_MODE),
     mockEntitlementMode: readEntitlementMode(source.HIGHFIVE_MOCK_ENTITLEMENT_MODE),
     mockDescriptorMode: readDescriptorMode(source.HIGHFIVE_MOCK_DESCRIPTOR_MODE),
-    deploymentStatus: "not_deployed",
+    deploymentStatus: readDeploymentStatus(source.HIGHFIVE_DEPLOYMENT_STATUS),
     bodyLimitBytes: defaultBodyLimitBytes,
     uploadBodyLimitBytes: readPositiveInteger(source.HIGHFIVE_UPLOAD_BODY_LIMIT_BYTES, defaultUploadBodyLimitBytes),
     rateLimitRequests: readPositiveInteger(source.HIGHFIVE_RATE_LIMIT_REQUESTS, defaultRateLimitRequests),
@@ -37,8 +40,9 @@ export function readRuntimeConfig(source: Record<string, string | undefined>): R
   };
 }
 
-function readHost(value: string | undefined): "127.0.0.1" {
+function readHost(value: string | undefined): ServerHost {
   if (!value || value === "127.0.0.1") return "127.0.0.1";
+  if (value === "0.0.0.0") return "0.0.0.0";
   return "127.0.0.1";
 }
 
@@ -49,8 +53,9 @@ function readPort(value: string | undefined): number {
   return parsed;
 }
 
-function readLocalSmoke(value: string | undefined): "local_smoke" {
+function readLocalSmoke(value: string | undefined): BackendEnv {
   if (!value || value === "local_smoke") return "local_smoke";
+  if (value === "production") return "production";
   return "local_smoke";
 }
 
@@ -67,6 +72,11 @@ function readEntitlementMode(value: string | undefined): MockEntitlementMode {
 function readDescriptorMode(value: string | undefined): MockDescriptorMode {
   if (value === "ready" || value === "unavailable") return value;
   return "unavailable";
+}
+
+function readDeploymentStatus(value: string | undefined): DeploymentStatus {
+  if (value === "production_infrastructure_ready") return "production_infrastructure_ready";
+  return "not_deployed";
 }
 
 function readPositiveInteger(value: string | undefined, fallback: number): number {

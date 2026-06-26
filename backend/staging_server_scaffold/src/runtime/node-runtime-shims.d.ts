@@ -5,6 +5,9 @@ declare const process: {
   exitCode?: number;
 };
 
+declare function setInterval(listener: () => void, delay?: number): unknown;
+declare function clearInterval(intervalID: unknown): void;
+
 interface ImportMeta {
   dirname: string;
 }

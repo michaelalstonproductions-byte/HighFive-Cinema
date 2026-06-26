@@ -18,3 +18,9 @@ Tools/SpatialPeekStress/__pycache__/
 # Xcode user-local files
 xcuserdata/
 *.xcuserstate
+
+# Production infrastructure local secrets and state
+backend/production_infrastructure/.env.production
+backend/production_infrastructure/secrets/
+backend/production_infrastructure/state/
+backend/production_infrastructure/backups/
