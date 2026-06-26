@@ -5650,6 +5650,7 @@ final class HFStreamingStore: ObservableObject {
     private let authConfiguration: HFAuthConfiguration
     private let authService: HFAuthService
     private let identityKeychainStore: HFIdentityKeychainSessionStore
+    private let identityAccessClient: HFIdentityAccessClient
     private let librarySyncConfiguration: HFLibrarySyncConfiguration
     private let downloadConfiguration: HFDownloadConfiguration
     private let entitlementConfiguration: HFEntitlementConfiguration
@@ -5697,6 +5698,10 @@ final class HFStreamingStore: ObservableObject {
         self.authConfiguration = authConfiguration
         self.authService = resolvedAuthService
         self.identityKeychainStore = HFIdentityKeychainSessionStore()
+        self.identityAccessClient = HFIdentityAccessClient(
+            backendConfiguration: backendConfiguration,
+            authConfiguration: authConfiguration
+        )
         self.librarySyncConfiguration = librarySyncConfiguration
         self.downloadConfiguration = downloadConfiguration
         self.entitlementConfiguration = entitlementConfiguration
@@ -9063,27 +9068,117 @@ final class HFStreamingStore: ObservableObject {
     }
 
     func signInWithDevelopmentIdentity(role: HFIdentityAccessRole = .creator) {
+        if identityAccessClient.isConfigured {
+            Task {
+                do {
+                    let session = try await identityAccessClient.developmentSession(role: role)
+                    await MainActor.run {
+                        self.applyIdentityAccessSession(
+                            session,
+                            state: .remoteAuthenticated,
+                            action: "Development Sign In",
+                            detail: "\(role.title) backend development session created and stored in Keychain.",
+                            runtimeDetail: "Backend development identity is active for simulator validation."
+                        )
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.applyIdentityAccessFailure(
+                            action: "Development Sign In Failed",
+                            error: error,
+                            fallbackDetail: "Backend development sign-in failed. Local development identity remains available."
+                        )
+                        self.signInWithLocalDevelopmentIdentity(role: role)
+                    }
+                }
+            }
+            return
+        }
+        signInWithLocalDevelopmentIdentity(role: role)
+    }
+
+    func signInWithAppleCredential(_ credential: HFAppleIdentityCredentialPayload, role: HFIdentityAccessRole = .viewer) {
+        Task {
+            do {
+                let session = try await identityAccessClient.exchangeAppleCredential(credential, role: role)
+                await MainActor.run {
+                    self.applyIdentityAccessSession(
+                        session,
+                        state: .remoteAuthenticated,
+                        action: "Apple Sign In",
+                        detail: "Sign in with Apple session exchanged by backend and stored in Keychain.",
+                        runtimeDetail: "Authenticated Apple session is active. Tokens were not stored in app state."
+                    )
+                }
+            } catch {
+                await MainActor.run {
+                    self.applyIdentityAccessFailure(
+                        action: "Apple Sign In Failed",
+                        error: error,
+                        fallbackDetail: "Apple sign-in requires a configured backend identity endpoint. Development identity remains available."
+                    )
+                }
+            }
+        }
+    }
+
+    private func signInWithLocalDevelopmentIdentity(role: HFIdentityAccessRole = .creator) {
         let session = HFIdentityAccessSession.development(
             role: role,
             profile: activeViewingProfile,
             creatorID: creatorProfiles.first?.creator.id
         )
-        identityKeychainStore.save(session)
-        let event = identityAuditEvent(action: "Sign In", detail: "\(role.title) development session created and stored in Keychain.")
-        identityAccessRuntimeSnapshot = .snapshot(
+        applyIdentityAccessSession(
+            session,
             state: .localDevelopment,
-            session: session,
-            auditEvents: trimmedIdentityEvents(appending: event),
-            deletionRequestStatus: "Not Requested",
-            detail: "Local development identity is active. Production Sign in with Apple requires Apple Developer capability setup."
+            action: "Sign In",
+            detail: "\(role.title) development session created and stored in Keychain.",
+            runtimeDetail: "Local development identity is active. Production Sign in with Apple requires Apple Developer capability setup."
         )
-        refreshAuthRuntimeStatus()
-        rebuildIdentitySessionRuntime(reason: "Development identity signed in")
     }
 
     func signOutIdentitySession() {
+        guard let session = identityAccessRuntimeSnapshot.activeSession else {
+            identityKeychainStore.delete()
+            let event = identityAuditEvent(action: "Sign Out", detail: "No active identity session was present.")
+            identityAccessRuntimeSnapshot = .snapshot(
+                state: .signedOut,
+                session: nil,
+                auditEvents: trimmedIdentityEvents(appending: event),
+                deletionRequestStatus: "Not Requested",
+                detail: "Signed out of the active identity session. Local profile mode remains available."
+            )
+            refreshAuthRuntimeStatus()
+            rebuildIdentitySessionRuntime(reason: "Identity session signed out")
+            return
+        }
+
+        if identityAccessClient.isConfigured, session.provider != "Development Identity" {
+            Task {
+                do {
+                    try await identityAccessClient.signOut(session: session)
+                    await MainActor.run {
+                        self.completeIdentitySignOut(detail: "Backend identity session revoked and secure local session removed.")
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.applyIdentityAccessFailure(
+                            action: "Remote Sign Out Failed",
+                            error: error,
+                            fallbackDetail: "Remote sign-out failed; local secure session was still removed."
+                        )
+                        self.completeIdentitySignOut(detail: "Local secure session removed after remote sign-out failed.")
+                    }
+                }
+            }
+            return
+        }
+        completeIdentitySignOut(detail: "Secure identity session removed from Keychain.")
+    }
+
+    private func completeIdentitySignOut(detail: String) {
         identityKeychainStore.delete()
-        let event = identityAuditEvent(action: "Sign Out", detail: "Secure identity session removed from Keychain.")
+        let event = identityAuditEvent(action: "Sign Out", detail: detail)
         identityAccessRuntimeSnapshot = .snapshot(
             state: .signedOut,
             session: nil,
@@ -9100,21 +9195,76 @@ final class HFStreamingStore: ObservableObject {
             restoreIdentityAccessSessionFromKeychain(reason: "No in-memory session; checked Keychain")
             return
         }
+        if identityAccessClient.isConfigured, session.provider != "Development Identity" {
+            Task {
+                do {
+                    let refreshed = try await identityAccessClient.refresh(session: session)
+                    await MainActor.run {
+                        self.applyIdentityAccessSession(
+                            refreshed,
+                            state: .remoteAuthenticated,
+                            action: "Refresh",
+                            detail: "Backend identity session refreshed until \(refreshed.expiresAtLabel).",
+                            runtimeDetail: "Remote identity session refreshed and restored through secure storage."
+                        )
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.applyIdentityAccessFailure(
+                            action: "Refresh Failed",
+                            error: error,
+                            fallbackDetail: "Remote identity refresh failed. Existing secure session remains until expiration."
+                        )
+                    }
+                }
+            }
+            return
+        }
         let refreshed = session.refreshed()
-        identityKeychainStore.save(refreshed)
-        let event = identityAuditEvent(action: "Refresh", detail: "Session refreshed until \(refreshed.expiresAtLabel).")
-        identityAccessRuntimeSnapshot = .snapshot(
+        applyIdentityAccessSession(
+            refreshed,
             state: refreshed.provider == "Development Identity" ? .localDevelopment : .remoteAuthenticated,
-            session: refreshed,
-            auditEvents: trimmedIdentityEvents(appending: event),
-            deletionRequestStatus: identityAccessRuntimeSnapshot.deletionRequestStatus,
-            detail: "Identity session refreshed and restored through secure storage."
+            action: "Refresh",
+            detail: "Session refreshed until \(refreshed.expiresAtLabel).",
+            runtimeDetail: "Identity session refreshed and restored through secure storage.",
+            deletionStatus: identityAccessRuntimeSnapshot.deletionRequestStatus
         )
-        rebuildIdentitySessionRuntime(reason: "Identity session refreshed")
     }
 
     func requestIdentityAccountDeletion() {
         guard let session = identityAccessRuntimeSnapshot.activeSession else { return }
+        if identityAccessClient.isConfigured, session.provider != "Development Identity" {
+            Task {
+                do {
+                    let response = try await identityAccessClient.requestDeletion(session: session)
+                    await MainActor.run {
+                        self.identityKeychainStore.delete()
+                        let event = self.identityAuditEvent(
+                            action: "Deletion Request",
+                            detail: response.detail ?? "Backend account deletion request recorded."
+                        )
+                        self.identityAccessRuntimeSnapshot = .snapshot(
+                            state: .deletionRequested,
+                            session: nil,
+                            auditEvents: self.trimmedIdentityEvents(appending: event),
+                            deletionRequestStatus: "Requested",
+                            detail: response.detail ?? "Deletion request recorded and remote sessions were revoked."
+                        )
+                        self.refreshAuthRuntimeStatus()
+                        self.rebuildIdentitySessionRuntime(reason: "Account deletion request recorded")
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.applyIdentityAccessFailure(
+                            action: "Deletion Request Failed",
+                            error: error,
+                            fallbackDetail: "Backend account deletion request failed. Session remains active."
+                        )
+                    }
+                }
+            }
+            return
+        }
         let event = identityAuditEvent(action: "Deletion Request", detail: "Account deletion request recorded for \(session.displayName).")
         identityAccessRuntimeSnapshot = .snapshot(
             state: .deletionRequested,
@@ -9124,6 +9274,40 @@ final class HFStreamingStore: ObservableObject {
             detail: "Deletion request is recorded locally. Production fulfillment requires provider confirmation and retention policy execution."
         )
         rebuildIdentitySessionRuntime(reason: "Account deletion request recorded")
+    }
+
+    private func applyIdentityAccessSession(
+        _ session: HFIdentityAccessSession,
+        state: HFIdentityAccessRuntimeState,
+        action: String,
+        detail: String,
+        runtimeDetail: String,
+        deletionStatus: String = "Not Requested"
+    ) {
+        identityKeychainStore.save(session)
+        let event = identityAuditEvent(action: action, detail: detail)
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: state,
+            session: session,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: deletionStatus,
+            detail: runtimeDetail
+        )
+        refreshAuthRuntimeStatus()
+        rebuildIdentitySessionRuntime(reason: action)
+    }
+
+    private func applyIdentityAccessFailure(action: String, error: Error, fallbackDetail: String) {
+        let event = identityAuditEvent(action: action, detail: error.localizedDescription)
+        identityAccessRuntimeSnapshot = .snapshot(
+            state: identityAccessRuntimeSnapshot.state,
+            session: identityAccessRuntimeSnapshot.activeSession,
+            auditEvents: trimmedIdentityEvents(appending: event),
+            deletionRequestStatus: identityAccessRuntimeSnapshot.deletionRequestStatus,
+            detail: fallbackDetail
+        )
+        refreshAuthRuntimeStatus()
+        rebuildIdentitySessionRuntime(reason: action)
     }
 
     func expireIdentityAccessSessionForQA() {

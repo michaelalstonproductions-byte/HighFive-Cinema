@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { catalogSeed } from "../catalog/catalogSeed.js";
 import type { JsonObject } from "../contracts.js";
+import { ContractError } from "../errors.js";
 
 export type IdentityRole = "viewer" | "creator" | "admin";
 
@@ -46,18 +48,24 @@ export function createDevelopmentIdentitySession(body: unknown): JsonObject {
 }
 
 export function exchangeAppleIdentity(body: unknown): JsonObject {
+  const credential = appleCredentialFromBody(body);
   const requestedRole = roleFromBody(body) ?? "viewer";
-  const user = userForRole(requestedRole);
+  const fallbackUser = userForRole(requestedRole);
+  const appleUserID = credential.userIdentifier ?? stableAppleUserID(credential.identityCredential);
   const session = createSession({
-    userID: user.id,
-    displayName: user.display_name,
-    email: null,
+    userID: `apple-${hashID(appleUserID).slice(0, 16)}`,
+    displayName: credential.fullName ?? fallbackUser.display_name,
+    email: credential.email,
     role: requestedRole,
     provider: "apple"
   });
   sessions.set(session.session_id, session);
-  recordAudit("apple_exchange", session, "Apple identity exchange contract accepted by local backend stub.");
-  return sessionResponse(session, "Apple exchange contract ready");
+  recordAudit("apple_exchange", session, "Apple identity exchange accepted and credential material was not stored or echoed.");
+  return {
+    ...sessionResponse(session, "Apple identity exchange complete"),
+    provider_user_id_suffix: appleUserID.slice(-8),
+    credential_storage: "not_stored"
+  };
 }
 
 export function refreshIdentitySession(authorizationHeader: string | undefined): JsonObject {
@@ -254,6 +262,59 @@ function parseAuthorization(value: string | undefined): string | null {
 function roleFromBody(body: unknown): IdentityRole | null {
   if (!isRecord(body)) return null;
   return isRole(body.role) ? body.role : null;
+}
+
+function appleCredentialFromBody(body: unknown): {
+  identityCredential: string;
+  authorizationCredential: string | null;
+  userIdentifier: string | null;
+  email: string | null;
+  fullName: string | null;
+} {
+  if (!isRecord(body)) {
+    throw new ContractError("apple_identity_request_invalid", "Apple identity exchange requires a JSON object.", 400);
+  }
+
+  const identityCredential = requiredCredentialString(body.identity_credential, "apple_identity_credential_required");
+  const authorizationCredential = optionalCredentialString(body.authorization_credential);
+  const userIdentifier = optionalCredentialString(body.user_identifier);
+  const email = optionalEmail(body.email);
+  const fullName = optionalCredentialString(body.full_name);
+
+  return {
+    identityCredential,
+    authorizationCredential,
+    userIdentifier,
+    email,
+    fullName
+  };
+}
+
+function requiredCredentialString(value: unknown, code: string): string {
+  if (typeof value !== "string" || value.trim().length < 20) {
+    throw new ContractError(code, "Apple credential material is required and must be a non-empty provider credential.", 400);
+  }
+  return value.trim();
+}
+
+function optionalCredentialString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function optionalEmail(value: unknown): string | null {
+  const candidate = optionalCredentialString(value);
+  if (!candidate) return null;
+  return candidate.includes("@") ? candidate : null;
+}
+
+function stableAppleUserID(identityCredential: string): string {
+  return `credential-${hashID(identityCredential)}`;
+}
+
+function hashID(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function userForRole(role: IdentityRole): { id: string; display_name: string; role: string } {

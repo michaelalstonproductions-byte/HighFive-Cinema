@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 enum HFMembershipPassFacet: String, CaseIterable, Identifiable {
@@ -509,6 +510,17 @@ struct ProfileView: View {
                     )
                 }
 
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.fullName, .email]
+                } onCompletion: { result in
+                    handleAppleSignIn(result)
+                }
+                .signInWithAppleButtonStyle(.white)
+                .frame(height: 46)
+                .clipShape(Capsule())
+                .accessibilityLabel("Sign in with Apple")
+                .accessibilityIdentifier("hf.identity.access.appleSignIn")
+
                 HStack(spacing: HFSpacing.sm) {
                     Button {
                         streamingStore.signInWithDevelopmentIdentity(role: .creator)
@@ -573,6 +585,28 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.account.panel")
+    }
+
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard
+                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                let payload = HFAppleIdentityCredentialPayload(credential: credential)
+            else {
+                mockMessage = ProfileMockMessage(
+                    title: "Apple Sign In",
+                    body: "Apple did not return a usable identity credential. Try again or use Development Sign In for simulator validation."
+                )
+                return
+            }
+            streamingStore.signInWithAppleCredential(payload, role: .viewer)
+        case .failure(let error):
+            mockMessage = ProfileMockMessage(
+                title: "Apple Sign In",
+                body: error.localizedDescription
+            )
+        }
     }
 
     private var librarySyncReadinessPanel: some View {
