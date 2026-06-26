@@ -1,0 +1,30 @@
+{
+  "phase": "LP15 Launch",
+  "app_name": "HighFive Cinema",
+  "release_candidate": "1.0.0-rc1",
+  "required_documents": [
+    "docs/launch/APP_STORE_LISTING.md",
+    "docs/launch/SUPPORT_RUNBOOK.md",
+    "docs/launch/TERMS_OF_USE.md",
+    "docs/launch/PRIVACY_NOTICE.md",
+    "docs/launch/PRESS_KIT.md"
+  ],
+  "required_screenshots": [
+    "home.png",
+    "search.png",
+    "library.png",
+    "profile.png",
+    "creator.png",
+    "operations.png",
+    "player.png"
+  ],
+  "manual_review_required": [
+    "final legal terms",
+    "final privacy notice",
+    "App Store privacy answers",
+    "support URL",
+    "marketing URL",
+    "signed archive export",
+    "App Store Connect media upload"
+  ]
+}
