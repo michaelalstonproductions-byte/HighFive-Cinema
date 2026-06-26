@@ -772,6 +772,11 @@ struct HFStreamingPlaybackSessionRecord: Identifiable, Hashable {
     var refreshAfter: String?
     var processingJobID: String
     var hlsMasterObjectKey: String
+    var variantCount: Int
+    var audioTrackCount: Int
+    var captionTrackCount: Int
+    var resumePolicy: String
+    var nextEpisodeTitle: String?
     var detail: String
 }
 
@@ -3243,6 +3248,8 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-start-streaming-playback-runtime")
             || arguments.contains("--hf-playback-hls")
             || arguments.contains("--hf-playback-session")
+            || arguments.contains("--hf-playback-tracks")
+            || arguments.contains("--hf-playback-next-episode")
             || arguments.contains("--hf-playback-error")
             || arguments.contains("--hf-start-viewer-library-runtime")
             || arguments.contains("--hf-library-progress-sync")
@@ -4681,6 +4688,11 @@ struct HFRemoteStreamingPlaybackDescriptorResponse: Decodable, Hashable {
     var playbackSource: String?
     var processingJobID: String?
     var hlsMasterObjectKey: String?
+    var bitrateVariants: [HFRemoteStreamingPlaybackVariant]?
+    var audioTracks: [HFRemoteStreamingPlaybackAudioTrack]?
+    var captionTracks: [HFRemoteStreamingPlaybackCaptionTrack]?
+    var resumePolicy: String?
+    var nextEpisode: HFRemoteStreamingPlaybackNextEpisode?
 
     private enum CodingKeys: String, CodingKey {
         case playbackDescriptorStatus = "playback_descriptor_status"
@@ -4693,6 +4705,64 @@ struct HFRemoteStreamingPlaybackDescriptorResponse: Decodable, Hashable {
         case playbackSource = "playback_source"
         case processingJobID = "processing_job_id"
         case hlsMasterObjectKey = "hls_master_object_key"
+        case bitrateVariants = "bitrate_variants"
+        case audioTracks = "audio_tracks"
+        case captionTracks = "caption_tracks"
+        case resumePolicy = "resume_policy"
+        case nextEpisode = "next_episode"
+    }
+}
+
+struct HFRemoteStreamingPlaybackVariant: Decodable, Hashable {
+    var quality: String?
+    var objectKey: String?
+    var bandwidth: Int?
+    var codec: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case quality
+        case objectKey = "object_key"
+        case bandwidth
+        case codec
+    }
+}
+
+struct HFRemoteStreamingPlaybackAudioTrack: Decodable, Hashable {
+    var language: String?
+    var label: String?
+    var codec: String?
+    var channels: Int?
+}
+
+struct HFRemoteStreamingPlaybackCaptionTrack: Decodable, Hashable {
+    var language: String?
+    var label: String?
+    var format: String?
+    var objectKey: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case language
+        case label
+        case format
+        case objectKey = "object_key"
+    }
+}
+
+struct HFRemoteStreamingPlaybackNextEpisode: Decodable, Hashable {
+    var seriesID: String?
+    var nextEpisodeID: String?
+    var title: String?
+    var seasonNumber: Int?
+    var episodeNumber: Int?
+    var autoplay: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case seriesID = "series_id"
+        case nextEpisodeID = "next_episode_id"
+        case title
+        case seasonNumber = "season_number"
+        case episodeNumber = "episode_number"
+        case autoplay
     }
 }
 
@@ -8293,7 +8363,8 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var streamingPlaybackRuntimeStatusRows: [HFStreamingPlaybackStatusRow] {
-        [
+        let latestSession = streamingPlaybackSessionRecords.first
+        return [
             HFStreamingPlaybackStatusRow(
                 id: "runtime",
                 title: "Playback Runtime",
@@ -8321,6 +8392,34 @@ final class HFStreamingStore: ObservableObject {
                 value: streamingPlaybackRuntimeSnapshot.refreshAfter ?? "Local",
                 detail: streamingPlaybackRuntimeSnapshot.expiresAt.map { "Expires \($0)" } ?? "No signed descriptor active.",
                 systemImage: "arrow.clockwise.circle.fill"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "variants",
+                title: "Bitrate",
+                value: latestSession.map { "\($0.variantCount) Variants" } ?? "Local",
+                detail: latestSession.map { _ in "Adaptive HLS variants are available for player quality switching." } ?? "No remote bitrate ladder loaded.",
+                systemImage: "slider.horizontal.3"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "tracks",
+                title: "Tracks",
+                value: latestSession.map { "\($0.audioTrackCount) Audio / \($0.captionTrackCount) Captions" } ?? "Local",
+                detail: "Player contract exposes selectable audio and caption metadata.",
+                systemImage: "captions.bubble.fill"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "resume",
+                title: "Resume",
+                value: latestSession?.resumePolicy.replacingOccurrences(of: "_", with: " ").capitalized ?? "Local",
+                detail: "Resume positions are resolved through the playback session lifecycle.",
+                systemImage: "gobackward"
+            ),
+            HFStreamingPlaybackStatusRow(
+                id: "nextEpisode",
+                title: "Next Episode",
+                value: latestSession?.nextEpisodeTitle ?? "Local",
+                detail: latestSession?.nextEpisodeTitle.map { "Series autoplay can continue into \($0)." } ?? "No series continuation loaded.",
+                systemImage: "forward.end.fill"
             )
         ]
     }
@@ -8429,7 +8528,12 @@ final class HFStreamingStore: ObservableObject {
                 refreshAfter: descriptor.refreshAfter,
                 processingJobID: descriptor.processingJobID ?? processedJob.id,
                 hlsMasterObjectKey: descriptor.hlsMasterObjectKey ?? processedJob.output?.hlsMasterObjectKey ?? "Unknown",
-                detail: "Entitlement, descriptor, and signed HLS manifest resolved through the loopback backend."
+                variantCount: descriptor.bitrateVariants?.count ?? 0,
+                audioTrackCount: descriptor.audioTracks?.count ?? 0,
+                captionTrackCount: descriptor.captionTracks?.count ?? 0,
+                resumePolicy: descriptor.resumePolicy ?? "local_progress",
+                nextEpisodeTitle: descriptor.nextEpisode?.title,
+                detail: "Entitlement, descriptor, signed HLS manifest, tracks, resume state, and next episode resolved through the loopback backend."
             )
             streamingPlaybackSessionRecords.removeAll { $0.id == session.id }
             streamingPlaybackSessionRecords.insert(session, at: 0)
@@ -8447,7 +8551,7 @@ final class HFStreamingStore: ObservableObject {
                 refreshAfter: descriptor.refreshAfter,
                 sessionCount: streamingPlaybackSessionRecords.count,
                 lastManifestPreview: manifestPreview,
-                detail: "Processed HLS playback runtime is ready for the premium player shell.",
+                detail: "Processed HLS playback runtime is ready with adaptive variants, audio, captions, resume policy, and series continuation.",
                 lastError: nil,
                 updatedAtLabel: "Playback descriptor ready"
             )

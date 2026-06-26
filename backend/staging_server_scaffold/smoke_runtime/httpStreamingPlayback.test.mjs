@@ -65,6 +65,19 @@ test("streaming playback: processed HLS output resolves through playback descrip
   assert.equal(descriptor.json.playback_format, "hls");
   assert.equal(descriptor.json.playback_source, "processed_hls");
   assert.equal(descriptor.json.processing_job_id, job.id);
+  assert.equal(descriptor.json.resume_policy, "server_progress");
+  assert.equal(descriptor.json.player_controls.bitrate_switching, true);
+  assert.equal(descriptor.json.player_controls.audio_selection, true);
+  assert.equal(descriptor.json.player_controls.captions, true);
+  assert.equal(descriptor.json.player_controls.next_episode, true);
+  assert.ok(descriptor.json.bitrate_variants.length >= 2);
+  assert.equal(descriptor.json.bitrate_variants[0].quality, "1080p");
+  assert.equal(descriptor.json.bitrate_variants[1].quality, "720p");
+  assert.equal(descriptor.json.audio_tracks[0].language, "en");
+  assert.equal(descriptor.json.audio_tracks[0].channels, 2);
+  assert.equal(descriptor.json.caption_tracks[0].format, "webvtt");
+  assert.equal(descriptor.json.next_episode.autoplay, true);
+  assert.equal(descriptor.json.next_episode.episode_number, 2);
   assert.match(descriptor.json.playback_url_or_token_reference, /\/v1\/playback\/hls\//);
   assertIsoDate(descriptor.json.expires_at);
   assertShortLived(descriptor.json.expires_at, now);
@@ -76,6 +89,10 @@ test("streaming playback: processed HLS output resolves through playback descrip
   assert.match(manifest.contentType, /application\/vnd\.apple\.mpegurl/);
   assert.match(manifest.text, /#EXTM3U/);
   assert.match(manifest.text, /variant-1080p\.m3u8/);
+  assert.match(manifest.text, /variant-720p\.m3u8/);
+  assert.match(manifest.text, /TYPE=AUDIO/);
+  assert.match(manifest.text, /TYPE=SUBTITLES/);
+  assert.match(manifest.text, /captions-en\.vtt/);
 });
 
 test("streaming playback: HLS manifest rejects tampered signatures", async () => {
@@ -91,4 +108,17 @@ test("streaming playback: HLS manifest rejects tampered signatures", async () =>
   assert.equal(result.status, 403);
   assert.match(result.contentType, /application\/json/);
   assert.equal(result.json.error, "playback_signature_invalid_or_expired");
+});
+
+test("streaming playback: readiness advertises player runtime capabilities", async () => {
+  const readiness = await requestJson("/ready");
+  assertJsonResponse(readiness, 200);
+  assert.equal(readiness.json.streaming_playback_runtime, true);
+  assert.equal(readiness.json.signed_playback_urls, true);
+  assert.equal(readiness.json.playback_resume_positions, true);
+  assert.equal(readiness.json.playback_caption_tracks, true);
+  assert.equal(readiness.json.playback_audio_tracks, true);
+  assert.equal(readiness.json.playback_bitrate_switching, true);
+  assert.equal(readiness.json.playback_series_autoplay, true);
+  assert.equal(readiness.json.playback_next_episode, true);
 });

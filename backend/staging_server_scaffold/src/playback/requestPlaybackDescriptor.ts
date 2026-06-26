@@ -79,7 +79,13 @@ export async function requestPlaybackDescriptor(
       playback_format: "hls",
       playback_source: "processed_hls",
       processing_job_id: processedPlayback.processing_job_id,
-      hls_master_object_key: processedPlayback.hls_master_object_key
+      hls_master_object_key: processedPlayback.hls_master_object_key,
+      bitrate_variants: processedPlayback.bitrate_variants,
+      audio_tracks: processedPlayback.audio_tracks,
+      caption_tracks: processedPlayback.caption_tracks,
+      resume_policy: processedPlayback.resume_policy,
+      next_episode: processedPlayback.next_episode,
+      player_controls: processedPlayback.player_controls
     };
   }
 

@@ -1301,6 +1301,16 @@ struct HFPlayerServiceSheet: View {
                             .font(HFTypography.micro)
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(2)
+                        Text("\(session.variantCount) variants • \(session.audioTrackCount) audio • \(session.captionTrackCount) captions • \(session.resumePolicy.replacingOccurrences(of: "_", with: " ").capitalized)")
+                            .font(HFTypography.micro.weight(.semibold))
+                            .foregroundStyle(HFColors.cyanGlow)
+                            .lineLimit(2)
+                        if let nextEpisodeTitle = session.nextEpisodeTitle {
+                            Text("Next Episode: \(nextEpisodeTitle)")
+                                .font(HFTypography.micro.weight(.semibold))
+                                .foregroundStyle(HFColors.gold)
+                                .lineLimit(2)
+                        }
                     }
                     .padding(HFSpacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)

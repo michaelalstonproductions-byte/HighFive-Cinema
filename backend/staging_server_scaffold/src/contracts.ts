@@ -55,6 +55,12 @@ export type PlaybackDescriptorResponse = {
   playback_source?: string | null;
   processing_job_id?: string | null;
   hls_master_object_key?: string | null;
+  bitrate_variants?: JsonObject[];
+  audio_tracks?: JsonObject[];
+  caption_tracks?: JsonObject[];
+  resume_policy?: string | null;
+  next_episode?: JsonObject | null;
+  player_controls?: JsonObject;
 };
 
 export const entitlementValidationPath = "/entitlements/validate";

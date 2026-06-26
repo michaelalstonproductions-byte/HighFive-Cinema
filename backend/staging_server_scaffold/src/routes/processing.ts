@@ -34,6 +34,14 @@ type ProcessedPlaybackDescriptor = {
   refresh_after: string;
   processing_job_id: string;
   hls_master_object_key: string;
+  playback_format: "hls";
+  playback_source: "processed_hls";
+  bitrate_variants: JsonObject[];
+  audio_tracks: JsonObject[];
+  caption_tracks: JsonObject[];
+  resume_policy: "server_progress";
+  next_episode: JsonObject | null;
+  player_controls: JsonObject;
 };
 
 const processingJobs = new Map<string, ProcessingJobRecord>();
@@ -56,6 +64,14 @@ export function processingReadinessSummary(): JsonObject {
     thumbnail_generation: true,
     trailer_derivative: true,
     playback_descriptor_resolution: true,
+    streaming_playback_runtime: true,
+    signed_playback_urls: true,
+    playback_resume_positions: true,
+    playback_caption_tracks: true,
+    playback_audio_tracks: true,
+    playback_bitrate_switching: true,
+    playback_series_autoplay: true,
+    playback_next_episode: true,
     job_progress: true,
     retry: true,
     idempotency: true,
@@ -81,7 +97,21 @@ export function processedPlaybackDescriptorForMovie(movieID: string, origin: str
     expires_at: expiresAt,
     refresh_after: refreshAfter,
     processing_job_id: job.id,
-    hls_master_object_key: output.hls_master_object_key
+    hls_master_object_key: output.hls_master_object_key,
+    playback_format: "hls",
+    playback_source: "processed_hls",
+    bitrate_variants: arrayField(output, "variants"),
+    audio_tracks: arrayField(output, "audio_tracks"),
+    caption_tracks: arrayField(output, "captions"),
+    resume_policy: "server_progress",
+    next_episode: nextEpisodeForMovie(movieID),
+    player_controls: {
+      bitrate_switching: true,
+      audio_selection: true,
+      captions: true,
+      resume: true,
+      next_episode: true
+    }
   };
 }
 
@@ -97,10 +127,30 @@ export function processedPlaybackManifest(
   if (!expiresAt || !signature || Date.parse(expiresAt) <= Date.now() || signature !== playbackSignature(job, expiresAt)) {
     return { statusCode: 403, contentType: "application/json", body: JSON.stringify({ error: "playback_signature_invalid_or_expired" }) };
   }
+  const variants = arrayField(job.output, "variants");
+  const audioTracks = arrayField(job.output, "audio_tracks");
+  const captionTracks = arrayField(job.output, "captions");
+  const audioMedia = audioTracks.length > 0
+    ? "#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES\n"
+    : "";
+  const subtitleMedia = captionTracks.length > 0
+    ? "#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"subs\",NAME=\"English CC\",LANGUAGE=\"en\",URI=\"captions-en.vtt\",DEFAULT=YES,AUTOSELECT=YES\n"
+    : "";
+  const variantLines = variants
+    .map((variant) => {
+      const quality = typeof variant.quality === "string" ? variant.quality : "1080p";
+      const objectKey = typeof variant.object_key === "string" ? variant.object_key : `variant-${quality}.m3u8`;
+      const bandwidth = typeof variant.bandwidth === "number" ? variant.bandwidth : 4500000;
+      const resolution = quality === "720p" ? "1280x720" : "1920x1080";
+      const codec = quality === "720p" ? "avc1.64001f,mp4a.40.2" : "avc1.640028,mp4a.40.2";
+      const filename = objectKey.split("/").pop() ?? `variant-${quality}.m3u8`;
+      return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${resolution},CODECS=\"${codec}\",AUDIO=\"audio\",SUBTITLES=\"subs\"\n${filename}`;
+    })
+    .join("\n");
   return {
     statusCode: 200,
     contentType: "application/vnd.apple.mpegurl",
-    body: "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-STREAM-INF:BANDWIDTH=4500000,RESOLUTION=1920x1080,CODECS=\"avc1.640028,mp4a.40.2\"\nvariant-1080p.m3u8\n"
+    body: `#EXTM3U\n#EXT-X-VERSION:7\n${audioMedia}${subtitleMedia}${variantLines}\n`
   };
 }
 
@@ -286,6 +336,7 @@ async function createHLSOutput(job: ProcessingJobRecord, asset: UploadedAssetRec
   const posterKey = `${packageKey}/poster-1080.jpg`;
   const thumbnailKey = `${packageKey}/thumbnail-manifest.json`;
   const trailerKey = `${packageKey}/trailer-preview.m3u8`;
+  const captionsKey = `${packageKey}/captions-en.vtt`;
   await mkdir(outputDir, { recursive: true });
   const variantManifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nsegment-00001.ts\n#EXT-X-ENDLIST\n";
   const variant720Manifest = "#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\nsegment-720p-00001.ts\n#EXT-X-ENDLIST\n";
@@ -295,6 +346,7 @@ async function createHLSOutput(job: ProcessingJobRecord, asset: UploadedAssetRec
   await writeFile(path.join(uploadObjectStoreRoot(), variant720Key), variant720Manifest);
   await writeFile(path.join(uploadObjectStoreRoot(), masterKey), masterManifest);
   await writeFile(path.join(uploadObjectStoreRoot(), trailerKey), trailerManifest);
+  await writeFile(path.join(uploadObjectStoreRoot(), captionsKey), "WEBVTT\n\n00:00:00.000 --> 00:00:06.000\nHighFive local caption preview.\n");
   await writeFile(path.join(uploadObjectStoreRoot(), posterKey), "highfive local poster derivative\n");
   await writeFile(path.join(uploadObjectStoreRoot(), thumbnailKey), JSON.stringify({
     source_asset_id: asset.id,
@@ -317,8 +369,8 @@ async function createHLSOutput(job: ProcessingJobRecord, asset: UploadedAssetRec
     poster_variant_object_key: thumbnailKey,
     generated_poster_object_key: posterKey,
     trailer_derivative_object_key: trailerKey,
-    captions: [],
-    audio_tracks: [{ language: "en", codec: "aac_contract", channels: 2 }],
+    captions: [{ language: "en", label: "English CC", format: "webvtt", object_key: captionsKey }],
+    audio_tracks: [{ language: "en", label: "English", codec: "aac_contract", channels: 2 }],
     package_checksum_sha256: checksum,
     idempotency_key: `${asset.id}:${asset.checksum_sha256}`,
     storage_provider: "local_object_store",
@@ -351,6 +403,24 @@ function completedProcessingJobForMovie(movieID: string): ProcessingJobRecord | 
 function playbackSignature(job: ProcessingJobRecord, expiresAt: string): string {
   const checksum = typeof job.output?.package_checksum_sha256 === "string" ? job.output.package_checksum_sha256 : job.id;
   return createHash("sha256").update(`${job.id}:${expiresAt}:${checksum}`).digest("hex");
+}
+
+function nextEpisodeForMovie(movieID: string): JsonObject | null {
+  if (movieID !== "friendly" && movieID !== "behind-vision") return null;
+  return {
+    series_id: "series-paranormall-local",
+    next_episode_id: "episode-paranormall-s1e2",
+    title: "The House That Answered",
+    season_number: 1,
+    episode_number: 2,
+    autoplay: true
+  };
+}
+
+function arrayField(body: JsonObject, key: string): JsonObject[] {
+  const value = body[key];
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord);
 }
 
 function parseProcessingJobInput(body: unknown): { asset_id: string } {
