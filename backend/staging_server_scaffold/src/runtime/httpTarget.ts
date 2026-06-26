@@ -62,6 +62,11 @@ import {
   performanceScaleSummaryPath,
   performanceScaleSyncTuningPath,
   performanceScaleWarmCachePath,
+  cinemaTwoAccessibilityPath,
+  cinemaTwoMarketingAssetsPath,
+  cinemaTwoPolishAuditPath,
+  cinemaTwoReleaseChecklistPath,
+  cinemaTwoSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -210,6 +215,14 @@ import {
   searchIndexReport,
   warmPerformanceCache
 } from "../routes/performanceScale.js";
+import {
+  cinemaTwoAccessibility,
+  cinemaTwoMarketingAssets,
+  cinemaTwoPolishAudit,
+  cinemaTwoReadinessSummary,
+  cinemaTwoReleaseChecklist,
+  cinemaTwoSummary
+} from "../routes/cinemaTwo.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1003,6 +1016,56 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 201, recordSyncTuning(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === cinemaTwoSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, cinemaTwoSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === cinemaTwoPolishAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, cinemaTwoPolishAudit(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === cinemaTwoAccessibilityPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, cinemaTwoAccessibility(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === cinemaTwoMarketingAssetsPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, cinemaTwoMarketingAssets(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === cinemaTwoReleaseChecklistPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, cinemaTwoReleaseChecklist(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -1926,6 +1989,11 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     performance_scale_large_catalog_path: performanceScaleLargeCatalogPath,
     performance_scale_search_index_path: performanceScaleSearchIndexPath,
     performance_scale_sync_tuning_path: performanceScaleSyncTuningPath,
+    cinema_two_summary_path: cinemaTwoSummaryPath,
+    cinema_two_polish_audit_path: cinemaTwoPolishAuditPath,
+    cinema_two_accessibility_path: cinemaTwoAccessibilityPath,
+    cinema_two_marketing_assets_path: cinemaTwoMarketingAssetsPath,
+    cinema_two_release_checklist_path: cinemaTwoReleaseChecklistPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1976,6 +2044,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const deviceExpansion = deviceExpansionReadinessSummary();
   const enterpriseStudio = enterpriseStudioReadinessSummary();
   const performanceScale = performanceScaleReadinessSummary();
+  const cinemaTwo = cinemaTwoReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2125,6 +2194,14 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     performance_scale_external_services: Boolean(performanceScale.external_scale_services),
     performance_scale_cache_entries: Number(performanceScale.cache_entries),
     performance_scale_sync_tuning_records: Number(performanceScale.sync_tuning_records),
+    cinema_two_enabled: Boolean(cinemaTwo.cinema_two_enabled),
+    cinema_two_final_ui_polish: Boolean(cinemaTwo.final_ui_polish),
+    cinema_two_performance_tuning: Boolean(cinemaTwo.performance_tuning),
+    cinema_two_accessibility_review: Boolean(cinemaTwo.accessibility_review),
+    cinema_two_animation_policy: Boolean(cinemaTwo.animation_policy),
+    cinema_two_launch_marketing_assets: Boolean(cinemaTwo.launch_marketing_assets),
+    cinema_two_external_services: Boolean(cinemaTwo.external_services),
+    cinema_two_release_gates: Number(cinemaTwo.release_gates),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
