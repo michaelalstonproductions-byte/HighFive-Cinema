@@ -57,6 +57,11 @@ import {
   enterpriseStudioDistributionReportPath,
   enterpriseStudioRightsReportPath,
   enterpriseStudioSummaryPath,
+  performanceScaleLargeCatalogPath,
+  performanceScaleSearchIndexPath,
+  performanceScaleSummaryPath,
+  performanceScaleSyncTuningPath,
+  performanceScaleWarmCachePath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -197,6 +202,14 @@ import {
   enterpriseStudioReadinessSummary,
   enterpriseStudioSummary
 } from "../routes/enterpriseStudio.js";
+import {
+  largeCatalogPage,
+  performanceScaleReadinessSummary,
+  performanceScaleSummary,
+  recordSyncTuning,
+  searchIndexReport,
+  warmPerformanceCache
+} from "../routes/performanceScale.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -938,6 +951,58 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, enterpriseDistributionReport(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === performanceScaleSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, performanceScaleSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === performanceScaleWarmCachePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, warmPerformanceCache(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === performanceScaleLargeCatalogPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, largeCatalogPage(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === performanceScaleSearchIndexPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, searchIndexReport(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === performanceScaleSyncTuningPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, recordSyncTuning(authHeader(request.headers.authorization), body));
         return;
       }
 
@@ -1856,6 +1921,11 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     enterprise_studio_bulk_publishing_path: enterpriseStudioBulkPublishingPath,
     enterprise_studio_rights_report_path: enterpriseStudioRightsReportPath,
     enterprise_studio_distribution_report_path: enterpriseStudioDistributionReportPath,
+    performance_scale_summary_path: performanceScaleSummaryPath,
+    performance_scale_warm_cache_path: performanceScaleWarmCachePath,
+    performance_scale_large_catalog_path: performanceScaleLargeCatalogPath,
+    performance_scale_search_index_path: performanceScaleSearchIndexPath,
+    performance_scale_sync_tuning_path: performanceScaleSyncTuningPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -1905,6 +1975,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const livePremieres = livePremiereReadinessSummary();
   const deviceExpansion = deviceExpansionReadinessSummary();
   const enterpriseStudio = enterpriseStudioReadinessSummary();
+  const performanceScale = performanceScaleReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2045,6 +2116,15 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     enterprise_studio_dashboards: Boolean(enterpriseStudio.enterprise_dashboards),
     enterprise_studio_external_services: Boolean(enterpriseStudio.external_enterprise_services),
     enterprise_studio_bulk_batches: Number(enterpriseStudio.bulk_batches),
+    performance_scale_enabled: Boolean(performanceScale.performance_scale_enabled),
+    performance_scale_large_catalog_pagination: Boolean(performanceScale.large_catalog_pagination),
+    performance_scale_search_index_diagnostics: Boolean(performanceScale.search_index_diagnostics),
+    performance_scale_catalog_cache_warming: Boolean(performanceScale.catalog_cache_warming),
+    performance_scale_background_sync_tuning: Boolean(performanceScale.background_sync_tuning),
+    performance_scale_database_index_plan: Boolean(performanceScale.database_index_plan),
+    performance_scale_external_services: Boolean(performanceScale.external_scale_services),
+    performance_scale_cache_entries: Number(performanceScale.cache_entries),
+    performance_scale_sync_tuning_records: Number(performanceScale.sync_tuning_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
