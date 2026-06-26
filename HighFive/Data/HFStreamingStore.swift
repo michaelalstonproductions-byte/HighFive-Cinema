@@ -11896,7 +11896,7 @@ final class HFStreamingStore: ObservableObject {
             let sessionID = try await client.createDevelopmentSession(role: "creator")
             let device = try await client.registerNotificationDevice(
                 HFRemoteNotificationDevicePayload(
-                    deviceToken: "ios-simulator-highfive-notification-token-\(activeProfileID)-p40a",
+                    deviceToken: "ios-simulator-highfive-notification-token-\(activeProfileID)-lp10",
                     platform: "ios",
                     environment: "simulator"
                 ),
@@ -11912,6 +11912,33 @@ final class HFStreamingStore: ObservableObject {
                     title: "Publishing review update",
                     body: "Your HighFive project has a review update.",
                     deepLink: "highfive://creator/publishing"
+                ),
+                sessionID: sessionID
+            )
+            _ = try await client.sendTestNotification(
+                HFRemoteNotificationTestPushPayload(
+                    category: "creator",
+                    title: "Creator workspace update",
+                    body: "A creator profile, project, or collaboration update is ready.",
+                    deepLink: "highfive://creator/workspace"
+                ),
+                sessionID: sessionID
+            )
+            _ = try await client.sendTestNotification(
+                HFRemoteNotificationTestPushPayload(
+                    category: "series",
+                    title: "Series activity update",
+                    body: "A season, episode, or continuity event is ready in the series workspace.",
+                    deepLink: "highfive://series"
+                ),
+                sessionID: sessionID
+            )
+            _ = try await client.sendTestNotification(
+                HFRemoteNotificationTestPushPayload(
+                    category: "system",
+                    title: "HighFive system notice",
+                    body: "The notification center is available without external push credentials.",
+                    deepLink: "highfive://notifications/system"
                 ),
                 sessionID: sessionID
             )
@@ -12006,8 +12033,10 @@ final class HFStreamingStore: ObservableObject {
     private func notificationSystemImage(for category: String) -> String {
         switch category.lowercased() {
         case "publishing": return "paperplane.circle.fill"
+        case "creator": return "person.crop.circle.badge.checkmark"
         case "processing": return "gearshape.2.fill"
         case "release": return "sparkles.tv.fill"
+        case "series": return "play.square.stack.fill"
         case "episode": return "play.square.stack.fill"
         case "collaboration": return "person.3.sequence.fill"
         case "revenue": return "dollarsign.circle.fill"

@@ -22,7 +22,9 @@ test("notifications: device registration, preferences, inbox, and read state wor
 
   const preferences = await requestJson("/v1/notifications/preferences", { headers: auth });
   assertJsonResponse(preferences, 200);
-  assert.equal(preferences.json.preferences.length >= 6, true);
+  assert.equal(preferences.json.preferences.length >= 10, true);
+  assert.equal(preferences.json.preferences.some((item) => item.category === "creator"), true);
+  assert.equal(preferences.json.preferences.some((item) => item.category === "series"), true);
 
   const updated = await requestJson("/v1/notifications/preferences", {
     method: "PATCH",
@@ -75,12 +77,84 @@ test("notifications: delivery audit records the development APNs contract", asyn
   assertNoCredentialMaterial(audit.json);
 });
 
+test("notifications: creator, series, and system events populate inbox and deep links", async () => {
+  const auth = await signIn("creator");
+  await postJson("/v1/notifications/devices", {
+    device_token: "creator-series-system-notification-token-abcdef",
+    environment: "simulator"
+  }, auth);
+
+  const events = [
+    ["creator", "Creator workspace update", "A project collaborator changed readiness.", "highfive://creator/workspace"],
+    ["series", "Series activity update", "A new episode path is ready.", "highfive://series"],
+    ["system", "HighFive system notice", "Notification center fallback is available.", "highfive://notifications/system"]
+  ];
+
+  for (const [category, title, body, deep_link] of events) {
+    const result = await postJson("/v1/notifications/test-push", { category, title, body, deep_link }, auth);
+    assertJsonResponse(result, 202);
+    assert.equal(result.json.notification.category, category);
+    assert.equal(result.json.notification.deep_link, deep_link);
+  }
+
+  const inbox = await requestJson("/v1/notifications/inbox", { headers: auth });
+  assertJsonResponse(inbox, 200);
+  for (const [category] of events) {
+    assert.equal(inbox.json.notifications.some((item) => item.category === category), true);
+  }
+  assertNoCredentialMaterial(inbox.json);
+});
+
+test("notifications: disabled push still delivers in-app fallback and audit", async () => {
+  const auth = await signIn("creator");
+  await postJson("/v1/notifications/devices", {
+    device_token: "creator-disabled-push-token-abcdef",
+    environment: "simulator"
+  }, auth);
+  const updated = await requestJson("/v1/notifications/preferences", {
+    method: "PATCH",
+    headers: { "content-type": "application/json", ...auth },
+    body: JSON.stringify({ category: "creator", push_enabled: false, inbox_enabled: true })
+  });
+  assertJsonResponse(updated, 200);
+
+  const pushed = await postJson("/v1/notifications/test-push", {
+    category: "creator",
+    title: "Creator update",
+    body: "Push disabled fallback should remain in the inbox.",
+    deep_link: "highfive://creator/workspace"
+  }, auth);
+  assertJsonResponse(pushed, 202);
+  assert.equal(pushed.json.status, "push_disabled");
+  assert.equal(pushed.json.notification.delivery_status, "push_disabled");
+
+  const inbox = await requestJson("/v1/notifications/inbox", { headers: auth });
+  assertJsonResponse(inbox, 200);
+  assert.equal(inbox.json.notifications.some((item) => item.category === "creator" && item.delivery_status === "push_disabled"), true);
+
+  const audit = await requestJson("/v1/notifications/delivery-audit", { headers: auth });
+  assertJsonResponse(audit, 200);
+  assert.equal(audit.json.delivery_audit.some((record) => record.delivery_status === "push_disabled"), true);
+  assertNoCredentialMaterial(audit.json);
+});
+
 test("notifications: readiness exposes production notification contracts", async () => {
   const result = await requestJson("/ready");
   assertJsonResponse(result, 200);
   assert.equal(result.json.notifications_enabled, true);
   assert.equal(result.json.apns_contract_ready, true);
+  assert.equal(result.json.notification_push_contract, true);
   assert.equal(result.json.notification_device_registration, true);
+  assert.equal(result.json.notification_in_app_inbox, true);
   assert.equal(result.json.notification_delivery_audit, true);
+  assert.equal(result.json.notification_read_state, true);
+  assert.equal(result.json.notification_publishing_events, true);
+  assert.equal(result.json.notification_creator_events, true);
+  assert.equal(result.json.notification_series_events, true);
+  assert.equal(result.json.notification_system_events, true);
+  assert.equal(result.json.notification_permission_denied_fallback, true);
+  assert.equal(result.json.notification_creator_category, true);
+  assert.equal(result.json.notification_series_category, true);
+  assert.equal(result.json.notification_category_count >= 10, true);
   assert.equal(result.json.external_push_attempted, false);
 });

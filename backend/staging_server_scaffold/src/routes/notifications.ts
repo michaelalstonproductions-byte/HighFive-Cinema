@@ -4,8 +4,10 @@ import { type IdentityRole, type IdentitySession, requireIdentitySession } from 
 
 type NotificationCategory =
   | "publishing"
+  | "creator"
   | "processing"
   | "release"
+  | "series"
   | "episode"
   | "collaboration"
   | "revenue"
@@ -69,8 +71,10 @@ let auditCounter = 1;
 
 const defaultCategories: NotificationCategory[] = [
   "publishing",
+  "creator",
   "processing",
   "release",
+  "series",
   "episode",
   "collaboration",
   "revenue",
@@ -202,14 +206,29 @@ export function recordProductNotification(input: {
 }
 
 export function notificationReadinessSummary(): JsonObject {
+  const categoryCounts = defaultCategories.reduce<Record<string, number>>((counts, category) => {
+    counts[category] = inbox.filter((item) => item.category === category).length;
+    return counts;
+  }, {});
+
   return {
     notifications_enabled: true,
     apns_contract_ready: true,
+    push_contract: true,
     device_registration: true,
     preferences: true,
     inbox: true,
+    in_app_inbox: true,
     deep_links: true,
     delivery_audit: true,
+    read_state: true,
+    publishing_events: true,
+    creator_events: true,
+    series_events: true,
+    system_events: true,
+    permission_denied_fallback: true,
+    categories: defaultCategories,
+    category_counts: categoryCounts,
     registered_devices: devices.size,
     inbox_items: inbox.length,
     delivery_events: deliveryAudit.length,
@@ -273,6 +292,13 @@ function seedInboxIfNeeded(session: IdentitySession): void {
   });
   createNotification({
     session,
+    category: "creator",
+    title: "Creator workspace update",
+    body: "A creator profile, project, or collaboration update is ready for review.",
+    deepLink: "highfive://creator/workspace"
+  });
+  createNotification({
+    session,
     category: "processing",
     title: "Media processing complete",
     body: "A source asset has a processing completion event available.",
@@ -284,6 +310,20 @@ function seedInboxIfNeeded(session: IdentitySession): void {
     title: "New episode available",
     body: "Series continuity can open the next episode path.",
     deepLink: "highfive://series/next"
+  });
+  createNotification({
+    session,
+    category: "series",
+    title: "Series activity update",
+    body: "A season, episode, or continuity event is ready in the series workspace.",
+    deepLink: "highfive://series"
+  });
+  createNotification({
+    session,
+    category: "system",
+    title: "HighFive system notice",
+    body: "The notification center is available even when external push delivery is not configured.",
+    deepLink: "highfive://notifications/system"
   });
 }
 
@@ -374,8 +414,10 @@ function userForRole(role: IdentityRole): string {
 function titleForCategory(category: NotificationCategory): string {
   switch (category) {
   case "publishing": return "Publishing review update";
+  case "creator": return "Creator workspace update";
   case "processing": return "Processing complete";
   case "release": return "Release publication update";
+  case "series": return "Series activity update";
   case "episode": return "New episode available";
   case "collaboration": return "Collaboration update";
   case "revenue": return "Revenue milestone";
@@ -387,8 +429,10 @@ function titleForCategory(category: NotificationCategory): string {
 function deepLinkForCategory(category: NotificationCategory): string {
   switch (category) {
   case "publishing": return "highfive://creator/publishing";
+  case "creator": return "highfive://creator/workspace";
   case "processing": return "highfive://creator/processing";
   case "release": return "highfive://content/release";
+  case "series": return "highfive://series";
   case "episode": return "highfive://series/next";
   case "collaboration": return "highfive://creator/collaboration";
   case "revenue": return "highfive://creator/revenue";
