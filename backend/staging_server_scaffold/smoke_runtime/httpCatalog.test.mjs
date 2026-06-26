@@ -21,7 +21,10 @@ test("catalog: GET /ready reports seed catalog readiness", async () => {
   assert.equal(result.json.ffprobe_inspection_contract, true);
   assert.equal(result.json.ffmpeg_processing_contract, true);
   assert.equal(result.json.hls_output_contract, true);
-  assert.equal(result.json.payments_enabled, false);
+  assert.equal(result.json.payments_enabled, true);
+  assert.equal(result.json.rights_windows_enabled, true);
+  assert.equal(result.json.availability_enforcement_enabled, true);
+  assert.equal(result.json.moderation_queue_enabled, true);
 });
 
 test("catalog: GET /v1/catalog returns read-only catalog", async () => {

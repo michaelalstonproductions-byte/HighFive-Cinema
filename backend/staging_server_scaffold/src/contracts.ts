@@ -106,6 +106,13 @@ export const monetizationTransactionsPath = "/v1/monetization/transactions";
 export const monetizationRestorePath = "/v1/monetization/restore";
 export const monetizationRevokePath = "/v1/monetization/revoke";
 export const monetizationAuditPath = "/v1/monetization/audit";
+export const platformOperationsSummaryPath = "/v1/admin/operations/summary";
+export const platformOperationsRightsPath = "/v1/admin/operations/rights";
+export const platformOperationsModerationPath = "/v1/admin/operations/moderation";
+export const platformOperationsModerationFlagsPath = "/v1/admin/operations/moderation/flags";
+export const platformOperationsModerationDetailPath = "/v1/admin/operations/moderation/";
+export const platformOperationsRightsDetailPath = "/v1/admin/operations/rights/";
+export const platformOperationsAuditPath = "/v1/admin/operations/audit";
 
 export const contractStates = [
   "entitlement_approved",

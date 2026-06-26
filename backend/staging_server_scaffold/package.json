@@ -19,6 +19,7 @@
     "analytics:smoke": "node --test smoke_runtime/httpAnalyticsEvents.test.mjs",
     "notifications:smoke": "node --test smoke_runtime/httpNotifications.test.mjs",
     "monetization:smoke": "node --test smoke_runtime/httpMonetization.test.mjs",
+    "operations:smoke": "node --test smoke_runtime/httpOperations.test.mjs",
     "check:contracts": "node -e \"JSON.parse(require('fs').readFileSync('package.json', 'utf8')); JSON.parse(require('fs').readFileSync('tsconfig.json', 'utf8'))\"",
     "typecheck": "tsc --noEmit"
   },

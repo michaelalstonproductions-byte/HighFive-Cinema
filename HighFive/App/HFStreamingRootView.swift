@@ -536,6 +536,11 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-admin-moderation")
             || arguments.contains("--hf-admin-operations")
             || arguments.contains("--hf-admin-audit")
+            || arguments.contains("--hf-start-platform-operations")
+            || arguments.contains("--hf-operations-rights")
+            || arguments.contains("--hf-operations-moderation")
+            || arguments.contains("--hf-operations-audit")
+            || arguments.contains("--hf-operations-health")
     }
 
     private static var shouldStartInMarketplaceDistribution: Bool {

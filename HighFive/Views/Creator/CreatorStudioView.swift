@@ -364,6 +364,11 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-admin-moderation") { return .administrationModeration }
         if arguments.contains("--hf-admin-operations") { return .administrationOperations }
         if arguments.contains("--hf-admin-audit") { return .administrationAudit }
+        if arguments.contains("--hf-start-platform-operations") { return .administrationOperations }
+        if arguments.contains("--hf-operations-rights") { return .administrationHealth }
+        if arguments.contains("--hf-operations-moderation") { return .administrationModeration }
+        if arguments.contains("--hf-operations-audit") { return .administrationAudit }
+        if arguments.contains("--hf-operations-health") { return .administrationHealth }
         if arguments.contains("--hf-start-marketplace") { return .marketplaceDashboard }
         if arguments.contains("--hf-marketplace-catalog") { return .marketplaceCatalog }
         if arguments.contains("--hf-marketplace-targets") { return .marketplaceTargets }

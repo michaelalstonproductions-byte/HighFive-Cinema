@@ -42,6 +42,13 @@ import {
   monetizationRevokePath,
   monetizationTransactionsPath,
   openAPIPath,
+  platformOperationsAuditPath,
+  platformOperationsModerationDetailPath,
+  platformOperationsModerationFlagsPath,
+  platformOperationsModerationPath,
+  platformOperationsRightsDetailPath,
+  platformOperationsRightsPath,
+  platformOperationsSummaryPath,
   playbackHLSPath,
   playbackDescriptorPath,
   readinessPath,
@@ -139,6 +146,17 @@ import {
   restoreMonetizationEntitlements,
   revokeMonetizationEntitlement
 } from "../routes/monetization.js";
+import {
+  decideModerationCase,
+  expireRightsWindow,
+  flagContentForModeration,
+  moderationQueue,
+  operationsAuditTrail,
+  operationsReadinessSummary,
+  operationsSummary,
+  restoreRightsWindow,
+  rightsLedger
+} from "../routes/operations.js";
 
 export function createStagingHttpTarget(config: RuntimeConfig): Server {
   return createServer(async (request, response) => {
@@ -411,6 +429,90 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, monetizationAudit(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === platformOperationsSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, operationsSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === platformOperationsRightsPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, rightsLedger(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === platformOperationsModerationPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, moderationQueue(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === platformOperationsModerationFlagsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, flagContentForModeration(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path.startsWith(platformOperationsModerationDetailPath)) {
+        const route = platformOperationsRoute(path, platformOperationsModerationDetailPath);
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, decideModerationCase(authHeader(request.headers.authorization), route.id, route.action, body));
+        return;
+      }
+
+      if (path.startsWith(platformOperationsRightsDetailPath)) {
+        const route = platformOperationsRoute(path, platformOperationsRightsDetailPath);
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        if (route.action === "expire") {
+          writeJson(response, 200, expireRightsWindow(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        if (route.action === "restore") {
+          writeJson(response, 200, restoreRightsWindow(authHeader(request.headers.authorization), route.id, body));
+          return;
+        }
+        const result = routeNotFound();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === platformOperationsAuditPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, operationsAuditTrail(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -840,6 +942,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     monetization_entitlements_path: monetizationEntitlementsPath,
     monetization_transactions_path: monetizationTransactionsPath,
     monetization_restore_path: monetizationRestorePath,
+    platform_operations_summary_path: platformOperationsSummaryPath,
+    platform_operations_rights_path: platformOperationsRightsPath,
+    platform_operations_moderation_path: platformOperationsModerationPath,
+    platform_operations_audit_path: platformOperationsAuditPath,
     admin_review_queue_path: adminReviewQueuePath,
     credentials_required: false,
     external_network_allowed: false,
@@ -858,6 +964,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
+  const operations = operationsReadinessSummary();
   return {
     status: "ready",
     environment: config.backendEnv,
@@ -913,6 +1020,13 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     direct_card_collection: Boolean(monetization.direct_card_collection),
     active_entitlements: Number(monetization.active_entitlements),
     transaction_records: Number(monetization.transaction_records),
+    rights_windows_enabled: Boolean(operations.rights_windows),
+    territory_enforcement_enabled: Boolean(operations.territory_enforcement),
+    availability_enforcement_enabled: Boolean(operations.availability_enforcement),
+    moderation_queue_enabled: Boolean(operations.moderation_queue),
+    takedown_supported: Boolean(operations.takedown_supported),
+    operations_audit_trail: Boolean(operations.audit_trail),
+    operations_admin_role_enforcement: Boolean(operations.admin_role_enforcement),
     auth_enabled: Boolean(identity.auth_enabled),
     sign_in_with_apple_contract: Boolean(identity.sign_in_with_apple_contract),
     development_identity_mode: Boolean(identity.development_identity_mode),
@@ -928,6 +1042,15 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
 
 function adminReviewRoute(path: string): { id: string; action: string | null } {
   const suffix = path.slice(adminReviewDetailPath.length);
+  const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
+  return {
+    id: parts[0] ?? "",
+    action: parts[1] ?? null
+  };
+}
+
+function platformOperationsRoute(path: string, prefix: string): { id: string; action: string | null } {
+  const suffix = path.slice(prefix.length);
   const parts = suffix.split("/").filter(Boolean).map(decodeURIComponent);
   return {
     id: parts[0] ?? "",

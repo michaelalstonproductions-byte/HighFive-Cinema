@@ -3264,6 +3264,11 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-monetization-purchase")
             || arguments.contains("--hf-monetization-restore")
             || arguments.contains("--hf-monetization-entitlements")
+            || arguments.contains("--hf-start-platform-operations")
+            || arguments.contains("--hf-operations-rights")
+            || arguments.contains("--hf-operations-moderation")
+            || arguments.contains("--hf-operations-audit")
+            || arguments.contains("--hf-operations-health")
 
         let configuredBaseURL = environment[Self.baseURLKey].flatMap(URL.init(string:))
         baseURL = configuredBaseURL ?? URL(string: "http://127.0.0.1:8787")!
@@ -4020,6 +4025,176 @@ struct HFRemoteMonetizationAuditResponse: Codable {
     var events: [HFRemoteMonetizationAuditRecord]
 }
 
+struct HFRemoteOperationsRightsWindow: Codable, Hashable {
+    var id: String
+    var contentID: String
+    var title: String
+    var territories: [String]
+    var startsAt: String
+    var endsAt: String
+    var state: String
+    var licensingPackageID: String
+    var rightsHolder: String
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case contentID = "content_id"
+        case title
+        case territories
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+        case state
+        case licensingPackageID = "licensing_package_id"
+        case rightsHolder = "rights_holder"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteOperationsModerationCase: Codable, Hashable {
+    var id: String
+    var contentID: String
+    var title: String
+    var category: String
+    var state: String
+    var policyStatus: String
+    var reviewerUserID: String?
+    var note: String
+    var updatedAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case contentID = "content_id"
+        case title
+        case category
+        case state
+        case policyStatus = "policy_status"
+        case reviewerUserID = "reviewer_user_id"
+        case note
+        case updatedAt = "updated_at"
+    }
+}
+
+struct HFRemoteOperationsHealthRecord: Codable, Hashable {
+    var id: String
+    var title: String
+    var status: String
+    var value: String
+    var detail: String
+}
+
+struct HFRemoteOperationsAuditRecord: Codable, Hashable {
+    var id: String
+    var action: String
+    var contentID: String?
+    var actorUserID: String
+    var role: String
+    var result: String
+    var detail: String
+    var createdAt: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case action
+        case contentID = "content_id"
+        case actorUserID = "actor_user_id"
+        case role
+        case result
+        case detail
+        case createdAt = "created_at"
+    }
+}
+
+struct HFRemoteOperationsAvailabilityRecord: Codable, Hashable {
+    var contentID: String
+    var title: String
+    var territory: String
+    var available: Bool
+    var denialReasons: [String]
+    var rightsWindowID: String?
+    var moderationCaseID: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case contentID = "content_id"
+        case title
+        case territory
+        case available
+        case denialReasons = "denial_reasons"
+        case rightsWindowID = "rights_window_id"
+        case moderationCaseID = "moderation_case_id"
+    }
+}
+
+struct HFRemoteOperationsSummaryResponse: Codable {
+    var status: String
+    var rightsWindows: [HFRemoteOperationsRightsWindow]
+    var moderationCases: [HFRemoteOperationsModerationCase]
+    var platformHealth: [HFRemoteOperationsHealthRecord]
+    var availability: [HFRemoteOperationsAvailabilityRecord]
+    var auditRecords: [HFRemoteOperationsAuditRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case rightsWindows = "rights_windows"
+        case moderationCases = "moderation_cases"
+        case platformHealth = "platform_health"
+        case availability
+        case auditRecords = "audit_records"
+    }
+}
+
+struct HFRemoteOperationsRightsResponse: Codable {
+    var status: String
+    var rightsWindows: [HFRemoteOperationsRightsWindow]
+    var availability: [HFRemoteOperationsAvailabilityRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case rightsWindows = "rights_windows"
+        case availability
+    }
+}
+
+struct HFRemoteOperationsModerationResponse: Codable {
+    var status: String
+    var moderationCases: [HFRemoteOperationsModerationCase]
+    var auditRecords: [HFRemoteOperationsAuditRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case moderationCases = "moderation_cases"
+        case auditRecords = "audit_records"
+    }
+}
+
+struct HFRemoteOperationsAuditResponse: Codable {
+    var status: String
+    var auditRecords: [HFRemoteOperationsAuditRecord]
+    var platformHealth: [HFRemoteOperationsHealthRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case auditRecords = "audit_records"
+        case platformHealth = "platform_health"
+    }
+}
+
+struct HFRemoteOperationsMutationResponse: Codable {
+    var status: String
+    var rightsWindow: HFRemoteOperationsRightsWindow?
+    var moderationCase: HFRemoteOperationsModerationCase?
+    var availability: HFRemoteOperationsAvailabilityRecord
+    var auditRecords: [HFRemoteOperationsAuditRecord]
+
+    private enum CodingKeys: String, CodingKey {
+        case status
+        case rightsWindow = "rights_window"
+        case moderationCase = "moderation_case"
+        case availability
+        case auditRecords = "audit_records"
+    }
+}
+
 struct HFRemoteIdentitySignInResponse: Codable {
     struct Session: Codable {
         var sessionID: String
@@ -4168,6 +4343,38 @@ struct HFRemoteCreatorDraftAPIClient {
 
     func monetizationAudit(sessionID: String) async throws -> HFRemoteMonetizationAuditResponse {
         try await request(path: "/v1/monetization/audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func platformOperationsSummary(sessionID: String) async throws -> HFRemoteOperationsSummaryResponse {
+        try await request(path: "/v1/admin/operations/summary", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func platformOperationsRights(sessionID: String) async throws -> HFRemoteOperationsRightsResponse {
+        try await request(path: "/v1/admin/operations/rights", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func platformOperationsModeration(sessionID: String) async throws -> HFRemoteOperationsModerationResponse {
+        try await request(path: "/v1/admin/operations/moderation", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func platformOperationsAudit(sessionID: String) async throws -> HFRemoteOperationsAuditResponse {
+        try await request(path: "/v1/admin/operations/audit", method: "GET", sessionID: sessionID, body: Optional<[String: String]>.none)
+    }
+
+    func flagOperationsContent(contentID: String, sessionID: String) async throws -> HFRemoteOperationsMutationResponse {
+        try await request(path: "/v1/admin/operations/moderation/flags", method: "POST", sessionID: sessionID, body: ["content_id": contentID, "category": "Policy Review", "note": "Flagged by local platform operations QA."])
+    }
+
+    func decideOperationsModeration(caseID: String, action: String, sessionID: String) async throws -> HFRemoteOperationsMutationResponse {
+        try await request(path: "/v1/admin/operations/moderation/\(caseID)/\(action)", method: "POST", sessionID: sessionID, body: ["note": "Local platform operations QA decision: \(action)."])
+    }
+
+    func expireOperationsRights(contentID: String, sessionID: String) async throws -> HFRemoteOperationsMutationResponse {
+        try await request(path: "/v1/admin/operations/rights/\(contentID)/expire", method: "POST", sessionID: sessionID, body: ["ends_at": "2026-01-01T00:00:00.000Z"])
+    }
+
+    func restoreOperationsRights(contentID: String, sessionID: String) async throws -> HFRemoteOperationsMutationResponse {
+        try await request(path: "/v1/admin/operations/rights/\(contentID)/restore", method: "POST", sessionID: sessionID, body: ["ends_at": "2027-12-31T23:59:59.000Z"])
     }
 
     func revisionHistory(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftRevisionResponse {
@@ -5423,6 +5630,9 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var monetizationProductRows: [HFMonetizationProductRow] = []
     @Published private(set) var monetizationEntitlementRows: [HFMonetizationEntitlementRow] = []
     @Published private(set) var monetizationAuditRows: [HFMonetizationAuditRow] = []
+    @Published private(set) var remotePlatformOperationsHealthRows: [HFPlatformHealthRecord] = []
+    @Published private(set) var remotePlatformOperationsModerationRows: [HFModerationQueueRecord] = []
+    @Published private(set) var remotePlatformOperationsAuditRows: [HFAuditTrailRecord] = []
 
     private let savedKey = "hf.savedMovieIDs"
     private let downloadsKey = "hf.downloadedMovieIDs"
@@ -5646,6 +5856,13 @@ final class HFStreamingStore: ObservableObject {
                     || launchArguments.contains("--hf-monetization-restore")
                     || launchArguments.contains("--hf-monetization-entitlements") {
                     await self.runMonetizationEntitlementFixture()
+                }
+                if launchArguments.contains("--hf-start-platform-operations")
+                    || launchArguments.contains("--hf-operations-rights")
+                    || launchArguments.contains("--hf-operations-moderation")
+                    || launchArguments.contains("--hf-operations-audit")
+                    || launchArguments.contains("--hf-operations-health") {
+                    await self.runPlatformOperationsFixture()
                 }
             }
         }
@@ -10804,6 +11021,149 @@ final class HFStreamingStore: ObservableObject {
         _ = await runMonetizationEntitlementFixture()
     }
 
+    @MainActor
+    func runPlatformOperationsFixture() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            remotePlatformOperationsHealthRows = [
+                HFPlatformHealthRecord(
+                    id: "operations-local",
+                    title: "Platform Operations",
+                    value: "Local",
+                    detail: "Loopback operations service disabled; local administration records remain available.",
+                    status: "Preview",
+                    systemImage: "shield.lefthalf.filled"
+                )
+            ]
+            return
+        }
+
+        remotePlatformOperationsHealthRows = [
+            HFPlatformHealthRecord(
+                id: "operations-loading",
+                title: "Platform Operations",
+                value: "Loading",
+                detail: "Loading rights windows, moderation queue, availability enforcement, and operations audit from the loopback service.",
+                status: "Connecting",
+                systemImage: "server.rack"
+            )
+        ]
+
+        do {
+            let client = HFRemoteCreatorDraftAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteAdminReviewSessionID(client: client)
+            let arguments = ProcessInfo.processInfo.arguments
+
+            if arguments.contains("--hf-operations-rights") {
+                _ = try await client.expireOperationsRights(contentID: "friendly", sessionID: sessionID)
+                _ = try await client.restoreOperationsRights(contentID: "friendly", sessionID: sessionID)
+            }
+
+            if arguments.contains("--hf-operations-moderation") {
+                let flagged = try await client.flagOperationsContent(contentID: "behind-the-vision", sessionID: sessionID)
+                if let moderationCase = flagged.moderationCase {
+                    _ = try await client.decideOperationsModeration(caseID: moderationCase.id, action: "takedown", sessionID: sessionID)
+                    _ = try await client.decideOperationsModeration(caseID: moderationCase.id, action: "restore", sessionID: sessionID)
+                }
+            }
+
+            let summary = try await client.platformOperationsSummary(sessionID: sessionID)
+            let rights = try await client.platformOperationsRights(sessionID: sessionID)
+            let moderation = try await client.platformOperationsModeration(sessionID: sessionID)
+            let audit = try await client.platformOperationsAudit(sessionID: sessionID)
+            applyRemotePlatformOperations(summary: summary, rights: rights, moderation: moderation, audit: audit)
+        } catch {
+            remotePlatformOperationsHealthRows = [
+                HFPlatformHealthRecord(
+                    id: "operations-error",
+                    title: "Platform Operations",
+                    value: "Fallback",
+                    detail: "Loopback operations service failed; local administration remains usable. \(error.localizedDescription)",
+                    status: "Error",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+            ]
+        }
+    }
+
+    private func applyRemotePlatformOperations(
+        summary: HFRemoteOperationsSummaryResponse,
+        rights: HFRemoteOperationsRightsResponse,
+        moderation: HFRemoteOperationsModerationResponse,
+        audit: HFRemoteOperationsAuditResponse
+    ) {
+        let unavailableCount = rights.availability.filter { !$0.available }.count
+        remotePlatformOperationsHealthRows = summary.platformHealth.map { record in
+            HFPlatformHealthRecord(
+                id: "remote-operations-\(record.id)",
+                title: record.title,
+                value: record.value,
+                detail: record.detail,
+                status: record.status.capitalized,
+                systemImage: platformOperationsSystemImage(for: record.id)
+            )
+        } + [
+            HFPlatformHealthRecord(
+                id: "remote-operations-enforcement",
+                title: "Availability Enforcement",
+                value: unavailableCount == 0 ? "Clear" : "\(unavailableCount)",
+                detail: "Catalog responses are filtered by rights windows, territory availability, and moderation takedown state.",
+                status: unavailableCount == 0 ? "Enforced" : "Restricted",
+                systemImage: "eye.trianglebadge.exclamationmark.fill"
+            )
+        ]
+
+        remotePlatformOperationsModerationRows = moderation.moderationCases.map { record in
+            HFModerationQueueRecord(
+                id: "remote-moderation-\(record.id)",
+                title: record.title,
+                category: record.category,
+                policyStatus: record.policyStatus,
+                reviewState: record.state.replacingOccurrences(of: "_", with: " ").capitalized,
+                detail: record.note,
+                systemImage: record.state == "takedown" ? "hand.raised.fill" : "flag.fill"
+            )
+        }
+
+        if remotePlatformOperationsModerationRows.isEmpty {
+            remotePlatformOperationsModerationRows = [
+                HFModerationQueueRecord(
+                    id: "remote-moderation-clear",
+                    title: "Moderation Queue",
+                    category: "Platform Policy",
+                    policyStatus: "Clear",
+                    reviewState: "No Open Cases",
+                    detail: "No flagged content requires admin action in the loopback operations service.",
+                    systemImage: "checkmark.shield.fill"
+                )
+            ]
+        }
+
+        let combinedAudit = (audit.auditRecords + summary.auditRecords).reduce(into: [String: HFRemoteOperationsAuditRecord]()) { partial, record in
+            partial[record.id] = record
+        }
+        remotePlatformOperationsAuditRows = combinedAudit.values.sorted { $0.createdAt > $1.createdAt }.prefix(8).map { record in
+            HFAuditTrailRecord(
+                id: "remote-audit-\(record.id)",
+                title: record.action.replacingOccurrences(of: "_", with: " ").capitalized,
+                detail: record.detail,
+                category: record.role.capitalized,
+                timeLabel: record.createdAt,
+                result: record.result.capitalized,
+                systemImage: record.result == "denied" ? "lock.shield.fill" : "list.clipboard.fill"
+            )
+        }
+    }
+
+    private func platformOperationsSystemImage(for id: String) -> String {
+        switch id {
+        case "catalog": return "rectangle.stack.fill"
+        case "rights": return "doc.badge.gearshape.fill"
+        case "moderation": return "flag.fill"
+        case "audit": return "list.clipboard.fill"
+        default: return "shield.lefthalf.filled"
+        }
+    }
+
     private func applyRemoteMonetizationState(
         storeKitSnapshot: HFStoreKitRuntimeSnapshot,
         recorded: HFRemoteMonetizationTransactionResponse,
@@ -11458,7 +11818,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var platformHealthRecords: [HFPlatformHealthRecord] {
-        [
+        remotePlatformOperationsHealthRows + [
             HFPlatformHealthRecord(id: "catalog", title: "Catalog Health", value: "\(cmsContentRecords.count)", detail: "Movies, series, episodes, trailers, collections, and creators indexed locally", status: "Ready", systemImage: "rectangle.stack.fill"),
             HFPlatformHealthRecord(id: "discovery", title: "Discovery Health", value: "\(discoveryCollections.count)", detail: "Featured, trending, creator published, and recommendation rails", status: "Local", systemImage: "sparkle.magnifyingglass"),
             HFPlatformHealthRecord(id: "series", title: "Series Health", value: "\(episodeRecords.count)", detail: "Episode records and next-episode recommendations available", status: "Ready", systemImage: "play.square.stack.fill"),
@@ -11469,7 +11829,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var moderationQueueRecords: [HFModerationQueueRecord] {
-        [
+        remotePlatformOperationsModerationRows + [
             HFModerationQueueRecord(id: "flagged-copy", title: creatorPrimaryReadinessProject.title, category: "Flagged Content", policyStatus: "Needs copy review", reviewState: "Pending Review", detail: "Synopsis and poster text are staged for local policy review.", systemImage: "flag.fill"),
             HFModerationQueueRecord(id: "review-ready", title: creatorReadyForReviewProjects.first?.title ?? featuredMovie.title, category: "Review Queue", policyStatus: "Ready for local review", reviewState: "Approved Preview", detail: "Metadata, poster, trailer, and artwork readiness can be checked locally.", systemImage: "checkmark.seal.fill"),
             HFModerationQueueRecord(id: "policy-boundary", title: "Policy Status", category: "Policy Status", policyStatus: "Local policy preview", reviewState: "Preview", detail: "No external moderation service or automated enforcement is active.", systemImage: "lock.shield.fill"),
@@ -11478,7 +11838,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var operationsDashboardRecords: [HFPlatformHealthRecord] {
-        [
+        remotePlatformOperationsHealthRows + [
             HFPlatformHealthRecord(id: "publishing", title: "Publishing", value: "\(creatorPublishingQueueRecords.count)", detail: "Queue, readiness, review, and audit records", status: "Review", systemImage: "paperplane.circle.fill"),
             HFPlatformHealthRecord(id: "discovery", title: "Discovery", value: "\(discoveryCollections.count)", detail: "Collections and recommendation surfaces", status: "Local", systemImage: "sparkles"),
             HFPlatformHealthRecord(id: "library", title: "Library", value: "\(libraryUserCollections.count)", detail: "Continue Watching, My List, favorites, and collections", status: "Active", systemImage: "bookmark.fill"),
@@ -11489,7 +11849,7 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var administrationAuditTrailRecords: [HFAuditTrailRecord] {
-        [
+        remotePlatformOperationsAuditRows + [
             HFAuditTrailRecord(id: "audit-publishing", title: "Publishing event", detail: "\(creatorPublishingQueueRecords.first?.project.title ?? featuredMovie.title) entered local review.", category: "Publishing", timeLabel: "Now", result: "Logged", systemImage: "paperplane.circle.fill"),
             HFAuditTrailRecord(id: "audit-discovery", title: "Discovery event", detail: "\(creatorPublishedProjects.count) published titles are discovery eligible.", category: "Discovery", timeLabel: "Today", result: "Visible", systemImage: "sparkle.magnifyingglass"),
             HFAuditTrailRecord(id: "audit-series", title: "Series event", detail: "\(primarySeriesRecord.title) has \(primarySeriesRecord.episodeCount) local episode records.", category: "Series", timeLabel: "Today", result: "Indexed", systemImage: "play.square.stack.fill"),
