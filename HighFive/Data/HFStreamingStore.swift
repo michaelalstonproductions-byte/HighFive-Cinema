@@ -4297,8 +4297,23 @@ struct HFRemoteCreatorDraftAPIClient {
         try await request(path: "/v1/admin/review/\(id)/request-revision", method: "POST", sessionID: sessionID, body: ["admin_note": "Revision requested by local admin review workflow."])
     }
 
+    func scheduleReview(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/admin/review/\(id)/schedule", method: "POST", sessionID: sessionID, body: [
+            "admin_note": "Scheduled by local admin review workflow.",
+            "scheduled_for": ISO8601DateFormatter().string(from: Date().addingTimeInterval(90 * 60))
+        ])
+    }
+
     func publishReview(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
         try await request(path: "/v1/admin/review/\(id)/publish", method: "POST", sessionID: sessionID, body: ["admin_note": "Published by local admin review workflow."])
+    }
+
+    func unpublishReview(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/admin/review/\(id)/unpublish", method: "POST", sessionID: sessionID, body: ["admin_note": "Unpublished by local admin rollback workflow."])
+    }
+
+    func archiveReview(id: String, sessionID: String) async throws -> HFRemoteCreatorDraftMutationResponse {
+        try await request(path: "/v1/admin/review/\(id)/archive", method: "POST", sessionID: sessionID, body: ["admin_note": "Archived by local admin rollback workflow."])
     }
 
     func reviewAudit(sessionID: String) async throws -> HFRemotePublishingReviewAuditResponse {
@@ -6742,6 +6757,36 @@ final class HFStreamingStore: ObservableObject {
             applyRemoteDraftMutation(approved)
             let published = try await client.publishReview(id: submitted.draft.id, sessionID: adminSession)
             applyRemoteDraftMutation(published)
+            let rollbackDraft = try await client.createDraft(
+                HFCreatorPublishingContent(
+                    id: "rollback-workflow-\(Int(Date().timeIntervalSince1970))",
+                    title: "Rollback Workflow Premiere",
+                    description: "A creator project used to verify schedule, unpublish, archive, and visibility rollback behavior.",
+                    posterAssetName: nil,
+                    trailerStatus: .ready,
+                    creator: activeViewingProfile.displayName,
+                    genre: "Documentary",
+                    tags: ["Rollback", "Review"],
+                    runtime: "39m",
+                    releaseState: .draft,
+                    posterStatus: .ready,
+                    metadataStatus: .ready,
+                    artworkStatus: .ready,
+                    updatedAtLabel: "Rollback workflow draft"
+                ),
+                sessionID: creatorSession
+            )
+            applyRemoteDraftMutation(rollbackDraft)
+            let rollbackSubmitted = try await client.submitDraft(id: rollbackDraft.draft.id, baseVersion: rollbackDraft.draft.version, sessionID: creatorSession)
+            applyRemoteDraftMutation(rollbackSubmitted)
+            let scheduled = try await client.scheduleReview(id: rollbackSubmitted.draft.id, sessionID: adminSession)
+            applyRemoteDraftMutation(scheduled)
+            let rollbackPublished = try await client.publishReview(id: rollbackSubmitted.draft.id, sessionID: adminSession)
+            applyRemoteDraftMutation(rollbackPublished)
+            let unpublished = try await client.unpublishReview(id: rollbackSubmitted.draft.id, sessionID: adminSession)
+            applyRemoteDraftMutation(unpublished)
+            let archived = try await client.archiveReview(id: rollbackSubmitted.draft.id, sessionID: adminSession)
+            applyRemoteDraftMutation(archived)
             let audit = try await client.reviewAudit(sessionID: adminSession)
             publishingReviewRecords = audit.reviewQueue
             publishingReviewAuditRecords = audit.auditRecords
@@ -6752,10 +6797,10 @@ final class HFStreamingStore: ObservableObject {
                 approvedCount: audit.reviewQueue.filter { $0.status == "approved" }.count,
                 publishedCount: audit.reviewQueue.filter { $0.status == "published" }.count,
                 auditCount: audit.auditRecords.count,
-                catalogVisibility: published.catalogVisibility ?? "visible",
-                detail: "Creator submit -> admin approve -> publish completed. Published project is visible to catalog and discovery service.",
+                catalogVisibility: "\(published.catalogVisibility ?? "visible") / rollback \(archived.catalogVisibility ?? "private")",
+                detail: "Creator submit -> admin approve -> publish completed, while a second project exercised schedule -> publish -> unpublish -> archive rollback with audit records.",
                 lastError: nil,
-                updatedAtLabel: published.status
+                updatedAtLabel: "\(published.status) + \(archived.status)"
             )
         } catch {
             publishingReviewRuntimeSnapshot = HFPublishingReviewRuntimeSnapshot(

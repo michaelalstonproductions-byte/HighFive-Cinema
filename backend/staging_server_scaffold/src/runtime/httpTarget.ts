@@ -1100,6 +1100,17 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     optimistic_concurrency: Boolean(publishing.optimistic_concurrency),
     draft_role_enforcement: Boolean(publishing.role_enforcement),
     admin_review_workflow: Boolean(publishing.admin_review_queue),
+    publishing_submit_for_review: Boolean(publishing.submit_for_review),
+    publishing_withdraw_submission: Boolean(publishing.withdraw_submission),
+    publishing_request_revision: Boolean(publishing.request_revision),
+    publishing_approve: Boolean(publishing.approve),
+    publishing_reject: Boolean(publishing.reject),
+    publishing_schedule: Boolean(publishing.schedule),
+    publishing_publish: Boolean(publishing.publish),
+    publishing_unpublish: Boolean(publishing.unpublish),
+    publishing_archive_reviewed_project: Boolean(publishing.archive_reviewed_project),
+    publishing_processing_gate: Boolean(publishing.processing_readiness_gate),
+    publishing_rights_gate: Boolean(publishing.rights_readiness_gate),
     catalog_visibility_transaction: Boolean(publishing.catalog_visibility_transaction),
     payments_enabled: true
   };

@@ -95,6 +95,73 @@ test("publishing review: admin can request revisions and creator can withdraw", 
   assert.equal(withdrawn.json.catalog_visibility, "private");
 });
 
+test("publishing review: admin can schedule, publish, unpublish, and archive with catalog rollback", async () => {
+  const creatorSignIn = await postJson("/v1/identity/dev/sign-in", { role: "creator" });
+  assertJsonResponse(creatorSignIn, 200);
+  const creatorAuth = { authorization: `HighFiveSession ${creatorSignIn.json.session.session_id}` };
+  const adminSignIn = await postJson("/v1/identity/dev/sign-in", { role: "admin" });
+  assertJsonResponse(adminSignIn, 200);
+  const adminAuth = { authorization: `HighFiveSession ${adminSignIn.json.session.session_id}` };
+
+  const created = await postJson("/v1/creator/drafts", { ...readyDraft, title: "Rollback Smoke Premiere" }, creatorAuth);
+  assertJsonResponse(created, 201);
+  const draftID = created.json.draft.id;
+  const contentID = created.json.draft.content_id;
+
+  const submitted = await postJson(`/v1/creator/drafts/${draftID}/submit`, { base_version: created.json.draft.version }, creatorAuth);
+  assertJsonResponse(submitted, 200);
+
+  const scheduledFor = new Date(Date.now() + 90 * 60 * 1000).toISOString();
+  const scheduled = await postJson(`/v1/admin/review/${draftID}/schedule`, {
+    admin_note: "Scheduled for release window.",
+    scheduled_for: scheduledFor
+  }, adminAuth);
+  assertJsonResponse(scheduled, 200);
+  assert.equal(scheduled.json.status, "scheduled");
+  assert.equal(scheduled.json.review.scheduled_for, scheduledFor);
+  assert.equal(scheduled.json.catalog_visibility, "private");
+
+  const published = await postJson(`/v1/admin/review/${draftID}/publish`, { admin_note: "Publishing scheduled title." }, adminAuth);
+  assertJsonResponse(published, 200);
+  assert.equal(published.json.catalog_visibility, "visible");
+  const visible = await requestJson(`/v1/content/${contentID}`);
+  assertJsonResponse(visible, 200);
+
+  const unpublished = await postJson(`/v1/admin/review/${draftID}/unpublish`, { admin_note: "Rollback after release." }, adminAuth);
+  assertJsonResponse(unpublished, 200);
+  assert.equal(unpublished.json.status, "unpublished");
+  assert.equal(unpublished.json.catalog_visibility, "private");
+  const hidden = await requestJson(`/v1/content/${contentID}`);
+  assertJsonResponse(hidden, 404);
+
+  const archived = await postJson(`/v1/admin/review/${draftID}/archive`, { admin_note: "Archived after rollback." }, adminAuth);
+  assertJsonResponse(archived, 200);
+  assert.equal(archived.json.status, "archived");
+  assert.equal(archived.json.draft.release_state, "archived");
+
+  const audit = await requestJson("/v1/admin/review/audit", { headers: adminAuth });
+  assertJsonResponse(audit, 200);
+  assert.equal(audit.json.audit_records.some((record) => record.action === "scheduled" && record.project_id === draftID), true);
+  assert.equal(audit.json.audit_records.some((record) => record.action === "unpublished" && record.project_id === draftID), true);
+  assert.equal(audit.json.audit_records.some((record) => record.action === "archived" && record.project_id === draftID), true);
+});
+
+test("publishing review: readiness advertises governed publishing operations", async () => {
+  const readiness = await requestJson("/ready");
+  assertJsonResponse(readiness, 200);
+  assert.equal(readiness.json.publishing_submit_for_review, true);
+  assert.equal(readiness.json.publishing_withdraw_submission, true);
+  assert.equal(readiness.json.publishing_request_revision, true);
+  assert.equal(readiness.json.publishing_approve, true);
+  assert.equal(readiness.json.publishing_reject, true);
+  assert.equal(readiness.json.publishing_schedule, true);
+  assert.equal(readiness.json.publishing_publish, true);
+  assert.equal(readiness.json.publishing_unpublish, true);
+  assert.equal(readiness.json.publishing_archive_reviewed_project, true);
+  assert.equal(readiness.json.publishing_processing_gate, true);
+  assert.equal(readiness.json.publishing_rights_gate, true);
+});
+
 test("publishing review: viewer cannot submit or administer review", async () => {
   const viewerSignIn = await postJson("/v1/identity/dev/sign-in", { role: "viewer" });
   assertJsonResponse(viewerSignIn, 200);
