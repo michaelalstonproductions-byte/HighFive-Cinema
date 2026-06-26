@@ -52,6 +52,8 @@ const uploadedAssets = new Map<string, UploadedAssetRecord>();
 const checksumIndex = new Map<string, string>();
 const objectStoreRoot = process.env.HIGHFIVE_OBJECT_STORE_DIR ?? "/private/tmp/highfive-p33a-object-storage";
 const uploadTTLMilliseconds = 10 * 60 * 1000;
+const supportedAssetKinds: UploadAssetKind[] = ["poster", "trailer", "source_video", "artwork"];
+const maxUploadSizeBytes = 10 * 1024 * 1024;
 
 export function uploadReadinessSummary(): JsonObject {
   return {
@@ -60,6 +62,13 @@ export function uploadReadinessSummary(): JsonObject {
     checksum_validation: true,
     duplicate_detection: true,
     project_ownership_checks: true,
+    poster_uploads: true,
+    trailer_uploads: true,
+    source_uploads: true,
+    retry_supported: true,
+    resume_policy: "new_signed_session_after_validation_failure",
+    supported_asset_kinds: supportedAssetKinds,
+    max_upload_size_bytes: maxUploadSizeBytes,
     uploaded_assets: uploadedAssets.size
   };
 }
@@ -273,7 +282,7 @@ function parseUploadSessionInput(body: unknown): {
   if (!contentType || !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i.test(contentType)) {
     throw new ContractError("invalid_upload_session", "content_type must be a valid MIME type.", 422);
   }
-  if (sizeBytes === null || !Number.isInteger(sizeBytes) || sizeBytes <= 0 || sizeBytes > 10 * 1024 * 1024) {
+  if (sizeBytes === null || !Number.isInteger(sizeBytes) || sizeBytes <= 0 || sizeBytes > maxUploadSizeBytes) {
     throw new ContractError("invalid_upload_session", "size_bytes must be between 1 byte and 10 MB for local staging.", 422);
   }
   if (checksum && !/^[a-f0-9]{64}$/i.test(checksum)) {

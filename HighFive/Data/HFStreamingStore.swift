@@ -3226,6 +3226,8 @@ struct HFProductionCatalogBackendConfiguration {
             || arguments.contains("--hf-upload-object-assets")
             || arguments.contains("--hf-upload-object-duplicates")
             || arguments.contains("--hf-upload-object-cancel")
+            || arguments.contains("--hf-upload-object-matrix")
+            || arguments.contains("--hf-upload-object-retry")
             || arguments.contains("--hf-start-media-processing")
             || arguments.contains("--hf-processing-jobs")
             || arguments.contains("--hf-processing-hls")
@@ -4910,7 +4912,8 @@ struct HFRemoteCreatorUploadAPIClient {
         filename: String,
         contentType: String,
         data: Data,
-        sessionID: String
+        sessionID: String,
+        checksumOverride: String? = nil
     ) async throws -> HFRemoteUploadSessionResponse {
         let payload = HFRemoteUploadSessionRequest(
             projectID: projectID,
@@ -4918,7 +4921,7 @@ struct HFRemoteCreatorUploadAPIClient {
             filename: filename,
             contentType: contentType,
             sizeBytes: data.count,
-            checksumSHA256: Self.sha256Hex(for: data)
+            checksumSHA256: checksumOverride ?? Self.sha256Hex(for: data)
         )
         return try await jsonRequest(path: "/v1/creator/uploads/sessions", method: "POST", sessionID: sessionID, body: payload)
     }
@@ -7663,7 +7666,10 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var creatorRemoteUploadStatusRows: [HFCreatorRemoteUploadStatusRow] {
-        [
+        let coveredAssetKinds = Set(creatorRemoteUploadedAssetRecords.map(\.assetKind))
+            .intersection(["poster", "trailer", "source_video"])
+            .count
+        return [
             HFCreatorRemoteUploadStatusRow(
                 id: "remote-upload-state",
                 title: "Upload Runtime",
@@ -7691,6 +7697,27 @@ final class HFStreamingStore: ObservableObject {
                 value: "\(creatorRemoteUploadRuntimeSnapshot.duplicateCount)",
                 detail: creatorRemoteUploadRuntimeSnapshot.lastError ?? "Checksum index is deterministic.",
                 systemImage: creatorRemoteUploadRuntimeSnapshot.duplicateCount > 0 ? "doc.on.doc.fill" : "checkmark.seal.fill"
+            ),
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-asset-kinds",
+                title: "Asset Kinds",
+                value: "\(coveredAssetKinds)/3",
+                detail: "Poster, trailer, and source video uploads share the signed session contract.",
+                systemImage: "square.stack.3d.up.fill"
+            ),
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-validation",
+                title: "Validation",
+                value: "Checksum",
+                detail: "Each upload is verified by expected size, SHA-256, MIME type, project ownership, and session state.",
+                systemImage: "checkmark.shield.fill"
+            ),
+            HFCreatorRemoteUploadStatusRow(
+                id: "remote-upload-retry",
+                title: "Retry Policy",
+                value: "New Session",
+                detail: "Failed validation retries with a fresh short-lived signed session and the same asset metadata.",
+                systemImage: "arrow.clockwise.circle.fill"
             )
         ]
     }
@@ -7821,6 +7848,138 @@ final class HFStreamingStore: ObservableObject {
         _ = await runCreatorRemoteUploadFixture(duplicate: true)
     }
 
+    func runCreatorRemoteUploadMatrixFixture() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteUploadRuntimeSnapshot = .local(reason: "Upload matrix skipped because the loopback backend is disabled.")
+            return
+        }
+        guard let projectID = primaryImportProjectID() else {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: "None",
+                detail: "No active creator project is available for the upload matrix.",
+                lastError: "Missing project",
+                updatedAtLabel: "Upload matrix blocked"
+            )
+            return
+        }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            for fixture in Self.creatorRemoteUploadMatrixFixtures() {
+                _ = try await uploadRemoteAsset(
+                    client: client,
+                    sessionID: sessionID,
+                    projectID: projectID,
+                    assetKind: fixture.assetKind,
+                    filename: fixture.filename,
+                    contentType: fixture.contentType,
+                    data: fixture.data
+                )
+            }
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .uploaded,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: creatorRemoteUploadedAssetRecords.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: "Poster, trailer, and source video uploads completed through signed object-storage sessions.",
+                lastError: nil,
+                updatedAtLabel: "Upload matrix complete"
+            )
+        } catch {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: creatorRemoteUploadedAssetRecords.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: "Upload matrix could not complete.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Upload matrix failed"
+            )
+        }
+    }
+
+    func runCreatorRemoteUploadRetryFixture() async {
+        guard productionCatalogConfiguration.isRemoteEnabled else {
+            creatorRemoteUploadRuntimeSnapshot = .local(reason: "Upload retry skipped because the loopback backend is disabled.")
+            return
+        }
+        guard let projectID = primaryImportProjectID() else { return }
+
+        do {
+            let client = HFRemoteCreatorUploadAPIClient(baseURL: productionCatalogConfiguration.baseURL)
+            let sessionID = try await remoteUploadSessionID(client: client)
+            let retryData = Data("highfive-lp5-retry-trailer-fixture".utf8)
+            let invalid = try await client.createUploadSession(
+                projectID: projectID,
+                assetKind: "trailer",
+                filename: "highfive-retry-trailer.mov",
+                contentType: "video/quicktime",
+                data: retryData,
+                sessionID: sessionID,
+                checksumOverride: String(repeating: "0", count: 64)
+            )
+            creatorRemoteUploadSessionRecords.insert(invalid.session, at: 0)
+            do {
+                _ = try await client.uploadBlob(to: invalid.session.uploadURL, data: retryData, sessionID: sessionID)
+            } catch {
+                creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                    state: .failed,
+                    endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                    sessionCount: creatorRemoteUploadSessionRecords.count,
+                    uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                    duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                    lastChecksumPrefix: HFRemoteCreatorUploadAPIClient.sha256Hex(for: retryData).prefix(12).description,
+                    detail: "Checksum validation rejected the first trailer attempt. Retrying with a fresh signed session.",
+                    lastError: error.localizedDescription,
+                    updatedAtLabel: "Validation rejected"
+                )
+            }
+
+            let uploaded = try await uploadRemoteAsset(
+                client: client,
+                sessionID: sessionID,
+                projectID: projectID,
+                assetKind: "trailer",
+                filename: "highfive-retry-trailer.mov",
+                contentType: "video/quicktime",
+                data: retryData
+            )
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .uploaded,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: uploaded.checksumSHA256.prefix(12).description,
+                detail: "Retry succeeded with a new signed upload session after checksum validation failure.",
+                lastError: nil,
+                updatedAtLabel: "Retry complete"
+            )
+        } catch {
+            creatorRemoteUploadRuntimeSnapshot = HFCreatorRemoteUploadRuntimeSnapshot(
+                state: .failed,
+                endpoint: productionCatalogConfiguration.baseURL.absoluteString,
+                sessionCount: creatorRemoteUploadSessionRecords.count,
+                uploadedAssetCount: creatorRemoteUploadedAssetRecords.count,
+                duplicateCount: creatorRemoteUploadedAssetRecords.filter { $0.duplicateOf != nil }.count,
+                lastChecksumPrefix: creatorRemoteUploadedAssetRecords.first?.checksumSHA256.prefix(12).description ?? "None",
+                detail: "Upload retry could not complete.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: "Retry failed"
+            )
+        }
+    }
+
     func runCreatorRemoteUploadCancelFixture() async {
         guard productionCatalogConfiguration.isRemoteEnabled else {
             creatorRemoteUploadRuntimeSnapshot = .local(reason: "Cancel fixture skipped because the loopback backend is disabled.")
@@ -7858,6 +8017,33 @@ final class HFStreamingStore: ObservableObject {
                 updatedAtLabel: "Cancel failed"
             )
         }
+    }
+
+    @discardableResult
+    private func uploadRemoteAsset(
+        client: HFRemoteCreatorUploadAPIClient,
+        sessionID: String,
+        projectID: String,
+        assetKind: String,
+        filename: String,
+        contentType: String,
+        data: Data
+    ) async throws -> HFCreatorRemoteUploadedAssetRecord {
+        let created = try await client.createUploadSession(
+            projectID: projectID,
+            assetKind: assetKind,
+            filename: filename,
+            contentType: contentType,
+            data: data,
+            sessionID: sessionID
+        )
+        creatorRemoteUploadSessionRecords.insert(created.session, at: 0)
+        let uploaded = try await client.uploadBlob(to: created.session.uploadURL, data: data, sessionID: sessionID)
+        creatorRemoteUploadSessionRecords.removeAll { $0.id == uploaded.session.id }
+        creatorRemoteUploadSessionRecords.insert(uploaded.session, at: 0)
+        creatorRemoteUploadedAssetRecords.removeAll { $0.id == uploaded.assetRecord.id }
+        creatorRemoteUploadedAssetRecords.insert(uploaded.assetRecord, at: 0)
+        return uploaded.assetRecord
     }
 
     var creatorRemoteProcessingStatusRows: [HFCreatorRemoteProcessingStatusRow] {
@@ -14074,6 +14260,29 @@ final class HFStreamingStore: ObservableObject {
     private static func mediaInspectionFixturePNGData() -> Data {
         Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=")
             ?? Data("HighFive PNG fixture".utf8)
+    }
+
+    private static func creatorRemoteUploadMatrixFixtures() -> [(assetKind: String, filename: String, contentType: String, data: Data)] {
+        [
+            (
+                assetKind: "poster",
+                filename: "highfive-lp5-poster.png",
+                contentType: "image/png",
+                data: mediaInspectionFixturePNGData()
+            ),
+            (
+                assetKind: "trailer",
+                filename: "highfive-lp5-trailer.mov",
+                contentType: "video/quicktime",
+                data: Data("highfive-lp5-trailer-fixture".utf8)
+            ),
+            (
+                assetKind: "source_video",
+                filename: "highfive-lp5-source.mp4",
+                contentType: "video/mp4",
+                data: Data("highfive-lp5-source-video-fixture".utf8)
+            )
+        ]
     }
 
     private static func makeInitialSeriesRecords(movies: [Movie]) -> [HFSeriesRecord] {

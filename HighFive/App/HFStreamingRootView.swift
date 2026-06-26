@@ -627,6 +627,8 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-upload-object-assets")
             || arguments.contains("--hf-upload-object-duplicates")
             || arguments.contains("--hf-upload-object-cancel")
+            || arguments.contains("--hf-upload-object-matrix")
+            || arguments.contains("--hf-upload-object-retry")
             || arguments.contains("--hf-start-media-processing")
             || arguments.contains("--hf-processing-jobs")
             || arguments.contains("--hf-processing-hls")

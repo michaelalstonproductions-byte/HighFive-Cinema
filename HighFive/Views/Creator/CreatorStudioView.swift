@@ -282,6 +282,8 @@ private enum HFCreatorProSpotlight {
     case remoteUploadAssets
     case remoteUploadDuplicates
     case remoteUploadCancel
+    case remoteUploadMatrix
+    case remoteUploadRetry
     case remoteProcessingDashboard
     case remoteProcessingJobs
     case remoteProcessingHLS
@@ -436,6 +438,8 @@ private enum HFCreatorProSpotlight {
         if arguments.contains("--hf-upload-object-assets") { return .remoteUploadAssets }
         if arguments.contains("--hf-upload-object-duplicates") { return .remoteUploadDuplicates }
         if arguments.contains("--hf-upload-object-cancel") { return .remoteUploadCancel }
+        if arguments.contains("--hf-upload-object-matrix") { return .remoteUploadMatrix }
+        if arguments.contains("--hf-upload-object-retry") { return .remoteUploadRetry }
         if arguments.contains("--hf-start-media-processing") { return .remoteProcessingDashboard }
         if arguments.contains("--hf-processing-jobs") { return .remoteProcessingJobs }
         if arguments.contains("--hf-processing-hls") { return .remoteProcessingHLS }
@@ -2561,6 +2565,10 @@ struct CreatorStudioView: View {
             creatorRemoteUploadDuplicatesSection
         case .remoteUploadCancel:
             creatorRemoteUploadCancelSection
+        case .remoteUploadMatrix:
+            creatorRemoteUploadMatrixSection
+        case .remoteUploadRetry:
+            creatorRemoteUploadRetrySection
         case .remoteProcessingDashboard:
             creatorRemoteProcessingDashboardSection
         case .remoteProcessingJobs:
@@ -6602,6 +6610,54 @@ struct CreatorStudioView: View {
         }
         .task {
             await streamingStore.runCreatorRemoteUploadCancelFixture()
+        }
+    }
+
+    private var creatorRemoteUploadMatrixSection: some View {
+        creatorProSpotlight(
+            title: "Creator Upload Matrix",
+            detail: "Poster, trailer, and source video bytes each create a signed session, validate checksum and size, then store an asset record.",
+            systemImage: "square.stack.3d.up.fill",
+            accent: HFColors.gold,
+            identifier: "hf.upload.object.matrix"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteUploadStatusRows) { row in
+                        remoteUploadStatusCard(row)
+                    }
+                }
+                ForEach(streamingStore.creatorRemoteUploadedAssetRecords.filter { ["poster", "trailer", "source_video"].contains($0.assetKind) }.prefix(6)) { record in
+                    remoteUploadedAssetRow(record)
+                }
+            }
+        }
+        .task {
+            await streamingStore.runCreatorRemoteUploadMatrixFixture()
+        }
+    }
+
+    private var creatorRemoteUploadRetrySection: some View {
+        creatorProSpotlight(
+            title: "Validation Retry",
+            detail: "Checksum failure blocks the first trailer attempt; retry uses a fresh short-lived session with the corrected expected digest.",
+            systemImage: "arrow.clockwise.circle.fill",
+            accent: HFColors.cyanGlow,
+            identifier: "hf.upload.object.retry"
+        ) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                    ForEach(streamingStore.creatorRemoteUploadStatusRows) { row in
+                        remoteUploadStatusCard(row)
+                    }
+                }
+                ForEach(streamingStore.creatorRemoteUploadSessionRecords.prefix(4)) { record in
+                    remoteUploadSessionRow(record)
+                }
+            }
+        }
+        .task {
+            await streamingStore.runCreatorRemoteUploadRetryFixture()
         }
     }
 
