@@ -1004,6 +1004,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     seed_data_loaded: true,
     catalog_titles: summary.total_titles,
     catalog_creators: summary.total_creators,
+    catalog_series: summary.total_series,
     catalog_collections: summary.total_collections,
     catalog_sync_enabled: true,
     delta_sync_enabled: true,

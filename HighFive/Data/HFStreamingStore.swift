@@ -6247,7 +6247,21 @@ final class HFStreamingStore: ObservableObject {
     }
 
     var cloudCatalogSyncDiagnostics: [HFCloudCatalogSyncDiagnosticRecord] {
-        [
+        let titleIDs = allCatalogMovies.map(\.id)
+        let duplicateRecordCount = duplicateCount(titleIDs)
+            + duplicateCount(persistedCreators.map(\.id))
+            + duplicateCount(contentSnapshot.series.map(\.id))
+            + duplicateCount(persistedCollections.map(\.id))
+        let episodeCount = contentSnapshot.series.reduce(0) { seriesTotal, series in
+            seriesTotal + series.seasons.reduce(0) { $0 + $1.episodes.count }
+        }
+        let collectionMembershipCount = persistedCollections.reduce(0) { $0 + $1.movies.count }
+        let isFreshInstallReady = cloudCatalogSyncRuntimeSnapshot.titleCount > 0
+            && cloudCatalogSyncRuntimeSnapshot.creatorCount > 0
+            && cloudCatalogSyncRuntimeSnapshot.seriesCount > 0
+            && cloudCatalogSyncRuntimeSnapshot.collectionCount > 0
+            && episodeCount > 0
+        return [
             HFCloudCatalogSyncDiagnosticRecord(
                 id: "state",
                 title: "Runtime State",
@@ -6275,8 +6289,33 @@ final class HFStreamingStore: ObservableObject {
                 detail: cloudCatalogSyncRuntimeSnapshot.lastError ?? "No sync error recorded.",
                 status: cloudCatalogSyncRuntimeSnapshot.lastError == nil ? "Clean" : "Fallback",
                 systemImage: cloudCatalogSyncRuntimeSnapshot.lastError == nil ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+            ),
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "fresh-install",
+                title: "Fresh Install Catalog",
+                detail: "\(cloudCatalogSyncRuntimeSnapshot.titleCount) titles, \(cloudCatalogSyncRuntimeSnapshot.creatorCount) creators, \(cloudCatalogSyncRuntimeSnapshot.seriesCount) series, \(episodeCount) episodes, and \(cloudCatalogSyncRuntimeSnapshot.collectionCount) collections are available from the synced cache.",
+                status: isFreshInstallReady ? "Ready" : "Waiting",
+                systemImage: isFreshInstallReady ? "icloud.and.arrow.down.fill" : "icloud.slash.fill"
+            ),
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "relationships",
+                title: "Relationship Coverage",
+                detail: "\(collectionMembershipCount) collection memberships and \(episodeCount) episode records resolve through the cloud-synced repository cache.",
+                status: collectionMembershipCount > 0 && episodeCount > 0 ? "Resolved" : "Review",
+                systemImage: collectionMembershipCount > 0 && episodeCount > 0 ? "link.circle.fill" : "exclamationmark.triangle.fill"
+            ),
+            HFCloudCatalogSyncDiagnosticRecord(
+                id: "dedupe",
+                title: "Duplicate Guard",
+                detail: "Catalog sync validates duplicate IDs across titles, creators, series, and collections before exposing repository-backed query results.",
+                status: duplicateRecordCount == 0 ? "Clean" : "\(duplicateRecordCount) Duplicates",
+                systemImage: duplicateRecordCount == 0 ? "checkmark.seal.fill" : "square.stack.3d.up.slash.fill"
             )
         ]
+    }
+
+    private func duplicateCount(_ values: [String]) -> Int {
+        values.count - Set(values).count
     }
 
     var creatorDraftSyncStatusRows: [HFContentRepositoryMetric] {
