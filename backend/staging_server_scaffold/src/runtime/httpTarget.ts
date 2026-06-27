@@ -123,6 +123,11 @@ import {
   v3AIOperationsReleaseOptimizationPath,
   v3AIOperationsRightsValidationPath,
   v3AIOperationsSummaryPath,
+  v3HighFiveEnterpriseAIStreamingPath,
+  v3HighFiveEnterpriseGlobalCreatorPath,
+  v3HighFiveEnterpriseLaunchReadinessPath,
+  v3HighFiveEnterpriseStudioPlatformPath,
+  v3HighFiveEnterpriseSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -362,6 +367,14 @@ import {
   v3AIOperationsReadinessSummary,
   v3AIOperationsSummary
 } from "../routes/v3AIOperations.js";
+import {
+  createAIStreamingPlatformRecord,
+  createEnterpriseLaunchReadinessRecord,
+  createEnterpriseStudioPlatformRecord,
+  createGlobalCreatorPlatformRecord,
+  v3HighFiveEnterpriseReadinessSummary,
+  v3HighFiveEnterpriseSummary
+} from "../routes/v3HighFiveEnterprise.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1812,6 +1825,60 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3HighFiveEnterpriseSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3HighFiveEnterpriseSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3HighFiveEnterpriseGlobalCreatorPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createGlobalCreatorPlatformRecord(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3HighFiveEnterpriseStudioPlatformPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseStudioPlatformRecord(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3HighFiveEnterpriseAIStreamingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAIStreamingPlatformRecord(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3HighFiveEnterpriseLaunchReadinessPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseLaunchReadinessRecord(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2793,6 +2860,11 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_ai_operations_catalog_optimization_path: v3AIOperationsCatalogOptimizationPath,
     v3_ai_operations_rights_validation_path: v3AIOperationsRightsValidationPath,
     v3_ai_operations_release_optimization_path: v3AIOperationsReleaseOptimizationPath,
+    v3_highfive_enterprise_summary_path: v3HighFiveEnterpriseSummaryPath,
+    v3_highfive_enterprise_global_creator_path: v3HighFiveEnterpriseGlobalCreatorPath,
+    v3_highfive_enterprise_studio_platform_path: v3HighFiveEnterpriseStudioPlatformPath,
+    v3_highfive_enterprise_ai_streaming_path: v3HighFiveEnterpriseAIStreamingPath,
+    v3_highfive_enterprise_launch_readiness_path: v3HighFiveEnterpriseLaunchReadinessPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2853,6 +2925,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3Marketplace = v3MarketplaceReadinessSummary();
   const v3GlobalDistribution = v3GlobalDistributionReadinessSummary();
   const v3AIOperations = v3AIOperationsReadinessSummary();
+  const v3HighFiveEnterprise = v3HighFiveEnterpriseReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -3099,6 +3172,17 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_ai_operations_moderation_records: Number(v3AIOperations.moderation_records),
     v3_ai_operations_quality_records: Number(v3AIOperations.quality_records),
     v3_ai_operations_optimization_records: Number(v3AIOperations.optimization_records),
+    v3_highfive_enterprise_enabled: Boolean(v3HighFiveEnterprise.v3_highfive_enterprise_enabled),
+    v3_highfive_enterprise_global_creator_platform: Boolean(v3HighFiveEnterprise.global_creator_platform),
+    v3_highfive_enterprise_studio_platform: Boolean(v3HighFiveEnterprise.enterprise_studio_platform),
+    v3_highfive_enterprise_ai_powered_streaming_platform: Boolean(v3HighFiveEnterprise.ai_powered_streaming_platform),
+    v3_highfive_enterprise_launch_readiness: Boolean(v3HighFiveEnterprise.enterprise_launch_readiness),
+    v3_highfive_enterprise_external_ai_calls: Boolean(v3HighFiveEnterprise.external_ai_calls),
+    v3_highfive_enterprise_external_services: Boolean(v3HighFiveEnterprise.external_enterprise_services),
+    v3_highfive_enterprise_global_creator_records: Number(v3HighFiveEnterprise.global_creator_records),
+    v3_highfive_enterprise_studio_platform_records: Number(v3HighFiveEnterprise.studio_platform_records),
+    v3_highfive_enterprise_ai_streaming_records: Number(v3HighFiveEnterprise.ai_streaming_records),
+    v3_highfive_enterprise_launch_readiness_records: Number(v3HighFiveEnterprise.launch_readiness_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
