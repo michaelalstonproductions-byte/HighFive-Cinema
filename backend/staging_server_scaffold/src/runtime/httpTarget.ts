@@ -111,6 +111,12 @@ import {
   v3MarketplaceProductionServicesPath,
   v3MarketplaceStockFootagePath,
   v3MarketplaceSummaryPath,
+  v3GlobalDistributionLanguagesPath,
+  v3GlobalDistributionLocalizationPath,
+  v3GlobalDistributionRegionalPublishingPath,
+  v3GlobalDistributionSubtitlesPath,
+  v3GlobalDistributionSummaryPath,
+  v3GlobalDistributionTerritoriesPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -332,6 +338,15 @@ import {
   v3MarketplaceReadinessSummary,
   v3MarketplaceSummary
 } from "../routes/v3Marketplace.js";
+import {
+  createGlobalLanguage,
+  createGlobalLocalization,
+  createGlobalSubtitle,
+  createGlobalTerritory,
+  createRegionalPublishing,
+  v3GlobalDistributionReadinessSummary,
+  v3GlobalDistributionSummary
+} from "../routes/v3GlobalDistribution.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1652,6 +1667,71 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3GlobalDistributionSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3GlobalDistributionSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3GlobalDistributionLocalizationPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createGlobalLocalization(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3GlobalDistributionSubtitlesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createGlobalSubtitle(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3GlobalDistributionRegionalPublishingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createRegionalPublishing(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3GlobalDistributionTerritoriesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createGlobalTerritory(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3GlobalDistributionLanguagesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createGlobalLanguage(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2621,6 +2701,12 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_marketplace_production_services_path: v3MarketplaceProductionServicesPath,
     v3_marketplace_music_path: v3MarketplaceMusicPath,
     v3_marketplace_stock_footage_path: v3MarketplaceStockFootagePath,
+    v3_global_distribution_summary_path: v3GlobalDistributionSummaryPath,
+    v3_global_distribution_localization_path: v3GlobalDistributionLocalizationPath,
+    v3_global_distribution_subtitles_path: v3GlobalDistributionSubtitlesPath,
+    v3_global_distribution_regional_publishing_path: v3GlobalDistributionRegionalPublishingPath,
+    v3_global_distribution_territories_path: v3GlobalDistributionTerritoriesPath,
+    v3_global_distribution_languages_path: v3GlobalDistributionLanguagesPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2679,6 +2765,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3Production = v3ProductionReadinessSummary();
   const v3EnterpriseStudios = v3EnterpriseStudiosReadinessSummary();
   const v3Marketplace = v3MarketplaceReadinessSummary();
+  const v3GlobalDistribution = v3GlobalDistributionReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2905,6 +2992,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_marketplace_license_listings: Number(v3Marketplace.license_listings),
     v3_marketplace_service_listings: Number(v3Marketplace.service_listings),
     v3_marketplace_asset_listings: Number(v3Marketplace.asset_listings),
+    v3_global_distribution_enabled: Boolean(v3GlobalDistribution.v3_global_distribution_enabled),
+    v3_global_distribution_localization: Boolean(v3GlobalDistribution.localization),
+    v3_global_distribution_subtitles: Boolean(v3GlobalDistribution.subtitles),
+    v3_global_distribution_regional_publishing: Boolean(v3GlobalDistribution.regional_publishing),
+    v3_global_distribution_territories: Boolean(v3GlobalDistribution.territories),
+    v3_global_distribution_languages: Boolean(v3GlobalDistribution.languages),
+    v3_global_distribution_external_services: Boolean(v3GlobalDistribution.external_distribution_services),
+    v3_global_distribution_localization_records: Number(v3GlobalDistribution.localization_records),
+    v3_global_distribution_subtitle_records: Number(v3GlobalDistribution.subtitle_records),
+    v3_global_distribution_territory_records: Number(v3GlobalDistribution.territory_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
