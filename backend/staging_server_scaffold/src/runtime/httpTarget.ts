@@ -77,6 +77,11 @@ import {
   v3SearchSemanticPath,
   v3SearchVisualSimilarityPath,
   v3SearchVoicePath,
+  v3CreatorCopilotAudiencePath,
+  v3CreatorCopilotGenerationPlanPath,
+  v3CreatorCopilotPublishingPath,
+  v3CreatorCopilotReleaseTimingPath,
+  v3CreatorCopilotSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -249,6 +254,14 @@ import {
   v3VisualSimilarity,
   v3VoiceSearch
 } from "../routes/v3Search.js";
+import {
+  v3CreatorCopilotAudience,
+  v3CreatorCopilotGenerationPlan,
+  v3CreatorCopilotPublishing,
+  v3CreatorCopilotReadinessSummary,
+  v3CreatorCopilotReleaseTiming,
+  v3CreatorCopilotSummary
+} from "../routes/v3CreatorCopilot.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1195,6 +1208,65 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3CreatorCopilotSummaryPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, v3CreatorCopilotSummary(authHeader(request.headers.authorization), {}));
+          return;
+        }
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, v3CreatorCopilotSummary(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCopilotGenerationPlanPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, v3CreatorCopilotGenerationPlan(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCopilotAudiencePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, v3CreatorCopilotAudience(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCopilotReleaseTimingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, v3CreatorCopilotReleaseTiming(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCopilotPublishingPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 200, v3CreatorCopilotPublishing(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2130,6 +2202,11 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_search_creator_similarity_path: v3SearchCreatorSimilarityPath,
     v3_search_voice_path: v3SearchVoicePath,
     v3_search_recommendation_path: v3SearchRecommendationPath,
+    v3_creator_copilot_summary_path: v3CreatorCopilotSummaryPath,
+    v3_creator_copilot_generation_plan_path: v3CreatorCopilotGenerationPlanPath,
+    v3_creator_copilot_audience_path: v3CreatorCopilotAudiencePath,
+    v3_creator_copilot_release_timing_path: v3CreatorCopilotReleaseTimingPath,
+    v3_creator_copilot_publishing_path: v3CreatorCopilotPublishingPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2183,6 +2260,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const cinemaTwo = cinemaTwoReadinessSummary();
   const v3Personalization = v3PersonalizationReadinessSummary();
   const v3Search = v3SearchReadinessSummary();
+  const v3CreatorCopilot = v3CreatorCopilotReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2357,6 +2435,14 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_voice_search_enabled: Boolean(v3Search.voice_search),
     v3_recommendation_search_enabled: Boolean(v3Search.recommendation_search),
     v3_search_external_ai_calls: Boolean(v3Search.external_ai_calls),
+    v3_creator_copilot_enabled: Boolean(v3CreatorCopilot.v3_creator_copilot_enabled),
+    v3_creator_copilot_poster_generation: Boolean(v3CreatorCopilot.poster_generation),
+    v3_creator_copilot_metadata_writing: Boolean(v3CreatorCopilot.metadata_writing),
+    v3_creator_copilot_trailer_suggestions: Boolean(v3CreatorCopilot.trailer_suggestions),
+    v3_creator_copilot_publishing_recommendations: Boolean(v3CreatorCopilot.publishing_recommendations),
+    v3_creator_copilot_audience_targeting: Boolean(v3CreatorCopilot.audience_targeting),
+    v3_creator_copilot_release_timing: Boolean(v3CreatorCopilot.release_timing),
+    v3_creator_copilot_external_ai_calls: Boolean(v3CreatorCopilot.external_ai_calls),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
