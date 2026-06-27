@@ -67,6 +67,10 @@ import {
   cinemaTwoPolishAuditPath,
   cinemaTwoReleaseChecklistPath,
   cinemaTwoSummaryPath,
+  v3PersonalizationAdaptiveDiscoveryPath,
+  v3PersonalizationHomePath,
+  v3PersonalizationMoodEnginePath,
+  v3PersonalizationTasteGraphPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -223,6 +227,13 @@ import {
   cinemaTwoReleaseChecklist,
   cinemaTwoSummary
 } from "../routes/cinemaTwo.js";
+import {
+  v3AdaptiveDiscovery,
+  v3MoodEngine,
+  v3PersonalizationReadinessSummary,
+  v3PersonalizedHome,
+  v3TasteGraph
+} from "../routes/v3Personalization.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1066,6 +1077,46 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, cinemaTwoReleaseChecklist(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3PersonalizationHomePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3PersonalizedHome(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3PersonalizationTasteGraphPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3TasteGraph(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3PersonalizationMoodEnginePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3MoodEngine(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3PersonalizationAdaptiveDiscoveryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3AdaptiveDiscovery(authHeader(request.headers.authorization)));
         return;
       }
 
@@ -1994,6 +2045,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     cinema_two_accessibility_path: cinemaTwoAccessibilityPath,
     cinema_two_marketing_assets_path: cinemaTwoMarketingAssetsPath,
     cinema_two_release_checklist_path: cinemaTwoReleaseChecklistPath,
+    v3_personalization_home_path: v3PersonalizationHomePath,
+    v3_personalization_taste_graph_path: v3PersonalizationTasteGraphPath,
+    v3_personalization_mood_engine_path: v3PersonalizationMoodEnginePath,
+    v3_personalization_adaptive_discovery_path: v3PersonalizationAdaptiveDiscoveryPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2045,6 +2100,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const enterpriseStudio = enterpriseStudioReadinessSummary();
   const performanceScale = performanceScaleReadinessSummary();
   const cinemaTwo = cinemaTwoReadinessSummary();
+  const v3Personalization = v3PersonalizationReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2202,6 +2258,15 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     cinema_two_launch_marketing_assets: Boolean(cinemaTwo.launch_marketing_assets),
     cinema_two_external_services: Boolean(cinemaTwo.external_services),
     cinema_two_release_gates: Number(cinemaTwo.release_gates),
+    v3_personalization_enabled: Boolean(v3Personalization.v3_personalization_enabled),
+    v3_personalized_home_enabled: Boolean(v3Personalization.personalized_home),
+    v3_taste_graph_enabled: Boolean(v3Personalization.taste_graph),
+    v3_mood_engine_enabled: Boolean(v3Personalization.mood_engine),
+    v3_behavior_learning_enabled: Boolean(v3Personalization.behavior_learning),
+    v3_smart_continue_watching_enabled: Boolean(v3Personalization.smart_continue_watching),
+    v3_dynamic_collections_enabled: Boolean(v3Personalization.dynamic_collections),
+    v3_adaptive_discovery_enabled: Boolean(v3Personalization.adaptive_discovery),
+    v3_personalization_external_ai_calls: Boolean(v3Personalization.external_ai_calls),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
