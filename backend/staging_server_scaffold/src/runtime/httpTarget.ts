@@ -104,6 +104,13 @@ import {
   v3EnterpriseStudiosSharedLibrariesPath,
   v3EnterpriseStudiosSummaryPath,
   v3EnterpriseStudiosWorkspacesPath,
+  v3MarketplaceCreatorServicesPath,
+  v3MarketplaceDistributionPath,
+  v3MarketplaceLicensesPath,
+  v3MarketplaceMusicPath,
+  v3MarketplaceProductionServicesPath,
+  v3MarketplaceStockFootagePath,
+  v3MarketplaceSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -315,6 +322,16 @@ import {
   v3EnterpriseStudiosReadinessSummary,
   v3EnterpriseStudiosSummary
 } from "../routes/v3EnterpriseStudios.js";
+import {
+  createMarketplaceCreatorService,
+  createMarketplaceDistribution,
+  createMarketplaceLicense,
+  createMarketplaceMusic,
+  createMarketplaceProductionService,
+  createMarketplaceStockFootage,
+  v3MarketplaceReadinessSummary,
+  v3MarketplaceSummary
+} from "../routes/v3Marketplace.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1559,6 +1576,82 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3MarketplaceSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3MarketplaceSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3MarketplaceLicensesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createMarketplaceLicense(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3MarketplaceDistributionPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createMarketplaceDistribution(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3MarketplaceCreatorServicesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createMarketplaceCreatorService(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3MarketplaceProductionServicesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createMarketplaceProductionService(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3MarketplaceMusicPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createMarketplaceMusic(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3MarketplaceStockFootagePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createMarketplaceStockFootage(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2521,6 +2614,13 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_enterprise_studios_permissions_path: v3EnterpriseStudiosPermissionsPath,
     v3_enterprise_studios_departments_path: v3EnterpriseStudiosDepartmentsPath,
     v3_enterprise_studios_shared_libraries_path: v3EnterpriseStudiosSharedLibrariesPath,
+    v3_marketplace_summary_path: v3MarketplaceSummaryPath,
+    v3_marketplace_licenses_path: v3MarketplaceLicensesPath,
+    v3_marketplace_distribution_path: v3MarketplaceDistributionPath,
+    v3_marketplace_creator_services_path: v3MarketplaceCreatorServicesPath,
+    v3_marketplace_production_services_path: v3MarketplaceProductionServicesPath,
+    v3_marketplace_music_path: v3MarketplaceMusicPath,
+    v3_marketplace_stock_footage_path: v3MarketplaceStockFootagePath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2578,6 +2678,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3CreatorCRM = v3CreatorCRMReadinessSummary();
   const v3Production = v3ProductionReadinessSummary();
   const v3EnterpriseStudios = v3EnterpriseStudiosReadinessSummary();
+  const v3Marketplace = v3MarketplaceReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2792,6 +2893,18 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_enterprise_studio_organization_records: Number(v3EnterpriseStudios.organization_records),
     v3_enterprise_studio_workspace_records: Number(v3EnterpriseStudios.workspace_records),
     v3_enterprise_studio_shared_library_records: Number(v3EnterpriseStudios.shared_library_records),
+    v3_marketplace_enabled: Boolean(v3Marketplace.v3_marketplace_enabled),
+    v3_marketplace_license_marketplace: Boolean(v3Marketplace.license_marketplace),
+    v3_marketplace_distribution_marketplace: Boolean(v3Marketplace.distribution_marketplace),
+    v3_marketplace_creator_services: Boolean(v3Marketplace.creator_services),
+    v3_marketplace_production_services: Boolean(v3Marketplace.production_services),
+    v3_marketplace_music_marketplace: Boolean(v3Marketplace.music_marketplace),
+    v3_marketplace_stock_footage_marketplace: Boolean(v3Marketplace.stock_footage_marketplace),
+    v3_marketplace_transaction_processing: Boolean(v3Marketplace.transaction_processing),
+    v3_marketplace_external_services: Boolean(v3Marketplace.external_marketplace_services),
+    v3_marketplace_license_listings: Number(v3Marketplace.license_listings),
+    v3_marketplace_service_listings: Number(v3Marketplace.service_listings),
+    v3_marketplace_asset_listings: Number(v3Marketplace.asset_listings),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
