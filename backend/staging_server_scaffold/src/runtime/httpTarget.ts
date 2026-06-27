@@ -82,6 +82,13 @@ import {
   v3CreatorCopilotPublishingPath,
   v3CreatorCopilotReleaseTimingPath,
   v3CreatorCopilotSummaryPath,
+  v3CreatorCRMContractsPath,
+  v3CreatorCRMDeliverablesPath,
+  v3CreatorCRMInboxPath,
+  v3CreatorCRMMilestonesPath,
+  v3CreatorCRMSummaryPath,
+  v3CreatorCRMTasksPath,
+  v3CreatorCRMTeamsPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -262,6 +269,16 @@ import {
   v3CreatorCopilotReleaseTiming,
   v3CreatorCopilotSummary
 } from "../routes/v3CreatorCopilot.js";
+import {
+  createCreatorCRMContract,
+  createCreatorCRMDeliverable,
+  createCreatorCRMInboxRecord,
+  createCreatorCRMMilestone,
+  createCreatorCRMTask,
+  createCreatorCRMTeam,
+  v3CreatorCRMReadinessSummary,
+  v3CreatorCRMSummary
+} from "../routes/v3CreatorCRM.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1267,6 +1284,82 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3CreatorCRMSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3CreatorCRMSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3CreatorCRMInboxPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorCRMInboxRecord(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMContractsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorCRMContract(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMTasksPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorCRMTask(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMMilestonesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorCRMMilestone(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMTeamsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorCRMTeam(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMDeliverablesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createCreatorCRMDeliverable(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2207,6 +2300,13 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_creator_copilot_audience_path: v3CreatorCopilotAudiencePath,
     v3_creator_copilot_release_timing_path: v3CreatorCopilotReleaseTimingPath,
     v3_creator_copilot_publishing_path: v3CreatorCopilotPublishingPath,
+    v3_creator_crm_summary_path: v3CreatorCRMSummaryPath,
+    v3_creator_crm_inbox_path: v3CreatorCRMInboxPath,
+    v3_creator_crm_contracts_path: v3CreatorCRMContractsPath,
+    v3_creator_crm_tasks_path: v3CreatorCRMTasksPath,
+    v3_creator_crm_milestones_path: v3CreatorCRMMilestonesPath,
+    v3_creator_crm_teams_path: v3CreatorCRMTeamsPath,
+    v3_creator_crm_deliverables_path: v3CreatorCRMDeliverablesPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2261,6 +2361,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3Personalization = v3PersonalizationReadinessSummary();
   const v3Search = v3SearchReadinessSummary();
   const v3CreatorCopilot = v3CreatorCopilotReadinessSummary();
+  const v3CreatorCRM = v3CreatorCRMReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2443,6 +2544,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_creator_copilot_audience_targeting: Boolean(v3CreatorCopilot.audience_targeting),
     v3_creator_copilot_release_timing: Boolean(v3CreatorCopilot.release_timing),
     v3_creator_copilot_external_ai_calls: Boolean(v3CreatorCopilot.external_ai_calls),
+    v3_creator_crm_enabled: Boolean(v3CreatorCRM.v3_creator_crm_enabled),
+    v3_creator_crm_inbox: Boolean(v3CreatorCRM.creator_inbox),
+    v3_creator_crm_contracts: Boolean(v3CreatorCRM.contracts),
+    v3_creator_crm_tasks: Boolean(v3CreatorCRM.tasks),
+    v3_creator_crm_milestones: Boolean(v3CreatorCRM.milestones),
+    v3_creator_crm_teams: Boolean(v3CreatorCRM.teams),
+    v3_creator_crm_deliverables: Boolean(v3CreatorCRM.deliverables),
+    v3_creator_crm_external_services: Boolean(v3CreatorCRM.external_services),
+    v3_creator_crm_inbox_records: Number(v3CreatorCRM.inbox_records),
+    v3_creator_crm_task_records: Number(v3CreatorCRM.task_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
