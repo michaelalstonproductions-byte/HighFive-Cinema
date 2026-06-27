@@ -97,6 +97,13 @@ import {
   v3ProductionSchedulePath,
   v3ProductionSeriesPath,
   v3ProductionSummaryPath,
+  v3EnterpriseStudiosAccountsPath,
+  v3EnterpriseStudiosDepartmentsPath,
+  v3EnterpriseStudiosOrganizationsPath,
+  v3EnterpriseStudiosPermissionsPath,
+  v3EnterpriseStudiosSharedLibrariesPath,
+  v3EnterpriseStudiosSummaryPath,
+  v3EnterpriseStudiosWorkspacesPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -298,6 +305,16 @@ import {
   v3ProductionReadinessSummary,
   v3ProductionSummary
 } from "../routes/v3ProductionManagement.js";
+import {
+  createEnterpriseAccount,
+  createEnterpriseDepartment,
+  createEnterpriseOrganization,
+  createEnterprisePermission,
+  createEnterpriseSharedLibrary,
+  createEnterpriseWorkspace,
+  v3EnterpriseStudiosReadinessSummary,
+  v3EnterpriseStudiosSummary
+} from "../routes/v3EnterpriseStudios.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1466,6 +1483,82 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3EnterpriseStudiosSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3EnterpriseStudiosSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3EnterpriseStudiosOrganizationsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseOrganization(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3EnterpriseStudiosAccountsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseAccount(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3EnterpriseStudiosWorkspacesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseWorkspace(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3EnterpriseStudiosPermissionsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterprisePermission(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3EnterpriseStudiosDepartmentsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseDepartment(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3EnterpriseStudiosSharedLibrariesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createEnterpriseSharedLibrary(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2421,6 +2514,13 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_production_budgets_path: v3ProductionBudgetsPath,
     v3_production_crew_path: v3ProductionCrewPath,
     v3_production_assets_path: v3ProductionAssetsPath,
+    v3_enterprise_studios_summary_path: v3EnterpriseStudiosSummaryPath,
+    v3_enterprise_studios_organizations_path: v3EnterpriseStudiosOrganizationsPath,
+    v3_enterprise_studios_accounts_path: v3EnterpriseStudiosAccountsPath,
+    v3_enterprise_studios_workspaces_path: v3EnterpriseStudiosWorkspacesPath,
+    v3_enterprise_studios_permissions_path: v3EnterpriseStudiosPermissionsPath,
+    v3_enterprise_studios_departments_path: v3EnterpriseStudiosDepartmentsPath,
+    v3_enterprise_studios_shared_libraries_path: v3EnterpriseStudiosSharedLibrariesPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2477,6 +2577,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3CreatorCopilot = v3CreatorCopilotReadinessSummary();
   const v3CreatorCRM = v3CreatorCRMReadinessSummary();
   const v3Production = v3ProductionReadinessSummary();
+  const v3EnterpriseStudios = v3EnterpriseStudiosReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2680,6 +2781,17 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_production_external_services: Boolean(v3Production.external_services),
     v3_production_project_records: Number(v3Production.production_projects),
     v3_production_asset_records: Number(v3Production.production_assets),
+    v3_enterprise_studios_enabled: Boolean(v3EnterpriseStudios.v3_enterprise_studios_enabled),
+    v3_enterprise_studio_accounts: Boolean(v3EnterpriseStudios.studio_accounts),
+    v3_enterprise_studio_organizations: Boolean(v3EnterpriseStudios.organizations),
+    v3_enterprise_studio_multiple_workspaces: Boolean(v3EnterpriseStudios.multiple_workspaces),
+    v3_enterprise_studio_permissions: Boolean(v3EnterpriseStudios.permissions),
+    v3_enterprise_studio_departments: Boolean(v3EnterpriseStudios.departments),
+    v3_enterprise_studio_shared_libraries: Boolean(v3EnterpriseStudios.shared_libraries),
+    v3_enterprise_studio_external_services: Boolean(v3EnterpriseStudios.external_services),
+    v3_enterprise_studio_organization_records: Number(v3EnterpriseStudios.organization_records),
+    v3_enterprise_studio_workspace_records: Number(v3EnterpriseStudios.workspace_records),
+    v3_enterprise_studio_shared_library_records: Number(v3EnterpriseStudios.shared_library_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
