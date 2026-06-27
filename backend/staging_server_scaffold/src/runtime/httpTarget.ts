@@ -89,6 +89,14 @@ import {
   v3CreatorCRMSummaryPath,
   v3CreatorCRMTasksPath,
   v3CreatorCRMTeamsPath,
+  v3ProductionAssetsPath,
+  v3ProductionBudgetsPath,
+  v3ProductionCrewPath,
+  v3ProductionFilmsPath,
+  v3ProductionProjectsPath,
+  v3ProductionSchedulePath,
+  v3ProductionSeriesPath,
+  v3ProductionSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -279,6 +287,17 @@ import {
   v3CreatorCRMReadinessSummary,
   v3CreatorCRMSummary
 } from "../routes/v3CreatorCRM.js";
+import {
+  createProductionAsset,
+  createProductionBudget,
+  createProductionCrew,
+  createProductionFilm,
+  createProductionProject,
+  createProductionSchedule,
+  createProductionSeries,
+  v3ProductionReadinessSummary,
+  v3ProductionSummary
+} from "../routes/v3ProductionManagement.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1360,6 +1379,93 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3ProductionSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3ProductionSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3ProductionFilmsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionFilm(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3ProductionSeriesPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionSeries(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3ProductionProjectsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionProject(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3ProductionSchedulePath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionSchedule(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3ProductionBudgetsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionBudget(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3ProductionCrewPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionCrew(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3ProductionAssetsPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createProductionAsset(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2307,6 +2413,14 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_creator_crm_milestones_path: v3CreatorCRMMilestonesPath,
     v3_creator_crm_teams_path: v3CreatorCRMTeamsPath,
     v3_creator_crm_deliverables_path: v3CreatorCRMDeliverablesPath,
+    v3_production_summary_path: v3ProductionSummaryPath,
+    v3_production_films_path: v3ProductionFilmsPath,
+    v3_production_series_path: v3ProductionSeriesPath,
+    v3_production_projects_path: v3ProductionProjectsPath,
+    v3_production_schedule_path: v3ProductionSchedulePath,
+    v3_production_budgets_path: v3ProductionBudgetsPath,
+    v3_production_crew_path: v3ProductionCrewPath,
+    v3_production_assets_path: v3ProductionAssetsPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2362,6 +2476,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3Search = v3SearchReadinessSummary();
   const v3CreatorCopilot = v3CreatorCopilotReadinessSummary();
   const v3CreatorCRM = v3CreatorCRMReadinessSummary();
+  const v3Production = v3ProductionReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2554,6 +2669,17 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_creator_crm_external_services: Boolean(v3CreatorCRM.external_services),
     v3_creator_crm_inbox_records: Number(v3CreatorCRM.inbox_records),
     v3_creator_crm_task_records: Number(v3CreatorCRM.task_records),
+    v3_production_management_enabled: Boolean(v3Production.v3_production_management_enabled),
+    v3_production_films: Boolean(v3Production.films),
+    v3_production_series: Boolean(v3Production.series),
+    v3_production_projects: Boolean(v3Production.projects),
+    v3_production_schedules: Boolean(v3Production.production_schedules),
+    v3_production_budgets: Boolean(v3Production.budgets),
+    v3_production_crew: Boolean(v3Production.crew),
+    v3_production_assets: Boolean(v3Production.assets),
+    v3_production_external_services: Boolean(v3Production.external_services),
+    v3_production_project_records: Number(v3Production.production_projects),
+    v3_production_asset_records: Number(v3Production.production_assets),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
