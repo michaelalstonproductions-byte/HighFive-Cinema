@@ -117,6 +117,12 @@ import {
   v3GlobalDistributionSubtitlesPath,
   v3GlobalDistributionSummaryPath,
   v3GlobalDistributionTerritoriesPath,
+  v3AIOperationsCatalogOptimizationPath,
+  v3AIOperationsModerationPath,
+  v3AIOperationsQualityControlPath,
+  v3AIOperationsReleaseOptimizationPath,
+  v3AIOperationsRightsValidationPath,
+  v3AIOperationsSummaryPath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -347,6 +353,15 @@ import {
   v3GlobalDistributionReadinessSummary,
   v3GlobalDistributionSummary
 } from "../routes/v3GlobalDistribution.js";
+import {
+  createAICatalogOptimization,
+  createAIModerationRecommendation,
+  createAIQualityControl,
+  createAIReleaseOptimization,
+  createAIRightsValidation,
+  v3AIOperationsReadinessSummary,
+  v3AIOperationsSummary
+} from "../routes/v3AIOperations.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1732,6 +1747,71 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         return;
       }
 
+      if (path === v3AIOperationsSummaryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3AIOperationsSummary(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3AIOperationsModerationPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAIModerationRecommendation(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3AIOperationsQualityControlPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAIQualityControl(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3AIOperationsCatalogOptimizationPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAICatalogOptimization(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3AIOperationsRightsValidationPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAIRightsValidation(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3AIOperationsReleaseOptimizationPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, createAIReleaseOptimization(authHeader(request.headers.authorization), body));
+        return;
+      }
+
       if (path === viewerLibrarySavePath) {
         if (request.method !== "POST") {
           const result = methodNotAllowed();
@@ -2707,6 +2787,12 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_global_distribution_regional_publishing_path: v3GlobalDistributionRegionalPublishingPath,
     v3_global_distribution_territories_path: v3GlobalDistributionTerritoriesPath,
     v3_global_distribution_languages_path: v3GlobalDistributionLanguagesPath,
+    v3_ai_operations_summary_path: v3AIOperationsSummaryPath,
+    v3_ai_operations_moderation_path: v3AIOperationsModerationPath,
+    v3_ai_operations_quality_control_path: v3AIOperationsQualityControlPath,
+    v3_ai_operations_catalog_optimization_path: v3AIOperationsCatalogOptimizationPath,
+    v3_ai_operations_rights_validation_path: v3AIOperationsRightsValidationPath,
+    v3_ai_operations_release_optimization_path: v3AIOperationsReleaseOptimizationPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2766,6 +2852,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const v3EnterpriseStudios = v3EnterpriseStudiosReadinessSummary();
   const v3Marketplace = v3MarketplaceReadinessSummary();
   const v3GlobalDistribution = v3GlobalDistributionReadinessSummary();
+  const v3AIOperations = v3AIOperationsReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -3002,6 +3089,16 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_global_distribution_localization_records: Number(v3GlobalDistribution.localization_records),
     v3_global_distribution_subtitle_records: Number(v3GlobalDistribution.subtitle_records),
     v3_global_distribution_territory_records: Number(v3GlobalDistribution.territory_records),
+    v3_ai_operations_enabled: Boolean(v3AIOperations.v3_ai_operations_enabled),
+    v3_ai_operations_automated_moderation: Boolean(v3AIOperations.automated_moderation),
+    v3_ai_operations_quality_control: Boolean(v3AIOperations.quality_control),
+    v3_ai_operations_catalog_optimization: Boolean(v3AIOperations.catalog_optimization),
+    v3_ai_operations_rights_validation: Boolean(v3AIOperations.rights_validation),
+    v3_ai_operations_release_optimization: Boolean(v3AIOperations.release_optimization),
+    v3_ai_operations_external_ai_calls: Boolean(v3AIOperations.external_ai_calls),
+    v3_ai_operations_moderation_records: Number(v3AIOperations.moderation_records),
+    v3_ai_operations_quality_records: Number(v3AIOperations.quality_records),
+    v3_ai_operations_optimization_records: Number(v3AIOperations.optimization_records),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
