@@ -71,6 +71,12 @@ import {
   v3PersonalizationHomePath,
   v3PersonalizationMoodEnginePath,
   v3PersonalizationTasteGraphPath,
+  v3SearchCreatorSimilarityPath,
+  v3SearchQueryPath,
+  v3SearchRecommendationPath,
+  v3SearchSemanticPath,
+  v3SearchVisualSimilarityPath,
+  v3SearchVoicePath,
   creatorProcessingJobDetailPath,
   creatorProcessingJobsPath,
   creatorUploadAssetsPath,
@@ -234,6 +240,15 @@ import {
   v3PersonalizedHome,
   v3TasteGraph
 } from "../routes/v3Personalization.js";
+import {
+  v3CreatorSimilarity,
+  v3RecommendationSearch,
+  v3SearchQuery,
+  v3SearchReadinessSummary,
+  v3SemanticSearch,
+  v3VisualSimilarity,
+  v3VoiceSearch
+} from "../routes/v3Search.js";
 import {
   createDevelopmentIdentitySession,
   creatorWorkspaceMutation,
@@ -1117,6 +1132,66 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
           return;
         }
         writeJson(response, 200, v3AdaptiveDiscovery(authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3SearchQueryPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3SearchQuery(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3SearchSemanticPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3SemanticSearch(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3SearchVisualSimilarityPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3VisualSimilarity(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3SearchCreatorSimilarityPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3CreatorSimilarity(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3SearchVoicePath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3VoiceSearch(request.url, authHeader(request.headers.authorization)));
+        return;
+      }
+
+      if (path === v3SearchRecommendationPath) {
+        if (request.method !== "GET") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        writeJson(response, 200, v3RecommendationSearch(request.url, authHeader(request.headers.authorization)));
         return;
       }
 
@@ -2049,6 +2124,12 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_personalization_taste_graph_path: v3PersonalizationTasteGraphPath,
     v3_personalization_mood_engine_path: v3PersonalizationMoodEnginePath,
     v3_personalization_adaptive_discovery_path: v3PersonalizationAdaptiveDiscoveryPath,
+    v3_search_query_path: v3SearchQueryPath,
+    v3_search_semantic_path: v3SearchSemanticPath,
+    v3_search_visual_similarity_path: v3SearchVisualSimilarityPath,
+    v3_search_creator_similarity_path: v3SearchCreatorSimilarityPath,
+    v3_search_voice_path: v3SearchVoicePath,
+    v3_search_recommendation_path: v3SearchRecommendationPath,
     analytics_events_path: analyticsEventsPath,
     analytics_dashboard_path: analyticsDashboardPath,
     notification_devices_path: notificationDevicesPath,
@@ -2101,6 +2182,7 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
   const performanceScale = performanceScaleReadinessSummary();
   const cinemaTwo = cinemaTwoReadinessSummary();
   const v3Personalization = v3PersonalizationReadinessSummary();
+  const v3Search = v3SearchReadinessSummary();
   const analytics = analyticsReadinessSummary();
   const notifications = notificationReadinessSummary();
   const monetization = monetizationReadinessSummary();
@@ -2267,6 +2349,14 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_dynamic_collections_enabled: Boolean(v3Personalization.dynamic_collections),
     v3_adaptive_discovery_enabled: Boolean(v3Personalization.adaptive_discovery),
     v3_personalization_external_ai_calls: Boolean(v3Personalization.external_ai_calls),
+    v3_ai_search_enabled: Boolean(v3Search.v3_ai_search_enabled),
+    v3_natural_language_search_enabled: Boolean(v3Search.natural_language_search),
+    v3_semantic_search_enabled: Boolean(v3Search.semantic_search),
+    v3_visual_similarity_enabled: Boolean(v3Search.visual_similarity),
+    v3_creator_similarity_enabled: Boolean(v3Search.creator_similarity),
+    v3_voice_search_enabled: Boolean(v3Search.voice_search),
+    v3_recommendation_search_enabled: Boolean(v3Search.recommendation_search),
+    v3_search_external_ai_calls: Boolean(v3Search.external_ai_calls),
     analytics_event_ingestion: Boolean(analytics.event_ingestion),
     analytics_batching: Boolean(analytics.batching),
     analytics_idempotency: Boolean(analytics.idempotency),
