@@ -116,11 +116,11 @@ struct ProfileView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 header
-                monetizationEntitlementsPanel
                 activeProfileCard
                 membershipPassEntry
+                monetizationEntitlementsPanel
                 accountPanel
                 librarySyncReadinessPanel
                 paymentReadinessPanel
@@ -134,7 +134,7 @@ struct ProfileView: View {
                 menu
                 signOutButton
             }
-            .padding(.top, HFSpacing.xxl)
+            .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .accessibilityIdentifier("hf.profile.root")

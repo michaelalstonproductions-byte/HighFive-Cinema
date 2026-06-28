@@ -333,7 +333,7 @@ struct HFEnergyAction: View {
             .lineLimit(1)
             .minimumScaleFactor(0.72)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 52)
+            .frame(minHeight: 48)
             .background(backgroundStyle)
             .overlay(border)
             .clipShape(Capsule())
@@ -399,7 +399,7 @@ struct HFSpatialActionCluster<Content: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: HFSpacing.sm) {
+        VStack(spacing: HFSpacing.xs) {
             content
         }
         .accessibilityElement(children: .contain)

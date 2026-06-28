@@ -85,7 +85,7 @@ struct MyListView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 header
                 if shouldRunViewerRuntime {
                     viewerLibraryRuntimeSurface
@@ -107,7 +107,7 @@ struct MyListView: View {
                     additionalSavedTitles
                 }
             }
-            .padding(.top, HFSpacing.xxl)
+            .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
@@ -508,7 +508,7 @@ struct MyListView: View {
                 HFDepthContourOverlay(color: HFColors.gold.opacity(0.58))
                     .opacity(0.24)
                 HStack(alignment: .center, spacing: HFSpacing.md) {
-                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 112 : 136, showTitle: false, posterOnly: true)
+                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 100 : 124, showTitle: false, posterOnly: true)
                         .shadow(color: HFColors.amberGlow.opacity(0.24), radius: 22, x: 0, y: 14)
                     VStack(alignment: .leading, spacing: HFSpacing.sm) {
                         Text("LOCAL LIBRARY MODE")
@@ -536,7 +536,7 @@ struct MyListView: View {
                 }
                 .padding(HFSpacing.md)
             }
-            .frame(height: usesFallbackLayout ? 270 : 300)
+            .frame(height: usesFallbackLayout ? 248 : 276)
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

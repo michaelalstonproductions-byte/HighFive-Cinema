@@ -126,7 +126,7 @@ struct SearchView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 header
                 if shouldRunDiscoveryService {
                     discoveryServiceRuntimeSurface
@@ -137,7 +137,7 @@ struct SearchView: View {
                 recommendationLayer
                 resultsSection
             }
-            .padding(.top, HFSpacing.xxl)
+            .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
@@ -312,7 +312,7 @@ struct SearchView: View {
                     .padding(HFSpacing.md)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: usesFallbackLayout ? 282 : 318)
+                .frame(height: usesFallbackLayout ? 258 : 292)
                 .accessibilityIdentifier("hf.spatial.search.lens")
                 .accessibilityIdentifier("hf.spatial.search.featuredTitle")
                 .accessibilityLabel("Discovery lens. Featured local title \(featuredTitle.title). Selected focus \(selectedFocus.title).")
@@ -332,7 +332,7 @@ struct SearchView: View {
                 .opacity(0.30)
             HStack(spacing: usesFallbackLayout ? -18 : -24) {
                 ForEach(Array(results.prefix(3).enumerated()), id: \.element.id) { index, movie in
-                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 96 : 118, showTitle: false, posterOnly: true)
+                    HFPosterCard(movie: movie, width: usesFallbackLayout ? 88 : 110, showTitle: false, posterOnly: true)
                         .rotationEffect(.degrees(Double(index - 1) * (reduceMotion ? 0 : 6)))
                         .opacity(index == 0 ? 1 : 0.72)
                         .offset(y: CGFloat(index) * (reduceMotion ? 0 : 8))

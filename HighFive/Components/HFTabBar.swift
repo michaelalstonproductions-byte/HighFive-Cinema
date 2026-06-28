@@ -83,7 +83,7 @@ struct HFTabBar<Value: Hashable>: View {
         .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 26, x: 0, y: 16)
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
         .padding(.horizontal, HFResponsiveFit.bottomTabHorizontalPadding(width: screenWidth))
-        .padding(.bottom, HFSpacing.lg)
+        .padding(.bottom, HFSpacing.md)
         .hfDynamicTypeGuard()
     }
 }

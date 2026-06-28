@@ -43,7 +43,7 @@ struct DownloadsView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 header
                 if shouldRunOfflineRuntime {
                     viewerOfflineRuntimeSurface
@@ -60,7 +60,7 @@ struct DownloadsView: View {
                     secondaryTitles
                 }
             }
-            .padding(.top, HFSpacing.xxl)
+            .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
@@ -147,9 +147,9 @@ struct DownloadsView: View {
                     ZStack {
                         Circle()
                             .fill(HFColors.cyanGlow.opacity(0.16))
-                            .frame(width: usesFallbackLayout ? 132 : 158, height: usesFallbackLayout ? 132 : 158)
+                            .frame(width: usesFallbackLayout ? 118 : 142, height: usesFallbackLayout ? 118 : 142)
                             .blur(radius: reduceMotion ? 0 : 2)
-                        HFPosterCard(movie: selectedMovie, width: usesFallbackLayout ? 104 : 124, showTitle: false, posterOnly: true)
+                        HFPosterCard(movie: selectedMovie, width: usesFallbackLayout ? 94 : 112, showTitle: false, posterOnly: true)
                             .shadow(color: HFColors.cyanGlow.opacity(0.22), radius: 22, x: 0, y: 14)
                     }
 
@@ -183,7 +183,7 @@ struct DownloadsView: View {
                 }
                 .padding(HFSpacing.md)
             }
-            .frame(height: usesFallbackLayout ? 282 : 312)
+            .frame(height: usesFallbackLayout ? 254 : 284)
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)

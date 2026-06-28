@@ -26,7 +26,7 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 heroSection
                 if showsCollectionsFirst {
                     collectionWorlds
@@ -130,20 +130,20 @@ struct HomeView: View {
         NavigationLink(value: heroMovie) {
             ZStack(alignment: .bottomLeading) {
                 heroArtwork(heroMovie)
-                    .frame(height: 420)
+                    .frame(height: 392)
                     .scaleEffect(reduceMotion ? 1 : (isHeroAwake ? 1.045 : 1.0))
                     .offset(x: reduceMotion ? 0 : (isHeroAwake ? -8 : 8), y: reduceMotion ? 0 : (isHeroAwake ? -5 : 4))
                     .accessibilityIdentifier("hf.spatial.home.backgroundPlane")
 
                 heroArtwork(heroMovie)
-                    .frame(width: 172, height: 250)
+                    .frame(width: 152, height: 226)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .stroke(HFColors.gold.opacity(0.48), lineWidth: 1)
                     )
                     .rotationEffect(.degrees(reduceMotion ? 0 : (isHeroAwake ? 3 : -2)))
-                    .offset(x: reduceMotion ? 138 : (isHeroAwake ? 146 : 132), y: reduceMotion ? -72 : (isHeroAwake ? -78 : -66))
+                    .offset(x: reduceMotion ? 140 : (isHeroAwake ? 146 : 134), y: reduceMotion ? -64 : (isHeroAwake ? -70 : -58))
                     .shadow(color: HFColors.amberGlow.opacity(0.26), radius: 26, x: 0, y: 16)
                     .accessibilityIdentifier("hf.spatial.home.subjectPlane")
 
@@ -170,7 +170,7 @@ struct HomeView: View {
                     endPoint: .bottomTrailing
                 )
 
-                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
                     HStack {
                         ZStack {
                             Circle()
@@ -218,7 +218,7 @@ struct HomeView: View {
                             .foregroundStyle(HFColors.gold)
                             .textCase(.uppercase)
                         Text(heroMovie.title)
-                            .font(.system(size: 46, weight: .black))
+                            .font(.system(size: 42, weight: .black))
                             .foregroundStyle(HFColors.textPrimary)
                             .lineLimit(2)
                             .minimumScaleFactor(0.54)
@@ -233,7 +233,7 @@ struct HomeView: View {
                             heroChip(heroMovie.genres.first ?? "Cinema")
                         }
 
-                        HStack(spacing: HFSpacing.sm) {
+                        HStack(spacing: HFSpacing.xs) {
                             HFEnergyAction(title: "Watch", systemImage: "play.fill", style: .gold) {
                                 streamingStore.markStartedWatching(heroMovie)
                                 previewMovie = heroMovie
@@ -259,10 +259,10 @@ struct HomeView: View {
                     .accessibilityIdentifier("hf.spatial.home.foregroundPlane")
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .padding(.top, HFSpacing.xxl)
-                .padding(.bottom, HFSpacing.xl)
+                .padding(.top, HFSpacing.xl)
+                .padding(.bottom, HFSpacing.lg)
             }
-            .frame(height: 420)
+            .frame(height: 392)
             .clipped()
             .hfSpatialSceneEntrance(isActive: isHeroAwake, reduceMotion: reduceMotion)
         }
