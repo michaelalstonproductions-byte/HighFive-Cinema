@@ -28,9 +28,7 @@ struct HFTabBar<Value: Hashable>: View {
                             .frame(height: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 2)
                         Text(item.title)
                             .font(.system(size: HFResponsiveFit.bottomTabFontSize(width: screenWidth), weight: .semibold, design: .default))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                            .allowsTightening(true)
+                            .hfSingleLineText(minimumScaleFactor: 0.64)
                     }
                     .foregroundStyle(selection == item.value ? HFColors.gold : HFColors.textMuted)
                     .frame(maxWidth: .infinity)
@@ -86,5 +84,6 @@ struct HFTabBar<Value: Hashable>: View {
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)
         .padding(.horizontal, HFResponsiveFit.bottomTabHorizontalPadding(width: screenWidth))
         .padding(.bottom, HFSpacing.lg)
+        .hfDynamicTypeGuard()
     }
 }

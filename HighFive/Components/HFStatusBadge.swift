@@ -14,8 +14,7 @@ struct HFStatusBadge: View {
 
             Text(title)
                 .font(HFTypography.micro)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .hfSingleLineText(minimumScaleFactor: 0.68)
         }
         .foregroundStyle(isProminent ? .black : HFColors.gold)
         .padding(.horizontal, HFSpacing.xs)

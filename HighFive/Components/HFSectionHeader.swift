@@ -15,8 +15,7 @@ struct HFSectionHeader: View {
             Text(title)
                 .font(HFTypography.section)
                 .foregroundStyle(HFColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
+                .hfReadableText(lines: 2, minimumScaleFactor: 0.78)
 
             Spacer()
 
@@ -29,6 +28,7 @@ struct HFSectionHeader: View {
                     }
                     .font(HFTypography.smallAction)
                     .foregroundStyle(HFColors.gold)
+                    .hfSingleLineText(minimumScaleFactor: 0.72)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 30)
                     .background(HFColors.gold.opacity(0.10))

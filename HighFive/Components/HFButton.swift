@@ -32,9 +32,8 @@ struct HFButton: View {
                         .font(.system(size: 16, weight: .bold))
                 }
                 Text(title)
-                    .font(.system(size: 16, weight: .bold, design: .default))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .font(HFTypography.smallAction)
+                    .hfSingleLineText(minimumScaleFactor: 0.56)
             }
             .foregroundStyle(foregroundColor)
             .frame(maxWidth: .infinity)

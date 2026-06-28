@@ -25,15 +25,15 @@ struct HFPosterFallback: View {
                 }
                 .frame(width: 54, height: 54)
 
-                Text("Artwork Pending")
-                    .font(HFTypography.caption)
+                Text("Artwork\nPending")
+                    .font(HFTypography.micro)
                     .foregroundStyle(HFColors.gold)
+                    .hfReadableText(lines: 2, minimumScaleFactor: 0.50, alignment: .center)
 
                 Text(title)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
+                    .hfReadableText(lines: 3, minimumScaleFactor: 0.50, alignment: .center)
             }
             .padding(HFSpacing.sm)
         }

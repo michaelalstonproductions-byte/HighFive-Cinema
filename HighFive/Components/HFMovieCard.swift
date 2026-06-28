@@ -12,15 +12,15 @@ struct HFMovieCard: View {
                     Text(movie.title)
                         .font(HFTypography.cardTitle)
                         .foregroundStyle(HFColors.textPrimary)
-                        .lineLimit(2)
+                        .hfReadableText(lines: 2, minimumScaleFactor: 0.78)
                     Text(movie.subtitle)
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
-                        .lineLimit(2)
+                        .hfReadableText(lines: 2, minimumScaleFactor: 0.80)
                     Text(movie.metadataLine)
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textMuted)
-                        .lineLimit(1)
+                        .hfSingleLineText(minimumScaleFactor: 0.72)
 
                     HStack(spacing: HFSpacing.xxs) {
                         if movie.isOriginal {
@@ -89,8 +89,7 @@ private struct HFMovieSignalChip: View {
                 .font(HFTypography.micro)
         }
         .foregroundStyle(HFColors.gold)
-        .lineLimit(1)
-        .minimumScaleFactor(0.76)
+        .hfSingleLineText(minimumScaleFactor: 0.72)
         .padding(.horizontal, HFSpacing.xs)
         .frame(height: 24)
         .background(HFColors.gold.opacity(0.10))

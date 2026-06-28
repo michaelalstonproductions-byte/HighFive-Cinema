@@ -94,15 +94,14 @@ struct HFPosterCard: View {
                 Text(movie.title)
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .hfReadableText(lines: 2, minimumScaleFactor: 0.78)
                     .frame(width: width, alignment: .leading)
 
                 if showMetadata {
                     Text(movie.metadataLine)
                         .font(HFTypography.caption)
                         .foregroundStyle(HFColors.textMuted)
-                        .lineLimit(1)
+                        .hfSingleLineText(minimumScaleFactor: 0.72)
                         .frame(width: width, alignment: .leading)
                 }
             }
@@ -153,8 +152,7 @@ private struct HFPosterSignalBadge: View {
                 .font(.system(size: 9, weight: .black, design: .default))
         }
         .foregroundStyle(.black)
-        .lineLimit(1)
-        .minimumScaleFactor(0.78)
+        .hfSingleLineText(minimumScaleFactor: 0.74)
         .padding(.horizontal, 7)
         .frame(height: 20)
         .background(HFColors.goldGradient)

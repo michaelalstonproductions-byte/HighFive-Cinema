@@ -793,6 +793,7 @@ struct HFStreamingRootView: View {
         .tint(HFColors.gold)
         .preferredColorScheme(.dark)
         .environmentObject(streamingStore)
+        .hfDynamicTypeGuard()
         .onAppear {
             if Self.shouldResetLaunchIntro {
                 hasCompletedOnboarding = false
