@@ -122,6 +122,7 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-home")
             || arguments.contains("--hf-fpp-accessibility")
+            || arguments.contains("--hf-fpp-performance")
             || Self.shouldStartInHighFiveOS
             || arguments.contains("--hf-premium-streaming-home")
             || arguments.contains("--hf-premium-streaming-discovery")

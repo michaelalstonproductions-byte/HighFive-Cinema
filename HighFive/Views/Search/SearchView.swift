@@ -353,7 +353,7 @@ struct SearchView: View {
 
     private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: HFSpacing.xs) {
+            LazyHStack(spacing: HFSpacing.xs) {
                 ForEach(filters, id: \.self) { filter in
                     HFFilterChip(title: filter, isSelected: selectedFilter == filter) {
                         selectedFilter = filter
@@ -366,7 +366,7 @@ struct SearchView: View {
 
     private var focusSelector: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: HFSpacing.sm) {
+            LazyHStack(spacing: HFSpacing.sm) {
                 ForEach(HFDiscoveryFocus.allCases) { focus in
                     focusButton(focus)
                         .frame(width: usesFallbackLayout ? 150 : 132)
@@ -453,7 +453,7 @@ struct SearchView: View {
             HFSectionHeader(title: "Discovery Engine", actionTitle: "Local catalog")
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.md) {
+                LazyHStack(spacing: HFSpacing.md) {
                     ForEach(streamingStore.discoveryCollections) { category in
                         premiumDiscoveryCard(category)
                     }
@@ -530,7 +530,7 @@ struct SearchView: View {
             HFSectionHeader(title: "Creator Profiles", actionTitle: "Discovery")
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(creatorProfiles) { profile in
                         NavigationLink(value: profile.creator) {
                             creatorProfileCard(profile)
@@ -625,7 +625,7 @@ struct SearchView: View {
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.sm) {
                     ForEach(category.movies.prefix(8)) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 112, showMetadata: false, showProgress: movie.progress != nil)

@@ -99,8 +99,8 @@ struct HFPosterCard: View {
                         lineWidth: 1
                     )
             )
-            .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 20, x: 0, y: 12)
-            .shadow(color: HFColors.shadow.opacity(0.90), radius: 18, x: 0, y: 13)
+            .shadow(color: HFColors.amberGlow.opacity(0.12), radius: 14, x: 0, y: 9)
+            .shadow(color: HFColors.shadow.opacity(0.74), radius: 12, x: 0, y: 9)
 
             if showTitle && !posterOnly {
                 Text(movie.title)

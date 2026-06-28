@@ -336,7 +336,7 @@ struct MyListView: View {
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.md) {
+                LazyHStack(spacing: HFSpacing.md) {
                     ForEach(streamingStore.libraryViewingHistory.prefix(8)) { record in
                         NavigationLink(value: record.movie) {
                             libraryActivityCard(record)
@@ -356,7 +356,7 @@ struct MyListView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "User Collections", actionTitle: "\(streamingStore.libraryUserCollections.count)")
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.md) {
+                LazyHStack(spacing: HFSpacing.md) {
                     ForEach(streamingStore.libraryUserCollections) { collection in
                         vaultCollectionCard(
                             title: collection.title,
@@ -560,7 +560,7 @@ struct MyListView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Saved for Tonight", actionTitle: "\(savedMovies.count)")
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(savedMovies.prefix(8)) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
@@ -601,7 +601,7 @@ struct MyListView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Continue the Story", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(streamingStore.queryLibraryRecommendations(anchor: selectedMovie, limit: 10)) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
@@ -618,7 +618,7 @@ struct MyListView: View {
 
     private var filterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: HFSpacing.xs) {
+            LazyHStack(spacing: HFSpacing.xs) {
                 ForEach(filters, id: \.self) { filter in
                     HFFilterChip(title: filter, isSelected: selectedFilter == filter) {
                         withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {

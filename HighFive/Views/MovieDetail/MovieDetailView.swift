@@ -887,7 +887,7 @@ struct MovieDetailView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "More Like This", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(relatedTitles) { related in
                         NavigationLink(value: related) {
                             HFPosterCard(movie: related, width: HFSpacing.posterRailWidth, showProgress: related.progress != nil)
@@ -905,7 +905,7 @@ struct MovieDetailView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Cast & Creators", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.sm) {
+                LazyHStack(spacing: HFSpacing.sm) {
                     ForEach(cast, id: \.self) { name in
                         HFGlassPanel(cornerRadius: 18) {
                             VStack(spacing: HFSpacing.sm) {
@@ -938,7 +938,7 @@ struct MovieDetailView: View {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
                 HFSectionHeader(title: "Scenes", actionTitle: nil)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: HFSpacing.md) {
+                    LazyHStack(spacing: HFSpacing.md) {
                         ForEach(galleryAssets, id: \.self) { assetName in
                             if HFPosterAssetHealth.hasImage(named: assetName) {
                                 Image(assetName)
@@ -1917,7 +1917,7 @@ struct CreatorProfileView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Creator Collections", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.md) {
+                LazyHStack(spacing: HFSpacing.md) {
                     ForEach(profile.collections) { collection in
                         HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
                             VStack(alignment: .leading, spacing: HFSpacing.sm) {
@@ -1972,7 +1972,7 @@ struct CreatorProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
                 HFSectionHeader(title: title, actionTitle: "\(movies.count)")
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                    LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                         ForEach(movies) { movie in
                             NavigationLink(value: movie) {
                                 HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showMetadata: true, showProgress: movie.progress != nil)

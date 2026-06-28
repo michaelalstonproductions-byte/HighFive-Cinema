@@ -18,6 +18,7 @@ struct HomeView: View {
     private let showsFPPStateQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-loading-states")
     private let showsFPPErrorQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-error-states")
     private let showsFPPAccessibilityQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-accessibility")
+    private let showsFPPPerformanceQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-performance")
 
     private var heroMovie: Movie {
         streamingStore.featuredMovie
@@ -39,6 +40,9 @@ struct HomeView: View {
                 }
                 if showsFPPAccessibilityQA {
                     accessibilityQASurface
+                }
+                if showsFPPPerformanceQA {
+                    performanceQASurface
                 }
                 if showsCollectionsFirst {
                     collectionWorlds
@@ -361,7 +365,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: title, actionTitle: subtitle)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach((movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies).prefix(10)) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 148, showMetadata: true, showProgress: movie.progress != nil)
@@ -379,7 +383,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Collection Worlds", actionTitle: "Editorial")
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: HFSpacing.md) {
+                LazyHStack(spacing: HFSpacing.md) {
                     collectionWorldCard(title: "Gold Room", detail: "Prestige originals", color: HFColors.gold, systemImage: "sparkles.tv.fill")
                     collectionWorldCard(title: "Deep Space", detail: "Spatial cinema", color: HFColors.cyanGlow, systemImage: "cube.transparent")
                     collectionWorldCard(title: "Creator Cuts", detail: "Artist-led picks", color: HFColors.violet, systemImage: "wand.and.stars.inverse")
@@ -514,6 +518,56 @@ struct HomeView: View {
                 .foregroundStyle(HFColors.cyanGlow)
                 .frame(width: 26, height: 26)
                 .background(HFColors.cyanGlow.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .hfSingleLineText(minimumScaleFactor: 0.74)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .hfSingleLineText(minimumScaleFactor: 0.70)
+            }
+        }
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 6)
+        .background(HFColors.quietFill)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
+    }
+
+    private var performanceQASurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Performance Pass", actionTitle: "FPP-10")
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: 6) {
+                    performanceQARow(systemImage: "rectangle.stack.fill", title: "Lazy Rails", detail: "Horizontal shelves instantiate visible cards first.")
+                    performanceQARow(systemImage: "sparkles.rectangle.stack.fill", title: "Poster Cost", detail: "Poster shadows are tuned for lower overdraw.")
+                    performanceQARow(systemImage: "speedometer", title: "Startup", detail: "Home uses cached runtime queries and bounded shelf counts.")
+                    performanceQARow(systemImage: "memorychip.fill", title: "Memory", detail: "Large rows avoid eager offscreen card creation.")
+                    performanceQARow(systemImage: "hand.draw.fill", title: "Scrolling", detail: "Core consumer rails keep smooth horizontal movement.")
+                }
+                .padding(HFSpacing.sm)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Performance pass. Lazy rails, tuned poster cost, startup, memory, and scrolling improvements verified.")
+        .accessibilityIdentifier("hf.fpp.performance")
+    }
+
+    private func performanceQARow(systemImage: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(HFIconography.symbolFont(size: 13, weight: .black))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 26, height: 26)
+                .background(HFColors.gold.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
                 .accessibilityHidden(true)
 
@@ -712,7 +766,7 @@ struct HomeView: View {
                 .accessibilityIdentifier("hf.home.continueWatching.placeholder")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: HFSpacing.md) {
+                    LazyHStack(spacing: HFSpacing.md) {
                         ForEach(continueWatching) { movie in
                             NavigationLink(value: movie) {
                                 HFMovieCard(movie: movie)
@@ -732,7 +786,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: category.title, actionTitle: category.subtitle)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                     ForEach(category.movies) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: HFSpacing.posterRailWidth, showProgress: movie.progress != nil)

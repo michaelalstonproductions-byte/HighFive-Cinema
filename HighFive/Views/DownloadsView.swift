@@ -296,7 +296,7 @@ struct DownloadsView: View {
                 compactNotice("No local offline preview titles yet. Browse HighFive to mark stories for nearby viewing.")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: HFSpacing.md) {
+                    LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                         ForEach(downloads) { movie in
                             NavigationLink(value: movie) {
                                 HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
