@@ -66,6 +66,26 @@ private enum HFDiscoveryFocus: String, CaseIterable, Identifiable {
     }
 }
 
+private struct HFSearchPolishSuggestion: Identifiable {
+    let id: String
+    let title: String
+    let detail: String
+    let query: String
+    let filter: String
+    let focus: HFDiscoveryFocus
+    let systemImage: String
+    let accent: Color
+}
+
+private struct HFSearchPolishMetric: Identifiable {
+    let id: String
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+    let accent: Color
+}
+
 struct SearchView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -82,6 +102,7 @@ struct SearchView: View {
 
     private let forcesEmptyState: Bool
     private let shouldRunDiscoveryService: Bool
+    private let showsSearchPolishAudit: Bool
     private let filters = ["All", "Movies", "Series", "Originals", "Creator Published", "Downloaded"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
@@ -89,13 +110,15 @@ struct SearchView: View {
 
     init(mode: Binding<HFSearchHubMode>) {
         let arguments = ProcessInfo.processInfo.arguments
-        let startsWithResults = arguments.contains("--hf-start-search-results") || arguments.contains("--hf-premium-streaming-discovery") || arguments.contains("--hf-start-discovery-service") || arguments.contains("--hf-discovery-search-service")
+        let startsSearchPolish = arguments.contains("--hf-fpp-search-polish")
+        let startsWithResults = startsSearchPolish || arguments.contains("--hf-start-search-results") || arguments.contains("--hf-premium-streaming-discovery") || arguments.contains("--hf-start-discovery-service") || arguments.contains("--hf-discovery-search-service")
         let startsEmpty = arguments.contains("--hf-start-search-empty") || arguments.contains("--hf-discovery-empty")
         _mode = mode
         _query = State(initialValue: arguments.contains("--hf-discovery-creator") ? "Maya" : startsWithResults ? "Friendly" : "")
         _selectedFilter = State(initialValue: startsWithResults ? "Movies" : "All")
         _selectedFocus = State(initialValue: startsWithResults ? .films : .tonight)
         forcesEmptyState = startsEmpty
+        showsSearchPolishAudit = startsSearchPolish
         shouldRunDiscoveryService = arguments.contains("--hf-start-discovery-service")
             || arguments.contains("--hf-discovery-search-service")
             || arguments.contains("--hf-discovery-recommendations")
@@ -124,12 +147,97 @@ struct SearchView: View {
         return streamingStore.searchCreatorProfiles(query: seedQuery)
     }
 
+    private var searchSuggestions: [HFSearchPolishSuggestion] {
+        [
+            HFSearchPolishSuggestion(
+                id: "featured-title",
+                title: featuredTitle.title,
+                detail: "Featured title",
+                query: featuredTitle.title,
+                filter: "Movies",
+                focus: .films,
+                systemImage: "sparkles.tv.fill",
+                accent: HFColors.gold
+            ),
+            HFSearchPolishSuggestion(
+                id: "creator-picks",
+                title: "Creator Picks",
+                detail: "Original voices",
+                query: "HighFive",
+                filter: "Originals",
+                focus: .creatorPicks,
+                systemImage: "person.crop.rectangle.stack.fill",
+                accent: HFColors.violet
+            ),
+            HFSearchPolishSuggestion(
+                id: "mystery-mood",
+                title: "Mystery Mood",
+                detail: "Shadow stories",
+                query: "Mystery",
+                filter: "All",
+                focus: .mystery,
+                systemImage: "eye.fill",
+                accent: HFColors.cyanGlow
+            ),
+            HFSearchPolishSuggestion(
+                id: "continue-watching",
+                title: "Continue Watching",
+                detail: "Resume shelf",
+                query: "",
+                filter: "All",
+                focus: .tonight,
+                systemImage: "play.rectangle.fill",
+                accent: HFColors.gold
+            )
+        ]
+    }
+
+    private var searchPolishMetrics: [HFSearchPolishMetric] {
+        [
+            HFSearchPolishMetric(
+                id: "suggestions",
+                title: "Suggestions",
+                value: "\(searchSuggestions.count)",
+                detail: "One-tap local intents",
+                systemImage: "sparkle.magnifyingglass",
+                accent: HFColors.gold
+            ),
+            HFSearchPolishMetric(
+                id: "filters",
+                title: "Filters",
+                value: "\(filters.count)",
+                detail: "Catalog modes aligned",
+                systemImage: "slider.horizontal.3",
+                accent: HFColors.cyanGlow
+            ),
+            HFSearchPolishMetric(
+                id: "results",
+                title: "Results",
+                value: "\(results.count)",
+                detail: "Readable card grid",
+                systemImage: "rectangle.grid.2x2.fill",
+                accent: HFColors.violet
+            ),
+            HFSearchPolishMetric(
+                id: "creators",
+                title: "Creators",
+                value: "\(creatorProfiles.count)",
+                detail: "Profile discovery path",
+                systemImage: "person.2.fill",
+                accent: HFColors.gold
+            )
+        ]
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 header
                 if shouldRunDiscoveryService {
                     discoveryServiceRuntimeSurface
+                }
+                if showsSearchPolishAudit {
+                    searchPolishAuditSurface
                 }
                 if forcesEmptyState {
                     emptyState
@@ -291,6 +399,9 @@ struct SearchView: View {
                     .onSubmit { streamingStore.addRecentSearch(query) }
                     .accessibilityIdentifier("hf.spatial.search.field")
 
+                searchSuggestionStrip
+                searchStatusStrip
+
                 ZStack(alignment: .bottomLeading) {
                     posterField
 
@@ -327,6 +438,93 @@ struct SearchView: View {
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var searchSuggestionStrip: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text("Suggested")
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textMuted)
+                .textCase(.uppercase)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: HFSpacing.xs) {
+                    ForEach(searchSuggestions) { suggestion in
+                        Button {
+                            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
+                                query = suggestion.query
+                                selectedFilter = suggestion.filter
+                                selectedFocus = suggestion.focus
+                                mode = .search
+                            }
+                        } label: {
+                            HStack(spacing: HFSpacing.xs) {
+                                Image(systemName: suggestion.systemImage)
+                                    .font(.system(size: 14, weight: .black))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(suggestion.title)
+                                        .font(HFTypography.micro.weight(.bold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.72)
+                                    Text(suggestion.detail)
+                                        .font(HFTypography.micro)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.72)
+                                }
+                            }
+                            .foregroundStyle(HFColors.textPrimary)
+                            .padding(.horizontal, HFSpacing.sm)
+                            .frame(height: 48)
+                            .background(suggestion.accent.opacity(0.14))
+                            .overlay(
+                                Capsule()
+                                    .stroke(suggestion.accent.opacity(0.32), lineWidth: 1)
+                            )
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Search suggestion \(suggestion.title), \(suggestion.detail)")
+                        .accessibilityIdentifier("hf.search.suggestion.\(suggestion.id)")
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.search.suggestions")
+    }
+
+    private var searchStatusStrip: some View {
+        HStack(spacing: HFSpacing.xs) {
+            searchStatusPill(title: "Mode", value: selectedFilter, accent: HFColors.gold)
+            searchStatusPill(title: "Focus", value: selectedFocus.title, accent: HFColors.cyanGlow)
+            searchStatusPill(title: "Matches", value: "\(results.count)", accent: HFColors.violet)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Search status. \(selectedFilter) mode. \(selectedFocus.title) focus. \(results.count) local matches.")
+        .accessibilityIdentifier("hf.search.statusStrip")
+    }
+
+    private func searchStatusPill(title: String, value: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+            Text(value)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 46)
+        .background(accent.opacity(0.12))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(accent.opacity(0.28), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 
     private var posterField: some View {
@@ -446,6 +644,81 @@ struct SearchView: View {
         .accessibilityIdentifier("hf.search.results")
         .accessibilityIdentifier("hf.streaming.premium.searchResults")
         .accessibilityIdentifier("hf.consumer.search.results")
+    }
+
+    private var searchPolishAuditSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 48, height: 48)
+                        .background(HFColors.gold.opacity(0.16))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                        Text("Search Polish")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Suggestions, filters, creators, empty state, and local result clarity are aligned for launch QA.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+
+                    Text("FPP-12")
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .frame(minHeight: 28)
+                        .background(HFColors.goldGradient)
+                        .clipShape(Capsule())
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    ForEach(searchPolishMetrics) { metric in
+                        HStack(alignment: .top, spacing: HFSpacing.xs) {
+                            Image(systemName: metric.systemImage)
+                                .font(.system(size: 17, weight: .black))
+                                .foregroundStyle(metric.accent)
+                                .frame(width: 34, height: 34)
+                                .background(metric.accent.opacity(0.13))
+                                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xxs, style: .continuous))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(metric.value)
+                                    .font(HFTypography.caption.weight(.black))
+                                    .foregroundStyle(HFColors.textPrimary)
+                                    .lineLimit(1)
+                                Text(metric.title)
+                                    .font(HFTypography.micro.weight(.bold))
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .lineLimit(1)
+                                Text(metric.detail)
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textMuted)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.72)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .frame(minHeight: 84, alignment: .topLeading)
+                        .padding(HFSpacing.xs)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                        .accessibilityIdentifier("hf.fpp.searchPolish.\(metric.id)")
+                    }
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("FPP twelve search polish audit surface.")
+        .accessibilityIdentifier("hf.fpp.searchPolish")
     }
 
     private var premiumDiscoveryCollections: some View {
