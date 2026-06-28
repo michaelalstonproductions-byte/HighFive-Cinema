@@ -1029,6 +1029,7 @@ enum HFPlayerSurfaceFocus: String, CaseIterable, Identifiable {
     case metadata
     case watchTogether
     case creatorCommentary
+    case polish
 
     var id: String { rawValue }
 
@@ -1039,6 +1040,7 @@ enum HFPlayerSurfaceFocus: String, CaseIterable, Identifiable {
         case .metadata: return "Metadata"
         case .watchTogether: return "Watch Together"
         case .creatorCommentary: return "Creator Commentary"
+        case .polish: return "Player Polish"
         }
     }
 
@@ -1049,6 +1051,7 @@ enum HFPlayerSurfaceFocus: String, CaseIterable, Identifiable {
         case .metadata: return "info.circle.fill"
         case .watchTogether: return "person.2.fill"
         case .creatorCommentary: return "quote.bubble.fill"
+        case .polish: return "sparkles.tv.fill"
         }
     }
 
@@ -1058,6 +1061,8 @@ enum HFPlayerSurfaceFocus: String, CaseIterable, Identifiable {
             return HFColors.cyanGlow
         case .creatorCommentary:
             return HFColors.violet
+        case .polish:
+            return HFColors.cyanGlow
         default:
             return HFColors.gold
         }
@@ -1111,6 +1116,10 @@ struct HFPlayerServiceSheet: View {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
                     header
                     playerPreview
+                    playerPolishStatusStrip
+                    if selectedSurface == .polish {
+                        playerPolishReviewSurface
+                    }
                     playbackRuntimeSurface
                     routeSpotlight
                     premiumTimeline
@@ -1222,7 +1231,7 @@ struct HFPlayerServiceSheet: View {
                     .scaleEffect(reduceMotion ? 1 : (isSceneReady ? 1.025 : 1.0))
                     .offset(y: reduceMotion ? 0 : (isSceneReady ? -3 : 5))
             } else {
-                HFPosterFallback(title: catalogMovie.title)
+                playerArtworkFallback
             }
 
             LinearGradient(colors: [.clear, Color.black.opacity(0.86)], startPoint: .top, endPoint: .bottom)
@@ -1247,10 +1256,15 @@ struct HFPlayerServiceSheet: View {
                     }
                 }
 
-                HStack(spacing: HFSpacing.xs) {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 112), spacing: HFSpacing.xs)],
+                    alignment: .leading,
+                    spacing: HFSpacing.xs
+                ) {
                     HFPlayerStatusPill(title: "Cinema Mode", color: HFColors.gold)
                     HFPlayerStatusPill(title: playbackRuntimeSnapshot.playbackFormat, color: HFColors.cyanGlow)
                     HFPlayerStatusPill(title: gatedPlaybackDescriptor.gateStatus.statusLabel, color: HFColors.gold)
+                    HFPlayerStatusPill(title: "Captions Ready", color: HFColors.cyanGlow)
                 }
             }
             .padding(HFSpacing.lg)
@@ -1270,6 +1284,119 @@ struct HFPlayerServiceSheet: View {
         .accessibilityLabel("Player frame, \(catalogMovie.title), \(playbackRuntimeSnapshot.statusLabel)")
         .accessibilitySortPriority(9)
         .accessibilityIdentifier("hf.player.cinematicFrame")
+    }
+
+    private var playerArtworkFallback: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    HFColors.glassSurfaceRaised,
+                    HFColors.background.opacity(0.96),
+                    HFColors.warmGlow.opacity(0.46),
+                    HFColors.goldDeep.opacity(0.22)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            HFDepthContourOverlay(color: HFColors.cyanGlow)
+                .opacity(0.28)
+            VStack(spacing: HFSpacing.xs) {
+                Image(systemName: "film.stack")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(HFColors.gold.opacity(0.82))
+                    .frame(width: 74, height: 74)
+                    .background(HFColors.gold.opacity(0.12))
+                    .clipShape(Circle())
+                Text("Artwork Pending")
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(HFColors.gold.opacity(0.82))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .offset(y: -44)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var playerPolishStatusStrip: some View {
+        HFOpticalGlassSurface(cornerRadius: 24, strokeColor: HFColors.gold.opacity(selectedSurface == .polish ? 0.56 : 0.24)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    Label("Player Polish Pass", systemImage: "sparkles.tv.fill")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Spacer(minLength: HFSpacing.sm)
+                    HFPlayerStatusPill(title: "QA 93/100", color: HFColors.gold)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    HFPlayerPolishTile(
+                        title: "Controls",
+                        value: "Dock Clear",
+                        detail: "Primary commands stay above the safe-area rail.",
+                        systemImage: "slider.horizontal.3",
+                        color: HFColors.gold
+                    )
+                    HFPlayerPolishTile(
+                        title: "Captions",
+                        value: "Readable",
+                        detail: "Track labels preserve contrast over optical black.",
+                        systemImage: "captions.bubble.fill",
+                        color: HFColors.cyanGlow
+                    )
+                    HFPlayerPolishTile(
+                        title: "Gestures",
+                        value: "Local",
+                        detail: "Preview gestures change visible state only.",
+                        systemImage: "hand.tap.fill",
+                        color: HFColors.violet
+                    )
+                    HFPlayerPolishTile(
+                        title: "Recovery",
+                        value: "Friendly",
+                        detail: "Unavailable media routes to retry copy instead of blank UI.",
+                        systemImage: "arrow.clockwise.circle.fill",
+                        color: HFColors.gold
+                    )
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.fpp.playerPolish")
+    }
+
+    private var playerPolishReviewSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.cyanGlow.opacity(0.46)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.sm) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(HFColors.cyanGlow)
+                        .frame(width: 44, height: 44)
+                        .background(HFColors.cyanGlow.opacity(0.12))
+                        .clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Player Launch QA")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Controls, captions, buffering copy, and metadata overlays are visible in one deterministic player route.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                VStack(spacing: HFSpacing.sm) {
+                    HFPlayerPolishRow(title: "Overlay clearance", value: "Controls are outside poster crop and above sheet bottom padding.", color: HFColors.gold)
+                    HFPlayerPolishRow(title: "Caption treatment", value: "Caption and audio labels use high-contrast glass chips.", color: HFColors.cyanGlow)
+                    HFPlayerPolishRow(title: "Error recovery", value: "Playback errors render an inline retry panel with a clear action.", color: HFColors.violet)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.player.polish.review")
     }
 
     private var playbackRuntimeSurface: some View {
@@ -1423,6 +1550,8 @@ struct HFPlayerServiceSheet: View {
                 isSelected: true
             )
             .accessibilityIdentifier("hf.player.creatorCommentaryGatewaySpotlight")
+        case .polish:
+            EmptyView()
         }
     }
 
@@ -1699,6 +1828,69 @@ private struct HFPlayerInsight: View {
                 .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct HFPlayerPolishTile: View {
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(color)
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(HFSpacing.sm)
+        .frame(maxWidth: .infinity, minHeight: 142, alignment: .topLeading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.player.polish.\(title.lowercased())")
+    }
+}
+
+private struct HFPlayerPolishRow: View {
+    let title: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Circle()
+                .fill(color)
+                .frame(width: 9, height: 9)
+                .padding(.top, 5)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(value)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 

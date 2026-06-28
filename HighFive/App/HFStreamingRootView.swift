@@ -160,6 +160,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-download-storage")
             || arguments.contains("--hf-start-movie-detail")
             || arguments.contains("--hf-start-player")
+            || arguments.contains("--hf-fpp-player-polish")
             || arguments.contains("--hf-start-player-controls")
             || arguments.contains("--hf-start-player-metadata")
             || arguments.contains("--hf-start-player-watch-together")
@@ -361,6 +362,7 @@ struct HFStreamingRootView: View {
     private static var shouldStartInPlayer: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-player")
+            || arguments.contains("--hf-fpp-player-polish")
             || arguments.contains("--hf-start-player-controls")
             || arguments.contains("--hf-start-player-metadata")
             || arguments.contains("--hf-start-player-watch-together")
@@ -375,6 +377,7 @@ struct HFStreamingRootView: View {
 
     private static var playerInitialSurface: HFPlayerSurfaceFocus {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-fpp-player-polish") { return .polish }
         if arguments.contains("--hf-start-streaming-playback-runtime") || arguments.contains("--hf-playback-hls") || arguments.contains("--hf-playback-session") || arguments.contains("--hf-playback-tracks") || arguments.contains("--hf-playback-next-episode") || arguments.contains("--hf-playback-error") { return .metadata }
         if arguments.contains("--hf-start-player-controls") { return .controls }
         if arguments.contains("--hf-start-player-metadata") { return .metadata }

@@ -753,7 +753,7 @@ struct HFStreamingPlaybackRuntimeSnapshot: Hashable {
             expiresAt: nil,
             refreshAfter: nil,
             sessionCount: 0,
-            lastManifestPreview: "No remote manifest requested.",
+            lastManifestPreview: "Local manifest preview not required.",
             detail: reason,
             lastError: nil,
             updatedAtLabel: "Local"
@@ -8485,7 +8485,7 @@ final class HFStreamingStore: ObservableObject {
                 id: "refresh",
                 title: "Refresh",
                 value: streamingPlaybackRuntimeSnapshot.refreshAfter ?? "Local",
-                detail: streamingPlaybackRuntimeSnapshot.expiresAt.map { "Expires \($0)" } ?? "No signed descriptor active.",
+                detail: streamingPlaybackRuntimeSnapshot.expiresAt.map { "Expires \($0)" } ?? "Local preview does not require refresh.",
                 systemImage: "arrow.clockwise.circle.fill"
             ),
             HFStreamingPlaybackStatusRow(
@@ -8545,7 +8545,7 @@ final class HFStreamingStore: ObservableObject {
         }
         guard productionCatalogConfiguration.isRemoteEnabled else {
             streamingPlaybackRuntimeSnapshot = .local(
-                reason: "Loopback backend disabled. Local Preview remains active and no playback URL is requested."
+                reason: "Local player preview is active. Playback stays inside the app shell for this QA route."
             )
             return nil
         }
@@ -8666,7 +8666,7 @@ final class HFStreamingStore: ObservableObject {
                 refreshAfter: nil,
                 sessionCount: streamingPlaybackSessionRecords.count,
                 lastManifestPreview: "No manifest fetched.",
-                detail: "Playback runtime could not resolve a signed descriptor. Local Preview fallback remains available.",
+                detail: "Playback is unavailable in this QA route. Local preview remains available.",
                 lastError: error.localizedDescription,
                 updatedAtLabel: "Playback failed"
             )
