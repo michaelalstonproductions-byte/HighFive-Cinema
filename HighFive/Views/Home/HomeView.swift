@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var isHeroAwake = false
 
     private let showsCollectionsFirst = ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-collections")
+    private let showsFPPStateQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-loading-states")
 
     private var heroMovie: Movie {
         streamingStore.featuredMovie
@@ -28,6 +29,9 @@ struct HomeView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 heroSection
+                if showsFPPStateQA {
+                    loadingStateQASurface
+                }
                 if showsCollectionsFirst {
                     collectionWorlds
                     premiumBrandSystem
@@ -378,6 +382,63 @@ struct HomeView: View {
         .accessibilityIdentifier("hf.streaming.premium.collectionWorlds")
     }
 
+    private var loadingStateQASurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "State System", actionTitle: "FPP-07")
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.36)) {
+                VStack(spacing: 5) {
+                    stateQARow(.loading, title: "Loading", detail: "Catalog preparing")
+                    stateQARow(.empty, title: "Empty", detail: "Shelf explains next step")
+                    stateQARow(.retry, title: "Retry", detail: "Recoverable action shown")
+                    stateQARow(.offline, title: "Offline", detail: "Local fallback visible")
+                    stateQARow(.progress(0.68), title: "Progress", detail: "Determinate status")
+                    stateQARow(.placeholder, title: "Placeholder", detail: "No blank gaps")
+                }
+                .padding(HFSpacing.sm)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityIdentifier("hf.fpp.loadingStates")
+    }
+
+    private func stateQARow(_ kind: HFContentStateKind, title: String, detail: String) -> some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: kind.systemImage)
+                .font(HFIconography.symbolFont(size: HFIconography.smallIconSize, weight: .black))
+                .foregroundStyle(kind.accent)
+                .frame(width: 28, height: 28)
+                .background(kind.accent.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+            Spacer()
+            if let progress = kind.progressValue {
+                ProgressView(value: progress)
+                    .tint(kind.accent)
+                    .frame(width: 64)
+                    .accessibilityLabel("Progress preview")
+            } else {
+                Text(kind.label)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(kind.accent)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(minHeight: 24)
+                    .background(kind.accent.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 6)
+        .background(HFColors.quietFill)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
     private func premiumSignal(title: String, value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
@@ -503,9 +564,18 @@ struct HomeView: View {
 
     @ViewBuilder
     private var continueWatchingSection: some View {
-        if !continueWatching.isEmpty {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                HFSectionHeader(title: "Continue Watching", actionTitle: nil)
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Continue Watching", actionTitle: continueWatching.isEmpty ? "Ready" : nil)
+            if continueWatching.isEmpty {
+                HFContentStateCard(
+                    kind: .progress(1),
+                    title: "Continue Watching is ready",
+                    message: "Playback progress will appear here after a local preview starts.",
+                    isCompact: true
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityIdentifier("hf.home.continueWatching.placeholder")
+            } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: HFSpacing.md) {
                         ForEach(continueWatching) { movie in
@@ -519,8 +589,8 @@ struct HomeView: View {
                     .padding(.horizontal, HFSpacing.screenHorizontal)
                 }
             }
-            .accessibilityIdentifier("hf.streaming.premium.continueWatchingRail")
         }
+        .accessibilityIdentifier("hf.streaming.premium.continueWatchingRail")
     }
 
     private func movieRail(_ category: Category) -> some View {

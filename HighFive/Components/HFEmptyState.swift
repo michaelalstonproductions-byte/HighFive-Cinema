@@ -43,3 +43,122 @@ struct HFEmptyState: View {
         }
     }
 }
+
+enum HFContentStateKind {
+    case loading
+    case empty
+    case retry
+    case offline
+    case progress(Double)
+    case placeholder
+
+    var systemImage: String {
+        switch self {
+        case .loading: return "hourglass"
+        case .empty: return "rectangle.stack.badge.minus"
+        case .retry: return "arrow.clockwise.circle.fill"
+        case .offline: return "wifi.slash"
+        case .progress: return "chart.line.uptrend.xyaxis.circle.fill"
+        case .placeholder: return "sparkles.rectangle.stack.fill"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .loading, .progress: return HFColors.cyanGlow
+        case .retry: return HFColors.orange
+        case .offline: return HFColors.violet
+        case .empty, .placeholder: return HFColors.gold
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .loading: return "Loading"
+        case .empty: return "Empty"
+        case .retry: return "Retry"
+        case .offline: return "Offline"
+        case .progress: return "Progress"
+        case .placeholder: return "Placeholder"
+        }
+    }
+
+    var progressValue: Double? {
+        guard case .progress(let value) = self else { return nil }
+        return min(max(value, 0), 1)
+    }
+}
+
+struct HFContentStateCard: View {
+    let kind: HFContentStateKind
+    let title: String
+    let message: String
+    var actionTitle: String?
+    var action: (() -> Void)?
+    var isCompact = false
+
+    var body: some View {
+        HFOpticalGlassSurface(cornerRadius: isCompact ? HFSpacing.cardRadius : HFSpacing.panelRadius, strokeColor: kind.accent.opacity(0.38)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                stateIcon
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    HStack(spacing: HFSpacing.xs) {
+                        Text(kind.label)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(kind.accent)
+                            .textCase(.uppercase)
+                        Spacer(minLength: 0)
+                    }
+
+                    Text(title)
+                        .font(isCompact ? HFTypography.cardTitle : HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(message)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let progress = kind.progressValue {
+                        ProgressView(value: progress)
+                            .tint(kind.accent)
+                            .background(HFColors.controlFill)
+                            .clipShape(Capsule())
+                            .accessibilityLabel("State progress")
+                            .accessibilityValue("\(Int(progress * 100)) percent")
+                    }
+
+                    if let actionTitle, let action {
+                        Button(action: action) {
+                            Text(actionTitle)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(kind.accent == HFColors.gold ? .black : HFColors.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 42)
+                                .background(kind.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(kind.accent.opacity(0.18)))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(isCompact ? HFSpacing.md : HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(kind.label): \(title). \(message)")
+        .accessibilityIdentifier("hf.state.\(kind.label.lowercased())")
+    }
+
+    private var stateIcon: some View {
+        Image(systemName: kind.systemImage)
+            .font(HFIconography.symbolFont(size: isCompact ? HFIconography.controlIconSize : HFIconography.featureIconSize, weight: .black))
+            .symbolRenderingMode(.hierarchical)
+            .foregroundStyle(kind.accent)
+            .frame(width: isCompact ? 44 : 54, height: isCompact ? 44 : 54)
+            .background(kind.accent.opacity(0.16))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}

@@ -627,29 +627,17 @@ struct MyListView: View {
     }
 
     private var emptyVault: some View {
-        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 10, strokeColor: HFColors.gold.opacity(0.38)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                Image(systemName: "bookmark.rectangle.stack.fill")
-                    .font(.system(size: 34, weight: .black))
-                    .foregroundStyle(.black)
-                    .frame(width: 62, height: 62)
-                    .background(HFColors.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-                Text("Your Library")
-                    .font(HFTypography.display)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("Save a story for later.")
-                    .font(HFTypography.body)
-                    .foregroundStyle(HFColors.textSecondary)
-                HFEnergyAction(title: "Explore HighFive", systemImage: "sparkles", style: .gold) {
-                    onBrowseDiscover?()
-                }
-                .accessibilityIdentifier("hf.library.explore")
-            }
-            .padding(HFSpacing.lg)
+        HFContentStateCard(
+            kind: .empty,
+            title: "Your Library is ready",
+            message: "Save a story, start watching, or mark a local offline preview to fill this vault.",
+            actionTitle: "Explore HighFive"
+        ) {
+            onBrowseDiscover?()
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.library.emptyState")
+        .accessibilityIdentifier("hf.library.explore")
     }
 
     private var libraryInspector: some View {
@@ -687,13 +675,12 @@ struct MyListView: View {
     }
 
     private func compactEmpty(message: String) -> some View {
-        Text(message)
-            .font(HFTypography.caption)
-            .foregroundStyle(HFColors.textSecondary)
-            .padding(HFSpacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        HFContentStateCard(
+            kind: .placeholder,
+            title: "Shelf placeholder",
+            message: message,
+            isCompact: true
+        )
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

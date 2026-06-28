@@ -131,7 +131,11 @@ struct SearchView: View {
                 if shouldRunDiscoveryService {
                     discoveryServiceRuntimeSurface
                 }
-                discoveryWorld
+                if forcesEmptyState {
+                    emptyState
+                } else {
+                    discoveryWorld
+                }
                 premiumDiscoveryCollections
                 creatorProfilesSection
                 recommendationLayer
@@ -422,7 +426,9 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: query.isEmpty ? "Local Results" : "Results", actionTitle: "\(results.count)")
             if results.isEmpty {
-                emptyState
+                if !forcesEmptyState {
+                    emptyState
+                }
             } else {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
                     ForEach(results) { movie in
@@ -659,26 +665,19 @@ struct SearchView: View {
     }
 
     private var emptyState: some View {
-        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: "magnifyingglass.circle.fill")
-                    .font(.system(size: 32, weight: .black))
-                    .foregroundStyle(HFColors.cyanGlow)
-                Text("Search your HighFive library")
-                    .font(HFTypography.section)
-                    .foregroundStyle(HFColors.textPrimary)
-                Text("Try another title, genre, or mood.")
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                Text("Local catalog")
-                    .font(HFTypography.micro)
-                    .foregroundStyle(HFColors.cyanGlow)
-                    .accessibilityIdentifier("hf.search.localOnly")
-            }
-            .padding(HFSpacing.lg)
+        HFContentStateCard(
+            kind: .retry,
+            title: "No local matches",
+            message: "Try another title, genre, creator, or mood. Search is reading from the local HighFive catalog.",
+            actionTitle: "Reset Search"
+        ) {
+            query = ""
+            selectedFilter = "All"
+            selectedFocus = .tonight
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.search.emptyState")
+        .accessibilityIdentifier("hf.search.localOnly")
     }
 
     private var searchInspector: some View {

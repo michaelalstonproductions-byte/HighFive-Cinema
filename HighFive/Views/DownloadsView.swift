@@ -49,6 +49,9 @@ struct DownloadsView: View {
                     viewerOfflineRuntimeSurface
                 }
                 capsuleWorld
+                if forcesEmptyState {
+                    compactNotice("No local offline preview titles yet. Browse HighFive to mark stories for nearby viewing.")
+                }
                 premiumCapsuleStats
                 if !shouldRunOfflineRuntime {
                     viewerOfflineRuntimeSurface
@@ -380,13 +383,12 @@ struct DownloadsView: View {
     }
 
     private func compactNotice(_ message: String) -> some View {
-        Text(message)
-            .font(HFTypography.caption)
-            .foregroundStyle(HFColors.textSecondary)
-            .padding(HFSpacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        HFContentStateCard(
+            kind: .offline,
+            title: "Offline preview placeholder",
+            message: message,
+            isCompact: true
+        )
             .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 

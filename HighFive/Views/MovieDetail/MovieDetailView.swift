@@ -956,6 +956,18 @@ struct MovieDetailView: View {
                     .padding(.horizontal, HFSpacing.screenHorizontal)
                 }
             }
+        } else {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                HFSectionHeader(title: "Scenes", actionTitle: "Preview")
+                HFContentStateCard(
+                    kind: .placeholder,
+                    title: "Scene gallery placeholder",
+                    message: "Gallery stills will appear here when title artwork is available in the local catalog.",
+                    isCompact: true
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityIdentifier("hf.movieDetail.gallery.placeholder")
+            }
         }
     }
 

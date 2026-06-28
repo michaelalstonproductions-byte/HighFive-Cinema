@@ -1206,6 +1206,15 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+            } else {
+                HFContentStateCard(
+                    kind: .progress(1),
+                    title: "Continue Watching is ready",
+                    message: "Start a local preview and profile progress will appear here.",
+                    isCompact: true
+                )
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityIdentifier("hf.profile.continueWatching.placeholder")
             }
         }
     }
