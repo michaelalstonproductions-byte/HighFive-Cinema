@@ -20,52 +20,7 @@ struct HFTabBar<Value: Hashable>: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(items) { item in
-                Button {
-                    withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.tabSelectionAnimation) {
-                        selection = item.value
-                    }
-                } label: {
-                    let isSelected = selection == item.value
-                    VStack(spacing: HFSpacing.xxs) {
-                        Image(systemName: item.systemImage)
-                            .font(.system(size: HFResponsiveFit.bottomTabIconSize(width: screenWidth), weight: isSelected ? .bold : .semibold))
-                            .symbolRenderingMode(.hierarchical)
-                            .frame(
-                                width: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 8,
-                                height: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 4
-                            )
-                        Text(item.title)
-                            .font(.system(size: HFResponsiveFit.bottomTabFontSize(width: screenWidth), weight: .semibold, design: .default))
-                            .hfSingleLineText(minimumScaleFactor: 0.64)
-                    }
-                    .foregroundStyle(isSelected ? HFColors.gold : HFColors.textMuted)
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: HFResponsiveFit.minimumTapTarget)
-                    .frame(height: HFResponsiveFit.bottomTabItemHeight(width: screenWidth))
-                    .scaleEffect(reduceMotion ? 1 : (isSelected ? 1.035 : 1))
-                    .background {
-                        if isSelected {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [HFColors.gold.opacity(0.28), HFColors.orange.opacity(0.12)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(HFColors.gold.opacity(0.58), lineWidth: 1)
-                                )
-                                .padding(.horizontal, HFSpacing.xs)
-                                .shadow(color: HFColors.amberGlow.opacity(0.38), radius: 14, x: 0, y: 8)
-                                .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                        }
-                    }
-                    .contentShape(Capsule())
-                    .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.tabSelectionAnimation, value: isSelected)
-                }
-                .buttonStyle(.plain)
+                tabButton(item)
             }
         }
         .frame(maxWidth: min(467, max(320, screenWidth - (HFResponsiveFit.bottomTabHorizontalPadding(width: screenWidth) * 2))))
@@ -107,5 +62,64 @@ struct HFTabBar<Value: Hashable>: View {
         .padding(.horizontal, HFResponsiveFit.bottomTabHorizontalPadding(width: screenWidth))
         .padding(.bottom, HFSpacing.md)
         .hfDynamicTypeGuard()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Primary navigation")
+    }
+
+    private func tabButton(_ item: HFTabItem<Value>) -> some View {
+        let isSelected = selection == item.value
+        return Button {
+            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.tabSelectionAnimation) {
+                selection = item.value
+            }
+        } label: {
+            tabButtonContent(item, isSelected: isSelected)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(item.title)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityHint("Switches to the \(item.title) tab")
+        .accessibilityIdentifier("hf.tab.\(item.id)")
+    }
+
+    private func tabButtonContent(_ item: HFTabItem<Value>, isSelected: Bool) -> some View {
+        VStack(spacing: HFSpacing.xxs) {
+            Image(systemName: item.systemImage)
+                .font(.system(size: HFResponsiveFit.bottomTabIconSize(width: screenWidth), weight: isSelected ? .bold : .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .frame(
+                    width: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 8,
+                    height: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 4
+                )
+            Text(item.title)
+                .font(.system(size: HFResponsiveFit.bottomTabFontSize(width: screenWidth), weight: .semibold, design: .default))
+                .hfSingleLineText(minimumScaleFactor: 0.64)
+        }
+        .foregroundStyle(isSelected ? HFColors.gold : HFColors.textMuted)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: HFResponsiveFit.minimumTapTarget)
+        .frame(height: HFResponsiveFit.bottomTabItemHeight(width: screenWidth))
+        .scaleEffect(reduceMotion ? 1 : (isSelected ? 1.035 : 1))
+        .background {
+            if isSelected {
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [HFColors.gold.opacity(0.28), HFColors.orange.opacity(0.12)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(HFColors.gold.opacity(0.58), lineWidth: 1)
+                    )
+                    .padding(.horizontal, HFSpacing.xs)
+                    .shadow(color: HFColors.amberGlow.opacity(0.38), radius: 14, x: 0, y: 8)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            }
+        }
+        .contentShape(Capsule())
+        .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.tabSelectionAnimation, value: isSelected)
     }
 }

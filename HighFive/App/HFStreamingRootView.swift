@@ -121,6 +121,7 @@ struct HFStreamingRootView: View {
     private static var shouldStartAfterOnboarding: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-home")
+            || arguments.contains("--hf-fpp-accessibility")
             || Self.shouldStartInHighFiveOS
             || arguments.contains("--hf-premium-streaming-home")
             || arguments.contains("--hf-premium-streaming-discovery")

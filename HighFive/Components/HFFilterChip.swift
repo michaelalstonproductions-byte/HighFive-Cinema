@@ -26,5 +26,8 @@ struct HFFilterChip: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(title) filter")
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityHint("Filters the current catalog view")
     }
 }

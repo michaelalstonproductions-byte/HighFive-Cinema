@@ -27,5 +27,7 @@ struct HFStatusBadge: View {
                 .stroke(isProminent ? Color.clear : HFColors.goldStroke, lineWidth: 1)
         )
         .clipShape(Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
     }
 }

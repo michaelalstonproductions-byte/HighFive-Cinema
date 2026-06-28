@@ -38,8 +38,10 @@ struct HFSectionHeader: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(actionTitle)
+                .accessibilityHint("Opens more items for \(title)")
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
     }
 }

@@ -11,12 +11,15 @@ struct HFSearchBar: View {
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(HFColors.gold)
                 .frame(width: HFIconography.menuIconFrame)
+                .accessibilityHidden(true)
 
             TextField(placeholder, text: $text)
                 .font(HFTypography.body)
                 .foregroundStyle(HFColors.textPrimary)
                 .textInputAutocapitalization(.never)
                 .disableAutocorrection(true)
+                .accessibilityLabel("Search")
+                .accessibilityHint(placeholder)
 
             if !text.isEmpty {
                 Button {
@@ -29,6 +32,8 @@ struct HFSearchBar: View {
                         .frame(width: HFIconography.actionIconFrame, height: HFIconography.actionIconFrame)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+                .accessibilityHint("Removes the current search text")
             }
         }
         .padding(.horizontal, HFSpacing.md)
@@ -39,5 +44,6 @@ struct HFSearchBar: View {
                 .stroke(HFColors.glassStroke, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .contain)
     }
 }

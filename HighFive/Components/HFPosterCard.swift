@@ -120,6 +120,25 @@ struct HFPosterCard: View {
         }
         .frame(width: width, alignment: .top)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityHint("Opens the title detail when selected")
+    }
+
+    private var accessibilitySummary: String {
+        var parts = [movie.title, movie.metadataLine]
+        if movie.isOriginal {
+            parts.append("HighFive Original")
+        }
+        if movie.isDownloaded {
+            parts.append("Available offline")
+        }
+        if movie.isComingSoon {
+            parts.append("Coming soon")
+        }
+        if let progress = movie.progress {
+            parts.append("\(Int(progress * 100)) percent watched")
+        }
+        return parts.joined(separator: ". ")
     }
 
     @ViewBuilder
@@ -144,10 +163,11 @@ struct HFPosterCard: View {
                 .scaledToFill()
                 .frame(width: width, height: posterHeight)
                 .clipped()
-                .accessibilityLabel(movie.title)
+                .accessibilityHidden(true)
         } else {
             HFPosterFallback(title: movie.title)
                 .frame(width: width, height: posterHeight)
+                .accessibilityHidden(true)
         }
     }
 }
@@ -172,5 +192,7 @@ private struct HFPosterSignalBadge: View {
         .background(HFColors.goldGradient)
         .clipShape(Capsule())
         .shadow(color: HFColors.shadow.opacity(0.32), radius: 8, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
     }
 }

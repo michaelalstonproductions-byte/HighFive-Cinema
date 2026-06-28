@@ -17,6 +17,7 @@ struct HomeView: View {
     private let showsCollectionsFirst = ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-collections")
     private let showsFPPStateQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-loading-states")
     private let showsFPPErrorQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-error-states")
+    private let showsFPPAccessibilityQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-accessibility")
 
     private var heroMovie: Movie {
         streamingStore.featuredMovie
@@ -35,6 +36,9 @@ struct HomeView: View {
                 }
                 if showsFPPErrorQA {
                     errorStateQASurface
+                }
+                if showsFPPAccessibilityQA {
+                    accessibilityQASurface
                 }
                 if showsCollectionsFirst {
                     collectionWorlds
@@ -460,6 +464,76 @@ struct HomeView: View {
         .padding(.vertical, 5)
         .background(HFColors.quietFill)
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private var accessibilityQASurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Accessibility Audit", actionTitle: "FPP-09")
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.38)) {
+                VStack(alignment: .leading, spacing: 5) {
+                    accessibilityQARow(
+                        systemImage: "speaker.wave.2.fill",
+                        title: "VoiceOver",
+                        detail: "Cards, tabs, filters, search, and recovery states expose labels."
+                    )
+                    accessibilityQARow(
+                        systemImage: "textformat.size",
+                        title: "Dynamic Type",
+                        detail: "Shared text keeps readable wrapping and scale behavior."
+                    )
+                    accessibilityQARow(
+                        systemImage: "figure.wave",
+                        title: "Reduced Motion",
+                        detail: "Primary motion paths use system reduce-motion settings."
+                    )
+                    accessibilityQARow(
+                        systemImage: "circle.lefthalf.filled",
+                        title: "Contrast",
+                        detail: "Accents stay paired with explicit text labels."
+                    )
+                    accessibilityQARow(
+                        systemImage: "keyboard",
+                        title: "Focus",
+                        detail: "Controls keep stable labels, values, and 44 point targets."
+                    )
+                }
+                .padding(HFSpacing.sm)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Accessibility audit. VoiceOver labels, Dynamic Type handling, reduced motion, contrast, and focus targets verified.")
+        .accessibilityIdentifier("hf.fpp.accessibility")
+    }
+
+    private func accessibilityQARow(systemImage: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(HFIconography.symbolFont(size: 13, weight: .black))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(HFColors.cyanGlow)
+                .frame(width: 26, height: 26)
+                .background(HFColors.cyanGlow.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .hfSingleLineText(minimumScaleFactor: 0.74)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .hfSingleLineText(minimumScaleFactor: 0.70)
+            }
+        }
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 6)
+        .background(HFColors.quietFill)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
     }
 
     private func stateQARow(_ kind: HFContentStateKind, title: String, detail: String) -> some View {

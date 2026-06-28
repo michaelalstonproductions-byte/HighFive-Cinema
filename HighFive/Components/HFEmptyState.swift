@@ -36,11 +36,15 @@ struct HFEmptyState: View {
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(actionTitle)
+                    .accessibilityHint("Attempts to recover this empty state")
                 }
             }
             .padding(HFSpacing.xl)
             .frame(maxWidth: .infinity)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title). \(message)")
     }
 }
 
@@ -141,6 +145,8 @@ struct HFContentStateCard: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(actionTitle)
+                        .accessibilityHint("Attempts to recover the \(kind.label.lowercased()) state")
                     }
                 }
             }
@@ -258,6 +264,8 @@ struct HFErrorRecoveryCard: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(recoveryTitle)
+                        .accessibilityHint("Attempts to recover this \(kind.title.lowercased()) error")
                     }
 
                     if let secondaryTitle, let secondary {
@@ -271,6 +279,8 @@ struct HFErrorRecoveryCard: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(secondaryTitle)
+                        .accessibilityHint("Shows an alternate recovery option")
                     }
                 }
             }

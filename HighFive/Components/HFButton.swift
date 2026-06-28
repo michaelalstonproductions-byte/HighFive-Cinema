@@ -46,6 +46,19 @@ struct HFButton: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint(accessibilityHint)
+    }
+
+    private var accessibilityHint: String {
+        switch style {
+        case .primary:
+            return "Primary action"
+        case .secondary:
+            return "Secondary action"
+        case .outline:
+            return "Additional action"
+        }
     }
 
     private var foregroundColor: Color {

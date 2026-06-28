@@ -74,6 +74,26 @@ struct HFMovieCard: View {
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                 .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityHint("Opens the title detail when selected")
+    }
+
+    private var accessibilitySummary: String {
+        var parts = [movie.title, movie.subtitle, movie.metadataLine]
+        if movie.isOriginal {
+            parts.append("HighFive Original")
+        }
+        if movie.isDownloaded {
+            parts.append("Available offline")
+        }
+        if let progress = movie.progress {
+            parts.append("\(Int(progress * 100)) percent watched")
+        }
+        if !movie.genres.isEmpty {
+            parts.append("Genres: \(movie.genres.prefix(3).joined(separator: ", "))")
+        }
+        return parts.joined(separator: ". ")
     }
 }
 
