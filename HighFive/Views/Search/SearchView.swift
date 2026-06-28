@@ -147,6 +147,7 @@ struct SearchView: View {
                 .presentationDragIndicator(.visible)
         }
         .onAppear {
+            guard !isSceneAwake else { return }
             withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isSceneAwake = true
             }

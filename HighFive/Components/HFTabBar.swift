@@ -11,6 +11,7 @@ struct HFTabItem<Value: Hashable>: Identifiable {
 struct HFTabBar<Value: Hashable>: View {
     let items: [HFTabItem<Value>]
     @Binding var selection: Value
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var screenWidth: CGFloat {
         UIScreen.main.bounds.width
@@ -20,8 +21,11 @@ struct HFTabBar<Value: Hashable>: View {
         HStack(spacing: 0) {
             ForEach(items) { item in
                 Button {
-                    selection = item.value
+                    withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.tabSelectionAnimation) {
+                        selection = item.value
+                    }
                 } label: {
+                    let isSelected = selection == item.value
                     VStack(spacing: HFSpacing.xxs) {
                         Image(systemName: item.systemImage)
                             .font(.system(size: HFResponsiveFit.bottomTabIconSize(width: screenWidth), weight: .semibold))
@@ -30,12 +34,13 @@ struct HFTabBar<Value: Hashable>: View {
                             .font(.system(size: HFResponsiveFit.bottomTabFontSize(width: screenWidth), weight: .semibold, design: .default))
                             .hfSingleLineText(minimumScaleFactor: 0.64)
                     }
-                    .foregroundStyle(selection == item.value ? HFColors.gold : HFColors.textMuted)
+                    .foregroundStyle(isSelected ? HFColors.gold : HFColors.textMuted)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: HFResponsiveFit.minimumTapTarget)
                     .frame(height: HFResponsiveFit.bottomTabItemHeight(width: screenWidth))
+                    .scaleEffect(reduceMotion ? 1 : (isSelected ? 1.035 : 1))
                     .background {
-                        if selection == item.value {
+                        if isSelected {
                             Capsule()
                                 .fill(
                                     LinearGradient(
@@ -50,9 +55,11 @@ struct HFTabBar<Value: Hashable>: View {
                                 )
                                 .padding(.horizontal, HFSpacing.xs)
                                 .shadow(color: HFColors.amberGlow.opacity(0.38), radius: 14, x: 0, y: 8)
+                                .transition(.opacity.combined(with: .scale(scale: 0.92)))
                         }
                     }
                     .contentShape(Capsule())
+                    .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.tabSelectionAnimation, value: isSelected)
                 }
                 .buttonStyle(.plain)
             }

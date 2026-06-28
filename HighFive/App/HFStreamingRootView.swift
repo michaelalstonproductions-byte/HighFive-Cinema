@@ -75,6 +75,7 @@ struct HFStreamingRootView: View {
     @State private var hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro
     @AppStorage("hf.hasCompletedCinematicOnboarding") private var hasCompletedOnboarding = false
     @StateObject private var streamingStore = HFStreamingStore()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let tabItems: [HFTabItem<HFStreamingTab>] = [
         HFTabItem(value: .home, title: "Home", systemImage: "house.fill"),
@@ -816,6 +817,12 @@ struct HFStreamingRootView: View {
         }
     }
 
+    private func selectTab(_ tab: HFStreamingTab) {
+        withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.tabSelectionAnimation) {
+            selectedTab = tab
+        }
+    }
+
     private var qaHighFiveOSView: some View {
         HFHighFiveOSView(initialMode: Self.highFiveOSInitialMode, selectedProfile: selectedProfile)
             .environmentObject(streamingStore)
@@ -889,20 +896,20 @@ struct HFStreamingRootView: View {
                             selectedProfile: selectedProfile,
                             onSearch: {
                                 searchMode = .search
-                                selectedTab = .search
+                                selectTab(.search)
                             },
                             onDiscover: {
                                 searchMode = .discover
-                                selectedTab = .search
+                                selectTab(.search)
                             },
                             onProfile: {
-                                selectedTab = .profile
+                                selectTab(.profile)
                             },
                             onMyList: {
-                                selectedTab = .library
+                                selectTab(.library)
                             },
                             onDownloads: {
-                                selectedTab = .downloads
+                                selectTab(.downloads)
                             }
                         )
                     case .search:
@@ -910,12 +917,12 @@ struct HFStreamingRootView: View {
                     case .library:
                         MyListView(onBrowseDiscover: {
                             searchMode = .discover
-                            selectedTab = .search
+                            selectTab(.search)
                         })
                     case .downloads:
                         DownloadsView(onFindMore: {
                             searchMode = .discover
-                            selectedTab = .search
+                            selectTab(.search)
                         })
                     case .profile:
                         ProfileView(
@@ -924,11 +931,13 @@ struct HFStreamingRootView: View {
                             initialMembershipShowcase: Self.membershipInitialShowcase,
                             startInMembership: Self.shouldStartInMembership,
                             onOpenMyList: {
-                                selectedTab = .library
+                                selectTab(.library)
                             }
                         )
                     }
                 }
+                .id(selectedTab)
+                .transition(HFSpatialRouteTransition.tabTransition(reduceMotion: reduceMotion))
                 .hfSpatialNavigationSpine()
 
                 HFTabBar(items: tabItems, selection: $selectedTab)

@@ -1,15 +1,15 @@
 import SwiftUI
 
 enum HFSpatialMotionTokens {
-    static let microResponse: Double = 0.16
-    static let standardTransition: Double = 0.26
-    static let sceneEntrance: Double = 0.48
-    static let focusSpringResponse: Double = 0.42
-    static let focusSpringDamping: Double = 0.86
-    static let selectedScale: CGFloat = 1.055
-    static let recededScale: CGFloat = 0.93
-    static let selectedLift: CGFloat = -8
-    static let recededOffset: CGFloat = 5
+    static let microResponse: Double = 0.14
+    static let standardTransition: Double = 0.24
+    static let sceneEntrance: Double = 0.42
+    static let focusSpringResponse: Double = 0.34
+    static let focusSpringDamping: Double = 0.88
+    static let selectedScale: CGFloat = 1.035
+    static let recededScale: CGFloat = 0.965
+    static let selectedLift: CGFloat = -5
+    static let recededOffset: CGFloat = 3
     static let maximumTiltDegrees: Double = 7
     static let maximumDecorativeBlur: CGFloat = 2
 
@@ -28,6 +28,14 @@ enum HFSpatialMotionTokens {
     static var focusAnimation: Animation {
         .spring(response: focusSpringResponse, dampingFraction: focusSpringDamping)
     }
+
+    static var tabSelectionAnimation: Animation {
+        .spring(response: 0.30, dampingFraction: 0.86)
+    }
+
+    static var pressAnimation: Animation {
+        .spring(response: 0.22, dampingFraction: 0.82)
+    }
 }
 
 enum HFSpatialRouteTransition {
@@ -37,6 +45,10 @@ enum HFSpatialRouteTransition {
 
     static func entranceScale(reduceMotion: Bool) -> CGFloat {
         reduceMotion ? 1 : 0.992
+    }
+
+    static func tabTransition(reduceMotion: Bool) -> AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.992, anchor: .center))
     }
 }
 
@@ -190,6 +202,17 @@ private struct HFSpatialSceneEntranceModifier: ViewModifier {
     }
 }
 
+private struct HFSpatialPressButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(reduceMotion ? 1 : (configuration.isPressed ? 0.982 : 1))
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.pressAnimation, value: configuration.isPressed)
+    }
+}
+
 extension View {
     func hfSpatialNavigationSpine(isActive: Bool = true) -> some View {
         modifier(HFSpatialNavigationSpineModifier(isActive: isActive))
@@ -339,7 +362,7 @@ struct HFEnergyAction: View {
             .clipShape(Capsule())
             .shadow(color: glowColor, radius: glowRadius, x: 0, y: 8)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(HFSpatialPressButtonStyle())
         .accessibilityIdentifier(style == .gold ? "hf.spatial.command.primary" : "hf.spatial.command.secondary")
     }
 
