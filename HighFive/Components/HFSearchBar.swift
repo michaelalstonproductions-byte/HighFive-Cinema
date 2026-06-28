@@ -7,8 +7,10 @@ struct HFSearchBar: View {
     var body: some View {
         HStack(spacing: HFSpacing.sm) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 18, weight: .bold))
+                .font(HFIconography.symbolFont(size: HFIconography.controlIconSize, weight: .bold))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(HFColors.gold)
+                .frame(width: HFIconography.menuIconFrame)
 
             TextField(placeholder, text: $text)
                 .font(HFTypography.body)
@@ -21,7 +23,10 @@ struct HFSearchBar: View {
                     text = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
+                        .font(HFIconography.symbolFont(size: HFIconography.actionIconSize, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(HFColors.textMuted)
+                        .frame(width: HFIconography.actionIconFrame, height: HFIconography.actionIconFrame)
                 }
                 .buttonStyle(.plain)
             }

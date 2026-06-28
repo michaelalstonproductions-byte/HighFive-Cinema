@@ -28,8 +28,12 @@ struct HFTabBar<Value: Hashable>: View {
                     let isSelected = selection == item.value
                     VStack(spacing: HFSpacing.xxs) {
                         Image(systemName: item.systemImage)
-                            .font(.system(size: HFResponsiveFit.bottomTabIconSize(width: screenWidth), weight: .semibold))
-                            .frame(height: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 2)
+                            .font(.system(size: HFResponsiveFit.bottomTabIconSize(width: screenWidth), weight: isSelected ? .bold : .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                            .frame(
+                                width: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 8,
+                                height: HFResponsiveFit.bottomTabIconSize(width: screenWidth) + 4
+                            )
                         Text(item.title)
                             .font(.system(size: HFResponsiveFit.bottomTabFontSize(width: screenWidth), weight: .semibold, design: .default))
                             .hfSingleLineText(minimumScaleFactor: 0.64)

@@ -84,7 +84,9 @@ private struct HFMovieSignalChip: View {
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: systemImage)
-                .font(.system(size: 8, weight: .black))
+                .font(HFIconography.symbolFont(size: HFIconography.chipIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: HFIconography.chipIconFrame)
             Text(title)
                 .font(HFTypography.micro)
         }

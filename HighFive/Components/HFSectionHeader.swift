@@ -24,7 +24,9 @@ struct HFSectionHeader: View {
                     HStack(spacing: HFSpacing.xxs) {
                         Text(actionTitle)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .black))
+                            .font(HFIconography.symbolFont(size: HFIconography.smallIconSize, weight: .black))
+                            .symbolRenderingMode(.hierarchical)
+                            .frame(width: HFIconography.chipIconFrame)
                     }
                     .font(HFTypography.smallAction)
                     .foregroundStyle(HFColors.gold)

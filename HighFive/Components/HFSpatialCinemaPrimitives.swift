@@ -1,5 +1,22 @@
 import SwiftUI
 
+enum HFIconography {
+    static let chipIconSize: CGFloat = 9
+    static let smallIconSize: CGFloat = 12
+    static let actionIconSize: CGFloat = 16
+    static let controlIconSize: CGFloat = 18
+    static let featureIconSize: CGFloat = 22
+    static let heroIconSize: CGFloat = 30
+    static let actionIconFrame: CGFloat = 20
+    static let chipIconFrame: CGFloat = 13
+    static let menuIconFrame: CGFloat = 30
+    static let circularIconFrame: CGFloat = 48
+
+    static func symbolFont(size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        .system(size: size, weight: weight, design: .default)
+    }
+}
+
 enum HFSpatialMotionTokens {
     static let microResponse: Double = 0.14
     static let standardTransition: Double = 0.24
@@ -359,9 +376,14 @@ struct HFEnergyAction: View {
         Button(action: action) {
             HStack(spacing: HFSpacing.xs) {
                 Image(systemName: systemImage)
+                    .font(HFIconography.symbolFont(size: HFIconography.actionIconSize, weight: .black))
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: HFIconography.actionIconFrame)
                 Text(title)
                 if style == .gold && differentiateWithoutColor {
                     Image(systemName: "checkmark.seal.fill")
+                        .font(HFIconography.symbolFont(size: HFIconography.smallIconSize, weight: .black))
+                        .frame(width: HFIconography.chipIconFrame)
                         .accessibilityHidden(true)
                 }
             }
@@ -532,9 +554,10 @@ struct HFSpatialInspectorChrome<Content: View>: View {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
                 HStack(alignment: .top, spacing: HFSpacing.md) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 22, weight: .black))
+                        .font(HFIconography.symbolFont(size: HFIconography.featureIconSize, weight: .black))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.black)
-                        .frame(width: 50, height: 50)
+                        .frame(width: HFIconography.circularIconFrame + 2, height: HFIconography.circularIconFrame + 2)
                         .background(
                             LinearGradient(
                                 colors: [accent.opacity(0.98), accent.opacity(0.64)],

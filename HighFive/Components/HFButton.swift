@@ -29,7 +29,9 @@ struct HFButton: View {
             HStack(spacing: HFSpacing.xs) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(HFIconography.symbolFont(size: HFIconography.actionIconSize, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: HFIconography.actionIconFrame)
                 }
                 Text(title)
                     .font(HFTypography.smallAction)

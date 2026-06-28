@@ -8,7 +8,9 @@ struct HFRouteChip: View {
     var body: some View {
         HStack(spacing: HFSpacing.xxs) {
             Image(systemName: systemImage)
-                .font(.system(size: 10, weight: .black))
+                .font(HFIconography.symbolFont(size: HFIconography.smallIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: HFIconography.chipIconFrame)
             Text(title)
                 .font(HFTypography.micro)
                 .lineLimit(1)

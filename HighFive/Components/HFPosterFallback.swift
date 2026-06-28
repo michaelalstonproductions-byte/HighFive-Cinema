@@ -32,7 +32,8 @@ struct HFPosterFallback: View {
                         .fill(HFColors.gold.opacity(0.18))
                         .overlay(Circle().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
                     Image(systemName: "film.stack")
-                        .font(.system(size: 26, weight: .bold))
+                        .font(HFIconography.symbolFont(size: HFIconography.featureIconSize, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(HFColors.gold)
                 }
                 .frame(width: 54, height: 54)

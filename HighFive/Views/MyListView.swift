@@ -402,8 +402,10 @@ struct MyListView: View {
     private func vaultStat(title: String, value: String, systemImage: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .black))
+                .font(HFIconography.symbolFont(size: HFIconography.controlIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(color)
+                .frame(width: HFIconography.actionIconFrame)
             Text(value)
                 .font(.system(size: 28, weight: .black))
                 .foregroundStyle(HFColors.textPrimary)
@@ -424,9 +426,10 @@ struct MyListView: View {
     private func vaultCollectionCard(title: String, detail: String, count: Int, color: Color, systemImage: String) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             Image(systemName: systemImage)
-                .font(.system(size: 20, weight: .black))
+                .font(HFIconography.symbolFont(size: HFIconography.featureIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(color == HFColors.gold ? .black : color)
-                .frame(width: 46, height: 46)
+                .frame(width: HFIconography.circularIconFrame, height: HFIconography.circularIconFrame)
                 .background(color == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(color.opacity(0.18)))
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
             Text(title)
@@ -454,8 +457,10 @@ struct MyListView: View {
     private func librarySignal(title: String, value: String, systemImage: String, color: Color, identifier: String) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .black))
+                .font(HFIconography.symbolFont(size: HFIconography.controlIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(color)
+                .frame(width: HFIconography.actionIconFrame)
             Text(value)
                 .font(.system(size: 24, weight: .black))
                 .foregroundStyle(HFColors.textPrimary)

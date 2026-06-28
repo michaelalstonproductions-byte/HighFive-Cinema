@@ -265,8 +265,10 @@ struct DownloadsView: View {
     private func capsuleStat(title: String, value: String, systemImage: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.xs) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .black))
+                .font(HFIconography.symbolFont(size: HFIconography.controlIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(color)
+                .frame(width: HFIconography.actionIconFrame)
             Text(value)
                 .font(.system(size: 24, weight: .black))
                 .foregroundStyle(HFColors.textPrimary)

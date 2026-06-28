@@ -9,7 +9,9 @@ struct HFStatusBadge: View {
         HStack(spacing: HFSpacing.xxs) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: 9, weight: .black))
+                    .font(HFIconography.symbolFont(size: HFIconography.chipIconSize, weight: .black))
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: HFIconography.chipIconFrame)
             }
 
             Text(title)

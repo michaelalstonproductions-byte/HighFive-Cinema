@@ -13,9 +13,10 @@ struct HFMenuRow: View {
             HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
                 HStack(spacing: HFSpacing.md) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(HFIconography.symbolFont(size: HFIconography.controlIconSize, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(HFColors.gold)
-                        .frame(width: 28)
+                        .frame(width: HFIconography.menuIconFrame)
 
                     Text(title)
                         .font(HFTypography.menu)
@@ -26,8 +27,10 @@ struct HFMenuRow: View {
                     HFUnreadBadge(count: badgeCount)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(HFIconography.symbolFont(size: HFIconography.smallIconSize, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(HFColors.textMuted)
+                        .frame(width: HFIconography.chipIconFrame)
                 }
                 .frame(height: 64)
                 .padding(.horizontal, HFSpacing.md)
