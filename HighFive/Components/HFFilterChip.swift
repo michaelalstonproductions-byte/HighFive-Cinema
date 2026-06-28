@@ -16,7 +16,7 @@ struct HFFilterChip: View {
                     if isSelected {
                         HFColors.goldGradient
                     } else {
-                        HFColors.surfaceElevated.opacity(0.86)
+                        HFColors.controlFill
                     }
                 }
                 .overlay(

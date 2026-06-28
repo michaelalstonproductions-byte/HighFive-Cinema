@@ -21,7 +21,7 @@ struct HFStatusBadge: View {
         .foregroundStyle(isProminent ? .black : HFColors.gold)
         .padding(.horizontal, HFSpacing.xs)
         .padding(.vertical, 6)
-        .background(isProminent ? AnyShapeStyle(HFColors.gold) : AnyShapeStyle(HFColors.gold.opacity(0.12)))
+        .background(isProminent ? AnyShapeStyle(HFColors.gold) : AnyShapeStyle(HFColors.selectedGoldFill))
         .overlay(
             Capsule()
                 .stroke(isProminent ? Color.clear : HFColors.goldStroke, lineWidth: 1)

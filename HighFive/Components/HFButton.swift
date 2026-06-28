@@ -63,15 +63,18 @@ struct HFButton: View {
         case .primary:
             HFColors.goldGradient
         case .secondary:
-            Color.white.opacity(0.16)
+            HFColors.controlFillStrong
         case .outline:
-            Color.black.opacity(0.32)
+            HFColors.quietFill
         }
     }
 
     @ViewBuilder
     private var border: some View {
-        if style == .outline {
+        if style == .secondary {
+            Capsule()
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        } else if style == .outline {
             Capsule()
                 .stroke(HFColors.goldStroke, lineWidth: 1)
         }

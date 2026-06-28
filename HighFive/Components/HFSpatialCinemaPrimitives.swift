@@ -91,6 +91,7 @@ private struct HFSpatialNavigationSpineModifier: ViewModifier {
                             colors: [
                                 HFColors.gold.opacity(reduceTransparency ? 0.16 : 0.22),
                                 HFColors.cyanGlow.opacity(reduceTransparency ? 0.10 : 0.16),
+                                HFColors.violet.opacity(reduceTransparency ? 0.035 : 0.08),
                                 Color.clear
                             ],
                             startPoint: .leading,
@@ -291,6 +292,7 @@ struct HFOpticalGlassSurface<Content: View>: View {
                                 Color.white.opacity(reduceTransparency ? 0.055 : 0.15),
                                 HFColors.gold.opacity(reduceTransparency ? 0.025 : 0.08),
                                 HFColors.cyanGlow.opacity(reduceTransparency ? 0.015 : 0.045),
+                                HFColors.violet.opacity(reduceTransparency ? 0.008 : 0.026),
                                 Color.black.opacity(reduceTransparency ? 0.58 : 0.42)
                             ],
                             startPoint: .topLeading,
@@ -450,7 +452,7 @@ struct HFEnergyAction: View {
         case .cyan:
             Capsule().stroke(HFColors.cyanGlow.opacity(0.68), lineWidth: 1)
         case .glass:
-            Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1)
+            Capsule().stroke(HFColors.glassStroke, lineWidth: 1)
         }
     }
 

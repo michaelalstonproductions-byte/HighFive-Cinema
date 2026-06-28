@@ -28,7 +28,7 @@ struct HFSegmentedControl<Selection: Hashable>: View {
             }
         }
         .padding(HFSpacing.xxs)
-        .background(HFColors.surface.opacity(0.88))
+        .background(HFColors.glassSurfaceRaised)
         .clipShape(Capsule())
         .overlay(Capsule().stroke(HFColors.glassStroke, lineWidth: 1))
     }

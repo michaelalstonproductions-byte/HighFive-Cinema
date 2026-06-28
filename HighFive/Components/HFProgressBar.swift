@@ -21,7 +21,7 @@ struct HFProgressBar: View {
 
             ProgressView(value: value)
                 .tint(HFColors.gold)
-                .background(HFColors.glassStroke)
+                .background(HFColors.controlFill)
                 .clipShape(Capsule())
         }
     }
