@@ -665,16 +665,17 @@ struct SearchView: View {
     }
 
     private var emptyState: some View {
-        HFContentStateCard(
-            kind: .retry,
+        HFErrorRecoveryCard(
+            kind: .search,
             title: "No local matches",
             message: "Try another title, genre, creator, or mood. Search is reading from the local HighFive catalog.",
-            actionTitle: "Reset Search"
-        ) {
+            recoveryTitle: "Reset Search",
+            recovery: {
             query = ""
             selectedFilter = "All"
             selectedFocus = .tonight
-        }
+            }
+        )
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.search.emptyState")
         .accessibilityIdentifier("hf.search.localOnly")

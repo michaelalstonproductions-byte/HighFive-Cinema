@@ -284,10 +284,16 @@ struct MyListView: View {
                 }
 
                 if let error = streamingStore.viewerLibraryRuntimeSnapshot.lastError {
-                    Text(error)
-                        .font(HFTypography.micro)
-                        .foregroundStyle(HFColors.gold)
-                        .fixedSize(horizontal: false, vertical: true)
+                    HFErrorRecoveryCard(
+                        kind: .network,
+                        title: "Library sync fallback active",
+                        message: error,
+                        recoveryTitle: "Retry Local Sync",
+                        recovery: {
+                            Task { await streamingStore.runViewerLibraryProgressOfflineFixture(for: selectedMovie) }
+                        },
+                        isCompact: true
+                    )
                         .accessibilityIdentifier("hf.viewer.library.runtime.error")
                 }
             }

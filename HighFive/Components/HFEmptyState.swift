@@ -162,3 +162,122 @@ struct HFContentStateCard: View {
             .accessibilityHidden(true)
     }
 }
+
+enum HFErrorRecoveryKind {
+    case playback
+    case upload
+    case search
+    case network
+    case auth
+    case download
+    case generic
+
+    var systemImage: String {
+        switch self {
+        case .playback: return "play.slash.fill"
+        case .upload: return "arrow.up.doc.fill"
+        case .search: return "magnifyingglass.circle.fill"
+        case .network: return "network.slash"
+        case .auth: return "person.crop.circle.badge.exclamationmark"
+        case .download: return "arrow.down.circle.dotted"
+        case .generic: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .playback: return "Playback"
+        case .upload: return "Upload"
+        case .search: return "Search"
+        case .network: return "Network"
+        case .auth: return "Account"
+        case .download: return "Download"
+        case .generic: return "Recovery"
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .playback, .search: return HFColors.orange
+        case .upload, .download: return HFColors.violet
+        case .network: return HFColors.cyanGlow
+        case .auth: return HFColors.gold
+        case .generic: return HFColors.redAccent
+        }
+    }
+}
+
+struct HFErrorRecoveryCard: View {
+    let kind: HFErrorRecoveryKind
+    let title: String
+    let message: String
+    var recoveryTitle: String = "Try Again"
+    var recovery: (() -> Void)?
+    var secondaryTitle: String?
+    var secondary: (() -> Void)?
+    var isCompact = false
+
+    var body: some View {
+        HFOpticalGlassSurface(cornerRadius: isCompact ? HFSpacing.cardRadius : HFSpacing.panelRadius, strokeColor: kind.accent.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: kind.systemImage)
+                        .font(HFIconography.symbolFont(size: isCompact ? HFIconography.controlIconSize : HFIconography.featureIconSize, weight: .black))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(kind.accent)
+                        .frame(width: isCompact ? 44 : 54, height: isCompact ? 44 : 54)
+                        .background(kind.accent.opacity(0.16))
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                        .accessibilityHidden(true)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("\(kind.title) Error")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(kind.accent)
+                            .textCase(.uppercase)
+                        Text(title)
+                            .font(isCompact ? HFTypography.cardTitle : HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(message)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                HStack(spacing: HFSpacing.sm) {
+                    if let recovery {
+                        Button(action: recovery) {
+                            Text(recoveryTitle)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(kind.accent == HFColors.gold ? .black : HFColors.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 42)
+                                .background(kind.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(kind.accent.opacity(0.20)))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if let secondaryTitle, let secondary {
+                        Button(action: secondary) {
+                            Text(secondaryTitle)
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 42)
+                                .background(HFColors.controlFill)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(isCompact ? HFSpacing.md : HFSpacing.lg)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(kind.title) error. \(title). \(message)")
+        .accessibilityIdentifier("hf.error.\(kind.title.lowercased())")
+    }
+}

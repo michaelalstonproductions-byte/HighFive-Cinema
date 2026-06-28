@@ -1294,6 +1294,20 @@ struct HFPlayerServiceSheet: View {
                     HFPlayerStatusPill(title: playbackRuntimeSnapshot.statusLabel, color: HFColors.gold)
                 }
 
+                if let error = playbackRuntimeSnapshot.lastError {
+                    HFErrorRecoveryCard(
+                        kind: .playback,
+                        title: "Playback preview unavailable",
+                        message: error,
+                        recoveryTitle: "Refresh Playback",
+                        recovery: {
+                            Task { await streamingStore.runStreamingPlaybackRuntimeFixture(for: catalogMovie) }
+                        },
+                        isCompact: true
+                    )
+                    .accessibilityIdentifier("hf.playback.error")
+                }
+
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
                     ForEach(streamingStore.streamingPlaybackRuntimeStatusRows) { row in
                         playbackRuntimeMetric(row)
@@ -1331,16 +1345,6 @@ struct HFPlayerServiceSheet: View {
                     .accessibilityIdentifier("hf.playback.session.\(session.id)")
                 }
 
-                if let error = playbackRuntimeSnapshot.lastError {
-                    Text(error)
-                        .font(HFTypography.micro)
-                        .foregroundStyle(HFColors.textSecondary)
-                        .padding(HFSpacing.sm)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .accessibilityIdentifier("hf.playback.error")
-                }
             }
             .padding(HFSpacing.md)
         }

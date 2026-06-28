@@ -16,6 +16,7 @@ struct HomeView: View {
 
     private let showsCollectionsFirst = ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-collections")
     private let showsFPPStateQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-loading-states")
+    private let showsFPPErrorQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-error-states")
 
     private var heroMovie: Movie {
         streamingStore.featuredMovie
@@ -31,6 +32,9 @@ struct HomeView: View {
                 heroSection
                 if showsFPPStateQA {
                     loadingStateQASurface
+                }
+                if showsFPPErrorQA {
+                    errorStateQASurface
                 }
                 if showsCollectionsFirst {
                     collectionWorlds
@@ -386,7 +390,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "State System", actionTitle: "FPP-07")
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.36)) {
-                VStack(spacing: 5) {
+                VStack(spacing: 4) {
                     stateQARow(.loading, title: "Loading", detail: "Catalog preparing")
                     stateQARow(.empty, title: "Empty", detail: "Shelf explains next step")
                     stateQARow(.retry, title: "Retry", detail: "Recoverable action shown")
@@ -399,6 +403,63 @@ struct HomeView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
         }
         .accessibilityIdentifier("hf.fpp.loadingStates")
+    }
+
+    private var errorStateQASurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Error Recovery", actionTitle: "FPP-08")
+            VStack(spacing: 5) {
+                errorQARow(.playback, title: "Playback", detail: "Resume, retry, or choose another title")
+                errorQARow(.search, title: "Search", detail: "Reset query and keep browsing")
+                errorQARow(.network, title: "Network", detail: "Use local cache while services recover")
+                errorQARow(.auth, title: "Account", detail: "Offer development sign-in fallback")
+                errorQARow(.upload, title: "Upload", detail: "Retry asset preparation safely")
+                errorQARow(.download, title: "Download", detail: "Explain offline entitlement state")
+            }
+            .padding(.horizontal, HFSpacing.sm)
+            .padding(.vertical, HFSpacing.xs)
+            .background(HFColors.glassSurface)
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                    .stroke(HFColors.orange.opacity(0.36), lineWidth: 1)
+            )
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityIdentifier("hf.fpp.errorStates")
+    }
+
+    private func errorQARow(_ kind: HFErrorRecoveryKind, title: String, detail: String) -> some View {
+        HStack(spacing: HFSpacing.sm) {
+            Image(systemName: kind.systemImage)
+                .font(HFIconography.symbolFont(size: 11, weight: .black))
+                .foregroundStyle(kind.accent)
+                .frame(width: 24, height: 24)
+                .background(kind.accent.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            Spacer()
+            Text("Recover")
+                .font(HFTypography.micro)
+                .foregroundStyle(kind.accent)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(minHeight: 24)
+                .background(kind.accent.opacity(0.12))
+                .clipShape(Capsule())
+        }
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 5)
+        .background(HFColors.quietFill)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 
     private func stateQARow(_ kind: HFContentStateKind, title: String, detail: String) -> some View {
