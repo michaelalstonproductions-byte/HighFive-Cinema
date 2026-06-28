@@ -123,6 +123,7 @@ struct HFStreamingRootView: View {
         return arguments.contains("--hf-start-home")
             || arguments.contains("--hf-fpp-accessibility")
             || arguments.contains("--hf-fpp-performance")
+            || arguments.contains("--hf-fpp-home-polish")
             || Self.shouldStartInHighFiveOS
             || arguments.contains("--hf-premium-streaming-home")
             || arguments.contains("--hf-premium-streaming-discovery")

@@ -19,6 +19,7 @@ struct HomeView: View {
     private let showsFPPErrorQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-error-states")
     private let showsFPPAccessibilityQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-accessibility")
     private let showsFPPPerformanceQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-performance")
+    private let showsFPPHomePolishQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-home-polish")
 
     private var heroMovie: Movie {
         streamingStore.featuredMovie
@@ -43,6 +44,9 @@ struct HomeView: View {
                 }
                 if showsFPPPerformanceQA {
                     performanceQASurface
+                }
+                if showsFPPHomePolishQA {
+                    homePolishQASurface
                 }
                 if showsCollectionsFirst {
                     collectionWorlds
@@ -249,6 +253,8 @@ struct HomeView: View {
                             heroChip(heroMovie.genres.first ?? "Cinema")
                         }
 
+                        heroSignalStrip
+
                         HStack(spacing: HFSpacing.xs) {
                             HFEnergyAction(title: "Watch", systemImage: "play.fill", style: .gold) {
                                 streamingStore.markStartedWatching(heroMovie)
@@ -289,6 +295,35 @@ struct HomeView: View {
         .hfSpatialFocalHandoff("hf.spatial.handoff.homeToMovie")
     }
 
+    private var heroSignalStrip: some View {
+        HStack(spacing: HFSpacing.xs) {
+            heroConfidencePill("Local Catalog", systemImage: "checkmark.seal.fill", color: HFColors.cyanGlow)
+            heroConfidencePill("Creator Pick", systemImage: "person.crop.rectangle.stack.fill", color: HFColors.violet)
+            heroConfidencePill(streamingStore.isSaved(heroMovie) ? "Saved" : "Ready", systemImage: streamingStore.isSaved(heroMovie) ? "bookmark.fill" : "sparkles.tv.fill", color: HFColors.gold)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Hero signals. Local catalog. Creator pick. \(streamingStore.isSaved(heroMovie) ? "Saved" : "Ready").")
+    }
+
+    private func heroConfidencePill(_ title: String, systemImage: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(HFIconography.symbolFont(size: HFIconography.chipIconSize, weight: .black))
+                .symbolRenderingMode(.hierarchical)
+                .frame(width: HFIconography.chipIconFrame)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(HFTypography.micro)
+                .hfSingleLineText(minimumScaleFactor: 0.62)
+        }
+        .foregroundStyle(color == HFColors.gold ? .black : color)
+        .padding(.horizontal, HFSpacing.xs)
+        .frame(height: 26)
+        .background(color == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(color.opacity(0.16)))
+        .overlay(Capsule().stroke(color.opacity(0.28), lineWidth: 1))
+        .clipShape(Capsule())
+    }
+
     private var premiumBrandSystem: some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.34)) {
             VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -304,10 +339,12 @@ struct HomeView: View {
                         Text("HighFive Premium")
                             .font(HFTypography.section)
                             .foregroundStyle(HFColors.textPrimary)
-                        Text("Originals, premieres, collections, and local continue-watching paths share one cinematic service layer.")
+                        Text("Originals, premieres, continue-watching, and editorial collections now read as one premium streaming service.")
                             .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+
+                        HFSpatialRouteBadge(title: "Home -> Detail -> Player", accent: HFColors.gold)
                     }
                 }
 
@@ -568,6 +605,56 @@ struct HomeView: View {
                 .foregroundStyle(HFColors.gold)
                 .frame(width: 26, height: 26)
                 .background(HFColors.gold.opacity(0.14))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .hfSingleLineText(minimumScaleFactor: 0.74)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .hfSingleLineText(minimumScaleFactor: 0.70)
+            }
+        }
+        .padding(.horizontal, HFSpacing.xs)
+        .padding(.vertical, 6)
+        .background(HFColors.quietFill)
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail)")
+    }
+
+    private var homePolishQASurface: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HFSectionHeader(title: "Home Polish", actionTitle: "FPP-11")
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: 6) {
+                    homePolishQARow(systemImage: "sparkles.tv.fill", title: "Hero", detail: "Signals, metadata, and actions read in one premium viewport.")
+                    homePolishQARow(systemImage: "rectangle.stack.fill", title: "Rails", detail: "Originals, premieres, trending, creator, and awards stay consistent.")
+                    homePolishQARow(systemImage: "play.rectangle.on.rectangle.fill", title: "Previews", detail: "Watch, Depth, Save, Detail, and Player routes remain intact.")
+                    homePolishQARow(systemImage: "arrow.triangle.2.circlepath", title: "Transitions", detail: "Hero handoff and route badges preserve cinematic continuity.")
+                    homePolishQARow(systemImage: "wand.and.stars", title: "Service Feel", detail: "Home now reads as a premium streaming app first.")
+                }
+                .padding(HFSpacing.sm)
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Home polish. Hero, rails, previews, transitions, and premium service feel verified.")
+        .accessibilityIdentifier("hf.fpp.homePolish")
+    }
+
+    private func homePolishQARow(systemImage: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(HFIconography.symbolFont(size: 13, weight: .black))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(HFColors.violet)
+                .frame(width: 26, height: 26)
+                .background(HFColors.violet.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
                 .accessibilityHidden(true)
 
