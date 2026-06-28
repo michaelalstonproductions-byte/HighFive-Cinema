@@ -72,20 +72,31 @@ struct HFTabBar<Value: Hashable>: View {
                 .fill(.ultraThinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .fill(Color.black.opacity(0.90))
+                        .fill(Color.black.opacity(0.88))
                 )
                 .overlay(
                     LinearGradient(
-                        colors: [HFColors.warmGlow.opacity(0.42), Color.clear, Color.black.opacity(0.24)],
-                        startPoint: .bottomLeading,
-                        endPoint: .topTrailing
+                        colors: [
+                            Color.white.opacity(0.08),
+                            HFColors.warmGlow.opacity(0.34),
+                            Color.clear,
+                            HFColors.cyanGlow.opacity(0.06),
+                            Color.black.opacity(0.28)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
                 )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
+                .stroke(HFColors.subtleGlassRimGradient, lineWidth: 1)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.20), lineWidth: 1)
+                .padding(1)
         )
         .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 26, x: 0, y: 16)
         .shadow(color: HFColors.shadow, radius: 22, x: 0, y: 14)

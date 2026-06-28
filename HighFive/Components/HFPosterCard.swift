@@ -19,16 +19,23 @@ struct HFPosterCard: View {
                     .frame(width: width, height: posterHeight)
 
                 LinearGradient(
-                    colors: [.clear, Color.black.opacity(0.30), Color.black.opacity(0.78)],
+                    colors: [.clear, Color.black.opacity(0.26), Color.black.opacity(0.82)],
                     startPoint: .center,
                     endPoint: .bottom
                 )
                 .frame(width: width, height: posterHeight)
 
                 LinearGradient(
-                    colors: [Color.white.opacity(0.16), .clear],
+                    colors: [Color.white.opacity(0.20), HFColors.gold.opacity(0.06), .clear],
                     startPoint: .topLeading,
                     endPoint: .center
+                )
+                .frame(width: width, height: posterHeight)
+
+                LinearGradient(
+                    colors: [.clear, HFColors.cyanGlow.opacity(0.08), HFColors.amberGlow.opacity(0.10)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
                 )
                 .frame(width: width, height: posterHeight)
 
@@ -80,15 +87,20 @@ struct HFPosterCard: View {
                 RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                     .stroke(
                         LinearGradient(
-                            colors: [HFColors.gold.opacity(0.42), Color.white.opacity(0.08)],
+                            colors: [
+                                Color.white.opacity(0.16),
+                                HFColors.gold.opacity(0.46),
+                                HFColors.cyanGlow.opacity(0.16),
+                                Color.white.opacity(0.06)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 1
                     )
             )
-            .shadow(color: HFColors.amberGlow.opacity(0.16), radius: 18, x: 0, y: 12)
-            .shadow(color: HFColors.shadow.opacity(0.82), radius: 16, x: 0, y: 12)
+            .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 20, x: 0, y: 12)
+            .shadow(color: HFColors.shadow.opacity(0.90), radius: 18, x: 0, y: 13)
 
             if showTitle && !posterOnly {
                 Text(movie.title)

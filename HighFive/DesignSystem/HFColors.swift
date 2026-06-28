@@ -7,7 +7,10 @@ enum HFColors {
     static let charcoalLight = Color(red: 0.155, green: 0.155, blue: 0.180)
     static let surface = Color(red: 0.092, green: 0.092, blue: 0.095)
     static let surfaceElevated = Color(red: 0.157, green: 0.157, blue: 0.212)
-    static let glassSurface = Color(red: 0.070, green: 0.064, blue: 0.052).opacity(0.74)
+    static let glassSurface = Color(red: 0.060, green: 0.055, blue: 0.048).opacity(0.82)
+    static let glassSurfaceRaised = Color(red: 0.105, green: 0.100, blue: 0.090).opacity(0.74)
+    static let glassHighlight = Color.white.opacity(0.105)
+    static let glassRim = Color.white.opacity(0.075)
     static let gold = Color(red: 1.000, green: 0.914, blue: 0.247)
     static let goldDeep = Color(red: 0.710, green: 0.455, blue: 0.100)
     static let orange = Color(red: 0.950, green: 0.410, blue: 0.115)
@@ -39,6 +42,27 @@ enum HFColors {
             Color.black.opacity(0.05),
             warmGlow.opacity(0.44),
             Color.black.opacity(0.92)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let opticalGlassGradient = LinearGradient(
+        colors: [
+            glassHighlight,
+            glassSurfaceRaised.opacity(0.62),
+            Color.black.opacity(0.78)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let subtleGlassRimGradient = LinearGradient(
+        colors: [
+            Color.white.opacity(0.18),
+            gold.opacity(0.20),
+            cyanGlow.opacity(0.12),
+            Color.white.opacity(0.04)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing

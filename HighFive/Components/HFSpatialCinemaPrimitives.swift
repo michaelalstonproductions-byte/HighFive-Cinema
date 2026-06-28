@@ -263,29 +263,43 @@ struct HFOpticalGlassSurface<Content: View>: View {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(reduceTransparency ? Color.black.opacity(0.96) : Color.black.opacity(0.72))
+                    .fill(reduceTransparency ? Color.black.opacity(0.97) : Color.black.opacity(0.76))
                     .overlay(
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(Color.white.opacity(reduceTransparency ? 0.02 : 0.035))
+                            .fill(HFColors.glassSurface.opacity(reduceTransparency ? 0.36 : 0.72))
                     )
                     .overlay(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(reduceTransparency ? 0.08 : 0.12),
-                                Color.white.opacity(reduceTransparency ? 0.01 : 0.02),
-                                Color.black.opacity(reduceTransparency ? 0.50 : 0.36)
+                                Color.white.opacity(reduceTransparency ? 0.055 : 0.15),
+                                HFColors.gold.opacity(reduceTransparency ? 0.025 : 0.08),
+                                HFColors.cyanGlow.opacity(reduceTransparency ? 0.015 : 0.045),
+                                Color.black.opacity(reduceTransparency ? 0.58 : 0.42)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                     )
+                    .overlay(alignment: .top) {
+                        Capsule()
+                            .fill(Color.white.opacity(reduceTransparency ? 0.035 : 0.16))
+                            .frame(height: 1)
+                            .padding(.horizontal, cornerRadius)
+                            .padding(.top, 1)
+                    }
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(strokeColor, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.55), radius: 18, x: 0, y: 12)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(HFColors.glassRim, lineWidth: 0.7)
+                    .padding(1)
+            )
+            .shadow(color: Color.black.opacity(0.64), radius: 22, x: 0, y: 14)
+            .shadow(color: strokeColor.opacity(reduceTransparency ? 0 : 0.10), radius: 20, x: 0, y: 8)
             .accessibilityIdentifier(reduceTransparency ? "hf.spatial.material.reduceTransparency" : "hf.spatial.material.opticalBlack")
     }
 }
@@ -380,9 +394,29 @@ struct HFEnergyAction: View {
         case .gold:
             return AnyShapeStyle(HFColors.goldGradient)
         case .cyan:
-            return AnyShapeStyle(Color.black.opacity(0.58))
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        HFColors.cyanGlow.opacity(0.22),
+                        Color.black.opacity(0.72),
+                        HFColors.glassSurface
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
         case .glass:
-            return AnyShapeStyle(Color.white.opacity(0.12))
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.12),
+                        HFColors.glassSurfaceRaised.opacity(0.56),
+                        Color.black.opacity(0.64)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
         }
     }
 
@@ -394,7 +428,7 @@ struct HFEnergyAction: View {
         case .cyan:
             Capsule().stroke(HFColors.cyanGlow.opacity(0.68), lineWidth: 1)
         case .glass:
-            Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1)
+            Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1)
         }
     }
 
