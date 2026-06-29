@@ -9842,7 +9842,7 @@ final class HFStreamingStore: ObservableObject {
         let viewerRole = accessSession?.role.title ?? profile.role
         let workspaceTitle = accessSession?.role.workspaceTitle ?? (profile.role == "Creator" ? "Creator Workspace" : "Watch Workspace")
         let workspaceScope = accessSession?.role == .creator || accessSession?.role == .admin ? "Drafts, publishing, analytics, and role-gated creator mutations" : "Streaming, library, and profile-scoped recommendations"
-        let permissionSummary = accessSession == nil ? "Local profile fallback with signed-out production identity" : "\(viewerRole) permissions resolved from secure identity session"
+        let permissionSummary = accessSession == nil ? "Local creator profile active for this device" : "\(viewerRole) permissions resolved from secure identity session"
         identitySessionRuntime = HFIdentitySessionRuntimeSnapshot(
             state: accessSession == nil ? .localActive : .localActive,
             activeProfileID: accessSession?.userID ?? profile.id,

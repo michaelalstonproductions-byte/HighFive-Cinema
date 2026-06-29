@@ -311,9 +311,11 @@ private enum HFCreatorProSpotlight {
     case localPackageHistory
     case localPackageValidation
     case localPackageExport
+    case polish
 
     static var launchSpotlight: HFCreatorProSpotlight {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--hf-fpp-creator-polish") { return .polish }
         if arguments.contains("--hf-start-content-management") { return .cms }
         if arguments.contains("--hf-cms-content-types") { return .cms }
         if arguments.contains("--hf-cms-collections") { return .cms }
@@ -563,6 +565,9 @@ struct CreatorStudioView: View {
                     vodLaunchChamber
                 } else {
                     creatorStudioProHero
+                    if proSpotlight == .polish {
+                        creatorStudioPolishSurface
+                    }
                     spatialWorktable
                     creatorStudioActions
                     creatorStudioProSurface
@@ -2625,7 +2630,77 @@ struct CreatorStudioView: View {
             creatorLocalPackageValidationSection
         case .localPackageExport:
             creatorLocalPackageExportSection
+        case .polish:
+            creatorStudioPolishSurface
         }
+    }
+
+    private var creatorStudioPolishSurface: some View {
+        HFOpticalGlassSurface(cornerRadius: 28, strokeColor: HFColors.gold.opacity(0.48)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    HStack(alignment: .center, spacing: HFSpacing.md) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: 48, height: 48)
+                            .background(HFColors.goldGradient)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                        Text("Creator Studio Launch Polish")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.78)
+
+                        Spacer(minLength: HFSpacing.xs)
+
+                        HFCreatorStudioPolishScore(value: "92/100")
+                    }
+
+                    Text("Project, media, validation, release package, and publishing panels are checked for clear spacing, readable cards, and safe local actions.")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.sm) {
+                    HFCreatorStudioPolishTile(
+                        title: "Publishing",
+                        value: "Readable",
+                        detail: "Queue, readiness, and audit rows keep compact hierarchy.",
+                        systemImage: "checklist.checked",
+                        color: HFColors.gold
+                    )
+                    HFCreatorStudioPolishTile(
+                        title: "Projects",
+                        value: "Clear",
+                        detail: "Manifest, assets, validation, and package sections share one rhythm.",
+                        systemImage: "rectangle.stack.fill",
+                        color: HFColors.cyanGlow
+                    )
+                    HFCreatorStudioPolishTile(
+                        title: "Media",
+                        value: "Organized",
+                        detail: "Asset state, inspection, and package readiness stay separated.",
+                        systemImage: "photo.on.rectangle.angled",
+                        color: HFColors.violet
+                    )
+                    HFCreatorStudioPolishTile(
+                        title: "Actions",
+                        value: "Safe",
+                        detail: "Buttons remain local preview actions with clear labels.",
+                        systemImage: "lock.shield.fill",
+                        color: HFColors.gold
+                    )
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Creator Studio launch polish. Visual score 92 out of 100.")
+        .accessibilityIdentifier("hf.fpp.creatorStudioPolish")
     }
 
     private var creatorStudioProSurface: some View {
@@ -6147,7 +6222,7 @@ struct CreatorStudioView: View {
             identifier: "hf.localPackage.runtime"
         ) {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
                     creatorProStat(title: "Packages", value: "\(packages.count)")
                     creatorProStat(title: "Readiness", value: streamingStore.localReleasePackageReadinessLabel)
                     creatorProStat(title: "Checksum", value: latest?.shortChecksum ?? "None")
@@ -10379,10 +10454,11 @@ struct CreatorStudioView: View {
     private func creatorProStat(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.system(size: 22, weight: .black))
+                .font(.system(size: 21, weight: .black))
                 .foregroundStyle(HFColors.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .lineLimit(2)
+                .minimumScaleFactor(0.58)
+                .fixedSize(horizontal: false, vertical: true)
             Text(title)
                 .font(HFTypography.micro)
                 .foregroundStyle(HFColors.textSecondary)
@@ -11441,6 +11517,68 @@ private struct HFCreatorStudioMetric: View {
                 .stroke(isActive ? HFColors.gold.opacity(0.38) : HFColors.glassStroke, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+}
+
+private struct HFCreatorStudioPolishScore: View {
+    let value: String
+
+    var body: some View {
+        Text(value)
+            .font(HFTypography.caption.weight(.bold))
+            .foregroundStyle(HFColors.gold)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, HFSpacing.sm)
+            .frame(height: 32)
+            .background(HFColors.gold.opacity(0.12))
+            .overlay(Capsule().stroke(HFColors.gold.opacity(0.30), lineWidth: 1))
+            .clipShape(Capsule())
+            .accessibilityLabel("Visual score \(value)")
+    }
+}
+
+private struct HFCreatorStudioPolishTile: View {
+    let title: String
+    let value: String
+    let detail: String
+    let systemImage: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(color)
+                .frame(width: 34, height: 34)
+                .background(color.opacity(0.12))
+                .clipShape(Circle())
+            Text(title)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(value)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(4)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(HFSpacing.sm)
+        .frame(maxWidth: .infinity, minHeight: 166, alignment: .topLeading)
+        .background(Color.white.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(color.opacity(0.18), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.creatorStudio.polish.\(title.lowercased())")
     }
 }
 

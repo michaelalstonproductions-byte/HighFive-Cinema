@@ -173,6 +173,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-playback-error")
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
+            || arguments.contains("--hf-fpp-creator-polish")
             || arguments.contains("--hf-start-creator-publishing")
             || arguments.contains("--hf-start-publishing")
             || arguments.contains("--hf-publishing-queue")
@@ -193,6 +194,9 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
+            || Self.shouldStartInCreatorProjectRuntime
+            || Self.shouldStartInCreatorMediaImportRuntime
+            || Self.shouldStartInCreatorLocalPackageRuntime
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
@@ -268,6 +272,9 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
+            || Self.shouldStartInCreatorProjectRuntime
+            || Self.shouldStartInCreatorMediaImportRuntime
+            || Self.shouldStartInCreatorLocalPackageRuntime
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
@@ -389,6 +396,7 @@ struct HFStreamingRootView: View {
     private static var shouldStartInCreatorStudio: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-creator-studio")
+            || arguments.contains("--hf-fpp-creator-polish")
             || arguments.contains("--hf-start-creator-publishing")
             || arguments.contains("--hf-start-publishing")
             || arguments.contains("--hf-publishing-queue")
@@ -409,6 +417,9 @@ struct HFStreamingRootView: View {
             || Self.shouldStartInRealIdentity
             || Self.shouldStartInContentBackend
             || Self.shouldStartInDraftWorkspace
+            || Self.shouldStartInCreatorProjectRuntime
+            || Self.shouldStartInCreatorMediaImportRuntime
+            || Self.shouldStartInCreatorLocalPackageRuntime
             || Self.shouldStartInCreatorDraftSync
             || Self.shouldStartInCreatorUploadObjectStorage
             || Self.shouldStartInPublishingReview
@@ -617,6 +628,39 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-draft-validation")
             || arguments.contains("--hf-draft-compare")
             || arguments.contains("--hf-draft-history")
+    }
+
+    private static var shouldStartInCreatorProjectRuntime: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-project-runtime")
+            || arguments.contains("--hf-project-manifest")
+            || arguments.contains("--hf-project-assets")
+            || arguments.contains("--hf-project-validation")
+            || arguments.contains("--hf-project-release-package")
+            || arguments.contains("--hf-project-timeline")
+    }
+
+    private static var shouldStartInCreatorMediaImportRuntime: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-media-import")
+            || arguments.contains("--hf-media-import-queue")
+            || arguments.contains("--hf-media-import-validation")
+            || arguments.contains("--hf-media-registration")
+            || arguments.contains("--hf-media-manifest-updates")
+            || arguments.contains("--hf-media-project-linking")
+            || arguments.contains("--hf-media-import-preflight")
+            || arguments.contains("--hf-media-inspection-preflight")
+            || arguments.contains("--hf-media-inspection-report")
+            || arguments.contains("--hf-media-quarantine")
+    }
+
+    private static var shouldStartInCreatorLocalPackageRuntime: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("--hf-start-local-package")
+            || arguments.contains("--hf-package-create")
+            || arguments.contains("--hf-package-history")
+            || arguments.contains("--hf-package-validation")
+            || arguments.contains("--hf-package-export")
     }
 
     private static var shouldStartInCreatorDraftSync: Bool {
