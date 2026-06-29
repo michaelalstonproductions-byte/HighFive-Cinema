@@ -9,6 +9,7 @@ struct HomeView: View {
     var onDownloads: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
     @State private var showsProtectedDepthPreview = false
@@ -61,7 +62,7 @@ struct HomeView: View {
                     movieRail(category)
                 }
             }
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .accessibilityIdentifier("hf.spatial.home")
         .accessibilityIdentifier("hf.streaming.premium.home")

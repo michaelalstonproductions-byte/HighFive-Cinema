@@ -119,6 +119,9 @@ struct MyListView: View {
                     vaultWorld
                     premiumVaultStats
                     personalLibrarySystem
+                    if usesFallbackLayout {
+                        libraryShelfControl
+                    }
                     if !shouldRunViewerRuntime {
                         viewerLibraryRuntimeSurface
                     }
@@ -131,7 +134,7 @@ struct MyListView: View {
                 }
             }
             .padding(.top, HFSpacing.screenTop)
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight + HFSpacing.xxl)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize, extra: HFSpacing.xxl))
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(isPresented: $showsInspector) {
@@ -172,52 +175,91 @@ struct MyListView: View {
     private var vaultWorld: some View {
         VStack(spacing: HFSpacing.sm) {
             if let selectedMovie {
-                vaultObject(for: selectedMovie)
-                    .accessibilitySortPriority(3)
+                Group {
+                    if usesFallbackLayout {
+                        accessibilityVaultSummary(for: selectedMovie)
+                    } else {
+                        vaultObject(for: selectedMovie)
+                    }
+                }
+                .accessibilitySortPriority(3)
             }
 
             libraryStatusStrip
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
-            libraryShelfControl
-                .accessibilitySortPriority(2)
-
-            HFSpatialActionCluster {
-                if let selectedMovie {
-                    NavigationLink(value: selectedMovie) {
-                        Label(selectedMovie.progress == nil ? "Open Movie" : "Continue Watching", systemImage: "play.fill")
-                            .font(HFTypography.smallAction)
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 48)
-                            .background(HFColors.goldGradient)
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("hf.spatial.library.continueWatching")
-                    .accessibilityIdentifier("hf.library.continueWatching")
-                    .accessibilityIdentifier("hf.library.continueStory")
-                    .accessibilityIdentifier("hf.route.libraryToMovieDetail")
-                }
-
-                HStack(spacing: HFSpacing.sm) {
-                    HFEnergyAction(title: "Remove from My List", systemImage: "bookmark.slash", style: .glass) {
-                        if let selectedMovie, streamingStore.isSaved(selectedMovie) {
-                            streamingStore.toggleSaved(selectedMovie)
-                        }
-                    }
-                    HFEnergyAction(title: "Open Library Inspector", systemImage: "slider.horizontal.3", style: .glass) {
-                        showsInspector = true
-                    }
-                    .accessibilityIdentifier("hf.library.inspector")
-                }
+            if !usesFallbackLayout {
+                libraryShelfControl
+                    .accessibilitySortPriority(2)
             }
-            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            if !usesFallbackLayout {
+                HFSpatialActionCluster {
+                    if let selectedMovie {
+                        NavigationLink(value: selectedMovie) {
+                            Label(selectedMovie.progress == nil ? "Open Movie" : "Continue Watching", systemImage: "play.fill")
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(.black)
+                                .frame(maxWidth: .infinity)
+                                .frame(minHeight: 48)
+                                .background(HFColors.goldGradient)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.spatial.library.continueWatching")
+                        .accessibilityIdentifier("hf.library.continueWatching")
+                        .accessibilityIdentifier("hf.library.continueStory")
+                        .accessibilityIdentifier("hf.route.libraryToMovieDetail")
+                    }
+
+                    HStack(spacing: HFSpacing.sm) {
+                        HFEnergyAction(title: "Remove from My List", systemImage: "bookmark.slash", style: .glass) {
+                            if let selectedMovie, streamingStore.isSaved(selectedMovie) {
+                                streamingStore.toggleSaved(selectedMovie)
+                            }
+                        }
+                        HFEnergyAction(title: "Open Library Inspector", systemImage: "slider.horizontal.3", style: .glass) {
+                            showsInspector = true
+                        }
+                        .accessibilityIdentifier("hf.library.inspector")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
         }
         .hfSpatialSceneEntrance(isActive: isSceneAwake, reduceMotion: reduceMotion)
         .accessibilityIdentifier("hf.spatial.library.vault")
         .accessibilityIdentifier("hf.streaming.premium.libraryVault")
         .accessibilityIdentifier("hf.spatial.accessibility.largeType")
+    }
+
+    private func accessibilityVaultSummary(for movie: Movie) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Label("Local Library Mode", systemImage: "bookmark.fill")
+                    .font(HFTypography.caption.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                Text(movie.title)
+                    .font(HFTypography.section.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(movie.subtitle)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    statusPill("Saved Locally", color: HFColors.gold, identifier: "hf.library.savedLocally")
+                    if movie.progress != nil {
+                        statusPill("Progress Saved", color: HFColors.cyanGlow, identifier: "hf.library.progressSavedLocally")
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Library vault selected title \(movie.title)")
     }
 
     private var libraryPolishMetrics: [HFLibraryPolishMetric] {
@@ -377,15 +419,29 @@ struct MyListView: View {
         .accessibilityIdentifier("hf.fpp.libraryPolish")
     }
 
+    @ViewBuilder
     private var libraryStatusStrip: some View {
-        HStack(spacing: HFSpacing.xs) {
+        let content = Group {
             libraryStatusPill(title: "Shelf", value: selectedFilter, accent: HFColors.gold)
             libraryStatusPill(title: "Visible", value: "\(visibleMovies.count)", accent: HFColors.cyanGlow)
             libraryStatusPill(title: "Progress", value: "\(progressMovies.count)", accent: HFColors.violet)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Library status. \(selectedFilter) shelf. \(visibleMovies.count) visible titles. \(progressMovies.count) progress titles.")
-        .accessibilityIdentifier("hf.library.statusStrip")
+
+        if usesFallbackLayout {
+            VStack(spacing: HFSpacing.xs) {
+                content
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Library status. \(selectedFilter) shelf. \(visibleMovies.count) visible titles. \(progressMovies.count) progress titles.")
+            .accessibilityIdentifier("hf.library.statusStrip")
+        } else {
+            HStack(spacing: HFSpacing.xs) {
+                content
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Library status. \(selectedFilter) shelf. \(visibleMovies.count) visible titles. \(progressMovies.count) progress titles.")
+            .accessibilityIdentifier("hf.library.statusStrip")
+        }
     }
 
     private func libraryStatusPill(title: String, value: String, accent: Color) -> some View {
@@ -402,7 +458,7 @@ struct MyListView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, HFSpacing.xs)
-        .frame(height: 46)
+        .frame(minHeight: usesFallbackLayout ? 74 : 46)
         .background(accent.opacity(0.12))
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
@@ -411,52 +467,73 @@ struct MyListView: View {
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
     }
 
+    @ViewBuilder
     private var libraryShelfControl: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: HFSpacing.xs) {
+        if usesFallbackLayout {
+            VStack(spacing: HFSpacing.xs) {
                 ForEach(libraryShelfShortcuts) { shelf in
-                    Button {
-                        withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
-                            selectedFilter = shelf.title
-                        }
-                    } label: {
-                        HStack(spacing: HFSpacing.xs) {
-                            Image(systemName: shelf.systemImage)
-                                .font(.system(size: 14, weight: .black))
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    Text(shelf.title)
-                                        .font(HFTypography.micro.weight(.bold))
-                                        .lineLimit(1)
-                                    Text(shelf.value)
-                                        .font(HFTypography.micro.weight(.black))
-                                        .foregroundStyle(shelf.accent)
-                                }
-                                Text(shelf.detail)
-                                    .font(HFTypography.micro)
-                                    .foregroundStyle(HFColors.textMuted)
-                                    .lineLimit(1)
-                            }
-                        }
-                        .foregroundStyle(HFColors.textPrimary)
-                        .padding(.horizontal, HFSpacing.sm)
-                        .frame(height: 50)
-                        .background(selectedFilter == shelf.title ? shelf.accent.opacity(0.18) : Color.white.opacity(0.07))
-                        .overlay(
-                            Capsule()
-                                .stroke(selectedFilter == shelf.title ? shelf.accent.opacity(0.48) : Color.white.opacity(0.12), lineWidth: 1)
-                        )
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(shelf.title) shelf, \(shelf.value) titles, \(shelf.detail)")
-                    .accessibilityIdentifier("hf.library.shelfShortcut.\(shelf.id)")
+                    libraryShelfButton(for: shelf, isAccessibilityLayout: true)
                 }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("hf.library.shelfShortcuts")
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: HFSpacing.xs) {
+                    ForEach(libraryShelfShortcuts) { shelf in
+                        libraryShelfButton(for: shelf, isAccessibilityLayout: false)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("hf.library.shelfShortcuts")
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("hf.library.shelfShortcuts")
+    }
+
+    private func libraryShelfButton(for shelf: HFLibraryShelfShortcut, isAccessibilityLayout: Bool) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
+                selectedFilter = shelf.title
+            }
+        } label: {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: shelf.systemImage)
+                    .font(.system(size: isAccessibilityLayout ? 17 : 14, weight: .black))
+                    .frame(width: isAccessibilityLayout ? 36 : nil)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(shelf.title)
+                            .font(HFTypography.micro.weight(.bold))
+                            .lineLimit(isAccessibilityLayout ? 2 : 1)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(shelf.value)
+                            .font(HFTypography.micro.weight(.black))
+                            .foregroundStyle(shelf.accent)
+                    }
+                    Text(shelf.detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .lineLimit(isAccessibilityLayout ? 2 : 1)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: HFSpacing.xs)
+            }
+            .foregroundStyle(HFColors.textPrimary)
+            .padding(.horizontal, HFSpacing.sm)
+            .frame(maxWidth: isAccessibilityLayout ? .infinity : nil, alignment: .leading)
+            .frame(minHeight: isAccessibilityLayout ? 72 : 50)
+            .background(selectedFilter == shelf.title ? shelf.accent.opacity(0.18) : Color.white.opacity(0.07))
+            .overlay(
+                RoundedRectangle(cornerRadius: isAccessibilityLayout ? HFSpacing.xs : 25, style: .continuous)
+                    .stroke(selectedFilter == shelf.title ? shelf.accent.opacity(0.48) : Color.white.opacity(0.12), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: isAccessibilityLayout ? HFSpacing.xs : 25, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(shelf.title) shelf, \(shelf.value) titles, \(shelf.detail)")
+        .accessibilityIdentifier("hf.library.shelfShortcut.\(shelf.id)")
     }
 
     private var premiumVaultStats: some View {

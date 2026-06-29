@@ -250,7 +250,7 @@ struct SearchView: View {
                 resultsSection
             }
             .padding(.top, HFSpacing.screenTop)
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(isPresented: $showsInspector) {
@@ -402,42 +402,77 @@ struct SearchView: View {
                 searchSuggestionStrip
                 searchStatusStrip
 
-                ZStack(alignment: .bottomLeading) {
-                    posterField
+                if usesFallbackLayout {
+                    accessibilityDiscoverySummary
+                } else {
+                    ZStack(alignment: .bottomLeading) {
+                        posterField
 
-                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                        Text("LOCAL CATALOG")
+                        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                            Text("LOCAL CATALOG")
+                                .font(HFTypography.micro)
+                                .foregroundStyle(HFColors.cyanGlow)
+                            Text(featuredTitle.title)
+                                .font(HFTypography.display)
+                                .foregroundStyle(HFColors.textPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.72)
+                            Text(featuredTitle.subtitle)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(HFColors.textSecondary)
+                                .lineLimit(2)
+                            HStack(spacing: HFSpacing.xs) {
+                                Text(selectedFocus.title)
+                                Text("\(results.count) local matches")
+                            }
                             .font(HFTypography.micro)
-                            .foregroundStyle(HFColors.cyanGlow)
-                        Text(featuredTitle.title)
-                            .font(HFTypography.display)
                             .foregroundStyle(HFColors.textPrimary)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.72)
-                        Text(featuredTitle.subtitle)
-                            .font(HFTypography.caption)
-                            .foregroundStyle(HFColors.textSecondary)
-                            .lineLimit(2)
-                        HStack(spacing: HFSpacing.xs) {
-                            Text(selectedFocus.title)
-                            Text("\(results.count) local matches")
                         }
-                        .font(HFTypography.micro)
-                        .foregroundStyle(HFColors.textPrimary)
+                        .padding(HFSpacing.md)
                     }
-                    .padding(HFSpacing.md)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 292)
+                    .accessibilityIdentifier("hf.spatial.search.lens")
+                    .accessibilityIdentifier("hf.spatial.search.featuredTitle")
+                    .accessibilityLabel("Discovery lens. Featured local title \(featuredTitle.title). Selected focus \(selectedFocus.title).")
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: usesFallbackLayout ? 258 : 292)
-                .accessibilityIdentifier("hf.spatial.search.lens")
-                .accessibilityIdentifier("hf.spatial.search.featuredTitle")
-                .accessibilityLabel("Discovery lens. Featured local title \(featuredTitle.title). Selected focus \(selectedFocus.title).")
 
                 filterRow
             }
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var accessibilityDiscoverySummary: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Label("Local Catalog", systemImage: "sparkle.magnifyingglass")
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(HFColors.cyanGlow)
+            Text(featuredTitle.title)
+                .font(HFTypography.section.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(featuredTitle.subtitle)
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(selectedFocus.title) · \(results.count) local matches")
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(HFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.42))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.cyanGlow.opacity(0.32), lineWidth: 1)
+        )
+        .accessibilityIdentifier("hf.spatial.search.lens")
+        .accessibilityIdentifier("hf.spatial.search.featuredTitle")
+        .accessibilityLabel("Discovery summary. Featured local title \(featuredTitle.title). Selected focus \(selectedFocus.title).")
     }
 
     private var searchSuggestionStrip: some View {
@@ -493,15 +528,29 @@ struct SearchView: View {
         .accessibilityIdentifier("hf.search.suggestions")
     }
 
+    @ViewBuilder
     private var searchStatusStrip: some View {
-        HStack(spacing: HFSpacing.xs) {
+        let content = Group {
             searchStatusPill(title: "Mode", value: selectedFilter, accent: HFColors.gold)
             searchStatusPill(title: "Focus", value: selectedFocus.title, accent: HFColors.cyanGlow)
             searchStatusPill(title: "Matches", value: "\(results.count)", accent: HFColors.violet)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Search status. \(selectedFilter) mode. \(selectedFocus.title) focus. \(results.count) local matches.")
-        .accessibilityIdentifier("hf.search.statusStrip")
+
+        if usesFallbackLayout {
+            VStack(spacing: HFSpacing.xs) {
+                content
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Search status. \(selectedFilter) mode. \(selectedFocus.title) focus. \(results.count) local matches.")
+            .accessibilityIdentifier("hf.search.statusStrip")
+        } else {
+            HStack(spacing: HFSpacing.xs) {
+                content
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Search status. \(selectedFilter) mode. \(selectedFocus.title) focus. \(results.count) local matches.")
+            .accessibilityIdentifier("hf.search.statusStrip")
+        }
     }
 
     private func searchStatusPill(title: String, value: String, accent: Color) -> some View {
@@ -518,7 +567,7 @@ struct SearchView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, HFSpacing.xs)
-        .frame(height: 46)
+        .frame(minHeight: usesFallbackLayout ? 74 : 46)
         .background(accent.opacity(0.12))
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)

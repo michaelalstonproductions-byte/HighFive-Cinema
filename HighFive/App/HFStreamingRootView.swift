@@ -943,63 +943,67 @@ struct HFStreamingRootView: View {
 
     private var streamingShell: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack {
                 HFColors.screenBackground
                     .ignoresSafeArea()
 
-                Group {
-                    switch selectedTab {
-                    case .home:
-                        HomeView(
-                            selectedProfile: selectedProfile,
-                            onSearch: {
-                                searchMode = .search
-                                selectTab(.search)
-                            },
-                            onDiscover: {
+                VStack(spacing: 0) {
+                    Group {
+                        switch selectedTab {
+                        case .home:
+                            HomeView(
+                                selectedProfile: selectedProfile,
+                                onSearch: {
+                                    searchMode = .search
+                                    selectTab(.search)
+                                },
+                                onDiscover: {
+                                    searchMode = .discover
+                                    selectTab(.search)
+                                },
+                                onProfile: {
+                                    selectTab(.profile)
+                                },
+                                onMyList: {
+                                    selectTab(.library)
+                                },
+                                onDownloads: {
+                                    selectTab(.downloads)
+                                }
+                            )
+                        case .search:
+                            SearchView(mode: $searchMode)
+                        case .library:
+                            MyListView(onBrowseDiscover: {
                                 searchMode = .discover
                                 selectTab(.search)
-                            },
-                            onProfile: {
-                                selectTab(.profile)
-                            },
-                            onMyList: {
-                                selectTab(.library)
-                            },
-                            onDownloads: {
-                                selectTab(.downloads)
-                            }
-                        )
-                    case .search:
-                        SearchView(mode: $searchMode)
-                    case .library:
-                        MyListView(onBrowseDiscover: {
-                            searchMode = .discover
-                            selectTab(.search)
-                        })
-                    case .downloads:
-                        DownloadsView(onFindMore: {
-                            searchMode = .discover
-                            selectTab(.search)
-                        })
-                    case .profile:
-                        ProfileView(
-                            selectedProfile: $selectedProfile,
-                            initialMembershipFacet: Self.membershipInitialFacet,
-                            initialMembershipShowcase: Self.membershipInitialShowcase,
-                            startInMembership: Self.shouldStartInMembership,
-                            onOpenMyList: {
-                                selectTab(.library)
-                            }
-                        )
+                            })
+                        case .downloads:
+                            DownloadsView(onFindMore: {
+                                searchMode = .discover
+                                selectTab(.search)
+                            })
+                        case .profile:
+                            ProfileView(
+                                selectedProfile: $selectedProfile,
+                                initialMembershipFacet: Self.membershipInitialFacet,
+                                initialMembershipShowcase: Self.membershipInitialShowcase,
+                                startInMembership: Self.shouldStartInMembership,
+                                onOpenMyList: {
+                                    selectTab(.library)
+                                }
+                            )
+                        }
                     }
-                }
-                .id(selectedTab)
-                .transition(HFSpatialRouteTransition.tabTransition(reduceMotion: reduceMotion))
-                .hfSpatialNavigationSpine()
+                    .id(selectedTab)
+                    .transition(HFSpatialRouteTransition.tabTransition(reduceMotion: reduceMotion))
+                    .hfSpatialNavigationSpine()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                HFTabBar(items: tabItems, selection: $selectedTab)
-                    .accessibilityIdentifier("hf.tabs.locked")
+                    HFTabBar(items: tabItems, selection: $selectedTab)
+                        .accessibilityIdentifier("hf.tabs.locked")
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)

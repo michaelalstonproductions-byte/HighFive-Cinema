@@ -57,6 +57,20 @@ enum HFResponsiveFit {
         isCompactPhone(width: width) ? 10 : HFSpacing.floatingTabHorizontal
     }
 
+    static func floatingTabContentClearance(dynamicTypeSize: DynamicTypeSize, extra: CGFloat = 0) -> CGFloat {
+        let base = HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight + extra
+        if dynamicTypeSize.isAccessibilitySize {
+            return base + HFSpacing.floatingTabClearance
+        }
+
+        switch dynamicTypeSize {
+        case .xxLarge, .xxxLarge:
+            return base + HFSpacing.xxl
+        default:
+            return base
+        }
+    }
+
     static func smallBadgeFontSize(width: CGFloat) -> CGFloat {
         width < 86 ? 8 : 9
     }

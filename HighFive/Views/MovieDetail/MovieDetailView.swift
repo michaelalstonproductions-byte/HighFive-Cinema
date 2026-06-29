@@ -4,6 +4,7 @@ struct MovieDetailView: View {
     let movie: Movie
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
     @State private var showsProtectedDepthPreview = false
@@ -58,7 +59,7 @@ struct MovieDetailView: View {
                 castSection
                 gallerySection
             }
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.root")
         .accessibilityIdentifier("hf.streaming.premium.movieDetail")
@@ -1900,6 +1901,7 @@ struct CreatorProfileView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isAwake = false
 
     private var profile: HFCreatorProfile {
@@ -1916,7 +1918,7 @@ struct CreatorProfileView: View {
                 collectionsSection
                 releaseStateSection
             }
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)

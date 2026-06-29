@@ -64,7 +64,7 @@ struct DownloadsView: View {
                 }
             }
             .padding(.top, HFSpacing.screenTop)
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .background(HFColors.screenBackground.ignoresSafeArea())
         .sheet(isPresented: $showsInspector) {

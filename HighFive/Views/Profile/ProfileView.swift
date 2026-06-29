@@ -96,6 +96,7 @@ struct ProfileView: View {
     var startInMembership = false
     var onOpenMyList: (() -> Void)?
     @EnvironmentObject private var streamingStore: HFStreamingStore
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var showsProfileSwitcher = false
     @State private var showsSignOutAlert = false
     @State private var mockMessage: ProfileMockMessage?
@@ -135,7 +136,7 @@ struct ProfileView: View {
                 signOutButton
             }
             .padding(.top, HFSpacing.screenTop)
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .accessibilityIdentifier("hf.profile.root")
         .accessibilityIdentifier("hf.profile.screen")
@@ -1688,7 +1689,7 @@ private struct HFMembershipIdentityPassView: View {
             }
             .padding(.top, HFSpacing.lg)
             .padding(.horizontal, HFSpacing.screenHorizontal)
-            .padding(.bottom, HFSpacing.floatingTabClearance + HFSpacing.tabBarHeight)
+            .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .background(membershipBackground)
         .navigationBarBackButtonHidden(true)
