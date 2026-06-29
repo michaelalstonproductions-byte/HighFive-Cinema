@@ -854,6 +854,9 @@ struct HFStreamingRootView: View {
             if Self.shouldResetLaunchIntro {
                 hasCompletedOnboarding = false
                 hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro && !Self.shouldForceLaunchIntro
+            } else if Self.shouldSkipLaunchIntro && !Self.shouldForceLaunchIntro {
+                hasCompletedLaunchIntro = true
+                hasCompletedOnboarding = true
             }
         }
         .task {

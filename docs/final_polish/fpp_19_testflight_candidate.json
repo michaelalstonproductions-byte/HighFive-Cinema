@@ -1,0 +1,82 @@
+{
+  "phase": "FPP-19",
+  "name": "TestFlight Candidate",
+  "baseline": {
+    "commit": "4d537ab",
+    "tag": "phase-fpp-18-bug-hunt"
+  },
+  "status": "passed",
+  "visual_score": 96,
+  "implemented": [
+    "Validated Debug simulator build",
+    "Validated Release simulator build",
+    "Captured candidate screenshot regression matrix",
+    "Fixed deterministic QA route onboarding gate",
+    "Documented TestFlight candidate status and remaining signing requirements"
+  ],
+  "changed_files": [
+    "HighFive/App/HFStreamingRootView.swift",
+    "docs/final_polish/FPP_19_TESTFLIGHT_CANDIDATE.md",
+    "docs/final_polish/fpp_19_testflight_candidate.json"
+  ],
+  "builds": {
+    "debug_simulator": {
+      "result": "passed",
+      "derived_data": "/Volumes/Scratch SSD/XcodeDerivedData/highfive-fpp-19-testflight-candidate",
+      "log": "/private/tmp/highfive-fpp-19-testflight-candidate/logs/debug-rebuild-after-route-fix.log"
+    },
+    "release_simulator": {
+      "result": "passed",
+      "derived_data": "/Volumes/Scratch SSD/XcodeDerivedData/highfive-fpp-19-testflight-candidate-release",
+      "log": "/private/tmp/highfive-fpp-19-testflight-candidate/logs/release-rebuild-after-route-fix.log"
+    }
+  },
+  "tests": {
+    "dedicated_test_target_available": false,
+    "result": "not available",
+    "notes": "The Xcode project exposes the HighFive scheme and target only. Candidate verification used build, screenshot, visual review, and safety scans."
+  },
+  "screenshots": {
+    "directory": "/private/tmp/highfive-fpp-19-testflight-candidate/screenshots",
+    "contact_sheet": "/private/tmp/highfive-fpp-19-testflight-candidate/fpp19_contact_sheet.png",
+    "files": [
+      "home.png",
+      "search.png",
+      "library.png",
+      "downloads.png",
+      "profile.png",
+      "movie_detail.png",
+      "player.png",
+      "membership.png",
+      "creator_studio.png",
+      "enterprise_polish.png"
+    ]
+  },
+  "scans": {
+    "git_diff_check": "passed",
+    "protected_paths": "passed",
+    "project_pbxproj_untouched": "passed",
+    "unsafe_diff_scan": "passed",
+    "tab_validation": "passed",
+    "secrets_scan": "passed"
+  },
+  "warnings": [
+    "HKV1_PlayerAudioTap.swift uses AVFoundation APIs deprecated in iOS 16.",
+    "HFStreamingStore.swift media inspection still uses AVFoundation APIs deprecated in iOS 16.",
+    "HFTabBar.swift still uses UIScreen.main, deprecated in iOS 26.",
+    "AppIntents metadata extraction is skipped because the app has no AppIntents framework dependency."
+  ],
+  "testflight": {
+    "simulator_candidate": "passed",
+    "real_archive_export": "not run",
+    "reason": "Apple Developer signing identity, provisioning profile, and App Store Connect upload configuration are not available in this environment."
+  },
+  "manual_setup_required": [
+    "Apple Developer signing identity",
+    "Provisioning profile",
+    "App Store Connect app record",
+    "Production capability review",
+    "Archive/export or CI upload pipeline"
+  ],
+  "next_phase": "FPP-20 Launch Candidate"
+}
