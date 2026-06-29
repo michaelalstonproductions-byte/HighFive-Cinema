@@ -1,0 +1,117 @@
+{
+  "phase": "FPP-17 Visual QA",
+  "baselineCommit": "d1a0f28",
+  "baselineTag": "phase-fpp-16-enterprise-polish",
+  "overallVisualScore": 94,
+  "screenshotDirectory": "/private/tmp/highfive-fpp-17-visual-qa/screenshots",
+  "contactSheet": "/private/tmp/highfive-fpp-17-visual-qa/fpp17_contact_sheet.png",
+  "screens": [
+    {
+      "name": "Home",
+      "launchArgument": "--hf-start-home",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/home.png",
+      "score": 95,
+      "status": "pass"
+    },
+    {
+      "name": "Search",
+      "launchArgument": "--hf-start-search",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/search.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Library",
+      "launchArgument": "--hf-start-library",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/library.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Downloads",
+      "launchArgument": "--hf-start-downloads",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/downloads.png",
+      "score": 93,
+      "status": "pass"
+    },
+    {
+      "name": "Profile",
+      "launchArgument": "--hf-start-profile",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/profile.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Movie Detail",
+      "launchArgument": "--hf-start-movie-detail",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/movie_detail.png",
+      "score": 95,
+      "status": "pass"
+    },
+    {
+      "name": "Player",
+      "launchArgument": "--hf-start-player",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/player.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Membership",
+      "launchArgument": "--hf-start-membership",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/membership.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Creator Studio",
+      "launchArgument": "--hf-start-creator-studio",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/creator_studio.png",
+      "score": 93,
+      "status": "pass"
+    },
+    {
+      "name": "Connect",
+      "launchArgument": "--hf-start-connect-watch-room",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/connect.png",
+      "score": 93,
+      "status": "pass"
+    },
+    {
+      "name": "Launch",
+      "launchArgument": "--hf-launch-pro-dashboard",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/launch.png",
+      "score": 93,
+      "status": "pass"
+    },
+    {
+      "name": "Analytics",
+      "launchArgument": "--hf-start-analytics",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/analytics.png",
+      "score": 93,
+      "status": "pass"
+    },
+    {
+      "name": "Admin Dashboard",
+      "launchArgument": "--hf-start-admin",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/admin_dashboard.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Admin Health",
+      "launchArgument": "--hf-admin-health",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/admin_health.png",
+      "score": 94,
+      "status": "pass"
+    },
+    {
+      "name": "Enterprise Polish",
+      "launchArgument": "--hf-fpp-enterprise-polish",
+      "screenshot": "/private/tmp/highfive-fpp-17-visual-qa/screenshots/enterprise_polish.png",
+      "score": 94,
+      "status": "pass"
+    }
+  ],
+  "blocked": false,
+  "recommendation": "Proceed to FPP-18 Bug Hunt"
+}
