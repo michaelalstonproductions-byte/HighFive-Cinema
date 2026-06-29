@@ -86,6 +86,10 @@ import {
   v3CreatorCopilotReleaseTimingPath,
   v3CreatorCopilotSummaryPath,
   v3CreatorCRMContractsPath,
+  v3CreatorCRMCompaniesPath,
+  v3CreatorCRMContactLinksPath,
+  v3CreatorCRMContactsImportCSVPath,
+  v3CreatorCRMContactsPath,
   v3CreatorCRMDeliverablesPath,
   v3CreatorCRMInboxPath,
   v3CreatorCRMMilestonesPath,
@@ -335,6 +339,16 @@ export function openAPISpec(): Record<string, unknown> {
       [v3CreatorCRMMilestonesPath]: { post: { summary: "Create a local creator CRM milestone record" } },
       [v3CreatorCRMTeamsPath]: { post: { summary: "Create a local creator CRM team record" } },
       [v3CreatorCRMDeliverablesPath]: { post: { summary: "Create a local creator CRM deliverable record" } },
+      [v3CreatorCRMContactsPath]: {
+        get: { summary: "Search admin-only private CRM contacts" },
+        post: { summary: "Create an admin-only private CRM contact" }
+      },
+      [v3CreatorCRMCompaniesPath]: {
+        get: { summary: "Search admin-only private CRM companies" },
+        post: { summary: "Create an admin-only private CRM company" }
+      },
+      [v3CreatorCRMContactsImportCSVPath]: { post: { summary: "Import admin-only private CRM contacts from CSV text" } },
+      [v3CreatorCRMContactLinksPath]: { post: { summary: "Link an admin-only private CRM contact to a project, studio, creator, or distribution deal" } },
       [v3ProductionSummaryPath]: { get: { summary: "Fetch V3 local production management films, series, projects, schedules, budgets, crew, and assets" } },
       [v3ProductionFilmsPath]: { post: { summary: "Create a local production film record" } },
       [v3ProductionSeriesPath]: { post: { summary: "Create a local production series record" } },

@@ -82,7 +82,11 @@ import {
   v3CreatorCopilotPublishingPath,
   v3CreatorCopilotReleaseTimingPath,
   v3CreatorCopilotSummaryPath,
+  v3CreatorCRMCompaniesPath,
+  v3CreatorCRMContactLinksPath,
   v3CreatorCRMContractsPath,
+  v3CreatorCRMContactsImportCSVPath,
+  v3CreatorCRMContactsPath,
   v3CreatorCRMDeliverablesPath,
   v3CreatorCRMInboxPath,
   v3CreatorCRMMilestonesPath,
@@ -309,12 +313,18 @@ import {
   v3CreatorCopilotSummary
 } from "../routes/v3CreatorCopilot.js";
 import {
+  createCreatorCRMCompany,
   createCreatorCRMContract,
+  createCreatorCRMContact,
   createCreatorCRMDeliverable,
   createCreatorCRMInboxRecord,
   createCreatorCRMMilestone,
   createCreatorCRMTask,
   createCreatorCRMTeam,
+  importCreatorCRMContactsCSV,
+  linkCreatorCRMContact,
+  v3CreatorCRMCompanies,
+  v3CreatorCRMContacts,
   v3CreatorCRMReadinessSummary,
   v3CreatorCRMSummary
 } from "../routes/v3CreatorCRM.js";
@@ -1453,6 +1463,58 @@ export function createStagingHttpTarget(config: RuntimeConfig): Server {
         }
         const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
         writeJson(response, 201, createCreatorCRMDeliverable(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMContactsPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, v3CreatorCRMContacts(authHeader(request.headers.authorization), request.url));
+          return;
+        }
+        if (request.method === "POST") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 201, createCreatorCRMContact(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === v3CreatorCRMCompaniesPath) {
+        if (request.method === "GET") {
+          writeJson(response, 200, v3CreatorCRMCompanies(authHeader(request.headers.authorization), request.url));
+          return;
+        }
+        if (request.method === "POST") {
+          const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+          writeJson(response, 201, createCreatorCRMCompany(authHeader(request.headers.authorization), body));
+          return;
+        }
+        const result = methodNotAllowed();
+        writeJson(response, result.statusCode, result.body);
+        return;
+      }
+
+      if (path === v3CreatorCRMContactsImportCSVPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, importCreatorCRMContactsCSV(authHeader(request.headers.authorization), body));
+        return;
+      }
+
+      if (path === v3CreatorCRMContactLinksPath) {
+        if (request.method !== "POST") {
+          const result = methodNotAllowed();
+          writeJson(response, result.statusCode, result.body);
+          return;
+        }
+        const body = await readBoundedJsonBody(request, config.bodyLimitBytes);
+        writeJson(response, 201, linkCreatorCRMContact(authHeader(request.headers.authorization), body));
         return;
       }
 
@@ -2826,6 +2888,10 @@ function healthBody(config: RuntimeConfig): Record<string, string | boolean> {
     v3_creator_crm_milestones_path: v3CreatorCRMMilestonesPath,
     v3_creator_crm_teams_path: v3CreatorCRMTeamsPath,
     v3_creator_crm_deliverables_path: v3CreatorCRMDeliverablesPath,
+    v3_creator_crm_contacts_path: v3CreatorCRMContactsPath,
+    v3_creator_crm_companies_path: v3CreatorCRMCompaniesPath,
+    v3_creator_crm_contacts_import_csv_path: v3CreatorCRMContactsImportCSVPath,
+    v3_creator_crm_contact_links_path: v3CreatorCRMContactLinksPath,
     v3_production_summary_path: v3ProductionSummaryPath,
     v3_production_films_path: v3ProductionFilmsPath,
     v3_production_series_path: v3ProductionSeriesPath,
@@ -3115,9 +3181,18 @@ function readinessBody(config: RuntimeConfig): Record<string, string | number | 
     v3_creator_crm_milestones: Boolean(v3CreatorCRM.milestones),
     v3_creator_crm_teams: Boolean(v3CreatorCRM.teams),
     v3_creator_crm_deliverables: Boolean(v3CreatorCRM.deliverables),
+    v3_creator_crm_private_contact_database: Boolean(v3CreatorCRM.private_contact_database),
+    v3_creator_crm_admin_only_contacts: Boolean(v3CreatorCRM.admin_only_contacts),
+    v3_creator_crm_companies: Boolean(v3CreatorCRM.companies),
+    v3_creator_crm_contact_roles: Boolean(v3CreatorCRM.contact_roles),
+    v3_creator_crm_csv_import: Boolean(v3CreatorCRM.csv_import),
+    v3_creator_crm_contact_search_filters: Boolean(v3CreatorCRM.contact_search_filters),
+    v3_creator_crm_automatic_email_sending: Boolean(v3CreatorCRM.automatic_email_sending),
     v3_creator_crm_external_services: Boolean(v3CreatorCRM.external_services),
     v3_creator_crm_inbox_records: Number(v3CreatorCRM.inbox_records),
     v3_creator_crm_task_records: Number(v3CreatorCRM.task_records),
+    v3_creator_crm_contact_records: Number(v3CreatorCRM.contact_records),
+    v3_creator_crm_company_records: Number(v3CreatorCRM.company_records),
     v3_production_management_enabled: Boolean(v3Production.v3_production_management_enabled),
     v3_production_films: Boolean(v3Production.films),
     v3_production_series: Boolean(v3Production.series),

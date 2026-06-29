@@ -21,6 +21,13 @@ test("v3 creator CRM: readiness exposes local CRM capabilities", async () => {
   assert.equal(ready.json.v3_creator_crm_milestones, true);
   assert.equal(ready.json.v3_creator_crm_teams, true);
   assert.equal(ready.json.v3_creator_crm_deliverables, true);
+  assert.equal(ready.json.v3_creator_crm_private_contact_database, true);
+  assert.equal(ready.json.v3_creator_crm_admin_only_contacts, true);
+  assert.equal(ready.json.v3_creator_crm_companies, true);
+  assert.equal(ready.json.v3_creator_crm_contact_roles, true);
+  assert.equal(ready.json.v3_creator_crm_csv_import, true);
+  assert.equal(ready.json.v3_creator_crm_contact_search_filters, true);
+  assert.equal(ready.json.v3_creator_crm_automatic_email_sending, false);
   assert.equal(ready.json.v3_creator_crm_external_services, false);
   assert.ok(ready.json.v3_creator_crm_inbox_records >= 1);
   assert.ok(ready.json.v3_creator_crm_task_records >= 1);
@@ -115,6 +122,86 @@ test("v3 creator CRM: creator can create inbox, contract, task, milestone, team,
   assert.ok(summary.json.deliverables.some((record) => record.id === deliverable.json.deliverable.id));
 });
 
+test("v3 creator CRM: admin-only contact database imports CSV, searches, and links private contacts", async () => {
+  const admin = await session("admin");
+  const headers = { authorization: admin.authorization };
+
+  const company = await postJson("/v3/creator-crm/companies", {
+    name: "Netflix",
+    type: "Studio",
+    email: "studio-relations@example.invalid",
+    phone: "+1 310 000 0000",
+    linkedin: "https://www.linkedin.com/company/netflix",
+    tags: "Studio, Distributor",
+    notes: "Internal relationship record only."
+  }, headers);
+  assertJsonResponse(company, 201);
+  assert.equal(company.json.company.private_scope, "admin");
+
+  const contact = await postJson("/v3/creator-crm/contacts", {
+    full_name: "Jordan Sample",
+    company_name: "Netflix",
+    role: "Producer, Studio Executive",
+    department: "Original Film",
+    email: "jordan.sample@example.invalid",
+    phone: "+1 310 555 0100",
+    linkedin: "https://www.linkedin.com/in/jordan-sample",
+    imdb: "https://pro.imdb.com/name/nm0000000",
+    representative: "Internal introduction",
+    agency: "HighFive Cinema",
+    manager: "HigherKey",
+    priority: "P1",
+    relationship_status: "Introduced",
+    outreach_status: "Meeting Scheduled",
+    last_contacted: "2026-06-28",
+    follow_up_date: "2026-07-05",
+    tags: "Investor Deck, Studio Deals, Distribution",
+    location: "Los Angeles",
+    notes: "Private admin-only contact. Do not email automatically."
+  }, headers);
+  assertJsonResponse(contact, 201);
+  assert.equal(contact.json.contact.private_scope, "admin");
+  assert.deepEqual(contact.json.contact.roles, ["Producer", "Studio Executive"]);
+  assert.equal(contact.json.contact.outreach_status, "meeting_scheduled");
+
+  const imported = await postJson("/v3/creator-crm/contacts/import-csv", {
+    csv_text: [
+      "Full Name,Company,Role,Department,Email,Phone,LinkedIn,IMDb,Representative,Agency,Manager,Priority,Status,Tags,Location,Notes,Follow-up Date",
+      "Avery Distributor,Sony Pictures,Distributor,Acquisitions,avery@example.invalid,+1 212 555 0101,https://www.linkedin.com/in/avery-distributor,https://pro.imdb.com/name/nm1111111,Intro via HigherKey,HighFive Cinema,HigherKey,P1,LOI Sent,\"Distribution,Mark of the West\",New York,\"Private distribution lead\",2026-07-10"
+    ].join("\n")
+  }, headers);
+  assertJsonResponse(imported, 201);
+  assert.equal(imported.json.imported_contacts, 1);
+  assert.equal(imported.json.automatic_email_sending, false);
+  assert.equal(imported.json.external_services, false);
+
+  const search = await requestJson("/v3/creator-crm/contacts?q=producer&company=netflix&tag=Studio%20Deals", { headers });
+  assertJsonResponse(search, 200);
+  assert.equal(search.json.access, "admin_only");
+  assert.equal(search.json.public_exposure, false);
+  assert.ok(search.json.contacts.some((record) => record.full_name === "Jordan Sample"));
+
+  const linked = await postJson("/v3/creator-crm/contacts/link", {
+    contact_id: contact.json.contact.id,
+    target_type: "distribution_deal",
+    target_id: "deal-mark-of-the-west-domestic",
+    relationship: "Potential distribution conversation"
+  }, headers);
+  assertJsonResponse(linked, 201);
+  assert.equal(linked.json.contact.links[0].target_type, "distribution_deal");
+
+  const companies = await requestJson("/v3/creator-crm/companies?q=sony", { headers });
+  assertJsonResponse(companies, 200);
+  assert.ok(companies.json.companies.some((record) => record.name === "Sony Pictures"));
+
+  const summary = await requestJson("/v3/creator-crm/summary", { headers });
+  assertJsonResponse(summary, 200);
+  assert.equal(summary.json.private_contact_database.access, "admin_only");
+  assert.ok(summary.json.private_contact_database.contacts >= 2);
+  assert.equal(summary.json.private_contact_database.automatic_email_sending, false);
+  assertNoCredentialMaterial(summary.json);
+});
+
 test("v3 creator CRM: viewer cannot access creator CRM", async () => {
   const viewer = await session("viewer");
   const summary = await requestJson("/v3/creator-crm/summary", {
@@ -130,6 +217,22 @@ test("v3 creator CRM: viewer cannot access creator CRM", async () => {
   assert.equal(task.json.error, "creator_role_required");
 });
 
+test("v3 creator CRM: private contacts are admin-only", async () => {
+  const creator = await session("creator");
+  const creatorContacts = await requestJson("/v3/creator-crm/contacts", {
+    headers: { authorization: creator.authorization }
+  });
+  assertJsonResponse(creatorContacts, 403);
+  assert.equal(creatorContacts.json.error, "admin_role_required");
+
+  const viewer = await session("viewer");
+  const viewerImport = await postJson("/v3/creator-crm/contacts/import-csv", {
+    csv_text: "Full Name,Company\nBlocked Viewer,HighFive"
+  }, { authorization: viewer.authorization });
+  assertJsonResponse(viewerImport, 403);
+  assert.equal(viewerImport.json.error, "admin_role_required");
+});
+
 test("v3 creator CRM: OpenAPI exposes CRM paths", async () => {
   const spec = await requestJson("/openapi.json");
   assertJsonResponse(spec, 200);
@@ -140,4 +243,8 @@ test("v3 creator CRM: OpenAPI exposes CRM paths", async () => {
   assert.ok(spec.json.paths["/v3/creator-crm/milestones"]);
   assert.ok(spec.json.paths["/v3/creator-crm/teams"]);
   assert.ok(spec.json.paths["/v3/creator-crm/deliverables"]);
+  assert.ok(spec.json.paths["/v3/creator-crm/contacts"]);
+  assert.ok(spec.json.paths["/v3/creator-crm/companies"]);
+  assert.ok(spec.json.paths["/v3/creator-crm/contacts/import-csv"]);
+  assert.ok(spec.json.paths["/v3/creator-crm/contacts/link"]);
 });
