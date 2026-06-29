@@ -1,7 +1,7 @@
 import Foundation
 
 enum HFMockData {
-    static let movies: [Movie] = [
+    nonisolated static let movies: [Movie] = [
         Movie(
             id: "friendly",
             title: "The Friendly",
@@ -185,7 +185,7 @@ enum HFMockData {
         return merged.filter { seen.insert($0.id).inserted }.prefix(8).map { $0 }
     }
 
-    static func movie(_ id: String) -> Movie? {
+    nonisolated static func movie(_ id: String) -> Movie? {
         movies.first { $0.id == id }
     }
 }

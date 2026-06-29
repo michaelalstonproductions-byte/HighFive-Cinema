@@ -213,7 +213,7 @@ struct HFStoreKitMonetizationRuntime {
         DateFormatter.localizedString(from: Date(), dateStyle: .none, timeStyle: .short)
     }
 
-    private static func iso8601(_ date: Date) -> String {
+    nonisolated private static func iso8601(_ date: Date) -> String {
         ISO8601DateFormatter().string(from: date)
     }
 }

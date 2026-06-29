@@ -54,6 +54,10 @@ struct HFBackendHTTPStatus: Codable, Equatable {
         let success = (200..<300).contains(statusCode)
         self.statusLabel = success ? "HTTP Success" : "HTTP \(statusCode)"
     }
+
+    nonisolated static func == (lhs: HFBackendHTTPStatus, rhs: HFBackendHTTPStatus) -> Bool {
+        lhs.statusCode == rhs.statusCode && lhs.statusLabel == rhs.statusLabel
+    }
 }
 
 enum HFBackendTransportError: Error, LocalizedError, Equatable {

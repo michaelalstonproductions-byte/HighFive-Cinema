@@ -5395,7 +5395,7 @@ struct HFProductionCatalogResponse: Codable, Hashable {
         case tombstones
     }
 
-    static func local(snapshot: HFContentBackendSnapshot) -> HFProductionCatalogResponse {
+    nonisolated static func local(snapshot: HFContentBackendSnapshot) -> HFProductionCatalogResponse {
         HFProductionCatalogResponse(
             generatedAt: snapshot.updatedAtLabel,
             source: "local_snapshot",
@@ -5443,7 +5443,7 @@ struct HFProductionCatalogDeltaResponse: Codable, Hashable {
         case tombstones
     }
 
-    static func local(cursor: String?) -> HFProductionCatalogDeltaResponse {
+    nonisolated static func local(cursor: String?) -> HFProductionCatalogDeltaResponse {
         HFProductionCatalogDeltaResponse(
             generatedAt: "Local cache",
             source: "local_snapshot",
@@ -5499,7 +5499,7 @@ struct HFProductionCatalogMovieDTO: Codable, Hashable {
         case collectionIDs = "collection_ids"
     }
 
-    init(movie: Movie) {
+    nonisolated init(movie: Movie) {
         id = movie.id
         title = movie.title
         subtitle = movie.subtitle
@@ -5555,7 +5555,7 @@ struct HFProductionCatalogCreatorDTO: Codable, Hashable {
         case featuredMovieIDs = "featured_movie_ids"
     }
 
-    init(creator: Creator) {
+    nonisolated init(creator: Creator) {
         id = creator.id
         name = creator.name
         role = creator.role
@@ -5591,7 +5591,7 @@ struct HFProductionCatalogEpisodeDTO: Codable, Hashable {
         case progress
     }
 
-    init(episode: HFEpisodeRecord) {
+    nonisolated init(episode: HFEpisodeRecord) {
         id = episode.id
         seriesID = episode.seriesID
         seasonNumber = episode.seasonNumber
@@ -5634,7 +5634,7 @@ struct HFProductionCatalogSeasonDTO: Codable, Hashable {
         case episodes
     }
 
-    init(season: HFSeasonRecord) {
+    nonisolated init(season: HFSeasonRecord) {
         id = season.id
         seriesID = season.seriesID
         seasonNumber = season.seasonNumber
@@ -5670,7 +5670,7 @@ struct HFProductionCatalogSeriesDTO: Codable, Hashable {
         case seasons
     }
 
-    init(series: HFSeriesRecord) {
+    nonisolated init(series: HFSeriesRecord) {
         id = series.id
         title = series.title
         synopsis = series.synopsis
@@ -5712,7 +5712,7 @@ struct HFProductionCatalogCollectionDTO: Codable, Hashable {
         case movieIDs = "movie_ids"
     }
 
-    init(collection: Category) {
+    nonisolated init(collection: Category) {
         id = collection.id
         title = collection.title
         subtitle = collection.subtitle

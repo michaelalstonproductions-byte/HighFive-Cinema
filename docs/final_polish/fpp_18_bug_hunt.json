@@ -1,0 +1,36 @@
+{
+  "phase": "FPP-18 Bug Hunt",
+  "baselineCommit": "624e438",
+  "baselineTag": "phase-fpp-17-visual-qa",
+  "status": "pass",
+  "visualScore": 95,
+  "initialUniqueWarningCategories": 24,
+  "finalUniqueWarningCategories": 9,
+  "resolvedWarningCategories": [
+    "StoreKit ISO-8601 helper actor isolation",
+    "Production catalog DTO initializer actor isolation",
+    "Mock catalog lookup actor isolation",
+    "Backend HTTP status Equatable actor isolation"
+  ],
+  "remainingWarningCategories": [
+    "AVFoundation media inspection deprecations",
+    "Legacy player audio tap AVFoundation deprecation",
+    "Bottom tab bar UIScreen.main deprecation",
+    "AppIntents metadata extraction note"
+  ],
+  "buildLog": "/private/tmp/highfive-fpp-18-bug-hunt/logs/build-final.log",
+  "screenshotDirectory": "/private/tmp/highfive-fpp-18-bug-hunt/screenshots",
+  "contactSheet": "/private/tmp/highfive-fpp-18-bug-hunt/fpp18_contact_sheet.png",
+  "screenshots": [
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/home.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/search.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/library.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/movie_detail.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/player.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/creator_studio.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/admin_health.png",
+    "/private/tmp/highfive-fpp-18-bug-hunt/screenshots/enterprise_polish.png"
+  ],
+  "blocked": false,
+  "recommendation": "Proceed to FPP-19 TestFlight Candidate"
+}
