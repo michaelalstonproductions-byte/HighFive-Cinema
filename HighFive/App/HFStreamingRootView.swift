@@ -174,6 +174,7 @@ struct HFStreamingRootView: View {
             || arguments.contains("--hf-start-protected-depth-preview")
             || arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-fpp-creator-polish")
+            || arguments.contains("--hf-fpp-enterprise-polish")
             || arguments.contains("--hf-start-creator-publishing")
             || arguments.contains("--hf-start-publishing")
             || arguments.contains("--hf-publishing-queue")
@@ -397,6 +398,7 @@ struct HFStreamingRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-creator-studio")
             || arguments.contains("--hf-fpp-creator-polish")
+            || arguments.contains("--hf-fpp-enterprise-polish")
             || arguments.contains("--hf-start-creator-publishing")
             || arguments.contains("--hf-start-publishing")
             || arguments.contains("--hf-publishing-queue")
@@ -554,6 +556,7 @@ struct HFStreamingRootView: View {
     private static var shouldStartInPlatformAdministration: Bool {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("--hf-start-admin")
+            || arguments.contains("--hf-fpp-enterprise-polish")
             || arguments.contains("--hf-admin-review")
             || arguments.contains("--hf-admin-creators")
             || arguments.contains("--hf-admin-health")
