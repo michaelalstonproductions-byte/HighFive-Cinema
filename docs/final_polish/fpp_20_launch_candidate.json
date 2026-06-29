@@ -1,0 +1,85 @@
+{
+  "phase": "FPP-20",
+  "name": "Launch Candidate",
+  "baseline": {
+    "commit": "d94edcc",
+    "tag": "phase-fpp-19-testflight-candidate"
+  },
+  "status": "passed",
+  "launch_ready_statement": "HIGHFIVE CINEMA LAUNCH READY",
+  "visual_score": 97,
+  "validation": {
+    "lp15_launch_validation": {
+      "result": "passed",
+      "backend_smoke": "227/227",
+      "ios_build": "passed",
+      "required_documents": "5/5",
+      "required_screenshots": "7/7",
+      "summary": "/private/tmp/highfive-fpp-20-launch-candidate/launch_validation/launch_validation_summary.md"
+    },
+    "lp16_public_release_validation": {
+      "result": "passed",
+      "backend_smoke": "227/227",
+      "ios_build": "passed",
+      "public_release_runbook": "present",
+      "summary": "/private/tmp/highfive-fpp-20-launch-candidate/public_release_validation/public_release_validation_summary.md"
+    },
+    "unsigned_device_archive": {
+      "result": "passed",
+      "archive_path": "/Volumes/Scratch SSD/XcodeDerivedData/highfive-fpp-20-launch-candidate/HighFive.xcarchive",
+      "log": "/private/tmp/highfive-fpp-20-launch-candidate/archive.log"
+    }
+  },
+  "app_store_metadata": {
+    "bundle_identifier": "com.higherkey.HighFiveCinemaClean.HighFive",
+    "marketing_version": "1.0",
+    "build_number": "1",
+    "app_icon": "AppIcon",
+    "privacy_manifest": "HighFive/Config/PrivacyInfo.xcprivacy"
+  },
+  "documents": [
+    "docs/launch/APP_STORE_LISTING.md",
+    "docs/launch/SUPPORT_RUNBOOK.md",
+    "docs/launch/TERMS_OF_USE.md",
+    "docs/launch/PRIVACY_NOTICE.md",
+    "docs/launch/PRESS_KIT.md",
+    "docs/launch/PUBLIC_RELEASE_RUNBOOK.md"
+  ],
+  "screenshots": {
+    "lp15_directory": "/private/tmp/highfive-fpp-20-launch-candidate/launch_validation/screenshots",
+    "lp16_directory": "/private/tmp/highfive-fpp-20-launch-candidate/public_release_validation/screenshots",
+    "contact_sheet": "/private/tmp/highfive-fpp-20-launch-candidate/fpp20_launch_contact_sheet.png",
+    "files": [
+      "home.png",
+      "search.png",
+      "library.png",
+      "profile.png",
+      "creator.png",
+      "operations.png",
+      "player.png"
+    ]
+  },
+  "protected_systems": {
+    "depth": "untouched",
+    "motion": "untouched",
+    "playback": "untouched",
+    "layer4": "untouched",
+    "rendering": "untouched",
+    "project_pbxproj": "untouched"
+  },
+  "warnings": [
+    "Existing AVFoundation deprecation warnings remain in media inspection and audio tap paths.",
+    "Existing UIScreen.main deprecation warning remains in HFTabBar.swift.",
+    "AppIntents metadata extraction is skipped because no AppIntents framework dependency exists."
+  ],
+  "manual_app_store_requirements": [
+    "Final legal approval",
+    "Final privacy approval and App Store privacy answers",
+    "Final support URL and marketing URL",
+    "Signed archive export",
+    "App Store Connect metadata and media upload",
+    "App Store Connect submission and release cutover",
+    "Hosted production monitoring review"
+  ],
+  "next_phase": "STOP"
+}
