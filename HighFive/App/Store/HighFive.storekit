@@ -60,36 +60,6 @@
       "type" : "NonConsumable"
     },
     {
-      "displayPrice" : "0.00",
-      "familyShareable" : false,
-      "internalID" : "92CDF2B1",
-      "localizations" : [
-        {
-          "description" : "",
-          "displayName" : "",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "com.highfive.app.unlock",
-      "referenceName" : "HighFive App Unlock",
-      "type" : "NonConsumable"
-    },
-    {
-      "displayPrice" : "9.99",
-      "familyShareable" : false,
-      "internalID" : "9C24CEF5",
-      "localizations" : [
-        {
-          "description" : "",
-          "displayName" : "",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "com.highfive.series.paranormall.season1",
-      "referenceName" : "Paranormall Season 1",
-      "type" : "NonConsumable"
-    },
-    {
       "displayPrice" : "1.99",
       "familyShareable" : false,
       "internalID" : "2C2F2822",
@@ -160,8 +130,23 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.highfive.episode.paranormall.e7",
+      "productID" : "com.highfive.episode.paranormall.e7.v2",
       "referenceName" : "Paranormall Episode 7",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "B74E9A21",
+      "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.highfive.series.paranormall.s1.unlock",
+      "referenceName" : "Paranormall Season 1 Unlock",
       "type" : "NonConsumable"
     }
   ],

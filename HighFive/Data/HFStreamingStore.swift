@@ -4,6 +4,7 @@ import CryptoKit
 import AVFoundation
 import ImageIO
 import SQLite3
+import StoreKit
 
 struct HFLocalViewingProfile: Identifiable, Codable, Equatable {
     let id: String
@@ -5775,6 +5776,8 @@ final class HFStreamingStore: ObservableObject {
     @Published private(set) var monetizationProductRows: [HFMonetizationProductRow] = []
     @Published private(set) var monetizationEntitlementRows: [HFMonetizationEntitlementRow] = []
     @Published private(set) var monetizationAuditRows: [HFMonetizationAuditRow] = []
+    @Published private(set) var verifiedStoreKitProductIDs: Set<String> = []
+    @Published private(set) var storeKitRestoreStatusMessage = "Restore Purchases checks verified App Store entitlements."
     @Published private(set) var remotePlatformOperationsHealthRows: [HFPlatformHealthRecord] = []
     @Published private(set) var remotePlatformOperationsModerationRows: [HFModerationQueueRecord] = []
     @Published private(set) var remotePlatformOperationsAuditRows: [HFAuditTrailRecord] = []
@@ -5812,6 +5815,8 @@ final class HFStreamingStore: ObservableObject {
     private var lastRemotePublishingSessionID: String?
     private var lastRemoteAdminReviewSessionID: String?
     private var lastRemoteUploadSessionID: String?
+    private let storeKitRuntime = HFStoreKitMonetizationRuntime()
+    private var storeKitTransactionUpdatesTask: Task<Void, Never>?
 
     let launchChecklistItems = [
         "Campaign headline reviewed",
@@ -6016,6 +6021,7 @@ final class HFStreamingStore: ObservableObject {
                 }
             }
         }
+        startStoreKitEntitlementMonitoringIfNeeded()
     }
 
     var backendStatus: HFBackendServiceStatus {
@@ -11460,7 +11466,7 @@ final class HFStreamingStore: ObservableObject {
     // hf.services.unifiedStore
     // hf.services.movieCatalog
     var featuredMovie: Movie {
-        movie(id: "friendly") ?? allCatalogMovies[0]
+        movie(id: "paranormall-s1") ?? allCatalogMovies[0]
     }
 
     var continueWatchingMovie: Movie {
@@ -11660,10 +11666,10 @@ final class HFStreamingStore: ObservableObject {
                 monetizationProductRows = localMonetizationProductRows(storeKitProducts: storeKitProducts)
             }
 
-            let developmentTransaction = storeKitRuntime.developmentTransaction(productID: "com.highfive.pass.monthly", userID: activeProfileID)
+            let developmentTransaction = storeKitRuntime.developmentTransaction(productID: HFProductIdentifier.theFriendlyMovie.rawValue, userID: activeProfileID)
             let recorded = try await client.recordStoreKitTransaction(HFRemoteStoreKitTransactionPayload(transaction: developmentTransaction), sessionID: sessionID)
             let graceTransaction = HFRemoteStoreKitTransactionPayload(
-                productID: "com.highfive.pass.annual",
+                productID: HFProductIdentifier.paranormallEpisode(1).rawValue,
                 transactionID: "development-grace-\(activeProfileID)-lp11",
                 originalTransactionID: "development-original-grace-\(activeProfileID)-lp11",
                 environment: "development",
@@ -11711,6 +11717,225 @@ final class HFStreamingStore: ObservableObject {
 
     func restoreMonetizationRuntime() async {
         _ = await runMonetizationEntitlementFixture()
+    }
+
+    @MainActor
+    func startStoreKitEntitlementMonitoringIfNeeded() {
+        guard storeKitTransactionUpdatesTask == nil else { return }
+        storeKitTransactionUpdatesTask = Task { [weak self] in
+            for await result in Transaction.updates {
+                guard !Task.isCancelled else { return }
+                guard case .verified(let transaction) = result else {
+                    continue
+                }
+                await transaction.finish()
+                await self?.refreshStoreKitEntitlements(reason: "Transaction update")
+            }
+        }
+
+        Task { [weak self] in
+            await self?.refreshStoreKitEntitlements(reason: "Launch entitlement refresh")
+        }
+    }
+
+    @MainActor
+    func storeKitProductID(for movie: Movie) -> String {
+        return HFStoreKitAccessMapping.rule(forCurrentMovieID: movie.id).productReference.productIdentifier.rawValue
+    }
+
+    @MainActor
+    func storeKitDisplayPrice(productID: String, fallback: String) -> String {
+        monetizationProductRows.first { $0.productID == productID }?.displayPrice ?? fallback
+    }
+
+    @MainActor
+    private func approvedStoreKitProductIDs(for movie: Movie) -> Set<String> {
+        var productIDs: Set<String> = [storeKitProductID(for: movie)]
+        storeKitEpisodeMappings(for: movie).forEach { mapping in
+            productIDs.insert(mapping.productIdentifier.rawValue)
+        }
+        return productIDs
+    }
+
+    @MainActor
+    func hasVerifiedStoreKitAccess(for movie: Movie) -> Bool {
+        guard movie.isOriginal, !movie.isComingSoon else { return true }
+        let productIDs = approvedStoreKitProductIDs(for: movie)
+        return !productIDs.isDisjoint(with: verifiedStoreKitProductIDs)
+    }
+
+    @MainActor
+    func hasVerifiedStoreKitAccess(productID: String) -> Bool {
+        verifiedStoreKitProductIDs.contains(productID)
+    }
+
+    @MainActor
+    func hasVerifiedStoreKitAccess(for movie: Movie, episodeNumber: Int?) -> Bool {
+        guard movie.isOriginal, !movie.isComingSoon else { return true }
+        guard movie.id == "paranormall-s1", let episodeNumber else {
+            return hasVerifiedStoreKitAccess(for: movie)
+        }
+
+        let episodeProductID = HFProductIdentifier.paranormallEpisode(episodeNumber).rawValue
+        let seasonProductID = HFProductIdentifier.paranormallSeasonOneUnlock.rawValue
+        return verifiedStoreKitProductIDs.contains(episodeProductID)
+            || verifiedStoreKitProductIDs.contains(seasonProductID)
+    }
+
+    @MainActor
+    @discardableResult
+    func refreshStoreKitEntitlements(reason: String) async -> Set<String> {
+        let entitlements = await storeKitRuntime.currentEntitlements()
+        applyStoreKitEntitlements(entitlements, restoreState: entitlements.isEmpty ? "No purchases found" : "Active entitlements", detail: reason)
+        return verifiedStoreKitProductIDs
+    }
+
+    @MainActor
+    func purchaseStoreKitAccess(for movie: Movie) async -> String {
+        let productID = storeKitProductID(for: movie)
+        return await purchaseStoreKitAccess(productID: productID)
+    }
+
+    @MainActor
+    func purchaseStoreKitAccess(productID: String) async -> String {
+        monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+            state: .purchasePending,
+            storeKitStatus: "Purchase Pending",
+            backendStatus: "App Store",
+            entitlementStatus: "Checking",
+            productCount: monetizationProductRows.count,
+            activeEntitlementCount: verifiedStoreKitProductIDs.count,
+            transactionCount: monetizationEntitlementRows.count,
+            restoreState: storeKitRestoreStatusMessage,
+            detail: "Requesting StoreKit purchase for \(productID).",
+            lastError: nil,
+            updatedAtLabel: timestampLabel()
+        )
+
+        do {
+            let transaction = try await storeKitRuntime.purchase(productID: productID, appAccountToken: UUID(uuidString: activeProfileID))
+            await refreshStoreKitEntitlements(reason: "Purchase completed")
+            storeKitRestoreStatusMessage = "Purchase complete."
+            monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+                state: .purchaseRecorded,
+                storeKitStatus: "StoreKit Ready",
+                backendStatus: "App Store",
+                entitlementStatus: "Verified",
+                productCount: monetizationProductRows.count,
+                activeEntitlementCount: verifiedStoreKitProductIDs.count,
+                transactionCount: monetizationEntitlementRows.count,
+                restoreState: storeKitRestoreStatusMessage,
+                detail: "Verified StoreKit transaction \(transaction.transactionID) for \(transaction.productID).",
+                lastError: nil,
+                updatedAtLabel: timestampLabel()
+            )
+            return "Purchase complete. Access is active."
+        } catch HFStoreKitMonetizationError.purchaseCancelled {
+            storeKitRestoreStatusMessage = "Purchase cancelled."
+            await refreshStoreKitEntitlements(reason: "Purchase cancelled")
+            return "Purchase cancelled."
+        } catch HFStoreKitMonetizationError.purchasePending {
+            storeKitRestoreStatusMessage = "Purchase pending."
+            return "Purchase pending. Access will update when Apple approves it."
+        } catch {
+            storeKitRestoreStatusMessage = "Purchase failed."
+            let failureDetail = error.localizedDescription
+            monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+                state: .failed,
+                storeKitStatus: "StoreKit Error",
+                backendStatus: "App Store",
+                entitlementStatus: "Not Unlocked",
+                productCount: monetizationProductRows.count,
+                activeEntitlementCount: verifiedStoreKitProductIDs.count,
+                transactionCount: monetizationEntitlementRows.count,
+                restoreState: storeKitRestoreStatusMessage,
+                detail: "StoreKit purchase failed for \(productID).",
+                lastError: failureDetail,
+                updatedAtLabel: timestampLabel()
+            )
+            return "Purchase failed: \(failureDetail)"
+        }
+    }
+
+    @MainActor
+    func restoreStoreKitPurchases() async -> String {
+        do {
+            let entitlements = try await storeKitRuntime.restoreEntitlements()
+            if entitlements.isEmpty {
+                applyStoreKitEntitlements([], restoreState: "No purchases found", detail: "AppStore.sync completed with no current entitlements.")
+                return "No purchases found."
+            }
+            applyStoreKitEntitlements(entitlements, restoreState: "Restored successfully", detail: "AppStore.sync completed and verified entitlements were refreshed.")
+            return "Restored successfully."
+        } catch StoreKitError.userCancelled {
+            storeKitRestoreStatusMessage = "Restore cancelled."
+            await refreshStoreKitEntitlements(reason: "Restore cancelled")
+            return "Restore cancelled."
+        } catch {
+            storeKitRestoreStatusMessage = "Restore failed."
+            monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+                state: .failed,
+                storeKitStatus: "StoreKit Error",
+                backendStatus: "App Store",
+                entitlementStatus: "Not Unlocked",
+                productCount: monetizationProductRows.count,
+                activeEntitlementCount: verifiedStoreKitProductIDs.count,
+                transactionCount: monetizationEntitlementRows.count,
+                restoreState: storeKitRestoreStatusMessage,
+                detail: "Restore Purchases failed.",
+                lastError: error.localizedDescription,
+                updatedAtLabel: timestampLabel()
+            )
+            return "Restore failed, please try again."
+        }
+    }
+
+    @MainActor
+    private func applyStoreKitEntitlements(_ entitlements: [HFStoreKitRuntimeEntitlement], restoreState: String, detail: String) {
+        let active = entitlements.filter { $0.status.localizedCaseInsensitiveContains("active") }
+        verifiedStoreKitProductIDs = Set(active.map(\.productID))
+        storeKitRestoreStatusMessage = restoreState
+        monetizationEntitlementRows = active.map { entitlement in
+            HFMonetizationEntitlementRow(
+                id: entitlement.id,
+                productID: entitlement.productID,
+                scope: "title",
+                status: entitlement.status.capitalized,
+                source: entitlement.source,
+                transactionID: entitlement.transactionID,
+                expiresAt: entitlement.expiresAt,
+                gracePeriodExpiresAt: nil,
+                billingRetry: false,
+                familyShared: false,
+                subscriptionManagementLink: nil
+            )
+        }
+        monetizationRuntimeSnapshot = HFMonetizationRuntimeSnapshot(
+            state: active.isEmpty ? .ready : .restored,
+            storeKitStatus: "StoreKit Ready",
+            backendStatus: "App Store",
+            entitlementStatus: active.isEmpty ? "No Active Entitlements" : "Verified",
+            productCount: max(monetizationProductRows.count, HFStoreKitPaywallCatalog.mappings.count),
+            activeEntitlementCount: active.count,
+            transactionCount: active.count,
+            restoreState: restoreState,
+            detail: detail,
+            lastError: nil,
+            updatedAtLabel: timestampLabel()
+        )
+        entitlementRuntimeStatus = HFEntitlementRuntimeStatus(
+            accessState: active.isEmpty ? .paymentProviderNotConnected : .accessReady,
+            restoreState: .validationRequired,
+            purchaseEligibility: HFPurchaseEligibility(
+                isEligible: true,
+                statusLabel: "StoreKit 2 Ready",
+                detail: active.isEmpty ? "No verified StoreKit entitlement is active." : "\(active.count) verified StoreKit entitlement(s) active."
+            ),
+            paymentProvider: .storeKit,
+            entitlementProvider: active.isEmpty ? .notConnected : .backendValidated,
+            boundary: .pricing,
+            detail: "StoreKit current entitlements are read locally; official playback unlocks only verified product IDs."
+        )
     }
 
     @MainActor
@@ -11937,7 +12162,7 @@ final class HFStreamingStore: ObservableObject {
                 kind: mapping.kind.rawValue,
                 displayPrice: mapping.displayPrice,
                 entitlementScope: mapping.currentMovieID,
-                subscriptionManagementLink: mapping.kind == .appUnlock ? "app-store-subscription-management" : nil,
+                subscriptionManagementLink: nil,
                 detail: mapping.detail
             )
         }
@@ -14531,10 +14756,7 @@ final class HFStreamingStore: ObservableObject {
         "\(base).\(profileID)"
     }
 
-    private static let localPreviewStreamingIDs: Set<String> = [
-        "friendly",
-        "paranormall-s1"
-    ]
+    private static let localPreviewStreamingIDs: Set<String> = []
 
     private static func loadProfileIDs(defaults: UserDefaults, scopedKey: String, fallbackKey: String, fallbackIDs: Set<String>) -> Set<String> {
         if let scoped = defaults.stringArray(forKey: scopedKey) {

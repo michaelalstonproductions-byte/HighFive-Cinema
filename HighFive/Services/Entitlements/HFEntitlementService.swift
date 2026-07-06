@@ -4,20 +4,27 @@ struct HFProductIdentifier: Codable, Hashable, Equatable {
     let rawValue: String
 
     static let localPreview = HFProductIdentifier(rawValue: "local-preview-access")
-    static let appUnlock = HFProductIdentifier(rawValue: "com.highfive.app.unlock")
     static let theFriendlyMovie = HFProductIdentifier(rawValue: "com.highfive.movie.thefriendly")
-    static let paranormallSeasonOne = HFProductIdentifier(rawValue: "com.highfive.series.paranormall.season1")
+    static let paranormallSeasonOneUnlock = HFProductIdentifier(rawValue: "com.highfive.series.paranormall.s1.unlock")
 
     static func paranormallEpisode(_ episodeNumber: Int) -> HFProductIdentifier {
-        HFProductIdentifier(rawValue: "com.highfive.episode.paranormall.e\(episodeNumber)")
+        if episodeNumber == 7 {
+            return HFProductIdentifier(rawValue: "com.highfive.episode.paranormall.e7.v2")
+        }
+        return HFProductIdentifier(rawValue: "com.highfive.episode.paranormall.e\(episodeNumber)")
     }
 }
 
 enum HFStoreKitProductKind: String, Codable, Equatable {
-    case appUnlock
     case movie
     case season
     case episode
+}
+
+enum HFPurchaseDisplayPrice {
+    static let friendly = "$4.99"
+    static let paranormallEpisode = "$1.99"
+    static let paranormallSeasonOne = "$9.99"
 }
 
 struct HFStoreKitProductMapping: Identifiable, Codable, Equatable {
@@ -205,8 +212,8 @@ enum HFStoreKitAccessMapping {
             title: "Paranormall Season 1",
             productReference: HFStoreKitProductReference(
                 id: "paranormall-season-product",
-                productIdentifier: .paranormallSeasonOne,
-                referenceName: "Paranormall Season 1",
+                productIdentifier: .paranormallSeasonOneUnlock,
+                referenceName: "Paranormall Season 1 Unlock",
                 displayPrice: "$9.99",
                 readiness: .mappedFromSource
             ),
@@ -214,7 +221,7 @@ enum HFStoreKitAccessMapping {
             paywallReadiness: .paymentProviderNotConnected,
             playbackAccessDecision: .cloudflarePlaybackRequiresBackendDescriptor,
             cloudflareReference: .descriptorRequired,
-            detail: "Paranormall Season 1 maps to the older paranormall_s1 StoreKit season product. Episode products are mapped as source metadata only."
+            detail: "Paranormall supports individual episode purchases and the approved Season 1 full-series unlock."
         )
     ]
 
@@ -241,16 +248,6 @@ enum HFStoreKitPaywallCatalog {
 
     static let mappings: [HFStoreKitProductMapping] = [
         HFStoreKitProductMapping(
-            id: "app-unlock",
-            currentMovieID: "app",
-            sourceMovieID: "app",
-            productIdentifier: .appUnlock,
-            referenceName: "HighFive App Unlock",
-            displayPrice: "$0.00",
-            kind: .appUnlock,
-            detail: "Imported from the older app unlock paywall source as catalog metadata only."
-        ),
-        HFStoreKitProductMapping(
             id: "friendly",
             currentMovieID: "friendly",
             sourceMovieID: "the_friendly",
@@ -261,14 +258,14 @@ enum HFStoreKitPaywallCatalog {
             detail: "Current movie ID friendly maps to old movie ID the_friendly."
         ),
         HFStoreKitProductMapping(
-            id: "paranormall-s1",
+            id: "paranormall-s1-season",
             currentMovieID: "paranormall-s1",
             sourceMovieID: "paranormall_s1",
-            productIdentifier: .paranormallSeasonOne,
-            referenceName: "Paranormall Season 1",
+            productIdentifier: .paranormallSeasonOneUnlock,
+            referenceName: "Paranormall Season 1 Unlock",
             displayPrice: "$9.99",
             kind: .season,
-            detail: "Current movie ID paranormall-s1 maps to old season ID paranormall_s1."
+            detail: "Full Season 1 purchase unlocks all Paranormall episodes."
         )
     ] + (1...7).map { episodeNumber in
         HFStoreKitProductMapping(

@@ -73,10 +73,15 @@ enum HFStoreKitMonetizationError: Error, LocalizedError {
 
 struct HFStoreKitMonetizationRuntime {
     static let productIDs = [
-        "com.highfive.pass.monthly",
-        "com.highfive.pass.annual",
         "com.highfive.movie.thefriendly",
-        "com.highfive.series.paranormall.season1"
+        "com.highfive.episode.paranormall.e1",
+        "com.highfive.episode.paranormall.e2",
+        "com.highfive.episode.paranormall.e3",
+        "com.highfive.episode.paranormall.e4",
+        "com.highfive.episode.paranormall.e5",
+        "com.highfive.episode.paranormall.e6",
+        "com.highfive.episode.paranormall.e7.v2",
+        "com.highfive.series.paranormall.s1.unlock"
     ]
 
     func loadProducts() async -> ([HFStoreKitRuntimeProduct], HFStoreKitRuntimeSnapshot) {
