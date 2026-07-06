@@ -1,0 +1,83 @@
+{
+  "version": "2026-07-03",
+  "titles": [
+    {
+      "id": "friendly",
+      "title": "The Friendly",
+      "type": "movie",
+      "storeKitProductID": "com.highfive.movie.thefriendly",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/faf28e751e7ee0cfd099dc557323b300/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_the_friendly_30s"
+    },
+    {
+      "id": "paranormall-s1-e1",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 1",
+      "type": "episode",
+      "episodeNumber": 1,
+      "storeKitProductID": "com.highfive.episode.paranormall.e1",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/661383db2016e5cfa8f691ba38510b86/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    },
+    {
+      "id": "paranormall-s1-e2",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 2",
+      "type": "episode",
+      "episodeNumber": 2,
+      "storeKitProductID": "com.highfive.episode.paranormall.e2",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/654db9ffbfef5f0e8f0d3191cdafd687/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    },
+    {
+      "id": "paranormall-s1-e3",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 3",
+      "type": "episode",
+      "episodeNumber": 3,
+      "storeKitProductID": "com.highfive.episode.paranormall.e3",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/96794bf63d4bd79886fd8a34d632a254/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    },
+    {
+      "id": "paranormall-s1-e4",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 4",
+      "type": "episode",
+      "episodeNumber": 4,
+      "storeKitProductID": "com.highfive.episode.paranormall.e4",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/0c9e23f0638621902b854a20106dfa48/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    },
+    {
+      "id": "paranormall-s1-e5",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 5",
+      "type": "episode",
+      "episodeNumber": 5,
+      "storeKitProductID": "com.highfive.episode.paranormall.e5",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/91cc77416edc4790bbe489445008db9c/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    },
+    {
+      "id": "paranormall-s1-e6",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 6",
+      "type": "episode",
+      "episodeNumber": 6,
+      "storeKitProductID": "com.highfive.episode.paranormall.e6",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/e5b253fbdac5295d2a2231fb9ae0765a/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    },
+    {
+      "id": "paranormall-s1-e7",
+      "seriesID": "paranormall-s1",
+      "title": "Paranormall Episode 7",
+      "type": "episode",
+      "episodeNumber": 7,
+      "storeKitProductID": "com.highfive.episode.paranormall.e7.v2",
+      "fullStreamURL": "https://customer-fa80m3mbm9ndqz54.cloudflarestream.com/8970fa16ca11214a19e8d2610dde4809/manifest/video.m3u8",
+      "trailerPreviewResource": "preview_paranormall_e1_30s"
+    }
+  ]
+}
