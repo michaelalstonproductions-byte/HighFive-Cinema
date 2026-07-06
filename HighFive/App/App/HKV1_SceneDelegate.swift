@@ -12,8 +12,19 @@ final class HKV1_SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
+        #if DEBUG
+        HFSimulatorQABootstrap.prepareIfNeeded()
+        #endif
+
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UIHostingController(rootView: HFStreamingRootView())
+        window.backgroundColor = .black
+
+        let rootView = HFLaunchReadyGate {
+            HFStreamingRootView()
+        }
+        let hostingController = UIHostingController(rootView: rootView)
+        hostingController.view.backgroundColor = .black
+        window.rootViewController = hostingController
         window.makeKeyAndVisible()
         self.window = window
     }

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="launch-view-controller">
+    <device id="retina6_12" orientation="portrait" appearance="dark"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="launch-scene">
+            <objects>
+                <viewController id="launch-view-controller" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="launch-root-view">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="launch-brand-panel">
+                                <rect key="frame" x="44" y="323" width="305" height="206"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="launch-mark-frame">
+                                        <rect key="frame" x="107.66666666666669" y="18" width="90" height="90"/>
+                                        <subviews>
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="launch-mark-core">
+                                                <rect key="frame" x="4" y="4" width="82" height="82"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="H5" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.7" translatesAutoresizingMaskIntoConstraints="NO" id="launch-monogram">
+                                                        <rect key="frame" x="13" y="21" width="56" height="41"/>
+                                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="34"/>
+                                                        <color key="textColor" red="1" green="0.9137254901960784" blue="0.24705882352941178" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                </subviews>
+                                                <color key="backgroundColor" red="0.018000000000000002" green="0.014" blue="0.010000000000000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                <constraints>
+                                                    <constraint firstItem="launch-monogram" firstAttribute="centerX" secondItem="launch-mark-core" secondAttribute="centerX" id="launch-monogram-center-x"/>
+                                                    <constraint firstItem="launch-monogram" firstAttribute="centerY" secondItem="launch-mark-core" secondAttribute="centerY" id="launch-monogram-center-y"/>
+                                                    <constraint firstItem="launch-monogram" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="launch-mark-core" secondAttribute="leading" constant="8" id="launch-monogram-min-leading"/>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="launch-monogram" secondAttribute="trailing" constant="8" id="launch-monogram-min-trailing"/>
+                                                </constraints>
+                                            </view>
+                                        </subviews>
+                                        <color key="backgroundColor" red="1" green="0.64313725490196083" blue="0.19607843137254902" alpha="0.92" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <constraints>
+                                            <constraint firstItem="launch-mark-core" firstAttribute="top" secondItem="launch-mark-frame" secondAttribute="top" constant="4" id="launch-mark-core-top"/>
+                                            <constraint firstItem="launch-mark-core" firstAttribute="leading" secondItem="launch-mark-frame" secondAttribute="leading" constant="4" id="launch-mark-core-leading"/>
+                                            <constraint firstAttribute="trailing" secondItem="launch-mark-core" secondAttribute="trailing" constant="4" id="launch-mark-core-trailing"/>
+                                            <constraint firstAttribute="bottom" secondItem="launch-mark-core" secondAttribute="bottom" constant="4" id="launch-mark-core-bottom"/>
+                                            <constraint firstAttribute="height" constant="90" id="launch-mark-height"/>
+                                            <constraint firstAttribute="width" constant="90" id="launch-mark-width"/>
+                                        </constraints>
+                                    </view>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="HIGHFIVE" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.7" translatesAutoresizingMaskIntoConstraints="NO" id="launch-title">
+                                        <rect key="frame" x="20" y="120" width="265" height="29"/>
+                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
+                                        <color key="textColor" red="1" green="0.9137254901960784" blue="0.24705882352941178" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="CINEMA" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.7" translatesAutoresizingMaskIntoConstraints="NO" id="launch-subtitle">
+                                        <rect key="frame" x="20" y="153" width="265" height="19"/>
+                                        <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="14"/>
+                                        <color key="textColor" white="0.92" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="launch-gold-line">
+                                        <rect key="frame" x="92.666666666666686" y="188" width="120" height="2"/>
+                                        <color key="backgroundColor" red="1" green="0.64313725490196083" blue="0.19607843137254902" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="launch-line-height"/>
+                                            <constraint firstAttribute="width" constant="120" id="launch-line-width"/>
+                                        </constraints>
+                                    </view>
+                                </subviews>
+                                <color key="backgroundColor" red="0.047058823529411764" green="0.035294117647058823" blue="0.019607843137254902" alpha="0.72" colorSpace="custom" customColorSpace="sRGB"/>
+                                <constraints>
+                                    <constraint firstItem="launch-mark-frame" firstAttribute="top" secondItem="launch-brand-panel" secondAttribute="top" constant="18" id="launch-mark-top"/>
+                                    <constraint firstItem="launch-mark-frame" firstAttribute="centerX" secondItem="launch-brand-panel" secondAttribute="centerX" id="launch-mark-center-x"/>
+                                    <constraint firstItem="launch-title" firstAttribute="top" secondItem="launch-mark-frame" secondAttribute="bottom" constant="12" id="launch-title-top"/>
+                                    <constraint firstItem="launch-title" firstAttribute="leading" secondItem="launch-brand-panel" secondAttribute="leading" constant="20" id="launch-title-leading"/>
+                                    <constraint firstAttribute="trailing" secondItem="launch-title" secondAttribute="trailing" constant="20" id="launch-title-trailing"/>
+                                    <constraint firstItem="launch-subtitle" firstAttribute="top" secondItem="launch-title" secondAttribute="bottom" constant="4" id="launch-subtitle-top"/>
+                                    <constraint firstItem="launch-subtitle" firstAttribute="leading" secondItem="launch-brand-panel" secondAttribute="leading" constant="20" id="launch-subtitle-leading"/>
+                                    <constraint firstAttribute="trailing" secondItem="launch-subtitle" secondAttribute="trailing" constant="20" id="launch-subtitle-trailing"/>
+                                    <constraint firstItem="launch-gold-line" firstAttribute="top" secondItem="launch-subtitle" secondAttribute="bottom" constant="16" id="launch-line-top"/>
+                                    <constraint firstItem="launch-gold-line" firstAttribute="centerX" secondItem="launch-brand-panel" secondAttribute="centerX" id="launch-line-center"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="launch-safe-area"/>
+                        <color key="backgroundColor" red="0.006" green="0.006" blue="0.006" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="launch-brand-panel" firstAttribute="centerX" secondItem="launch-root-view" secondAttribute="centerX" id="launch-panel-center-x"/>
+                            <constraint firstItem="launch-brand-panel" firstAttribute="centerY" secondItem="launch-root-view" secondAttribute="centerY" id="launch-panel-center-y"/>
+                            <constraint firstItem="launch-brand-panel" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="launch-safe-area" secondAttribute="leading" constant="28" id="launch-panel-min-leading"/>
+                            <constraint firstItem="launch-safe-area" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="launch-brand-panel" secondAttribute="trailing" constant="28" id="launch-panel-min-trailing"/>
+                            <constraint firstItem="launch-brand-panel" firstAttribute="width" relation="lessThanOrEqual" secondItem="launch-root-view" secondAttribute="width" multiplier="0.78" id="launch-panel-max-width"/>
+                            <constraint firstItem="launch-brand-panel" firstAttribute="height" constant="206" id="launch-panel-height"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="launch-first-responder" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="52" y="375"/>
+        </scene>
+    </scenes>
+</document>

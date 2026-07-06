@@ -73,7 +73,13 @@ struct HFStreamingRootView: View {
     @State private var selectedProfile = HFMockData.userProfiles[0]
     @State private var searchMode: HFSearchHubMode = Self.initialSearchMode
     @State private var hasCompletedLaunchIntro = Self.shouldSkipLaunchIntro
+    @State private var showsProtectedDepthPreview = false
     @AppStorage("hf.hasCompletedCinematicOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hf.hasSeenControlPanelWalkthrough") private var hasSeenControlPanelWalkthrough = false
+    @AppStorage(HFLegalDocuments.acceptedTermsVersionKey) private var acceptedTermsVersion = ""
+    @AppStorage(HFLegalDocuments.acceptedPrivacyVersionKey) private var acceptedPrivacyVersion = ""
+    @AppStorage(HFLegalDocuments.acceptedTermsDateKey) private var acceptedTermsDate = ""
+    @AppStorage(HFLegalDocuments.hasAcceptedTermsKey) private var hasAcceptedTerms = false
     @StateObject private var streamingStore = HFStreamingStore()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -812,30 +818,43 @@ struct HFStreamingRootView: View {
     }
 
     private static var qaMovieDetailMovie: Movie {
-        HFMockData.movie("friendly") ?? HFMockData.movies[0]
+        let arguments = CommandLine.arguments
+        if arguments.contains("--hf-start-player-paranormall") {
+            return HFMockData.movie("paranormall-s1") ?? HFMockData.movies[0]
+        }
+        if arguments.contains("--hf-start-player-friendly") {
+            return HFMockData.movie("friendly") ?? HFMockData.movies[0]
+        }
+        return HFMockData.movie("friendly") ?? HFMockData.movies[0]
     }
 
     var body: some View {
         Group {
             if shouldShowStreamingShell {
-                if Self.shouldStartInHighFiveOS {
-                    qaHighFiveOSView
-                } else if Self.shouldStartInProtectedDepthPreview {
-                    HighFiveProtectedSpatialPeekBridge()
-                } else if Self.shouldStartInPlayer {
-                    qaPlayerView
-                } else if Self.shouldStartInBackendStatus {
-                    qaBackendStatusView
-                } else if Self.shouldStartInCreatorStudio {
-                    qaCreatorStudioView
-                } else if Self.shouldStartInConnect {
-                    qaConnectView
-                } else if Self.shouldStartInCreatorProfile {
-                    qaCreatorProfileView
-                } else if Self.shouldStartInMovieDetail {
-                    qaMovieDetailView
+                if hasAcceptedCurrentLegal {
+                    if Self.shouldStartInHighFiveOS {
+                        qaHighFiveOSView
+                    } else if Self.shouldStartInProtectedDepthPreview {
+                        HighFiveProtectedSpatialPeekBridge()
+                    } else if Self.shouldStartInPlayer {
+                        qaPlayerView
+                    } else if Self.shouldStartInBackendStatus {
+                        qaBackendStatusView
+                    } else if Self.shouldStartInCreatorStudio {
+                        qaCreatorStudioView
+                    } else if Self.shouldStartInConnect {
+                        qaConnectView
+                    } else if Self.shouldStartInCreatorProfile {
+                        qaCreatorProfileView
+                    } else if Self.shouldStartInMovieDetail {
+                        qaMovieDetailView
+                    } else {
+                        streamingShell
+                    }
                 } else {
-                    streamingShell
+                    HFTermsAgreementView {
+                        acceptLegalAndEnter()
+                    }
                 }
             } else {
                 HighFiveIntroFlowView(
@@ -848,8 +867,12 @@ struct HFStreamingRootView: View {
         }
         .tint(HFColors.gold)
         .preferredColorScheme(.dark)
+        .background(HFColors.background.ignoresSafeArea())
         .environmentObject(streamingStore)
         .hfDynamicTypeGuard()
+        .sheet(isPresented: $showsProtectedDepthPreview) {
+            HighFiveProtectedSpatialPeekBridge()
+        }
         .onAppear {
             if Self.shouldResetLaunchIntro {
                 hasCompletedOnboarding = false
@@ -860,12 +883,22 @@ struct HFStreamingRootView: View {
             }
         }
         .task {
+            guard Self.shouldStartInBackendStatus || ProcessInfo.processInfo.arguments.contains("--hf-refresh-backend-runtime") else {
+                return
+            }
+            try? await Task.sleep(nanoseconds: 750_000_000)
             await streamingStore.refreshBackendRuntimeStatus()
         }
     }
 
     private var shouldShowStreamingShell: Bool {
-        hasCompletedLaunchIntro || (hasCompletedOnboarding && !Self.shouldResetLaunchIntro && !Self.shouldForceLaunchIntro)
+        hasCompletedLaunchIntro && !Self.shouldForceLaunchIntro
+    }
+
+    private var hasAcceptedCurrentLegal: Bool {
+        hasAcceptedTerms &&
+            acceptedTermsVersion == HFLegalDocuments.currentTermsVersion &&
+            acceptedPrivacyVersion == HFLegalDocuments.currentPrivacyVersion
     }
 
     private func completeLaunchIntro() {
@@ -873,6 +906,17 @@ struct HFStreamingRootView: View {
             hasCompletedLaunchIntro = true
             hasCompletedOnboarding = true
         }
+        if !hasSeenControlPanelWalkthrough {
+            hasSeenControlPanelWalkthrough = true
+        }
+    }
+
+    private func acceptLegalAndEnter() {
+        HFLegalDocuments.recordCurrentAcceptance()
+        hasAcceptedTerms = true
+        acceptedTermsVersion = HFLegalDocuments.currentTermsVersion
+        acceptedPrivacyVersion = HFLegalDocuments.currentPrivacyVersion
+        acceptedTermsDate = UserDefaults.standard.string(forKey: HFLegalDocuments.acceptedTermsDateKey) ?? acceptedTermsDate
     }
 
     private func selectTab(_ tab: HFStreamingTab) {
@@ -1004,6 +1048,7 @@ struct HFStreamingRootView: View {
                         .accessibilityIdentifier("hf.tabs.locked")
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             }
             .navigationDestination(for: Movie.self) { movie in
                 MovieDetailView(movie: movie)
