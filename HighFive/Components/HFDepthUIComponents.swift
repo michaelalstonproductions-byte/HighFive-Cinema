@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMotion
+import Combine
 
 struct DepthMotionValues: Equatable {
     var x: CGFloat
