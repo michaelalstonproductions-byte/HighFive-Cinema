@@ -106,31 +106,13 @@ struct MyListView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
-                header
-                if shouldRunViewerRuntime {
-                    viewerLibraryRuntimeSurface
-                }
-                if showsLibraryPolishAudit {
-                    libraryPolishAuditSurface
-                }
+                figmaLibraryHeader
                 if savedMovies.isEmpty {
-                    emptyVault
+                    figmaLibraryEmpty
                 } else {
-                    vaultWorld
-                    premiumVaultStats
-                    personalLibrarySystem
-                    if usesFallbackLayout {
-                        libraryShelfControl
-                    }
-                    if !shouldRunViewerRuntime {
-                        viewerLibraryRuntimeSurface
-                    }
-                    libraryActivitySurface
-                    libraryCollectionsSurface
-                    libraryIntelligenceSurface
-                    savedForTonightShelf
-                    watchShelf
-                    additionalSavedTitles
+                    figmaContinueCard
+                    figmaLibraryFilterRow
+                    figmaLibraryGrid
                 }
             }
             .padding(.top, HFSpacing.screenTop)
@@ -157,6 +139,116 @@ struct MyListView: View {
         .accessibilityIdentifier("hf.streaming.premium.libraryVault")
         .accessibilityIdentifier("hf.consumer.library.root")
         .accessibilityIdentifier("hf.library.screen")
+    }
+
+    private var figmaLibraryHeader: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text("Library")
+                .font(.system(size: 36, weight: .black))
+                .foregroundStyle(.white)
+            Text("Your saved titles and continue watching.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    @ViewBuilder
+    private var figmaContinueCard: some View {
+        if let selectedMovie {
+            NavigationLink(value: selectedMovie) {
+                HStack(spacing: HFSpacing.md) {
+                    HFPosterCard(movie: selectedMovie, width: 112, showTitle: false, showProgress: selectedMovie.progress != nil, posterOnly: true)
+
+                    VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                        Text(selectedMovie.progress == nil ? "Saved" : "Continue Watching")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.gold)
+                        Text(selectedMovie.title)
+                            .font(.system(size: 30, weight: .black))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.64)
+                        Text(selectedMovie.subtitle)
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+
+                        Label(selectedMovie.progress == nil ? "Open Movie" : "Resume", systemImage: "play.fill")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(width: 154, height: 42)
+                            .background(HFColors.goldGradient)
+                            .clipShape(Capsule())
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(HFSpacing.md)
+                .background(Color.white.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var figmaLibraryFilterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: HFSpacing.xs) {
+                ForEach(filters.prefix(4), id: \.self) { filter in
+                    HFFilterChip(title: filter, isSelected: selectedFilter == filter) {
+                        selectedFilter = filter
+                    }
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+    }
+
+    private var figmaLibraryGrid: some View {
+        let gridColumns = [
+            GridItem(.flexible(), spacing: HFSpacing.md),
+            GridItem(.flexible(), spacing: HFSpacing.md),
+            GridItem(.flexible(), spacing: HFSpacing.md)
+        ]
+
+        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text(selectedFilter)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(.white)
+
+            LazyVGrid(columns: gridColumns, spacing: HFSpacing.md) {
+                ForEach(visibleMovies.prefix(18)) { movie in
+                    NavigationLink(value: movie) {
+                        HFPosterCard(movie: movie, width: 112, showTitle: false, posterOnly: true)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.rsf02.library.grid")
+    }
+
+    private var figmaLibraryEmpty: some View {
+        VStack(spacing: HFSpacing.md) {
+            Image(systemName: "bookmark")
+                .font(.system(size: 54, weight: .bold))
+                .foregroundStyle(HFColors.textSecondary)
+            Text("Your Library Is Empty")
+                .font(.system(size: 26, weight: .black))
+                .foregroundStyle(.white)
+            Text("Save a movie to build your list.")
+                .font(HFTypography.body)
+                .foregroundStyle(HFColors.textSecondary)
+            HFButton("Browse Movies", systemImage: "magnifyingglass", style: .primary) {
+                onBrowseDiscover?()
+            }
+            .frame(maxWidth: 240)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .padding(.top, HFSpacing.xxl)
     }
 
     private var header: some View {

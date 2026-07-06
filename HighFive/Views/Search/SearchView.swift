@@ -232,22 +232,13 @@ struct SearchView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
-                header
-                if shouldRunDiscoveryService {
-                    discoveryServiceRuntimeSurface
-                }
-                if showsSearchPolishAudit {
-                    searchPolishAuditSurface
-                }
+                figmaSearchHeader
                 if forcesEmptyState {
                     emptyState
                 } else {
-                    discoveryWorld
+                    figmaSearchControls
+                    figmaPosterGrid
                 }
-                premiumDiscoveryCollections
-                creatorProfilesSection
-                recommendationLayer
-                resultsSection
             }
             .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
@@ -275,6 +266,61 @@ struct SearchView: View {
         .accessibilityIdentifier("hf.streaming.premium.discovery")
         .accessibilityIdentifier("hf.consumer.search.root")
         .accessibilityIdentifier("hf.search.screen")
+    }
+
+    private var figmaSearchHeader: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Search")
+                    .font(.system(size: 36, weight: .black))
+                    .foregroundStyle(.white)
+                Text("Find movies, originals, and saved titles.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var figmaSearchControls: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSearchBar(text: $query, placeholder: "Search your HighFive library")
+                .onSubmit { streamingStore.addRecentSearch(query) }
+
+            filterRow
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var figmaPosterGrid: some View {
+        let gridColumns = [
+            GridItem(.flexible(), spacing: HFSpacing.md),
+            GridItem(.flexible(), spacing: HFSpacing.md),
+            GridItem(.flexible(), spacing: HFSpacing.md)
+        ]
+
+        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text(query.isEmpty ? selectedFilter : "Results")
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(.white)
+
+            LazyVGrid(columns: gridColumns, spacing: HFSpacing.md) {
+                ForEach(results.prefix(18)) { movie in
+                    NavigationLink(value: movie) {
+                        HFPosterCard(movie: movie, width: 112, showTitle: false, posterOnly: true)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.rsf02.search.posterGrid")
     }
 
     private var header: some View {

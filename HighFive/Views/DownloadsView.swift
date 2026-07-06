@@ -44,24 +44,8 @@ struct DownloadsView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
-                header
-                if shouldRunOfflineRuntime {
-                    viewerOfflineRuntimeSurface
-                }
-                capsuleWorld
-                if forcesEmptyState {
-                    compactNotice("No local offline preview titles yet. Browse HighFive to mark stories for nearby viewing.")
-                }
-                premiumCapsuleStats
-                if !shouldRunOfflineRuntime {
-                    viewerOfflineRuntimeSurface
-                }
-                localOfflineShelf
-                if downloads.isEmpty {
-                    emptyShelf
-                } else {
-                    secondaryTitles
-                }
+                figmaDownloadsHeader
+                figmaDownloadsEmpty
             }
             .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
@@ -87,6 +71,66 @@ struct DownloadsView: View {
         .accessibilityIdentifier("hf.streaming.premium.downloadsCapsule")
         .accessibilityIdentifier("hf.consumer.downloads.root")
         .accessibilityIdentifier("hf.downloads.screen")
+    }
+
+    private var figmaDownloadsHeader: some View {
+        HStack(alignment: .center) {
+            Text("Downloads")
+                .font(.system(size: 36, weight: .black))
+                .foregroundStyle(.white)
+            Spacer()
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var figmaDownloadsEmpty: some View {
+        VStack(spacing: HFSpacing.xl) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.08))
+                    .frame(width: 238, height: 238)
+
+                HStack(spacing: -34) {
+                    ForEach(Array(streamingStore.catalogRuntimeMovies(pageSize: 3).enumerated()), id: \.element.id) { index, movie in
+                        HFPosterCard(movie: movie, width: 112, showTitle: false, posterOnly: true)
+                            .rotationEffect(.degrees(Double(index - 1) * 10))
+                            .offset(y: index == 1 ? -12 : 14)
+                    }
+                }
+            }
+            .padding(.top, HFSpacing.xl)
+
+            VStack(spacing: HFSpacing.sm) {
+                Text("No Downloads Yet")
+                    .font(.system(size: 26, weight: .black))
+                    .foregroundStyle(.white)
+
+                Text("Offline playback is not enabled in this build.")
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, HFSpacing.lg)
+            }
+
+            Button {
+                onFindMore?()
+            } label: {
+                Text("Find More To Download")
+                    .font(HFTypography.smallAction)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: 252)
+                    .frame(height: 48)
+                    .background(Color.white.opacity(0.18))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.rsf02.downloads.empty")
     }
 
     private var header: some View {
