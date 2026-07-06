@@ -26,7 +26,7 @@ struct HFMovieCard: View {
                         if movie.isOriginal {
                             HFMovieSignalChip(title: "Original", systemImage: "sparkles")
                         }
-                        if movie.isDownloaded {
+                        if showsOfflineChip {
                             HFMovieSignalChip(title: "Offline", systemImage: "arrow.down.circle.fill")
                         }
                         if movie.progress != nil {
@@ -84,7 +84,7 @@ struct HFMovieCard: View {
         if movie.isOriginal {
             parts.append("HighFive Original")
         }
-        if movie.isDownloaded {
+        if showsOfflineChip {
             parts.append("Available offline")
         }
         if let progress = movie.progress {
@@ -94,6 +94,10 @@ struct HFMovieCard: View {
             parts.append("Genres: \(movie.genres.prefix(3).joined(separator: ", "))")
         }
         return parts.joined(separator: ". ")
+    }
+
+    private var showsOfflineChip: Bool {
+        movie.isDownloaded && movie.id != "friendly"
     }
 }
 

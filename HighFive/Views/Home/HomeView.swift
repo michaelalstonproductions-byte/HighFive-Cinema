@@ -1,4 +1,8 @@
 import SwiftUI
+import AVKit
+import CoreTransferable
+import PhotosUI
+import UniformTypeIdentifiers
 
 struct HomeView: View {
     let selectedProfile: UserProfile
@@ -12,8 +16,15 @@ struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var previewMovie: Movie?
+    @State private var activeImportedVideo: HFImportedVideoItem?
+    @State private var importedVideos: [HFImportedVideoItem] = HFImportedVideoLibrary.load()
+    @State private var showsVideoImporter = false
+    @State private var showsImportSourcePicker = false
+    @State private var selectedPhotoLibraryVideo: PhotosPickerItem?
+    @State private var importErrorMessage: String?
     @State private var showsProtectedDepthPreview = false
     @State private var isHeroAwake = false
+    @State private var selectedContentCategory: HFContentCategory = .all
 
     private let showsCollectionsFirst = ProcessInfo.processInfo.arguments.contains("--hf-premium-streaming-collections")
     private let showsFPPStateQA = ProcessInfo.processInfo.arguments.contains("--hf-fpp-loading-states")
@@ -30,56 +41,540 @@ struct HomeView: View {
         streamingStore.catalogRuntimeMovies(filter: "Progress", sort: .progress, pageSize: 10)
     }
 
+    private var categoryCatalogMovies: [Movie] {
+        streamingStore.queryCatalog()
+    }
+
+    private var filteredCategoryMovies: [Movie] {
+        categoryCatalogMovies.filter { selectedContentCategory.includes($0) }
+    }
+
+    private var availableNowMovies: [Movie] {
+        ["friendly", "paranormall-s1"].compactMap(streamingStore.movie(id:))
+    }
+
+    private var comingSoonMovies: [Movie] {
+        ["big-loss", "maple-street", "arrival-time", "sunshine", "old-satan"]
+            .compactMap(streamingStore.movie(id:))
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
-                heroSection
-                if showsFPPStateQA {
-                    loadingStateQASurface
-                }
-                if showsFPPErrorQA {
-                    errorStateQASurface
-                }
-                if showsFPPAccessibilityQA {
-                    accessibilityQASurface
-                }
-                if showsFPPPerformanceQA {
-                    performanceQASurface
-                }
-                if showsFPPHomePolishQA {
-                    homePolishQASurface
-                }
-                if showsCollectionsFirst {
-                    collectionWorlds
-                    premiumBrandSystem
-                } else {
-                    premiumBrandSystem
-                }
-                premiumStreamingRails
-                streamingCommandSurface
-                continueWatchingSection
-                ForEach(streamingStore.premiumHomeCatalogRails) { category in
-                    movieRail(category)
-                }
+                figmaHomeHero
+                curatedPosterRail(
+                    title: "Available Now",
+                    movies: availableNowMovies,
+                    identifier: "hf.home.availableNow"
+                )
+                curatedPosterRail(
+                    title: "Coming Soon",
+                    movies: comingSoonMovies,
+                    identifier: "hf.home.comingSoon"
+                )
+                importedVideosSection
             }
             .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .accessibilityIdentifier("hf.spatial.home")
         .accessibilityIdentifier("hf.streaming.premium.home")
         .background(HFColors.screenBackground.ignoresSafeArea())
-        .sheet(item: $previewMovie) { movie in
-            HFPlayerServiceSheet(movie: movie)
+        .fullScreenCover(item: $previewMovie) { movie in
+            HFPlayerServiceSheet(movie: movie, startsInVerticalStage: true)
                 .environmentObject(streamingStore)
+        }
+        .fullScreenCover(item: $activeImportedVideo) { importedVideo in
+            HFPlayerServiceSheet(
+                movie: importedVideo.movie,
+                startsInVerticalStage: true,
+                contentSource: .userImported,
+                importedVideoURL: importedVideo.fileURL
+            )
+            .environmentObject(streamingStore)
         }
         .sheet(isPresented: $showsProtectedDepthPreview) {
             HighFiveProtectedSpatialPeekBridge()
         }
+        .sheet(isPresented: $showsImportSourcePicker) {
+            HFImportMovieSourceSheet(
+                selectedPhotoLibraryVideo: $selectedPhotoLibraryVideo,
+                onFiles: {
+                    showsImportSourcePicker = false
+                    showsVideoImporter = true
+                }
+            )
+            .presentationDetents([.height(260)])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.dark)
+        }
+        .fileImporter(
+            isPresented: $showsVideoImporter,
+            allowedContentTypes: [.movie, .video, .mpeg4Movie, .quickTimeMovie],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImportedVideo(result)
+        }
+        .onChange(of: selectedPhotoLibraryVideo) { _, item in
+            guard let item else { return }
+            Task { await handlePhotoLibraryVideo(item) }
+        }
         .onAppear {
+            importedVideos = HFImportedVideoLibrary.load()
             guard !isHeroAwake else { return }
             withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
                 isHeroAwake = true
             }
         }
+    }
+
+    private var figmaHomeHero: some View {
+        DepthHeroStage(height: 540, depthEnabled: true, atmosphereTint: HFColors.gold) {
+            markOfTheWestHeroMedia
+                .accessibilityIdentifier("hf.home.hero.video")
+        } foreground: { motion in
+            markOfTheWestHeroContent(motion: motion)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 0, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .background(Color.clear.accessibilityIdentifier("hf.rsf02.home.hero"))
+        .accessibilityIdentifier("hf.home.hero")
+    }
+
+    private var markOfTheWestHeroMedia: some View {
+        ZStack {
+            if HFPosterAssetHealth.hasImage(named: "mark_west_hero_keyart") {
+                Image("mark_west_hero_keyart")
+                    .resizable()
+                    .scaledToFill()
+                    .accessibilityHidden(true)
+            } else {
+                markOfTheWestProceduralBackdrop
+            }
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.16),
+                    Color.black.opacity(0.02),
+                    Color.black.opacity(0.48),
+                    HFColors.background.opacity(0.98)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.72),
+                    Color.black.opacity(0.12),
+                    Color.black.opacity(0.46)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+        .background(Color.black)
+    }
+
+    private var markOfTheWestProceduralBackdrop: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color.black,
+                        Color(red: 0.06, green: 0.038, blue: 0.025),
+                        Color(red: 0.23, green: 0.13, blue: 0.045),
+                        Color.black
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                RadialGradient(
+                    colors: [
+                        Color(red: 1.0, green: 0.60, blue: 0.18).opacity(0.66),
+                        HFColors.gold.opacity(0.20),
+                        .clear
+                    ],
+                    center: UnitPoint(x: 0.72, y: 0.40),
+                    startRadius: 4,
+                    endRadius: max(size.width, size.height) * 0.58
+                )
+
+                westernMountainLayer(size: size, verticalOffset: size.height * 0.52, opacity: 0.72)
+                    .fill(Color.black.opacity(0.42))
+
+                westernMountainLayer(size: size, verticalOffset: size.height * 0.60, opacity: 0.92)
+                    .fill(Color.black.opacity(0.64))
+
+                desertHazeLayer(size: size)
+
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0.0),
+                            Color(red: 0.22, green: 0.12, blue: 0.035).opacity(0.30),
+                            Color.black.opacity(0.80)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: size.height * 0.48)
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func westernMountainLayer(size: CGSize, verticalOffset: CGFloat, opacity: Double) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: verticalOffset))
+        path.addLine(to: CGPoint(x: size.width * 0.12, y: verticalOffset - size.height * 0.06))
+        path.addLine(to: CGPoint(x: size.width * 0.24, y: verticalOffset - size.height * 0.025))
+        path.addLine(to: CGPoint(x: size.width * 0.38, y: verticalOffset - size.height * 0.09))
+        path.addLine(to: CGPoint(x: size.width * 0.52, y: verticalOffset - size.height * 0.035))
+        path.addLine(to: CGPoint(x: size.width * 0.70, y: verticalOffset - size.height * 0.115))
+        path.addLine(to: CGPoint(x: size.width * 0.86, y: verticalOffset - size.height * 0.04))
+        path.addLine(to: CGPoint(x: size.width, y: verticalOffset - size.height * 0.075))
+        path.addLine(to: CGPoint(x: size.width, y: size.height))
+        path.addLine(to: CGPoint(x: 0, y: size.height))
+        path.closeSubpath()
+        return path
+    }
+
+    private func desertHazeLayer(size: CGSize) -> some View {
+        ZStack {
+            ForEach(0..<5, id: \.self) { index in
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.018),
+                                HFColors.gold.opacity(0.045),
+                                .clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: size.width * (0.78 - CGFloat(index) * 0.07), height: 2)
+                    .blur(radius: 8 + CGFloat(index) * 2)
+                    .offset(
+                        x: CGFloat(index - 2) * 28,
+                        y: size.height * (0.48 + CGFloat(index) * 0.05)
+                    )
+            }
+        }
+        .blendMode(.screen)
+        .accessibilityHidden(true)
+    }
+
+    private func markOfTheWestHeroContent(motion: DepthMotionValues) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("HighFive")
+                        .font(.system(size: 27, weight: .black, design: .default))
+                        .foregroundStyle(HFColors.goldGradient)
+                    Text("CINEMA")
+                        .font(.system(size: 12, weight: .heavy, design: .default))
+                        .tracking(6)
+                        .foregroundStyle(HFColors.gold.opacity(0.92))
+                        .padding(.leading, 42)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("HighFive Cinema")
+
+                Spacer()
+
+                Button(action: onSearch) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 25, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.94))
+                        .frame(width: 48, height: 48)
+                        .background(Color.black.opacity(0.24), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.10), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Search")
+            }
+            .padding(.top, 52)
+
+            HStack(spacing: 30) {
+                Text("Movies")
+                    .foregroundStyle(.white)
+                    .overlay(alignment: .bottom) {
+                        Capsule()
+                            .fill(HFColors.gold)
+                            .frame(width: 34, height: 3)
+                            .offset(y: 12)
+                    }
+                Text("Series")
+                Text("Categories")
+            }
+            .font(.system(size: 17, weight: .bold))
+            .foregroundStyle(.white.opacity(0.72))
+            .padding(.top, 28)
+
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PRE-PRODUCTION")
+                    .font(.system(size: 13, weight: .black, design: .default))
+                    .tracking(1.7)
+                    .foregroundStyle(HFColors.gold)
+
+                Text("The Mark\nof the West")
+                    .font(.system(size: 42, weight: .black, design: .serif))
+                    .foregroundStyle(.white)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.70)
+                    .shadow(color: .black.opacity(0.55), radius: 14, x: 0, y: 9)
+
+                Text("Limited Series Coming Soon")
+                    .font(.system(size: 16, weight: .heavy))
+                    .tracking(1.1)
+                    .foregroundStyle(HFColors.gold.opacity(0.94))
+                    .textCase(.uppercase)
+
+                Text("Starring Derek Hinkey")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.86))
+
+                Text("A HighFive Cinema Original")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.72))
+                    .padding(.top, 1)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        Label("Coming Soon", systemImage: "clock.fill")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 18)
+                            .frame(height: 48)
+                            .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .accessibilityAddTraits(.isStaticText)
+                            .accessibilityIdentifier("hf.home.hero.comingSoon")
+
+                        Button(action: onSearch) {
+                            Label("Learn More", systemImage: "info.circle")
+                                .font(HFTypography.smallAction)
+                                .foregroundStyle(.white.opacity(0.92))
+                                .padding(.horizontal, 16)
+                                .frame(height: 48)
+                                .background(Color.black.opacity(0.38), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(.white.opacity(0.16), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.home.hero.learnMore")
+                    }
+
+                    HStack(spacing: 12) {
+                        Button(action: onMyList) {
+                            Label("My List", systemImage: "plus")
+                                .font(.system(size: 14, weight: .black))
+                                .foregroundStyle(.white.opacity(0.92))
+                                .padding(.horizontal, 16)
+                                .frame(height: 42)
+                                .background(Color.black.opacity(0.38), in: Capsule())
+                                .overlay(Capsule().stroke(HFColors.gold.opacity(0.30), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.home.hero.myList")
+
+                        CompactImportSlateButton {
+                            showsImportSourcePicker = true
+                        }
+                    }
+                }
+                .padding(.top, 10)
+            }
+            .frame(maxWidth: 360, alignment: .leading)
+            .offset(x: motion.isActive ? -motion.x * 5 : 0, y: motion.isActive ? -motion.y * 4 : 0)
+            .padding(.bottom, 42)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var importVideosCover: some View {
+        HFImportMovieLibrarySlateCard {
+            showsImportSourcePicker = true
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.home.importVideos.cover")
+    }
+
+    @ViewBuilder
+    private var importedVideosSection: some View {
+        if !importedVideos.isEmpty {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Text("Imported Videos")
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                        ForEach(importedVideos) { importedVideo in
+                            Button {
+                                activeImportedVideo = importedVideo
+                            } label: {
+                                HFImportedVideoPosterCard(item: importedVideo)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+                }
+            }
+            .accessibilityIdentifier("hf.home.importedVideos.section")
+        }
+    }
+
+    private var categoryBrowserSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HStack(alignment: .center, spacing: HFSpacing.sm) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Genres")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.white)
+
+                    Text("Categories: \(selectedContentCategory.rawValue)")
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                }
+
+                Spacer(minLength: 12)
+
+                categoryMenu
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            if filteredCategoryMovies.isEmpty {
+                categoryEmptyState
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                        ForEach(filteredCategoryMovies.prefix(12)) { movie in
+                            NavigationLink(value: movie) {
+                                HFPosterCard(movie: movie, width: 136, showTitle: false, posterOnly: true)
+                                    .accessibilityIdentifier(movie.catalogCardAccessibilityIdentifier)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+                }
+                .accessibilityIdentifier("hf.categories.results")
+            }
+        }
+    }
+
+    private var categoryMenu: some View {
+        Menu {
+            ForEach(HFContentCategory.allCases) { category in
+                Button {
+                    selectedContentCategory = category
+                } label: {
+                    if category == selectedContentCategory {
+                        Label(category.rawValue, systemImage: "checkmark")
+                    } else {
+                        Text(category.rawValue)
+                    }
+                }
+                .accessibilityIdentifier(category.accessibilityIdentifier)
+            }
+        } label: {
+            Label(selectedContentCategory.rawValue, systemImage: "line.3.horizontal.decrease.circle.fill")
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .padding(.horizontal, 13)
+                .frame(height: 40)
+                .background(HFColors.goldGradient, in: Capsule())
+                .shadow(color: HFColors.gold.opacity(0.18), radius: 12, x: 0, y: 7)
+        }
+        .menuStyle(.button)
+        .accessibilityIdentifier("hf.categories.dropdown")
+    }
+
+    private var categoryEmptyState: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("More titles coming soon", systemImage: "sparkles.tv.fill")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(.white)
+
+            Text("We're adding more HighFive Cinema titles to this category.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background(HFColors.glassSurfaceRaised, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityIdentifier("hf.categories.emptyState")
+    }
+
+    private func figmaPosterRail(title: String, movies: [Movie]) -> some View {
+        let railMovies = movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
+        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text(title)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(.white)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(railMovies.prefix(10)) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 136, showTitle: false, posterOnly: true)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.rsf02.home.rail.\(title)")
+    }
+
+    private func curatedPosterRail(title: String, movies: [Movie], identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(.white)
+
+                Spacer()
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(movies) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 148, showTitle: false, posterOnly: true)
+                                .accessibilityIdentifier(movie.catalogCardAccessibilityIdentifier)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier(identifier)
     }
 
     private var header: some View {
@@ -258,7 +753,6 @@ struct HomeView: View {
 
                         HStack(spacing: HFSpacing.xs) {
                             HFEnergyAction(title: "Watch", systemImage: "play.fill", style: .gold) {
-                                streamingStore.markStartedWatching(heroMovie)
                                 previewMovie = heroMovie
                             }
                             .accessibilityIdentifier("hf.spatial.home.watch")
@@ -887,6 +1381,40 @@ struct HomeView: View {
         }
         .accessibilityIdentifier("hf.home.curatedRails")
     }
+
+    private func handleImportedVideo(_ result: Result<[URL], Error>) {
+        do {
+            guard let sourceURL = try result.get().first else { return }
+            let importedVideo = try HFImportedVideoLibrary.importVideo(from: sourceURL)
+            importedVideos = HFImportedVideoLibrary.load()
+            importErrorMessage = nil
+            activeImportedVideo = importedVideo
+        } catch {
+            importErrorMessage = "Import failed: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func handlePhotoLibraryVideo(_ item: PhotosPickerItem) async {
+        do {
+            guard let transfer = try await item.loadTransferable(type: HFPhotoLibraryVideoTransfer.self) else {
+                importErrorMessage = "Photo Library import did not provide a readable video."
+                selectedPhotoLibraryVideo = nil
+                return
+            }
+            let importedVideo = try HFImportedVideoLibrary.importVideo(from: transfer.url)
+            try? FileManager.default.removeItem(at: transfer.url)
+            importedVideos = HFImportedVideoLibrary.load()
+            importErrorMessage = nil
+            selectedPhotoLibraryVideo = nil
+            showsImportSourcePicker = false
+            activeImportedVideo = importedVideo
+        } catch {
+            importErrorMessage = "Photo Library import failed: \(error.localizedDescription)"
+            selectedPhotoLibraryVideo = nil
+        }
+    }
+
     private func heroChip(_ title: String) -> some View {
         Text(title)
             .font(HFTypography.caption)
@@ -899,6 +1427,21 @@ struct HomeView: View {
     }
 
     @ViewBuilder
+    private func heroMedia(_ movie: Movie) -> some View {
+        ZStack {
+            heroArtwork(movie)
+
+            if !reduceMotion, let timelineURL = Bundle.main.url(forResource: "Timeline1", withExtension: "mov") {
+                HFHomeHeroTimelineVideo(url: timelineURL)
+                    .accessibilityHidden(true)
+                    .transition(.opacity)
+            }
+        }
+        .background(Color.black)
+        .accessibilityIdentifier("hf.home.hero.timelineVideo")
+    }
+
+    @ViewBuilder
     private func heroArtwork(_ movie: Movie) -> some View {
         if HFPosterAssetHealth.hasImage(named: movie.backdropAssetName ?? movie.posterAssetName),
            let assetName = movie.backdropAssetName ?? movie.posterAssetName {
@@ -908,6 +1451,625 @@ struct HomeView: View {
         } else {
             HFPosterFallback(title: movie.title)
         }
+    }
+}
+
+private struct HFHomeHeroTimelineVideo: UIViewRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(url: url)
+    }
+
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        view.backgroundColor = .black
+        view.playerLayer.videoGravity = .resizeAspectFill
+        view.playerLayer.player = context.coordinator.player
+        context.coordinator.play()
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerView, context: Context) {
+        if uiView.playerLayer.player !== context.coordinator.player {
+            uiView.playerLayer.player = context.coordinator.player
+        }
+        context.coordinator.play()
+    }
+
+    static func dismantleUIView(_ uiView: PlayerView, coordinator: Coordinator) {
+        coordinator.pause()
+        uiView.playerLayer.player = nil
+    }
+
+    final class PlayerView: UIView {
+        override static var layerClass: AnyClass {
+            AVPlayerLayer.self
+        }
+
+        var playerLayer: AVPlayerLayer {
+            layer as! AVPlayerLayer
+        }
+    }
+
+    final class Coordinator {
+        let player: AVPlayer
+        private var endObserver: NSObjectProtocol?
+
+        init(url: URL) {
+            let item = AVPlayerItem(url: url)
+            player = AVPlayer(playerItem: item)
+            player.isMuted = true
+            player.actionAtItemEnd = .none
+            player.automaticallyWaitsToMinimizeStalling = false
+
+            endObserver = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: item,
+                queue: .main
+            ) { [weak player] _ in
+                player?.seek(to: .zero)
+                player?.play()
+            }
+        }
+
+        func play() {
+            guard player.timeControlStatus != .playing else { return }
+            player.play()
+        }
+
+        func pause() {
+            player.pause()
+        }
+
+        deinit {
+            if let endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
+            }
+        }
+    }
+}
+
+private struct HFImportMovieSourceSheet: View {
+    @Binding var selectedPhotoLibraryVideo: PhotosPickerItem?
+    let onFiles: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Capsule()
+                .fill(HFColors.gold.opacity(0.46))
+                .frame(width: 42, height: 4)
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Import Movie Library")
+                    .font(.system(size: 24, weight: .black, design: .default))
+                    .foregroundStyle(.white)
+                Text("Choose a video from Photos or Files.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+
+            HStack(spacing: 12) {
+                PhotosPicker(
+                    selection: $selectedPhotoLibraryVideo,
+                    matching: .videos,
+                    photoLibrary: .shared()
+                ) {
+                    importSourceButtonLabel(title: "Photo Library", systemImage: "photo.on.rectangle.angled")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.home.importVideos.photos")
+
+                Button(action: onFiles) {
+                    importSourceButtonLabel(title: "Files", systemImage: "folder.badge.plus")
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hf.home.importVideos.files")
+            }
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .padding(.top, 18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(HFColors.screenBackground.ignoresSafeArea())
+    }
+
+    private func importSourceButtonLabel(title: String, systemImage: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(HFColors.gold)
+
+            Text(title)
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 112)
+        .background(HFColors.glassSurfaceRaised, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.30), lineWidth: 1)
+        )
+    }
+}
+
+private struct HFPhotoLibraryVideoTransfer: Transferable {
+    let url: URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { transfer in
+            SentTransferredFile(transfer.url)
+        } importing: { received in
+            let sourceURL = received.file
+            let extensionName = sourceURL.pathExtension.isEmpty ? "mov" : sourceURL.pathExtension
+            let destinationURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("highfive-photo-library-\(UUID().uuidString).\(extensionName)")
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            return HFPhotoLibraryVideoTransfer(url: destinationURL)
+        }
+    }
+}
+
+private struct HFImportMovieLibrarySlateCard: View {
+    let onTap: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isSlateOpen = false
+
+    var body: some View {
+        Button {
+            playSlateTap()
+            onTap()
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.black,
+                                Color(red: 0.055, green: 0.055, blue: 0.06),
+                                Color(red: 0.13, green: 0.10, blue: 0.045)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.14)
+
+                HStack(spacing: 14) {
+                    clapperGraphic
+                        .frame(width: 66, height: 62)
+                        .accessibilityHidden(true)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Import Movie Library")
+                            .font(.system(size: 20, weight: .black, design: .default))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+
+                        Text("Local private playback")
+                            .font(HFTypography.caption.weight(.semibold))
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .shadow(color: .black.opacity(0.34), radius: 8, x: 0, y: 5)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .black))
+                        .foregroundStyle(HFColors.gold.opacity(0.86))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+
+                slateLinework
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 106)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                HFColors.gold.opacity(0.62),
+                                .white.opacity(0.12),
+                                HFColors.gold.opacity(0.28)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: .black.opacity(0.34), radius: 24, x: 0, y: 16)
+            .shadow(color: HFColors.gold.opacity(0.10), radius: 18, x: 0, y: 10)
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Import Movie Library")
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                isSlateOpen = true
+            }
+        }
+    }
+
+    private var clapperGraphic: some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(Color(red: 0.025, green: 0.025, blue: 0.028))
+                .frame(height: 42)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.50), lineWidth: 1)
+                )
+                .overlay(alignment: .top) {
+                    VStack(spacing: 8) {
+                        Rectangle()
+                            .fill(HFColors.gold.opacity(0.72))
+                            .frame(height: 1)
+                        Rectangle()
+                            .fill(.white.opacity(0.12))
+                            .frame(height: 1)
+                    }
+                    .padding(.top, 10)
+                    .padding(.horizontal, 9)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    Circle()
+                        .fill(HFColors.gold.opacity(0.72))
+                        .frame(width: 5, height: 5)
+                        .padding(8)
+                }
+
+            clapperTop
+                .frame(height: 23)
+                .offset(y: -38)
+                .rotationEffect(.degrees(isSlateOpen ? -11 : -2), anchor: .leading)
+                .shadow(color: .black.opacity(0.34), radius: 8, x: 0, y: 5)
+        }
+    }
+
+    private var clapperTop: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(red: 0.035, green: 0.035, blue: 0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.58), lineWidth: 1)
+                )
+
+            HStack(spacing: 0) {
+                ForEach(0..<5, id: \.self) { index in
+                    Rectangle()
+                        .fill(index.isMultiple(of: 2) ? HFColors.gold.opacity(0.88) : .white.opacity(0.13))
+                        .rotationEffect(.degrees(-22))
+                        .frame(width: 21)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+    }
+
+    private var slateLinework: some View {
+        VStack {
+            HStack {
+                Spacer()
+                VStack(alignment: .trailing, spacing: 9) {
+                    Rectangle()
+                        .fill(HFColors.gold.opacity(0.36))
+                        .frame(width: 76, height: 1)
+                    Rectangle()
+                        .fill(.white.opacity(0.12))
+                        .frame(width: 52, height: 1)
+                }
+            }
+            Spacer()
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, HFColors.gold.opacity(0.22), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+        }
+        .padding(18)
+    }
+
+    private func playSlateTap() {
+        guard !reduceMotion else { return }
+        withAnimation(.spring(response: 0.18, dampingFraction: 0.72)) {
+            isSlateOpen.toggle()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
+            withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
+                isSlateOpen.toggle()
+            }
+        }
+    }
+}
+
+private struct HFImportedVideoItem: Identifiable, Codable, Hashable {
+    let id: UUID
+    var title: String
+    var fileName: String
+    var filePath: String
+    var importedAt: Date
+
+    var fileURL: URL {
+        URL(fileURLWithPath: filePath)
+    }
+
+    var movie: Movie {
+        Movie(
+            id: "imported-\(id.uuidString)",
+            title: title,
+            subtitle: "User imported video",
+            synopsis: "A local video imported from your device for HighFive Cinema playback.",
+            year: "",
+            rating: "Imported",
+            duration: "Local",
+            genres: ["Imported"],
+            posterAssetName: nil,
+            backdropAssetName: nil,
+            creatorName: "My Videos",
+            isOriginal: false,
+            isComingSoon: false,
+            isDownloaded: true,
+            progress: nil
+        )
+    }
+}
+
+private enum HFContentCategory: String, CaseIterable, Identifiable {
+    case all = "All"
+    case movies = "Movies"
+    case series = "Series"
+    case drama = "Drama"
+    case action = "Action"
+    case horror = "Horror"
+    case documentaries = "Documentaries"
+    case comedy = "Comedy"
+    case thriller = "Thriller"
+    case mystery = "Mystery"
+    case sciFi = "Sci-Fi"
+    case fantasy = "Fantasy"
+    case romance = "Romance"
+    case family = "Family"
+    case war = "War"
+    case faithInspirational = "Faith / Inspirational"
+    case music = "Music"
+    case sports = "Sports"
+    case other = "Other"
+
+    var id: String { rawValue }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .all: return "hf.categories.option.all"
+        case .movies: return "hf.categories.option.movies"
+        case .series: return "hf.categories.option.series"
+        case .drama: return "hf.categories.option.drama"
+        case .action: return "hf.categories.option.action"
+        case .horror: return "hf.categories.option.horror"
+        case .documentaries: return "hf.categories.option.documentaries"
+        case .comedy: return "hf.categories.option.comedy"
+        case .thriller: return "hf.categories.option.thriller"
+        case .mystery: return "hf.categories.option.mystery"
+        case .sciFi: return "hf.categories.option.scifi"
+        case .fantasy: return "hf.categories.option.fantasy"
+        case .romance: return "hf.categories.option.romance"
+        case .family: return "hf.categories.option.family"
+        case .war: return "hf.categories.option.war"
+        case .faithInspirational: return "hf.categories.option.faithInspirational"
+        case .music: return "hf.categories.option.music"
+        case .sports: return "hf.categories.option.sports"
+        case .other: return "hf.categories.option.other"
+        }
+    }
+
+    func includes(_ movie: Movie) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .movies:
+            return movie.id == "friendly" || (movie.duration.localizedCaseInsensitiveContains("Feature") && !movie.genres.containsCaseInsensitive("Series"))
+        case .series:
+            return movie.id == "paranormall-s1" ||
+                movie.genres.containsCaseInsensitive("Series") ||
+                movie.duration.localizedCaseInsensitiveContains("episodes") ||
+                movie.duration.localizedCaseInsensitiveContains("series")
+        case .drama:
+            return movie.genres.containsCaseInsensitive("Drama")
+        case .action:
+            return movie.genres.containsCaseInsensitive("Action")
+        case .horror:
+            return movie.genres.containsCaseInsensitive("Horror")
+        case .documentaries:
+            return movie.genres.containsCaseInsensitive("Documentary") ||
+                movie.genres.containsCaseInsensitive("Documentaries")
+        case .comedy:
+            return movie.genres.containsCaseInsensitive("Comedy")
+        case .thriller:
+            return movie.genres.containsCaseInsensitive("Thriller")
+        case .mystery:
+            return movie.genres.containsCaseInsensitive("Mystery")
+        case .sciFi:
+            return movie.genres.containsCaseInsensitive("Sci-Fi") ||
+                movie.genres.containsCaseInsensitive("Science Fiction") ||
+                movie.genres.containsCaseInsensitive("SciFi")
+        case .fantasy:
+            return movie.genres.containsCaseInsensitive("Fantasy")
+        case .romance:
+            return movie.genres.containsCaseInsensitive("Romance")
+        case .family:
+            return movie.genres.containsCaseInsensitive("Family")
+        case .war:
+            return movie.genres.containsCaseInsensitive("War")
+        case .faithInspirational:
+            return movie.genres.containsCaseInsensitive("Faith") ||
+                movie.genres.containsCaseInsensitive("Inspirational")
+        case .music:
+            return movie.genres.containsCaseInsensitive("Music")
+        case .sports:
+            return movie.genres.containsCaseInsensitive("Sports") ||
+                movie.genres.containsCaseInsensitive("Sport")
+        case .other:
+            return movie.genres.isEmpty || movie.genres.containsCaseInsensitive("Other")
+        }
+    }
+}
+
+private extension Movie {
+    var catalogCardAccessibilityIdentifier: String {
+        switch id {
+        case "friendly":
+            return "hf.catalog.card.friendly"
+        case "paranormall-s1":
+            return "hf.catalog.card.paranormall"
+        default:
+            return "hf.catalog.card.\(id)"
+        }
+    }
+}
+
+private extension Array where Element == String {
+    func containsCaseInsensitive(_ value: String) -> Bool {
+        contains { $0.localizedCaseInsensitiveContains(value) }
+    }
+}
+
+private enum HFImportedVideoLibrary {
+    static func load() -> [HFImportedVideoItem] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let data = try? Data(contentsOf: manifestURL),
+              let items = try? decoder.decode([HFImportedVideoItem].self, from: data) else {
+            return []
+        }
+
+        return items
+            .filter { FileManager.default.fileExists(atPath: $0.filePath) }
+            .sorted { $0.importedAt > $1.importedAt }
+    }
+
+    static func importVideo(from sourceURL: URL) throws -> HFImportedVideoItem {
+        let didStartAccess = sourceURL.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccess {
+                sourceURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        try FileManager.default.createDirectory(at: importDirectory, withIntermediateDirectories: true)
+
+        let id = UUID()
+        let originalName = sourceURL.lastPathComponent.isEmpty ? "ImportedVideo.mov" : sourceURL.lastPathComponent
+        let extensionName = sourceURL.pathExtension.isEmpty ? "mov" : sourceURL.pathExtension
+        let safeBaseName = sourceURL.deletingPathExtension().lastPathComponent
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        let fileName = "\(safeBaseName)-\(id.uuidString.prefix(8)).\(extensionName)"
+        let destinationURL = importDirectory.appendingPathComponent(fileName)
+
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+        try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+
+        let title = sourceURL.deletingPathExtension().lastPathComponent.isEmpty
+            ? originalName
+            : sourceURL.deletingPathExtension().lastPathComponent
+        let item = HFImportedVideoItem(
+            id: id,
+            title: title,
+            fileName: fileName,
+            filePath: destinationURL.path,
+            importedAt: Date()
+        )
+
+        var items = load()
+        items.removeAll { $0.filePath == item.filePath || $0.title == item.title }
+        items.insert(item, at: 0)
+        try save(items)
+        return item
+    }
+
+    private static func save(_ items: [HFImportedVideoItem]) throws {
+        try FileManager.default.createDirectory(at: importDirectory, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(items)
+        try data.write(to: manifestURL, options: [.atomic])
+    }
+
+    private static var manifestURL: URL {
+        importDirectory.appendingPathComponent("imported-videos.json")
+    }
+
+    private static var importDirectory: URL {
+        let supportDirectory = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )) ?? FileManager.default.temporaryDirectory
+        return supportDirectory.appendingPathComponent("ImportedVideos", isDirectory: true)
+    }
+}
+
+private struct HFImportedVideoPosterCard: View {
+    let item: HFImportedVideoItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .bottomLeading) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.black,
+                                HFColors.gold.opacity(0.22),
+                                Color(red: 0.08, green: 0.07, blue: 0.06)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Image(systemName: "play.rectangle.fill")
+                    .font(.system(size: 34, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .padding(14)
+            }
+            .frame(width: 136, height: 204)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
+            )
+
+            Text(item.title)
+                .font(HFTypography.caption.weight(.bold))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .frame(width: 136, alignment: .leading)
+        }
+        .accessibilityIdentifier("hf.home.importedVideo.card")
     }
 }
 
