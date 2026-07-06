@@ -14,6 +14,14 @@ DEVICE_SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
 MODULE_CACHE="/private/tmp/highfive-direct-typecheck-module-cache"
 mkdir -p "$MODULE_CACHE/debug" "$MODULE_CACHE/release"
 
+# Clean-worktree fallback note:
+# The raw find-based fallback intentionally excludes
+# HighFive/App/Depth/Onboarding/LaunchOnboardingViewController.swift because
+# there is another LaunchOnboardingViewController.swift in the same module path.
+# Swift uses filenames to disambiguate private declarations, so raw-find
+# fallback validation can fail on duplicate basenames even when the Xcode target
+# source set is valid.
+
 prepare_list() {
   local source_list="$1"
   local output_list="$2"
@@ -24,6 +32,7 @@ prepare_list() {
     find HighFive -name "*.swift" \
       ! -path "*Checkpoint March 23*" \
       ! -path "*/out/*" \
+      ! -path "HighFive/App/Depth/Onboarding/LaunchOnboardingViewController.swift" \
       | sort > "$output_list"
   fi
 }
