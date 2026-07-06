@@ -102,6 +102,7 @@ struct ProfileView: View {
     @State private var mockMessage: ProfileMockMessage?
     @State private var showsMembershipPass = false
     @State private var didHandleInitialMembershipRoute = false
+    @StateObject private var localProfileStore = HFLocalProfileStore()
 
     private var savedMovies: [Movie] {
         streamingStore.allCatalogMovies.filter { streamingStore.isSaved($0) }
@@ -118,21 +119,11 @@ struct ProfileView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
-                header
-                activeProfileCard
-                membershipPassEntry
-                monetizationEntitlementsPanel
-                accountPanel
-                librarySyncReadinessPanel
-                paymentReadinessPanel
-                playbackDescriptorReadinessPanel
-                downloadReadinessPanel
-                backendServicesPanel
-                profileSwitcherRail
-                viewingStats
-                highfiveHub
-                preferencesPanel
-                menu
+                figmaProfileHeader
+                localProfileCard
+                figmaProfilesRow
+                figmaManageProfiles
+                figmaProfileMenu
                 signOutButton
             }
             .padding(.top, HFSpacing.screenTop)
@@ -147,6 +138,17 @@ struct ProfileView: View {
                 initialFacet: initialMembershipFacet,
                 initialShowcase: initialMembershipShowcase
             )
+        }
+        .navigationDestination(for: HFProfileDestination.self) { destination in
+            switch destination {
+            case .account:
+                HFAccountView()
+                    .environmentObject(streamingStore)
+            case .appSettings:
+                HFAppSettingsView()
+            case .helpSupport:
+                HFHelpSupportView()
+            }
         }
         .onAppear {
             guard startInMembership, !didHandleInitialMembershipRoute else { return }
@@ -171,6 +173,179 @@ struct ProfileView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+    }
+
+    private var figmaProfileHeader: some View {
+        HStack(spacing: HFSpacing.md) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
+            Text("Profiles & More")
+                .font(.system(size: 34, weight: .black))
+                .foregroundStyle(.white)
+            Spacer()
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var localProfileCard: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.28)) {
+            HStack(alignment: .center, spacing: HFSpacing.md) {
+                Image(systemName: localProfileStore.hasProfile ? localProfileStore.avatarSymbol : "person.crop.circle.badge.plus")
+                    .font(.system(size: 34, weight: .black))
+                    .foregroundStyle(localProfileStore.hasProfile ? .black : HFColors.gold)
+                    .frame(width: 72, height: 72)
+                    .background(localProfileStore.hasProfile ? HFColors.gold : Color.white.opacity(0.08), in: Circle())
+                    .overlay(Circle().stroke(HFColors.gold.opacity(0.25), lineWidth: 1))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(localProfileStore.hasProfile ? localProfileStore.displayName : "Add Profile")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.76)
+
+                    Text(localProfileStore.profileSubtitle)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(2)
+
+                    Text("Purchases and Restore Purchases are handled through Apple.")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                if localProfileStore.hasProfile {
+                    NavigationLink {
+                        HFManageProfileView(profileStore: localProfileStore)
+                    } label: {
+                        profileActionLabel("Manage Profile", systemImage: "pencil")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.profile.manageProfile")
+                } else {
+                    NavigationLink {
+                        HFAddProfileView(profileStore: localProfileStore)
+                    } label: {
+                        profileActionLabel("Add Profile", systemImage: "plus")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hf.profile.addProfile")
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.profile.localProfileCard")
+    }
+
+    private func profileActionLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.system(size: 13, weight: .black))
+            .foregroundStyle(.black)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(HFColors.goldGradient, in: Capsule())
+            .accessibilityLabel(title)
+    }
+
+    private var figmaProfilesRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: HFSpacing.lg) {
+                ForEach(HFMockData.userProfiles) { profile in
+                    Button {
+                        selectedProfile = profile
+                    } label: {
+                        VStack(spacing: HFSpacing.xs) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(profile.id == selectedProfile.id ? HFColors.gold : Color.white.opacity(0.16))
+                                Image(systemName: profile.avatarSystemName)
+                                    .font(.system(size: 42, weight: .black))
+                                    .foregroundStyle(profile.id == selectedProfile.id ? .black : .white)
+                            }
+                            .frame(width: 78, height: 78)
+
+                            Text(profile.name)
+                                .font(HFTypography.caption)
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+        }
+        .accessibilityIdentifier("hf.rsf02.profile.profiles")
+    }
+
+    private var figmaManageProfiles: some View {
+        Button {
+            showsProfileSwitcher = true
+        } label: {
+            Label("Manage Profiles", systemImage: "pencil")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 72)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private var figmaProfileMenu: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            figmaProfileMenuRow("Notifications", systemImage: "bell.fill") {}
+            figmaProfileMenuRow("My List", systemImage: "list.bullet.rectangle") { onOpenMyList?() }
+
+            Text("Manage")
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .padding(.top, HFSpacing.sm)
+                .accessibilityIdentifier("hf.profile.manage")
+
+            NavigationLink(value: HFProfileDestination.account) {
+                HFProfileNavigationRow(destination: .account)
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(value: HFProfileDestination.appSettings) {
+                HFProfileNavigationRow(destination: .appSettings)
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(value: HFProfileDestination.helpSupport) {
+                HFProfileNavigationRow(destination: .helpSupport)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+    }
+
+    private func figmaProfileMenuRow(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: HFSpacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34)
+                Text(title)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.white)
+                Spacer()
+            }
+            .padding(.horizontal, HFSpacing.lg)
+            .frame(height: 64)
+            .background(Color.white.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var header: some View {
@@ -751,9 +926,9 @@ struct ProfileView: View {
                     )
 
                     HFAccountReadinessRow(
-                        title: "Restore Purchases Not Active Yet",
-                        detail: "Restore purchase behavior waits for provider and server validation.",
-                        status: entitlementStatus.restoreState.statusLabel,
+                        title: "Restore Purchases",
+                        detail: streamingStore.storeKitRestoreStatusMessage,
+                        status: streamingStore.monetizationRuntimeSnapshot.restoreState,
                         systemImage: "arrow.counterclockwise.circle.fill",
                         identifier: "hf.profile.restoreReadiness"
                     )
@@ -900,6 +1075,7 @@ struct ProfileView: View {
                 .accessibilityIdentifier("hf.monetization.entitlements")
 
                 HStack(spacing: HFSpacing.sm) {
+                    #if DEBUG
                     Button {
                         Task { await streamingStore.purchaseDevelopmentHighFivePass() }
                     } label: {
@@ -913,11 +1089,12 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("hf.monetization.purchase")
+                    #endif
 
                     Button {
-                        Task { await streamingStore.restoreMonetizationRuntime() }
+                        Task { _ = await streamingStore.restoreStoreKitPurchases() }
                     } label: {
-                        Text("Restore")
+                        Text("Restore Purchases")
                             .font(HFTypography.smallAction)
                             .foregroundStyle(HFColors.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -1577,6 +1754,45 @@ private struct HFProfileMenuButton: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct HFProfileNavigationRow: View {
+    let destination: HFProfileDestination
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: destination.systemImage)
+                .font(.system(size: 19, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 42, height: 42)
+                .background(Color.white.opacity(0.07), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(destination.title)
+                    .font(.system(size: 16, weight: .black))
+                    .foregroundStyle(HFColors.textPrimary)
+
+                Text(destination.subtitle)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(HFColors.textMuted)
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+        )
+        .accessibilityIdentifier(destination.accessibilityID)
     }
 }
 
@@ -2363,7 +2579,7 @@ private struct HFMembershipIdentityPassView: View {
                     HFMembershipInspectorRow(title: "Local Preview Access", detail: "Playback fallback remains available without a live transaction.", status: entitlementStatus.accessState.statusLabel, systemImage: "play.rectangle.fill", identifier: "hf.membership.localPreviewAccess")
                     HFMembershipInspectorRow(title: "Server entitlement validation required", detail: entitlementStatus.boundary.detail, status: "Required", systemImage: "lock.shield.fill", identifier: "hf.membership.entitlementValidation")
                     HFMembershipInspectorRow(title: "Payment Provider Not Connected Yet", detail: "Payment readiness is informational only.", status: entitlementStatus.paymentProviderLabel, systemImage: "network.slash", identifier: "hf.membership.paymentProviderNotConnected")
-                    HFMembershipInspectorRow(title: "Restore " + "Purchases Not Active Yet", detail: "Restore readiness waits for provider and server validation.", status: entitlementStatus.restoreState.statusLabel, systemImage: "arrow.counterclockwise.circle.fill", identifier: "hf.membership.restoreNotActive")
+                    HFMembershipInspectorRow(title: "Restore Purchases", detail: streamingStore.storeKitRestoreStatusMessage, status: streamingStore.monetizationRuntimeSnapshot.restoreState, systemImage: "arrow.counterclockwise.circle.fill", identifier: "hf.membership.restore")
                     HFMembershipInspectorRow(title: "Privacy readiness", detail: streamingStore.profilePrivacyState, status: "Ready", systemImage: "hand.raised.fill", identifier: "hf.membership.privacyReadiness")
                     HFMembershipInspectorRow(title: "Device and session preview", detail: authStatus.sessionState.detail, status: authStatus.sessionState.statusLabel, systemImage: "iphone.gen3", identifier: "hf.membership.deviceSession")
                     HFMembershipInspectorRow(title: "Account deletion boundary", detail: authStatus.deletionRequest.detail, status: authStatus.deletionRequest.statusLabel, systemImage: "trash.slash.fill", identifier: "hf.membership.deleteBoundary")
