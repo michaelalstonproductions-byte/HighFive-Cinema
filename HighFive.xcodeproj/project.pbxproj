@@ -7,34 +7,21 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		9E515AE72F917769007445DC /* HighFive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HighFive.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E515AE72F917769007445DC /* HighFive Cinema.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "HighFive Cinema.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9E515AF52F917771007445DC /* Exceptions for "HighFive" folder in "HighFive" target */ = {
+		9E56CFA42FC8ED82004B0BAD /* Exceptions for "HighFive" folder in "HighFive" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Creator/Onboarding/LaunchOnboardingViewController.swift,
-				Config/ExportOptions.AppStore.example.plist,
-				Config/HighFiveProduction.entitlements,
-				Config/ProductionSigning.xcconfig.example,
 				App/Depth/Onboarding/LaunchOnboardingViewController.swift,
-				"App/Depth/Checkpoint March 23  copy__HKV1_VideoFrameSidecar__869337cc6b.swift",
-				App/Depth/HKV1_DepthGenerator.swift,
-				App/Depth/HKV1_DepthPreviewEngine.swift,
-				App/Depth/HKV1_TemporalDepthFusion.swift,
-				App/Motion/HKV1_LensModel.swift,
-				App/Motion/HKV1_ProMotionCoordinator.swift,
-				App/Motion/HKV1_ProMotionOutput.swift,
 				App/Motion/LaunchOnboardingViewController.swift,
 				App/Motion/Onboarding/LaunchOnboardingViewController.swift,
-				App/Onboarding/LaunchOnboardingViewController.swift,
-				App/Playback/HKV1_PlaybackController.swift,
-				App/Playback/HKV1_SpatialPeekViewController.swift,
-				App/UI/Assets.xcassets,
+				App/Store/HighFive.storekit,
 				App/UI/Rendering/HKV1_ControlBar.swift,
-				App/UI/Rendering/HKV1_LensTuningProfile.swift,
-				App/UI/Rendering/HKV1_PlayerLayerView.swift,
+				Config/ExportOptions.AppStore.example.plist,
+				Config/ProductionSigning.xcconfig.example,
 			);
 			target = 9E515AE62F917769007445DC /* HighFive */;
 		};
@@ -44,7 +31,7 @@
 		9E515AE92F917769007445DC /* HighFive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				9E515AF52F917771007445DC /* Exceptions for "HighFive" folder in "HighFive" target */,
+				9E56CFA42FC8ED82004B0BAD /* Exceptions for "HighFive" folder in "HighFive" target */,
 			);
 			path = HighFive;
 			sourceTree = "<group>";
@@ -73,7 +60,7 @@
 		9E515AE82F917769007445DC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9E515AE72F917769007445DC /* HighFive.app */,
+				9E515AE72F917769007445DC /* HighFive Cinema.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -88,6 +75,7 @@
 				9E515AE32F917769007445DC /* Sources */,
 				9E515AE42F917769007445DC /* Frameworks */,
 				9E515AE52F917769007445DC /* Resources */,
+				9E56D0202FC91C81004B0BAD /* HighFive Debug Full Streams */,
 			);
 			buildRules = (
 			);
@@ -100,7 +88,7 @@
 			packageProductDependencies = (
 			);
 			productName = HighFive;
-			productReference = 9E515AE72F917769007445DC /* HighFive.app */;
+			productReference = 9E515AE72F917769007445DC /* HighFive Cinema.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -146,6 +134,37 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		9E56D0202FC91C81004B0BAD /* HighFive Debug Full Streams */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/copy_debug_full_streams.sh",
+			);
+			name = "HighFive Debug Full Streams";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/TheFriendly_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E1_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E2_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E3_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E4_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E5_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E6_ref.mp4",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/DebugFullStreams/Paranormall_E7_ref.mp4",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/copy_debug_full_streams.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9E515AE32F917769007445DC /* Sources */ = {
@@ -279,9 +298,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = HighFive/Config/HighFiveProduction.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 4N9QF424Z8;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -289,12 +308,18 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				HIGHFIVE_APNS_ENVIRONMENT = development;
+				INFOPLIST_KEY_CFBundleDisplayName = "HighFive Cinema";
+				INFOPLIST_KEY_CFBundleName = "HighFive Cinema";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSMotionUsageDescription = "HighFive Cinema uses device motion to power Depth, Tilt, and Peek playback effects.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "HighFive Cinema lets you import videos from your Photo Library for private local playback.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -303,9 +328,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.higherkey.HighFiveCinemaClean.HighFive;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.higherkey.HigherKeySpatialPeek-Rebuild";
+				PRODUCT_NAME = "HighFive Cinema";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -325,9 +350,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = HighFive/Config/HighFiveProduction.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 4N9QF424Z8;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -335,12 +360,18 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				HIGHFIVE_APNS_ENVIRONMENT = production;
+				INFOPLIST_KEY_CFBundleDisplayName = "HighFive Cinema";
+				INFOPLIST_KEY_CFBundleName = "HighFive Cinema";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSMotionUsageDescription = "HighFive Cinema uses device motion to power Depth, Tilt, and Peek playback effects.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "HighFive Cinema lets you import videos from your Photo Library for private local playback.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -349,9 +380,9 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.higherkey.HighFiveCinemaClean.HighFive;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.higherkey.HigherKeySpatialPeek-Rebuild";
+				PRODUCT_NAME = "HighFive Cinema";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
