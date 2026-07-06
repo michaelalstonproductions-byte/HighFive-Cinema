@@ -69,6 +69,29 @@ final class HKV1_SpatialPeekViewController: UIViewController,
     private let debugLabel = UILabel()
     private let libraryButton = UIButton(type: .system)
     private let defaultIntroVideoName = "Timeline 1"
+    private static let externalReferenceVideoDirectories: [URL] = {
+        #if DEBUG
+        guard let directory = ProcessInfo.processInfo.environment["HF_LOCAL_FULL_STREAM_DIR"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !directory.isEmpty else {
+            return []
+        }
+        return [URL(fileURLWithPath: directory, isDirectory: true)]
+        #else
+        []
+        #endif
+    }()
+    private static let externalIntroVideoBaseNames = [
+        "Timeline1",
+        "Timeline 1",
+        "timeline1",
+        "timeline_1"
+    ]
+    private static let externalFallbackVideoBaseNames = [
+        "Timeline1",
+        "ParaNormall_1080p_HD",
+        "TheFriendly_ref",
+        "Paranormall_E1_ref"
+    ]
     private var hasExitedToLibrary = false
     private let loadingOverlay = UIView()
     private let loadingCard = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
@@ -379,6 +402,9 @@ final class HKV1_SpatialPeekViewController: UIViewController,
     private var lastRawTiltY: CGFloat = 0
     private var lastAppliedDx: CGFloat = 0
     private var lastAppliedDy: CGFloat = 0
+#if targetEnvironment(simulator)
+    private var simulatorMotionStartTime: CFTimeInterval = 0
+#endif
 
     // MARK: - Tuning
 
@@ -1971,6 +1997,10 @@ final class HKV1_SpatialPeekViewController: UIViewController,
             return match
         }
 
+        if let externalURL = externalReferenceVideoURL(baseNames: Self.externalIntroVideoBaseNames) {
+            return externalURL
+        }
+
         return nil
     }
 
@@ -2014,6 +2044,10 @@ final class HKV1_SpatialPeekViewController: UIViewController,
            ),
            let match = urls.first(where: matchesVideoName) {
             return match
+        }
+
+        if let externalURL = externalReferenceVideoURL(baseNames: externalReferenceVideoBaseNames(for: videoName)) {
+            return externalURL
         }
 
         return nil
@@ -2113,27 +2147,7 @@ final class HKV1_SpatialPeekViewController: UIViewController,
 
         playbackController.pause()
         controlBar.setPlaying(false)
-
-        guard let windowScene = view.window?.windowScene else {
-            let libraryVC = HKC_LIBRARYViewController()
-            let nav = UINavigationController(rootViewController: libraryVC)
-            nav.setNavigationBarHidden(true, animated: false)
-            nav.modalPresentationStyle = .fullScreen
-            present(nav, animated: true)
-            return
-        }
-
-        let window = UIWindow(windowScene: windowScene)
-        let libraryVC = HKC_LIBRARYViewController()
-        let nav = UINavigationController(rootViewController: libraryVC)
-        nav.setNavigationBarHidden(true, animated: false)
-
-        window.rootViewController = nav
-        window.makeKeyAndVisible()
-
-        if let sceneDelegate = windowScene.delegate as? HKV1_SceneDelegate {
-            sceneDelegate.window = window
-        }
+        dismiss(animated: true)
     }
 
     private func firstBundledVideoURL() -> URL? {
@@ -2143,6 +2157,10 @@ final class HKV1_SpatialPeekViewController: UIViewController,
 
         if let preferredPair = HKV1_TrainingClipLocator.resolvePreferredTrainingClipPair() {
             return preferredPair.videoURL
+        }
+
+        if let externalURL = externalReferenceVideoURL(baseNames: Self.externalFallbackVideoBaseNames) {
+            return externalURL
         }
 
         let fm = FileManager.default
@@ -2191,6 +2209,64 @@ final class HKV1_SpatialPeekViewController: UIViewController,
             return match
         }
 
+        return nil
+    }
+
+    private func externalReferenceVideoURL(baseNames: [String]) -> URL? {
+        let validExtensions = ["mov", "mp4", "m4v"]
+
+        for directory in Self.externalReferenceVideoDirectories {
+            for baseName in baseNames {
+                for ext in validExtensions {
+                    let url = directory.appendingPathComponent("\(baseName).\(ext)")
+                    if FileManager.default.fileExists(atPath: url.path) {
+                        return url
+                    }
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private func externalReferenceVideoBaseNames(for bundledVideoName: String) -> [String] {
+        var names: [String] = [bundledVideoName]
+        let lowercasedName = bundledVideoName.lowercased()
+
+        if !lowercasedName.hasSuffix("_ref") {
+            names.append("\(bundledVideoName)_ref")
+        }
+
+        if lowercasedName.contains("friendly") {
+            names.append("TheFriendly_ref")
+        }
+
+        if lowercasedName.contains("paranormall") || lowercasedName.contains("paranormal") {
+            if let episode = paranormalEpisodeNumber(in: lowercasedName) {
+                names.append("Paranormall_E\(episode)_ref")
+            } else {
+                names.append("ParaNormall_1080p_HD")
+                names.append("Paranormall_E1_ref")
+            }
+        }
+
+        if lowercasedName.replacingOccurrences(of: " ", with: "") == "timeline1" {
+            names.append("Timeline1")
+        }
+
+        var uniqueNames: [String] = []
+        for name in names where !uniqueNames.contains(name) {
+            uniqueNames.append(name)
+        }
+        return uniqueNames
+    }
+
+    private func paranormalEpisodeNumber(in name: String) -> Int? {
+        for episode in 1...7 {
+            if name.contains("e\(episode)") || name.contains("episode\(episode)") || name.contains("episode_\(episode)") {
+                return episode
+            }
+        }
         return nil
     }
 
@@ -2368,6 +2444,9 @@ final class HKV1_SpatialPeekViewController: UIViewController,
         lastRawTiltY = 0
         lastAppliedDx = 0
         lastAppliedDy = 0
+#if targetEnvironment(simulator)
+        simulatorMotionStartTime = 0
+#endif
         smoothedManualDx = 0
         smoothedManualDy = 0
         smoothedAIDx = 0
@@ -2401,9 +2480,9 @@ final class HKV1_SpatialPeekViewController: UIViewController,
         }
         lastDisplayTimestamp = link.timestamp
 
-        let rawTilt = motionService.readTilt()
-        let rawX = CGFloat(rawTilt.x)
-        let rawY = CGFloat(rawTilt.y)
+        let rawTilt = resolvedRawTilt(from: motionService.readTilt(), timestamp: link.timestamp)
+        let rawX = rawTilt.x
+        let rawY = rawTilt.y
 
         lastRawTiltX = rawX
         lastRawTiltY = rawY
@@ -2428,6 +2507,34 @@ final class HKV1_SpatialPeekViewController: UIViewController,
         }
 
         refreshMotionUIIfNeeded(link.timestamp)
+    }
+
+    private func resolvedRawTilt(from hardwareTilt: (x: Double, y: Double), timestamp: CFTimeInterval) -> CGPoint {
+        let rawX = CGFloat(hardwareTilt.x)
+        let rawY = CGFloat(hardwareTilt.y)
+
+#if targetEnvironment(simulator)
+        let hasRealMotion = abs(rawX) > 0.0001 || abs(rawY) > 0.0001
+        guard !hasRealMotion, isManualMotionLaneActive else {
+            simulatorMotionStartTime = 0
+            return CGPoint(x: rawX, y: rawY)
+        }
+
+        if simulatorMotionStartTime == 0 {
+            simulatorMotionStartTime = timestamp
+        }
+
+        let elapsed = CGFloat(timestamp - simulatorMotionStartTime)
+        let xAmplitude: CGFloat = currentModeIndex == 2 ? 0.22 : 0.17
+        let yAmplitude: CGFloat = currentModeIndex == 2 ? 0.13 : 0.10
+
+        return CGPoint(
+            x: sin(elapsed * 0.95) * xAmplitude,
+            y: cos(elapsed * 0.72) * yAmplitude
+        )
+#else
+        return CGPoint(x: rawX, y: rawY)
+#endif
     }
     
     private func settleToCenter(dt: CGFloat) {

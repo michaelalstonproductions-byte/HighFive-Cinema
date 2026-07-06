@@ -736,19 +736,19 @@ final class HKV1_PlayerLayerView: UIView {
 
             filmGrainLayer.opacity = Float(
                 clamp(
-                    profile.grainBase
-                        + (depth * profile.grainDepthGain)
-                        + grainBias
-                        + (lutStrength * 0.018),
-                    min: 0.016,
-                    max: 0.13
+                    (profile.grainBase * 0.34)
+                        + (depth * profile.grainDepthGain * 0.22)
+                        + (grainBias * 0.30)
+                        + (lutStrength * 0.004),
+                    min: 0.002,
+                    max: 0.035
                 )
             )
         } else {
             // Keep subtle finish even in flat mode
             topShoulderLayer.opacity = Float(clamp(0.020 + shoulderBias + (lutStrength * 0.010), min: 0.0, max: 0.12))
             bottomVignetteLayer.opacity = Float(clamp(0.020 + vignetteBias + (lutStrength * 0.010), min: 0.0, max: 0.14))
-            filmGrainLayer.opacity = Float(clamp(0.026 + grainBias + (lutStrength * 0.010), min: 0.02, max: 0.10))
+            filmGrainLayer.opacity = Float(clamp(0.006 + (grainBias * 0.25) + (lutStrength * 0.002), min: 0.0, max: 0.018))
         }
 
         // LUT finish layers should work in BOTH flat and spatial modes
