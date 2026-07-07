@@ -41,6 +41,8 @@ prepare_list() {
       ! -path "*/out/*" \
       ! -path "HighFive/App/Depth/Onboarding/LaunchOnboardingViewController.swift" \
       ! -path "HighFive/App/Motion/LaunchOnboardingViewController.swift" \
+      ! -path "HighFive/App/Motion/Onboarding/LaunchOnboardingViewController.swift" \
+      ! -path "HighFive/App/Onboarding/LaunchOnboardingViewController.swift" \
       | sort > "$output_list"
   fi
 }
