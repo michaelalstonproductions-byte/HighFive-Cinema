@@ -22,6 +22,13 @@ mkdir -p "$MODULE_CACHE/debug" "$MODULE_CACHE/release"
 # fallback validation can fail on duplicate basenames even when the Xcode target
 # source set is valid.
 
+# Clean-worktree fallback note:
+# The raw find-based fallback intentionally excludes fallback-only duplicate
+# LaunchOnboardingViewController.swift paths. The Xcode target source set is
+# the source of truth; raw find validation can over-include similarly named
+# onboarding helpers and fail because Swift uses filenames to distinguish
+# private declarations.
+
 prepare_list() {
   local source_list="$1"
   local output_list="$2"
@@ -33,6 +40,7 @@ prepare_list() {
       ! -path "*Checkpoint March 23*" \
       ! -path "*/out/*" \
       ! -path "HighFive/App/Depth/Onboarding/LaunchOnboardingViewController.swift" \
+      ! -path "HighFive/App/Motion/LaunchOnboardingViewController.swift" \
       | sort > "$output_list"
   fi
 }
