@@ -755,6 +755,37 @@ struct HFExecutiveCommandCenterSnapshot: Codable, Hashable, Sendable {
     }
 }
 
+enum HFOSCohesionStatus: String, Codable, Hashable, Sendable {
+    case aligned = "Aligned"
+    case localOnly = "Local Only"
+    case review = "Review"
+}
+
+struct HFOSCohesionCheck: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let detail: String
+    let status: HFOSCohesionStatus
+    let systemImage: String
+}
+
+struct HFOSNavigationRoute: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let detail: String
+    let source: String
+    let target: String
+    let systemImage: String
+}
+
+struct HFOSCohesionSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let checks: [HFOSCohesionCheck]
+    let navigationRoutes: [HFOSNavigationRoute]
+    let localBoundaryNotes: [String]
+}
+
 struct HFProject: Identifiable, Codable, Hashable, Sendable {
     let id: HFProjectID
     let movieID: String?

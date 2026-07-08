@@ -36,9 +36,9 @@ private enum HFHighFiveOSMode: String, CaseIterable, Identifiable {
         case .cinemaGalaxy: return "Galaxy"
         case .commandCenter: return "Command Center"
         case .analytics: return "Analytics"
-        case .executiveDashboard: return "Executive"
+        case .executiveDashboard: return "Executive Command"
         case .controlWall: return "Control Wall"
-        case .intelligence: return "Intelligence"
+        case .intelligence: return "HigherKey Brain"
         case .dashboard: return "Dashboard"
         case .activity: return "Activity"
         case .spotlight: return "Spotlight"
@@ -1470,7 +1470,7 @@ private struct HFHighFiveOSView: View {
                         HFEnergyAction(title: "Control Wall", systemImage: "rectangle.grid.3x2.fill", style: .glass) {
                             selectedMode = .controlWall
                         }
-                        HFEnergyAction(title: "Insights", systemImage: "brain.head.profile", style: .glass) {
+                        HFEnergyAction(title: "HigherKey Brain", systemImage: "brain.head.profile", style: .glass) {
                             selectedMode = .intelligence
                         }
                     }
@@ -1616,11 +1616,12 @@ private struct HFHighFiveOSView: View {
         let orchestration = HFLocalProjectStore.orchestrationSnapshot
         let missionPlanner = HFLocalProjectStore.missionPlannerSnapshot
         let executionTracking = HFLocalProjectStore.executionTrackingSnapshot
+        let cohesion = HFLocalProjectStore.higherKeyOSCohesionSnapshot
 
         return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                    osSectionHeader(title: "Intelligence Layer", detail: "HigherKey Brain derives local events, workflow rules, dependency thresholds, and readiness movement from the shared project model.")
+                    osSectionHeader(title: "HigherKey Brain", detail: "Local operating view for Studio Intelligence, Workflow Automation, Orchestration, Mission Planner, and Execution Tracking.")
                     insightCard("HigherKey Brain", brainSnapshot.summary, "brain.head.profile", HFColors.violet)
                     insightCard("Project State", "\(brainSnapshot.sourceLabel) feeds \(brainSnapshot.projectCount) local projects into studio tools.", "square.stack.3d.up.fill", HFColors.cyanGlow)
                     insightCard("Autonomous Studio Signals", studioIntelligence.summary, "waveform.path.ecg", HFColors.gold)
@@ -1631,6 +1632,7 @@ private struct HFHighFiveOSView: View {
                 }
                 .padding(HFSpacing.lg)
             }
+            osCohesionReportSection(cohesion)
             brainDashboardSection(studioIntelligence)
             orchestrationSection(orchestration)
             missionPlannerSection(missionPlanner)
@@ -1695,10 +1697,44 @@ private struct HFHighFiveOSView: View {
         .accessibilityIdentifier("hf.command.center.higherKeyBrainDashboard")
     }
 
+    private func osCohesionReportSection(_ snapshot: HFOSCohesionSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "System Cohesion", detail: snapshot.summary)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    ForEach(snapshot.checks) { check in
+                        commandMetricCard(HFCommandMetric(title: check.title, value: check.status.rawValue, detail: check.detail, accent: cohesionAccent(for: check.status), systemImage: check.systemImage))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Navigation Map")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.navigationRoutes) { route in
+                        brainSignalRow(title: route.title, detail: "\(route.source) to \(route.target). \(route.detail)", status: "Local", systemImage: route.systemImage, accent: HFColors.cyanGlow)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Local Boundaries")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(Array(snapshot.localBoundaryNotes.enumerated()), id: \.offset) { index, note in
+                        brainSignalRow(title: "Boundary \(index + 1)", detail: note, status: "Read Only", systemImage: "lock.shield.fill", accent: HFColors.gold)
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.systemCohesion")
+    }
+
     private func orchestrationSection(_ snapshot: HFOrchestrationSnapshot) -> some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.38)) {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                osSectionHeader(title: "Orchestration Engine Foundation", detail: "Local-only sequencing across project state, intelligence, workflow automation, Brain, Packaging Studio, Creator OS, QA, Release, and Marketing.")
+                osSectionHeader(title: "Orchestration Engine", detail: "Local-only sequencing across project state, Studio Intelligence, Workflow Automation, HigherKey Brain, Packaging Studio, Creator OS, QA, Release, and Marketing.")
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                     commandMetricCard(HFCommandMetric(title: "Queue", value: "\(snapshot.queue.count)", detail: "Handoff items", accent: HFColors.violet, systemImage: "list.bullet.rectangle.fill"))
@@ -1771,7 +1807,7 @@ private struct HFHighFiveOSView: View {
     private func missionPlannerSection(_ snapshot: HFMissionPlannerSnapshot) -> some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                osSectionHeader(title: "Mission Planner Foundation", detail: "Local mission plans convert orchestration output into milestones, task groups, blocker timelines, and execution steps.")
+                osSectionHeader(title: "Mission Planner", detail: "Local mission plans convert orchestration output into milestones, task groups, blocker timelines, and execution steps.")
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                     commandMetricCard(HFCommandMetric(title: "Missions", value: "\(snapshot.activeMissions.count)", detail: "Active plans", accent: HFColors.gold, systemImage: "checklist.checked"))
@@ -1833,7 +1869,7 @@ private struct HFHighFiveOSView: View {
     private func executionTrackingSection(_ snapshot: HFExecutionTrackingSnapshot) -> some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.38)) {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                osSectionHeader(title: "Execution Tracking Foundation", detail: "Local execution status turns mission plans into task state, progress history, ownership placeholders, timeline progress, and completion forecasts.")
+                osSectionHeader(title: "Execution Tracking", detail: "Local execution status turns mission plans into task state, progress history, ownership placeholders, timeline progress, and completion forecasts.")
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                     commandMetricCard(HFCommandMetric(title: "Execution", value: "\(snapshot.activeExecutionStatuses.count)", detail: "Active statuses", accent: HFColors.cyanGlow, systemImage: "chart.line.uptrend.xyaxis"))
@@ -1904,7 +1940,7 @@ private struct HFHighFiveOSView: View {
     private func workflowAutomationSection(_ snapshot: HFWorkflowAutomationSnapshot) -> some View {
         HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                osSectionHeader(title: "Workflow Automation Foundation", detail: "Rules and readiness movement are local recommendations only. No state is persisted and no publish or upload path is enabled.")
+                osSectionHeader(title: "Workflow Automation", detail: "Rules and readiness movement are local recommendations only. No state is persisted and no publish or upload path is enabled.")
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                     commandMetricCard(HFCommandMetric(title: "Rules", value: "\(snapshot.rules.count)", detail: "Enabled local rules", accent: HFColors.cyanGlow, systemImage: "switch.2"))
@@ -2395,83 +2431,98 @@ private struct HFHighFiveOSView: View {
     private func orchestrationActionButton(_ action: HFOrchestrationLocalAction, nextWorkspace: HFOrchestrationWorkspace?) -> some View {
         let accent = action.isPlaceholder ? HFColors.gold : brainAccent(for: action.targetWorkspace == .qa ? .blocked : .info)
 
-        return Button {
+        return osNavigationActionButton(
+            id: "orchestration.\(action.id)",
+            title: action.title,
+            caption: action.isPlaceholder ? "Review Placeholder" : action.targetWorkspace.rawValue,
+            detail: action.detail,
+            systemImage: action.systemImage,
+            accent: accent,
+            minHeight: 158
+        ) {
             if action.id == "open-target-workspace" {
                 openOrchestrationWorkspace(nextWorkspace ?? action.targetWorkspace)
             } else {
                 selectedMode = .intelligence
             }
-        } label: {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: action.systemImage)
-                    .font(.system(size: 17, weight: .black))
-                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
-                    .frame(width: 38, height: 38)
-                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-                Text(action.title)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.72)
-                Text(action.isPlaceholder ? "Placeholder" : action.targetWorkspace.rawValue)
-                    .font(HFTypography.micro)
-                    .foregroundStyle(accent)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                Text(action.detail)
-                    .font(HFTypography.micro)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.72)
-            }
-            .frame(maxWidth: .infinity, minHeight: 158, alignment: .topLeading)
-            .padding(HFSpacing.sm)
-            .background(Color.black.opacity(0.28))
-            .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
-            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("hf.command.center.orchestration.\(action.id)")
     }
 
     private func executiveCommandButton(_ action: HFExecutiveCommandAction) -> some View {
         let accent = action.targetWorkspace.map(executiveWorkspaceAccent) ?? HFColors.gold
 
-        return Button {
+        return osNavigationActionButton(
+            id: "executive.\(action.id)",
+            title: action.title,
+            caption: executiveActionCaption(action),
+            detail: action.detail,
+            systemImage: action.systemImage,
+            accent: accent,
+            minHeight: 150
+        ) {
             openExecutiveCommandAction(action)
-        } label: {
+        }
+    }
+
+    private func osNavigationActionButton(
+        id: String,
+        title: String,
+        caption: String,
+        detail: String,
+        systemImage: String,
+        accent: Color,
+        minHeight: CGFloat,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                Image(systemName: action.systemImage)
+                Image(systemName: systemImage)
                     .font(.system(size: 17, weight: .black))
                     .foregroundStyle(accent == HFColors.gold ? .black : accent)
                     .frame(width: 38, height: 38)
                     .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
                     .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-                Text(action.title)
+                Text(title)
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textPrimary)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
-                Text(action.targetWorkspace?.rawValue ?? "Local")
+                Text(caption)
                     .font(HFTypography.micro)
                     .foregroundStyle(accent)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
-                Text(action.detail)
+                Text(detail)
                     .font(HFTypography.micro)
                     .foregroundStyle(HFColors.textSecondary)
                     .lineLimit(3)
                     .minimumScaleFactor(0.72)
             }
-            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
             .padding(HFSpacing.sm)
             .background(Color.black.opacity(0.28))
             .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("hf.command.center.executive.\(action.id)")
+        .accessibilityIdentifier("hf.command.center.\(id)")
+    }
+
+    private func executiveActionCaption(_ action: HFExecutiveCommandAction) -> String {
+        switch action.id {
+        case "open-brain":
+            return "HigherKey Brain"
+        case "open-mission-planner":
+            return "Brain -> Mission Planner"
+        case "open-workflow-automation":
+            return "Brain -> Workflow Automation"
+        case "open-studio-intelligence":
+            return "Brain -> Studio Intelligence"
+        case "open-execution-tracking":
+            return "Brain -> Execution Tracking"
+        default:
+            return action.targetWorkspace?.rawValue ?? "Local"
+        }
     }
 
     private func openExecutiveCommandAction(_ action: HFExecutiveCommandAction) {
@@ -2527,6 +2578,17 @@ private struct HFHighFiveOSView: View {
         if loadScore >= 75 { return HFColors.redAccent }
         if loadScore >= 50 { return HFColors.gold }
         return HFColors.cyanGlow
+    }
+
+    private func cohesionAccent(for status: HFOSCohesionStatus) -> Color {
+        switch status {
+        case .aligned:
+            return HFColors.cyanGlow
+        case .localOnly:
+            return HFColors.gold
+        case .review:
+            return HFColors.redAccent
+        }
     }
 
     private func missionAccent(for priority: HFMissionPriority) -> Color {

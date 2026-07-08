@@ -77,6 +77,71 @@ enum HFLocalProjectStore {
         )
     }
 
+    static var higherKeyOSCohesionSnapshot: HFOSCohesionSnapshot {
+        let studioIntelligence = autonomousStudioIntelligenceSnapshot
+        let workflowAutomation = workflowAutomationSnapshot
+        let orchestration = orchestrationSnapshot
+        let missionPlanner = missionPlannerSnapshot
+        let executionTracking = executionTrackingSnapshot
+        let executiveCommand = executiveCommandCenterSnapshot
+        let blockedHandoffs = orchestration.blockedHandoffs.count
+        let blockedTasks = executionTracking.blockedTaskCount
+
+        return HFOSCohesionSnapshot(
+            sourceLabel: "HFLocalProjectStore",
+            summary: "\(projects.count) local projects feed HigherKey Brain, Executive Command, Mission Planner, Orchestration, Workflow Automation, Execution Tracking, and Studio Intelligence with no backend or persistence handoff.",
+            checks: [
+                HFOSCohesionCheck(
+                    id: "shared-project-state",
+                    title: "Unified Project State",
+                    detail: "\(projects.count) projects remain the single local input for every HigherKey OS surface.",
+                    status: .aligned,
+                    systemImage: "square.stack.3d.up.fill"
+                ),
+                HFOSCohesionCheck(
+                    id: "read-only-engines",
+                    title: "Read-Only Engines",
+                    detail: "\(studioIntelligence.totalSignalCount) studio signals, \(workflowAutomation.totalSignalCount) workflow signals, \(orchestration.queue.count) handoffs, \(missionPlanner.activeMissions.count) missions, and \(executionTracking.activeExecutionStatuses.count) execution statuses are derived locally.",
+                    status: .localOnly,
+                    systemImage: "lock.shield.fill"
+                ),
+                HFOSCohesionCheck(
+                    id: "navigation-clarity",
+                    title: "Navigation Clarity",
+                    detail: "\(executiveCommand.commandActions.count) executive actions point to existing local surfaces instead of creating new destinations.",
+                    status: .aligned,
+                    systemImage: "arrow.triangle.turn.up.right.diamond.fill"
+                ),
+                HFOSCohesionCheck(
+                    id: "handoff-pressure",
+                    title: "Handoff Pressure",
+                    detail: "\(blockedHandoffs) blocked handoffs and \(blockedTasks) blocked tasks remain visible for review.",
+                    status: blockedHandoffs + blockedTasks > 0 ? .review : .aligned,
+                    systemImage: "exclamationmark.triangle.fill"
+                ),
+                HFOSCohesionCheck(
+                    id: "protected-systems",
+                    title: "Protected Systems",
+                    detail: "Depth, Motion, Playback, Layer 4, Rendering, StoreKit, purchases, legal, CRM, backend, upload, publishing, and media export remain outside this hardening pass.",
+                    status: .aligned,
+                    systemImage: "checkmark.seal.fill"
+                )
+            ],
+            navigationRoutes: [
+                HFOSNavigationRoute(id: "executive-to-brain", title: "Executive Command -> HigherKey Brain", detail: "Executive decisions open the Brain operating view for local intelligence review.", source: "Executive Command Center", target: "HigherKey Brain", systemImage: "brain.head.profile"),
+                HFOSNavigationRoute(id: "brain-to-mission", title: "HigherKey Brain -> Mission Planner", detail: "Brain signals remain grouped with mission plans, milestones, blockers, and execution steps.", source: "HigherKey Brain", target: "Mission Planner", systemImage: "checklist.checked"),
+                HFOSNavigationRoute(id: "mission-to-execution", title: "Mission Planner -> Execution Tracking", detail: "Mission output feeds local task state, progress history, owners, timeline progress, and forecasts.", source: "Mission Planner", target: "Execution Tracking", systemImage: "chart.line.uptrend.xyaxis"),
+                HFOSNavigationRoute(id: "orchestration-to-workflow", title: "Orchestration Engine -> Workflow Automation", detail: "Sequenced handoffs stay tied to local workflow rules and readiness movement.", source: "Orchestration Engine", target: "Workflow Automation", systemImage: "arrow.triangle.branch"),
+                HFOSNavigationRoute(id: "studio-to-executive", title: "Studio Intelligence -> Executive Command", detail: "Studio signals contribute to executive health, risks, briefing, and timeline summaries.", source: "Studio Intelligence", target: "Executive Command Center", systemImage: "gauge.with.dots.needle.50percent")
+            ],
+            localBoundaryNotes: [
+                "All checks are computed in memory from local snapshots.",
+                "Buttons navigate to existing local SwiftUI surfaces only.",
+                "No HigherKey OS engine writes project state, persistence, backend data, uploads, publishing jobs, or media output."
+            ]
+        )
+    }
+
     static var higherKeyBrainSnapshot: HFProjectBrainSnapshot {
         let active = creatorOSProject
         let intelligence = autonomousStudioIntelligenceSnapshot
