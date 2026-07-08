@@ -45,7 +45,13 @@ struct DownloadsView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 figmaDownloadsHeader
-                figmaDownloadsEmpty
+                if downloads.isEmpty {
+                    figmaDownloadsEmpty
+                } else {
+                    capsuleWorld
+                    premiumCapsuleStats
+                    localOfflineShelf
+                }
             }
             .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
@@ -108,7 +114,7 @@ struct DownloadsView: View {
                     .font(.system(size: 26, weight: .black))
                     .foregroundStyle(.white)
 
-                Text("Offline playback is not enabled in this build.")
+                Text("Save a title for offline preview when it is available on this device.")
                     .font(HFTypography.body)
                     .foregroundStyle(HFColors.textSecondary)
                     .multilineTextAlignment(.center)
@@ -118,7 +124,7 @@ struct DownloadsView: View {
             Button {
                 onFindMore?()
             } label: {
-                Text("Find More To Download")
+                Text("Browse Titles")
                     .font(HFTypography.smallAction)
                     .foregroundStyle(.white)
                     .frame(maxWidth: 252)

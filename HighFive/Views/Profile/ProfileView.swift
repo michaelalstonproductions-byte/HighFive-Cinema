@@ -178,12 +178,16 @@ struct ProfileView: View {
 
     private var figmaProfileHeader: some View {
         HStack(spacing: HFSpacing.md) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
+            Image(systemName: selectedProfile.avatarSystemName)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(.black)
+                .frame(width: 46, height: 46)
+                .background(HFColors.goldGradient, in: Circle())
             Text("Profiles & More")
                 .font(.system(size: 34, weight: .black))
                 .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
             Spacer()
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -366,7 +370,12 @@ struct ProfileView: View {
 
     private var figmaProfileMenu: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            figmaProfileMenuRow("Notifications", systemImage: "bell.fill") {}
+            figmaProfileMenuRow("Notifications", systemImage: "bell.fill") {
+                mockMessage = ProfileMockMessage(
+                    title: "Notifications",
+                    body: "Notification preferences are local preview settings in this build."
+                )
+            }
             figmaProfileMenuRow("My List", systemImage: "list.bullet.rectangle") { onOpenMyList?() }
 
             Text("Manage")
