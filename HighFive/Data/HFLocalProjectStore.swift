@@ -48,22 +48,33 @@ enum HFLocalProjectStore {
         )
     }
 
+    static var missionPlannerSnapshot: HFMissionPlannerSnapshot {
+        HFMissionPlannerEngine.snapshot(
+            projects: projects,
+            intelligence: autonomousStudioIntelligenceSnapshot,
+            workflowAutomation: workflowAutomationSnapshot,
+            orchestration: orchestrationSnapshot
+        )
+    }
+
     static var higherKeyBrainSnapshot: HFProjectBrainSnapshot {
         let active = creatorOSProject
         let intelligence = autonomousStudioIntelligenceSnapshot
         let workflowAutomation = workflowAutomationSnapshot
         let orchestration = orchestrationSnapshot
+        let missionPlanner = missionPlannerSnapshot
         return HFProjectBrainSnapshot(
             projectCount: projects.count,
             primaryProjectTitle: active.title,
             sourceLabel: "HFLocalProjectStore",
-            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) studio signals, \(workflowAutomation.totalSignalCount) workflow automation signals, and \(orchestration.queue.count) orchestration queue items.",
+            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) studio signals, \(workflowAutomation.totalSignalCount) workflow automation signals, \(orchestration.queue.count) orchestration queue items, and \(missionPlanner.activeMissions.count) active mission plans.",
             toolSignals: [
                 HFProjectToolSignal(id: "packaging", title: "Packaging Studio", value: packagingProject.shortTitle, detail: packagingProject.packageStatus, systemImage: "shippingbox.fill"),
                 HFProjectToolSignal(id: "creator-os", title: "Creator OS", value: active.readinessPercentLabel, detail: active.workflowStage, systemImage: "command"),
                 HFProjectToolSignal(id: "studio-intelligence", title: "Studio Intelligence", value: "\(intelligence.totalSignalCount)", detail: "Local event engine signals derived", systemImage: "lightbulb.max.fill"),
                 HFProjectToolSignal(id: "workflow-automation", title: "Workflow Automation", value: "\(workflowAutomation.triggeredSuggestions.count)", detail: "Local triggered suggestions", systemImage: "arrow.triangle.branch"),
                 HFProjectToolSignal(id: "orchestration", title: "Orchestration", value: "\(orchestration.queue.count)", detail: "Local handoff queue derived", systemImage: "point.3.connected.trianglepath.dotted"),
+                HFProjectToolSignal(id: "mission-planner", title: "Mission Planner", value: "\(missionPlanner.activeMissions.count)", detail: "Local mission plans derived", systemImage: "checklist.checked"),
                 HFProjectToolSignal(id: "operator-runtime", title: "Operator Runtime", value: "Signal", detail: "Graph remains intact with project-state input only", systemImage: "point.3.connected.trianglepath.dotted")
             ]
         )

@@ -368,6 +368,142 @@ struct HFOrchestrationSnapshot: Codable, Hashable, Sendable {
     }
 }
 
+enum HFMissionStatus: String, Codable, Hashable, Sendable {
+    case active = "Active"
+    case blocked = "Blocked"
+    case reviewNeeded = "Review Needed"
+    case ready = "Ready"
+    case planned = "Planned"
+}
+
+enum HFMissionPriority: String, Codable, Hashable, Sendable {
+    case critical = "Critical"
+    case high = "High"
+    case medium = "Medium"
+    case normal = "Normal"
+}
+
+struct HFMissionPlan: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let objective: String
+    let currentWorkspace: HFOrchestrationWorkspace
+    let targetWorkspace: HFOrchestrationWorkspace
+    let priority: HFMissionPriority
+    let status: HFMissionStatus
+    let readinessLabel: String
+    let blockerCount: Int
+    let systemImage: String
+}
+
+struct HFMissionMilestone: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sequenceIndex: Int
+    let title: String
+    let detail: String
+    let workspace: HFOrchestrationWorkspace
+    let status: HFMissionStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFMissionTask: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let detail: String
+    let workspace: HFOrchestrationWorkspace
+    let priority: HFMissionPriority
+    let status: HFMissionStatus
+    let sourceSignalID: String?
+    let systemImage: String
+}
+
+struct HFMissionTaskGroup: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let workspace: HFOrchestrationWorkspace
+    let tasks: [HFMissionTask]
+    let status: HFMissionStatus
+    let priority: HFMissionPriority
+    let systemImage: String
+}
+
+struct HFBlockerTimelineEvent: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sequenceIndex: Int
+    let title: String
+    let detail: String
+    let sourceWorkspace: HFOrchestrationWorkspace
+    let targetWorkspace: HFOrchestrationWorkspace
+    let status: HFMissionStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFMissionExecutionStep: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sequenceIndex: Int
+    let title: String
+    let detail: String
+    let workspace: HFOrchestrationWorkspace
+    let status: HFMissionStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFMissionPlannerSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let activeMissions: [HFMissionPlan]
+    let milestones: [HFMissionMilestone]
+    let taskGroups: [HFMissionTaskGroup]
+    let blockerTimeline: [HFBlockerTimelineEvent]
+    let executionPlan: [HFMissionExecutionStep]
+
+    var priorityTasks: [HFMissionTask] {
+        taskGroups
+            .flatMap(\.tasks)
+            .sorted { lhs, rhs in
+                if lhs.priority.sortRank != rhs.priority.sortRank {
+                    return lhs.priority.sortRank > rhs.priority.sortRank
+                }
+                return lhs.title < rhs.title
+            }
+    }
+}
+
+extension HFMissionPriority {
+    var sortRank: Int {
+        switch self {
+        case .critical:
+            return 4
+        case .high:
+            return 3
+        case .medium:
+            return 2
+        case .normal:
+            return 1
+        }
+    }
+}
+
 struct HFProject: Identifiable, Codable, Hashable, Sendable {
     let id: HFProjectID
     let movieID: String?

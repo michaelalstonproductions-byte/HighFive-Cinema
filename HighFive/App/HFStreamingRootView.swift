@@ -1535,6 +1535,7 @@ private struct HFHighFiveOSView: View {
         let studioIntelligence = HFLocalProjectStore.autonomousStudioIntelligenceSnapshot
         let workflowAutomation = HFLocalProjectStore.workflowAutomationSnapshot
         let orchestration = HFLocalProjectStore.orchestrationSnapshot
+        let missionPlanner = HFLocalProjectStore.missionPlannerSnapshot
 
         return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
@@ -1545,11 +1546,13 @@ private struct HFHighFiveOSView: View {
                     insightCard("Autonomous Studio Signals", studioIntelligence.summary, "waveform.path.ecg", HFColors.gold)
                     insightCard("Workflow Automation", workflowAutomation.summary, "arrow.triangle.branch", HFColors.cyanGlow)
                     insightCard("Orchestration Engine", orchestration.summary, "point.3.connected.trianglepath.dotted", HFColors.violet)
+                    insightCard("Mission Planner", missionPlanner.summary, "checklist.checked", HFColors.gold)
                 }
                 .padding(HFSpacing.lg)
             }
             brainDashboardSection(studioIntelligence)
             orchestrationSection(orchestration)
+            missionPlannerSection(missionPlanner)
             workflowAutomationSection(workflowAutomation)
             activitySignalsPanel
         }
@@ -1681,6 +1684,68 @@ private struct HFHighFiveOSView: View {
             .padding(HFSpacing.lg)
         }
         .accessibilityIdentifier("hf.command.center.orchestrationEngine")
+    }
+
+    private func missionPlannerSection(_ snapshot: HFMissionPlannerSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Mission Planner Foundation", detail: "Local mission plans convert orchestration output into milestones, task groups, blocker timelines, and execution steps.")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Missions", value: "\(snapshot.activeMissions.count)", detail: "Active plans", accent: HFColors.gold, systemImage: "checklist.checked"))
+                    commandMetricCard(HFCommandMetric(title: "Milestones", value: "\(snapshot.milestones.count)", detail: "Workspace gates", accent: HFColors.violet, systemImage: "flag.checkered"))
+                    commandMetricCard(HFCommandMetric(title: "Tasks", value: "\(snapshot.priorityTasks.count)", detail: "Priority actions", accent: HFColors.cyanGlow, systemImage: "list.bullet.clipboard.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Blockers", value: "\(snapshot.blockerTimeline.count)", detail: "Timeline events", accent: snapshot.blockerTimeline.isEmpty ? HFColors.cyanGlow : HFColors.redAccent, systemImage: "exclamationmark.triangle.fill"))
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Active Missions")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.activeMissions.prefix(3)) { mission in
+                        brainSignalRow(title: mission.title, detail: "\(mission.objective) \(mission.blockerCount) blockers visible.", status: mission.priority.rawValue, systemImage: mission.systemImage, accent: missionAccent(for: mission.priority))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Milestones")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.milestones.prefix(5)) { milestone in
+                        brainSignalRow(title: "\(milestone.sequenceIndex). \(milestone.title)", detail: "\(milestone.projectTitle) -> \(milestone.workspace.rawValue). \(milestone.detail)", status: milestone.status.rawValue, systemImage: milestone.systemImage, accent: brainAccent(for: milestone.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Priority Tasks")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.priorityTasks.prefix(5)) { task in
+                        brainSignalRow(title: task.title, detail: "\(task.projectTitle) -> \(task.workspace.rawValue). \(task.detail)", status: task.priority.rawValue, systemImage: task.systemImage, accent: missionAccent(for: task.priority))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Blocker Timeline")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.blockerTimeline.prefix(5)) { event in
+                        brainSignalRow(title: "\(event.sequenceIndex). \(event.title)", detail: "\(event.sourceWorkspace.rawValue) -> \(event.targetWorkspace.rawValue). \(event.detail)", status: event.status.rawValue, systemImage: event.systemImage, accent: brainAccent(for: event.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Execution Plan")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.executionPlan.prefix(6)) { step in
+                        brainSignalRow(title: "\(step.sequenceIndex). \(step.title)", detail: "\(step.projectTitle) -> \(step.workspace.rawValue). \(step.detail)", status: step.status.rawValue, systemImage: step.systemImage, accent: brainAccent(for: step.severity))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.missionPlanner")
     }
 
     private func workflowAutomationSection(_ snapshot: HFWorkflowAutomationSnapshot) -> some View {
@@ -2227,6 +2292,19 @@ private struct HFHighFiveOSView: View {
         case .qa, .release, .marketing:
             selectedRoom = .launchRoom
             selectedMode = .missionControl
+        }
+    }
+
+    private func missionAccent(for priority: HFMissionPriority) -> Color {
+        switch priority {
+        case .critical:
+            return HFColors.redAccent
+        case .high:
+            return HFColors.gold
+        case .medium:
+            return HFColors.violet
+        case .normal:
+            return HFColors.cyanGlow
         }
     }
 
