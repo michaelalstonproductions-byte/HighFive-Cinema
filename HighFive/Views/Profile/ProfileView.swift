@@ -149,6 +149,8 @@ struct ProfileView: View {
                 HFAppSettingsView()
             case .helpSupport:
                 HFHelpSupportView()
+            case .releaseCandidateQA:
+                HFReleaseCandidateQAChecklistView()
             }
         }
         .onAppear {
@@ -412,6 +414,17 @@ struct ProfileView: View {
 
             NavigationLink(value: HFProfileDestination.helpSupport) {
                 HFProfileNavigationRow(destination: .helpSupport)
+            }
+            .buttonStyle(.plain)
+
+            Text("Internal Tools")
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .padding(.top, HFSpacing.sm)
+                .accessibilityIdentifier("hf.profile.internalSection")
+
+            NavigationLink(value: HFProfileDestination.releaseCandidateQA) {
+                HFProfileNavigationRow(destination: .releaseCandidateQA)
             }
             .buttonStyle(.plain)
         }
