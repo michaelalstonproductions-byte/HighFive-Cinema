@@ -142,6 +142,16 @@ struct SearchView: View {
         results.first ?? streamingStore.featuredMovie
     }
 
+    private var searchRecommendationMovies: [Movie] {
+        let recommended = streamingStore.recommendationCollections(anchor: featuredTitle)
+            .flatMap(\.movies)
+        return Array(uniqueMovies(recommended.isEmpty ? streamingStore.queryCatalog() : recommended).prefix(10))
+    }
+
+    private var consumerSnapshot: HFConsumerExperienceSnapshot {
+        HFLocalProjectStore.consumerExperienceSnapshot
+    }
+
     private var creatorProfiles: [HFCreatorProfile] {
         let seedQuery = query.isEmpty ? selectedFocus.querySeed : query
         return streamingStore.searchCreatorProfiles(query: seedQuery)
@@ -237,6 +247,8 @@ struct SearchView: View {
                     emptyState
                 } else {
                     figmaSearchControls
+                    consumerSearchIntelligence
+                    searchRecommendationRail
                     figmaPosterGrid
                 }
             }
@@ -274,7 +286,7 @@ struct SearchView: View {
                 Text("Search")
                     .font(.system(size: 36, weight: .black))
                     .foregroundStyle(.white)
-                Text("Find movies, originals, and saved titles.")
+                Text("Find movies, originals, saved titles, and local recommendations.")
                     .font(HFTypography.caption)
                     .foregroundStyle(HFColors.textSecondary)
             }
@@ -321,6 +333,125 @@ struct SearchView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.rsf02.search.posterGrid")
+    }
+
+    private var consumerSearchIntelligence: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            searchSignalGroup(title: "Suggested Searches", signals: consumerSnapshot.suggestedSearches)
+            searchTextGroup(title: "Recent Searches", values: Array((streamingStore.recentSearches + consumerSnapshot.recentSearches.map(\.title)).prefix(6)))
+            searchSignalGroup(title: "Trending Locally", signals: consumerSnapshot.trendingSignals)
+        }
+        .accessibilityIdentifier("hf.consumer.search.smartGroups")
+    }
+
+    private var searchRecommendationRail: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Recommended Discoveries")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.white)
+                    Text("Local picks based on the current search focus.")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(searchRecommendationMovies) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 126, showTitle: false, posterOnly: true)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.consumer.search.recommendedDiscoveries")
+    }
+
+    private func searchSignalGroup(title: String, signals: [HFConsumerExperienceSignal]) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: HFSpacing.xs) {
+                    ForEach(signals.prefix(6)) { signal in
+                        searchIntentButton(title: signal.title, detail: signal.detail, systemImage: signal.systemImage) {
+                            query = signal.title
+                            selectedFilter = signal.movieID == nil ? "All" : "Movies"
+                            mode = .search
+                        }
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+    }
+
+    private func searchTextGroup(title: String, values: [String]) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(title)
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: HFSpacing.xs) {
+                    ForEach(Array(Set(values)).sorted().prefix(6), id: \.self) { value in
+                        searchIntentButton(title: value, detail: "Search again", systemImage: "clock.arrow.circlepath") {
+                            query = value
+                            selectedFilter = "All"
+                            mode = .search
+                        }
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+    }
+
+    private func searchIntentButton(title: String, detail: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
+                action()
+            }
+        } label: {
+            HStack(spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text(detail)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                }
+            }
+            .padding(.horizontal, HFSpacing.sm)
+            .frame(height: 50)
+            .background(Color.white.opacity(0.07), in: Capsule())
+            .overlay(Capsule().stroke(HFColors.gold.opacity(0.24), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
+        var seen = Set<String>()
+        return movies.filter { seen.insert($0.id).inserted }
     }
 
     private var header: some View {

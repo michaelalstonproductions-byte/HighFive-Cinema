@@ -121,6 +121,7 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 figmaProfileHeader
                 localProfileCard
+                premiumProfileOverview
                 figmaProfilesRow
                 figmaManageProfiles
                 figmaProfileMenu
@@ -240,6 +241,70 @@ struct ProfileView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.profile.localProfileCard")
+    }
+
+    private var premiumProfileOverview: some View {
+        HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.22)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "person.crop.rectangle.stack.fill")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 50, height: 50)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Viewer Hub")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local viewing, saved titles, and profile settings in one place.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.xs) {
+                    profileMetric("Continue", value: "\(continueWatchingMovies.count)", systemImage: "play.rectangle.fill", accent: HFColors.gold)
+                    profileMetric("Saved", value: "\(savedMovies.count)", systemImage: "bookmark.fill", accent: HFColors.violet)
+                    profileMetric("Downloads", value: "\(downloadedMovies.count)", systemImage: "arrow.down.circle.fill", accent: HFColors.cyanGlow)
+                    profileMetric("Mode", value: streamingStore.accountMode, systemImage: "checkmark.seal.fill", accent: HFColors.gold)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.consumer.profile.viewerHub")
+    }
+
+    private func profileMetric(_ title: String, value: String, systemImage: String, accent: Color) -> some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(accent)
+                .frame(width: 30, height: 30)
+                .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                Text(value)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.62)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     private func profileActionLabel(_ title: String, systemImage: String) -> some View {

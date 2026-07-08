@@ -432,6 +432,12 @@ private struct HFStreamingTitleDetailView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(.white.opacity(0.16), lineWidth: 1)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
+                .blur(radius: 0.5)
+        )
+        .shadow(color: HFColors.amberGlow.opacity(0.18), radius: 18, x: 0, y: 12)
         .background(
             Color.clear
                 .frame(width: 1, height: 1)
@@ -593,7 +599,16 @@ private struct HFStreamingTitleDetailView: View {
                     HStack(spacing: 12) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.08))
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            HFColors.gold.opacity(0.16),
+                                            Color.white.opacity(0.07)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                             Text("\(episode.id)")
                                 .font(.system(size: 22, weight: .black, design: .default))
                                 .foregroundStyle(HFColors.gold)
@@ -630,6 +645,10 @@ private struct HFStreamingTitleDetailView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(episode.id == selectedEpisodeNumber ? HFColors.gold.opacity(0.08) : Color.clear)
+                    )
 
                     if episode.id != metadata.episodes.last?.id {
                         Rectangle()
@@ -1095,6 +1114,14 @@ struct MovieDetailView: View {
         streamingStore.relatedMovies(for: catalogMovie)
     }
 
+    private var consumerSnapshot: HFConsumerExperienceSnapshot {
+        HFLocalProjectStore.consumerExperienceSnapshot
+    }
+
+    private var consumerRecommendationCollections: [Category] {
+        streamingStore.recommendationCollections(anchor: catalogMovie) + streamingStore.catalogRails(filter: "Coming Soon")
+    }
+
     private var playbackDescriptor: HFPlaybackDescriptor {
         streamingStore.playbackDescriptor(for: catalogMovie)
     }
@@ -1226,6 +1253,9 @@ struct MovieDetailView: View {
                 } else if isHighFivePassLockedTitle && !isUnlockedForLocalTesting {
                     lockedTitleAccessBand
                 }
+                cinematicMetadataPanel
+                consumerRecommendationSection
+                verticalStagePresentationCard
                 relatedSection
                 castSection
             }
@@ -1474,6 +1504,72 @@ struct MovieDetailView: View {
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(HFColors.gold.opacity(0.28), lineWidth: 1))
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.movieDetail.lockedAccessBand")
+    }
+
+    private var cinematicMetadataPanel: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    Image(systemName: "sparkles.tv.fill")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundStyle(.black)
+                        .frame(width: 52, height: 52)
+                        .background(HFColors.goldGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Cinematic Details")
+                            .font(HFTypography.section)
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Local metadata, viewing state, and recommendation context for this title.")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: HFSpacing.xs) {
+                    movieDetailMetric("Format", value: titleDetailMetadata.runtimeOrSeason, systemImage: "film.stack.fill", accent: HFColors.gold)
+                    movieDetailMetric("Status", value: catalogMovie.isComingSoon ? "Coming Soon" : "Available", systemImage: "checkmark.seal.fill", accent: HFColors.cyanGlow)
+                    movieDetailMetric("Cast", value: "\(max(cast.count, titleDetailMetadata.stars.count)) Listed", systemImage: "person.2.fill", accent: HFColors.violet)
+                    movieDetailMetric("Related", value: "\(relatedTitles.count) Titles", systemImage: "rectangle.stack.fill", accent: HFColors.gold)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.consumer.movieDetail.cinematicMetadata")
+    }
+
+    private func movieDetailMetric(_ title: String, value: String, systemImage: String, accent: Color) -> some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(accent)
+                .frame(width: 32, height: 32)
+                .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+                Text(value)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     private var hero: some View {
@@ -2280,20 +2376,142 @@ struct MovieDetailView: View {
         .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
     }
 
+    private var consumerRecommendationSection: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
+            HFSectionHeader(title: "Recommended For You", actionTitle: "Local")
+
+            ForEach(consumerRecommendationCollections.prefix(5)) { category in
+                movieDetailRecommendationRail(category)
+            }
+        }
+        .accessibilityIdentifier("hf.consumer.movieDetail.recommendations")
+    }
+
+    private func movieDetailRecommendationRail(_ category: Category) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(consumerRecommendationTitle(category.title))
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            Text(consumerRecommendationSubtitle(for: category))
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+                .lineLimit(2)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                    ForEach(category.movies.prefix(8)) { related in
+                        NavigationLink(value: related) {
+                            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                                HFPosterCard(movie: related, width: 126, showProgress: related.progress != nil)
+                                Text(consumerSnapshot.recommendationReasons[related.id] ?? "Recommended from your local watch profile.")
+                                    .font(HFTypography.micro)
+                                    .foregroundStyle(HFColors.textSecondary)
+                                    .lineLimit(2)
+                                    .frame(width: 126, alignment: .leading)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open recommendation \(related.title)")
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.consumer.movieDetail.recommendation.\(category.id)")
+    }
+
+    private var verticalStagePresentationCard: some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.32)) {
+            HStack(alignment: .top, spacing: HFSpacing.md) {
+                Image(systemName: "rectangle.portrait.fill")
+                    .font(.system(size: 25, weight: .black))
+                    .foregroundStyle(.black)
+                    .frame(width: 54, height: 54)
+                    .background(HFColors.goldGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                    Text("Vertical Stage")
+                        .font(HFTypography.section)
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(consumerSnapshot.verticalStageDetail)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button {
+                        startPlaybackIfAllowed()
+                    } label: {
+                        Label("Open Vertical Stage", systemImage: "play.fill")
+                            .font(HFTypography.smallAction)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: 220)
+                            .frame(height: 44)
+                            .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, HFSpacing.xs)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityIdentifier("hf.consumer.movieDetail.verticalStagePresentation")
+    }
+
+    private func consumerRecommendationTitle(_ title: String) -> String {
+        if title.localizedCaseInsensitiveContains("Backend") || title.localizedCaseInsensitiveContains("Remote") {
+            return "Recommended"
+        }
+        return title
+    }
+
+    private func consumerRecommendationSubtitle(for category: Category) -> String {
+        if category.id.localizedCaseInsensitiveContains("remote") {
+            return "Selected from your local watch profile."
+        }
+        if category.id == "because-you-watched" {
+            return "Because you watched \(catalogMovie.title)."
+        }
+        if category.id == "similar-titles" {
+            return "Similar tone, genre, and creator-adjacent picks."
+        }
+        if category.id == "coming-soon" {
+            return consumerSnapshot.comingSoonDetail
+        }
+        return category.subtitle ?? "Selected from your local watch profile."
+    }
+
     private var castSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Cast & Creators", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: HFSpacing.sm) {
                     ForEach(cast, id: \.self) { name in
-                        HFGlassPanel(cornerRadius: 18) {
+                        HFGlassPanel(cornerRadius: 18, strokeColor: HFColors.gold.opacity(0.20)) {
                             VStack(spacing: HFSpacing.sm) {
-                                Image(systemName: "person.fill")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundStyle(HFColors.gold)
-                                    .frame(width: 62, height: 62)
-                                    .background(HFColors.charcoalLight)
-                                    .clipShape(Circle())
+                                ZStack {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [
+                                                    HFColors.gold.opacity(0.24),
+                                                    Color.white.opacity(0.06),
+                                                    HFColors.cyanGlow.opacity(0.12)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 24, weight: .bold))
+                                        .foregroundStyle(HFColors.gold)
+                                }
+                                .frame(width: 62, height: 62)
+                                .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
 
                                 Text(name)
                                     .font(HFTypography.caption)
@@ -5238,29 +5456,54 @@ private struct HFFullVerticalDepthPlayer: View {
             LinearGradient(
                 colors: [
                     Color.black,
-                    HFColors.background,
-                    HFColors.gold.opacity(0.20),
+                    HFColors.background.opacity(0.96),
+                    HFColors.gold.opacity(0.24),
                     Color.black
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
 
+            RadialGradient(
+                colors: [
+                    HFColors.gold.opacity(0.28),
+                    HFColors.cyanGlow.opacity(0.10),
+                    .clear
+                ],
+                center: .center,
+                startRadius: 12,
+                endRadius: 320
+            )
+            .blendMode(.screen)
+            .accessibilityHidden(true)
+
             VStack(spacing: HFSpacing.lg) {
                 Spacer()
 
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 58, weight: .black))
-                    .foregroundStyle(HFColors.gold)
-                    .scaleEffect(activationPulse ? 1.04 : 0.98)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 34, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .background(Color.black.opacity(0.34), in: RoundedRectangle(cornerRadius: 34, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                                .stroke(HFColors.gold.opacity(0.24), lineWidth: 1)
+                        )
+                        .frame(width: 172, height: 246)
+                        .shadow(color: HFColors.gold.opacity(0.18), radius: 28, x: 0, y: 18)
+
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 58, weight: .black))
+                        .foregroundStyle(HFColors.gold)
+                        .scaleEffect(activationPulse ? 1.04 : 0.98)
+                }
 
                 VStack(spacing: HFSpacing.xs) {
-                    Text(allowsImportControls ? "Import Video" : "Stream Unavailable")
+                    Text(allowsImportControls ? "Open Vertical Stage" : "Stage Not Available")
                         .font(.system(size: 34, weight: .black))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
 
-                    Text(sourceErrorMessage ?? (allowsImportControls ? "Choose a video to start Vertical Stage playback." : "This title is not available for playback yet."))
+                    Text(sourceErrorMessage ?? (allowsImportControls ? "Choose a local video to frame in the portrait stage." : "This title does not have a playable source on this device yet."))
                         .font(HFTypography.body)
                         .foregroundStyle(HFColors.textSecondary)
                         .multilineTextAlignment(.center)

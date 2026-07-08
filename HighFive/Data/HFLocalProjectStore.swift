@@ -77,6 +77,18 @@ enum HFLocalProjectStore {
         )
     }
 
+    static var consumerExperienceSnapshot: HFConsumerExperienceSnapshot {
+        HFConsumerExperienceIntelligence.snapshot(
+            projects: projects,
+            studioIntelligence: autonomousStudioIntelligenceSnapshot,
+            workflowAutomation: workflowAutomationSnapshot,
+            orchestration: orchestrationSnapshot,
+            missionPlanner: missionPlannerSnapshot,
+            executionTracking: executionTrackingSnapshot,
+            executiveCommand: executiveCommandCenterSnapshot
+        )
+    }
+
     static var higherKeyOSCohesionSnapshot: HFOSCohesionSnapshot {
         let studioIntelligence = autonomousStudioIntelligenceSnapshot
         let workflowAutomation = workflowAutomationSnapshot

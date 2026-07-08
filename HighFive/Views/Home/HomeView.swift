@@ -37,8 +37,24 @@ struct HomeView: View {
         streamingStore.featuredMovie
     }
 
+    private var consumerSnapshot: HFConsumerExperienceSnapshot {
+        HFLocalProjectStore.consumerExperienceSnapshot
+    }
+
     private var continueWatching: [Movie] {
         streamingStore.catalogRuntimeMovies(filter: "Progress", sort: .progress, pageSize: 10)
+    }
+
+    private var recommendedForYouMovies: [Movie] {
+        uniqueMovies(
+            streamingStore.recommendationCollections(anchor: continueWatching.first ?? heroMovie)
+                .flatMap(\.movies)
+        )
+    }
+
+    private var featuredOriginalsMovies: [Movie] {
+        let originals = streamingStore.queryCatalog().filter(\.isOriginal)
+        return uniqueMovies(originals.isEmpty ? streamingStore.allCatalogMovies.filter(\.isOriginal) : originals)
     }
 
     private var categoryCatalogMovies: [Movie] {
@@ -63,14 +79,35 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 figmaHomeHero
                 curatedPosterRail(
-                    title: "Available Now",
-                    movies: availableNowMovies,
-                    identifier: "hf.home.availableNow"
+                    title: "Continue Watching",
+                    detail: consumerSnapshot.continueWatchingDetail,
+                    movies: continueWatching,
+                    identifier: "hf.home.continueWatching"
                 )
                 curatedPosterRail(
+                    title: "Recommended For You",
+                    detail: consumerSnapshot.recommendedDetail,
+                    movies: recommendedForYouMovies,
+                    identifier: "hf.home.recommendedForYou"
+                )
+                curatedPosterRail(
+                    title: "Featured Originals",
+                    detail: "HighFive stories with premium local placement.",
+                    movies: featuredOriginalsMovies,
+                    identifier: "hf.home.featuredOriginals"
+                )
+                consumerSignalStrip
+                curatedPosterRail(
                     title: "Coming Soon",
+                    detail: consumerSnapshot.comingSoonDetail,
                     movies: comingSoonMovies,
                     identifier: "hf.home.comingSoon"
+                )
+                curatedPosterRail(
+                    title: "Available Now",
+                    detail: consumerSnapshot.availableNowDetail,
+                    movies: availableNowMovies,
+                    identifier: "hf.home.availableNow"
                 )
                 importedVideosSection
             }
@@ -146,6 +183,8 @@ struct HomeView: View {
                 Image("mark_west_hero_keyart")
                     .resizable()
                     .scaledToFill()
+                    .scaleEffect(reduceMotion ? 1 : (isHeroAwake ? 1.028 : 1.0))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 1.15), value: isHeroAwake)
                     .accessibilityHidden(true)
             } else {
                 markOfTheWestProceduralBackdrop
@@ -171,6 +210,20 @@ struct HomeView: View {
                 startPoint: .leading,
                 endPoint: .trailing
             )
+
+            RadialGradient(
+                colors: [
+                    HFColors.gold.opacity(0.28),
+                    HFColors.gold.opacity(0.08),
+                    .clear
+                ],
+                center: UnitPoint(x: 0.18, y: 0.72),
+                startRadius: 20,
+                endRadius: 360
+            )
+            .blendMode(.screen)
+            .opacity(isHeroAwake ? 1 : 0.48)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.9), value: isHeroAwake)
         }
         .background(Color.black)
     }
@@ -321,7 +374,7 @@ struct HomeView: View {
             Spacer()
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("PRE-PRODUCTION")
+                Text(consumerSnapshot.heroEyebrow.uppercased())
                     .font(.system(size: 13, weight: .black, design: .default))
                     .tracking(1.7)
                     .foregroundStyle(HFColors.gold)
@@ -339,9 +392,11 @@ struct HomeView: View {
                     .foregroundStyle(HFColors.gold.opacity(0.94))
                     .textCase(.uppercase)
 
-                Text("Starring Derek Hinkey")
+                Text(consumerSnapshot.heroDetail)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.86))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text("A HighFive Cinema Original")
                     .font(.system(size: 14, weight: .semibold))
@@ -550,10 +605,10 @@ struct HomeView: View {
         .accessibilityIdentifier("hf.rsf02.home.rail.\(title)")
     }
 
-    private func curatedPosterRail(title: String, movies: [Movie], identifier: String) -> some View {
+    private var consumerSignalStrip: some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HStack {
-                Text(title)
+                Text("Trending Locally")
                     .font(.system(size: 22, weight: .black))
                     .foregroundStyle(.white)
 
@@ -562,8 +617,76 @@ struct HomeView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: HFSpacing.sm) {
+                    ForEach(consumerSnapshot.trendingSignals.prefix(4)) { signal in
+                        localConsumerSignalCard(signal)
+                    }
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.home.localSignals")
+    }
+
+    private func localConsumerSignalCard(_ signal: HFConsumerExperienceSignal) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: signal.systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 38, height: 38)
+                .background(HFColors.gold.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            Text(signal.title)
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+            Text(signal.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(width: 172, alignment: .topLeading)
+        .frame(minHeight: 128, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private func curatedPosterRail(title: String, detail: String? = nil, movies: [Movie], identifier: String) -> some View {
+        let railMovies = movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
+        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(.white)
+                    if let detail, !detail.isEmpty {
+                        Text(detail)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                    }
+                }
+
+                Spacer()
+
+                Text("Local")
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(height: 26)
+                    .background(Color.white.opacity(0.07), in: Capsule())
+                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
+            }
+            .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: HFSpacing.md) {
-                    ForEach(movies) { movie in
+                    ForEach(railMovies) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 148, showTitle: false, posterOnly: true)
                                 .accessibilityIdentifier(movie.catalogCardAccessibilityIdentifier)
@@ -574,7 +697,15 @@ struct HomeView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .opacity(isHeroAwake ? 1 : 0)
+        .offset(y: reduceMotion ? 0 : (isHeroAwake ? 0 : 10))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.38).delay(0.08), value: isHeroAwake)
         .accessibilityIdentifier(identifier)
+    }
+
+    private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
+        var seen = Set<String>()
+        return movies.filter { seen.insert($0.id).inserted }
     }
 
     private var header: some View {

@@ -32,7 +32,7 @@ struct MyListView: View {
 
     private let forcesEmptyState: Bool
     private let showsLibraryPolishAudit: Bool
-    private let filters = ["Saved", "Continue Watching", "Watch Later", "Favorites", "History", "Offline"]
+    private let filters = ["Collections", "Continue Watching", "Recently Watched", "Favorites", "Purchased", "Downloaded", "Watch Later"]
     private let columns = [
         GridItem(.adaptive(minimum: HFSpacing.posterGridWidth), spacing: HFSpacing.md)
     ]
@@ -44,15 +44,15 @@ struct MyListView: View {
         if arguments.contains("--hf-fpp-library-polish") || arguments.contains("--hf-start-library-continue") {
             initialFilter = "Continue Watching"
         } else if arguments.contains("--hf-start-library-history") {
-            initialFilter = "History"
+            initialFilter = "Recently Watched"
         } else if arguments.contains("--hf-start-library-favorites") {
             initialFilter = "Favorites"
         } else if arguments.contains("--hf-start-library-watch-later") {
             initialFilter = "Watch Later"
         } else if arguments.contains("--hf-start-library-offline") {
-            initialFilter = "Offline"
+            initialFilter = "Downloaded"
         } else {
-            initialFilter = "Saved"
+            initialFilter = "Collections"
         }
         _selectedFilter = State(initialValue: initialFilter)
         forcesEmptyState = arguments.contains("--hf-start-library-empty")
@@ -86,6 +86,14 @@ struct MyListView: View {
         forcesEmptyState ? nil : streamingStore.libraryLastViewedMovie
     }
 
+    private var purchasedMovies: [Movie] {
+        savedMovies.filter { !$0.isComingSoon }
+    }
+
+    private var collectionMovies: [Movie] {
+        uniqueMovies(streamingStore.libraryUserCollections.flatMap(\.movies) + savedMovies)
+    }
+
     private var visibleMovies: [Movie] {
         switch selectedFilter {
         case "Continue Watching":
@@ -94,10 +102,14 @@ struct MyListView: View {
             return streamingStore.libraryWatchLaterMovies
         case "Favorites":
             return streamingStore.libraryFavoriteMovies
-        case "History":
+        case "Recently Watched", "History":
             return streamingStore.libraryViewingHistory.map(\.movie)
-        case "Offline":
+        case "Downloaded", "Offline":
             return offlineMovies
+        case "Purchased":
+            return purchasedMovies
+        case "Collections":
+            return collectionMovies
         default:
             return savedMovies
         }
@@ -111,6 +123,7 @@ struct MyListView: View {
                     figmaLibraryEmpty
                 } else {
                     figmaContinueCard
+                    consumerLibraryOverview
                     figmaLibraryFilterRow
                     figmaLibraryGrid
                 }
@@ -146,7 +159,7 @@ struct MyListView: View {
             Text("Library")
                 .font(.system(size: 36, weight: .black))
                 .foregroundStyle(.white)
-            Text("Your saved titles and continue watching.")
+            Text("Collections, recently watched, favorites, purchased titles, downloads, and watch later.")
                 .font(HFTypography.caption)
                 .foregroundStyle(HFColors.textSecondary)
         }
@@ -184,8 +197,23 @@ struct MyListView: View {
                     Spacer(minLength: 0)
                 }
                 .padding(HFSpacing.md)
-                .background(Color.white.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.10),
+                            HFColors.gold.opacity(0.06),
+                            Color.white.opacity(0.04)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
+                )
+                .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 18, x: 0, y: 12)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -195,7 +223,7 @@ struct MyListView: View {
     private var figmaLibraryFilterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: HFSpacing.xs) {
-                ForEach(filters.prefix(4), id: \.self) { filter in
+                ForEach(filters, id: \.self) { filter in
                     HFFilterChip(title: filter, isSelected: selectedFilter == filter) {
                         selectedFilter = filter
                     }
@@ -217,17 +245,105 @@ struct MyListView: View {
                 .font(.system(size: 22, weight: .black))
                 .foregroundStyle(.white)
 
-            LazyVGrid(columns: gridColumns, spacing: HFSpacing.md) {
-                ForEach(visibleMovies.prefix(18)) { movie in
-                    NavigationLink(value: movie) {
-                        HFPosterCard(movie: movie, width: 112, showTitle: false, posterOnly: true)
+            if visibleMovies.isEmpty {
+                libraryEmptyShelfCard
+            } else {
+                LazyVGrid(columns: gridColumns, spacing: HFSpacing.md) {
+                    ForEach(visibleMovies.prefix(18)) { movie in
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 112, showTitle: false, posterOnly: true)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.rsf02.library.grid")
+    }
+
+    private var libraryEmptyShelfCard: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Image(systemName: "rectangle.stack.badge.plus")
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 44, height: 44)
+                .background(HFColors.gold.opacity(0.14), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            Text("\(selectedFilter) is ready")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+            Text("Save, favorite, download, or resume a local title to fill this shelf.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.md)
+        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.20), lineWidth: 1)
+        )
+        .accessibilityIdentifier("hf.consumer.library.emptyShelf")
+    }
+
+    private var consumerLibraryOverview: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            Text("Your Shelves")
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(.white)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: HFSpacing.sm) {
+                    libraryShelfSummary(title: "Collections", value: "\(streamingStore.libraryUserCollections.count)", detail: "Local grouped shelves", systemImage: "rectangle.stack.fill", filter: "Collections", accent: HFColors.violet)
+                    libraryShelfSummary(title: "Recently Watched", value: "\(streamingStore.libraryViewingHistory.count)", detail: "Local playback history", systemImage: "clock.arrow.circlepath", filter: "Recently Watched", accent: HFColors.cyanGlow)
+                    libraryShelfSummary(title: "Favorites", value: "\(streamingStore.libraryFavoriteMovies.count)", detail: "Pinned local picks", systemImage: "star.fill", filter: "Favorites", accent: HFColors.gold)
+                    libraryShelfSummary(title: "Purchased", value: "\(purchasedMovies.count)", detail: "Unlocked or saved titles", systemImage: "checkmark.seal.fill", filter: "Purchased", accent: HFColors.gold)
+                    libraryShelfSummary(title: "Downloaded", value: "\(offlineMovies.count)", detail: "Available offline", systemImage: "arrow.down.circle.fill", filter: "Downloaded", accent: HFColors.cyanGlow)
+                    libraryShelfSummary(title: "Watch Later", value: "\(streamingStore.libraryWatchLaterMovies.count)", detail: "Saved for later", systemImage: "bookmark.fill", filter: "Watch Later", accent: HFColors.violet)
+                }
+                .padding(.horizontal, HFSpacing.screenHorizontal)
+            }
+        }
+        .accessibilityIdentifier("hf.consumer.library.shelves")
+    }
+
+    private func libraryShelfSummary(title: String, value: String, detail: String, systemImage: String, filter: String, accent: Color) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : HFSpatialMotionTokens.microAnimation) {
+                selectedFilter = filter
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(accent)
+                    .frame(width: 38, height: 38)
+                    .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                Text(value)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(title)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+            }
+            .frame(width: 144, alignment: .topLeading)
+            .frame(minHeight: 128, alignment: .topLeading)
+            .padding(HFSpacing.sm)
+            .background(selectedFilter == filter ? accent.opacity(0.16) : Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke((selectedFilter == filter ? accent : Color.white).opacity(selectedFilter == filter ? 0.42 : 0.10), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var figmaLibraryEmpty: some View {
@@ -403,9 +519,9 @@ struct MyListView: View {
             ),
             HFLibraryShelfShortcut(
                 id: "saved",
-                title: "Saved",
-                detail: "My List",
-                value: "\(savedMovies.count)",
+                title: "Collections",
+                detail: "Grouped shelves",
+                value: "\(streamingStore.libraryUserCollections.count)",
                 systemImage: "bookmark.fill",
                 accent: HFColors.gold
             ),
@@ -419,7 +535,7 @@ struct MyListView: View {
             ),
             HFLibraryShelfShortcut(
                 id: "history",
-                title: "History",
+                title: "Recently Watched",
                 detail: "Recently viewed",
                 value: "\(streamingStore.libraryViewingHistory.count)",
                 systemImage: "clock.fill",
@@ -427,13 +543,18 @@ struct MyListView: View {
             ),
             HFLibraryShelfShortcut(
                 id: "offline",
-                title: "Offline",
-                detail: "Local capsule",
+                title: "Downloaded",
+                detail: "Offline shelf",
                 value: "\(offlineMovies.count)",
                 systemImage: "arrow.down.circle.fill",
                 accent: HFColors.cyanGlow
             )
         ]
+    }
+
+    private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
+        var seen = Set<String>()
+        return movies.filter { seen.insert($0.id).inserted }
     }
 
     private var libraryPolishAuditSurface: some View {

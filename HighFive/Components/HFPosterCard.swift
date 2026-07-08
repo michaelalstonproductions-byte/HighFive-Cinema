@@ -185,6 +185,8 @@ struct HFPosterCard: View {
             )
             .frame(width: posterArtworkWidth, height: posterArtworkHeight)
 
+            premiumPosterFinish
+
             if showProgress, let progress = movie.progress {
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
@@ -204,7 +206,71 @@ struct HFPosterCard: View {
         .aspectRatio(2.0 / 3.0, contentMode: .fit)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.16),
+                            HFColors.gold.opacity(movie.isOriginal ? 0.46 : 0.24),
+                            Color.white.opacity(0.05)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .background(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius + 4, style: .continuous)
+                .fill(HFColors.gold.opacity(movie.isOriginal ? 0.10 : 0.05))
+                .blur(radius: 14)
+                .offset(y: 8)
+        )
         .accessibilityIdentifier("hf.catalog.posterImage.\(movie.id)")
+    }
+
+    private var premiumPosterFinish: some View {
+        ZStack {
+            HStack {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.18),
+                                HFColors.gold.opacity(0.12),
+                                Color.clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 1)
+                Spacer(minLength: 0)
+                Rectangle()
+                    .fill(HFColors.gold.opacity(movie.isOriginal ? 0.24 : 0.10))
+                    .frame(width: 1)
+            }
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.20),
+                    Color.white.opacity(0.02),
+                    Color.clear
+                ],
+                startPoint: .topLeading,
+                endPoint: UnitPoint(x: 0.62, y: 0.44)
+            )
+            .blendMode(.screen)
+
+            Capsule()
+                .fill(Color.white.opacity(0.10))
+                .frame(width: posterArtworkWidth * 0.74, height: 1)
+                .blur(radius: 2)
+                .offset(y: -posterArtworkHeight * 0.38)
+        }
+        .frame(width: posterArtworkWidth, height: posterArtworkHeight)
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
