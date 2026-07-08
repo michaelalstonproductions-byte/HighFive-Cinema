@@ -50,7 +50,7 @@ enum HFExecutiveCommandCenterEngine {
 
         return HFExecutiveCommandCenterSnapshot(
             sourceLabel: sourceLabel,
-            summary: "Executive Command Center reads \(projects.count) projects, \(missionPlanner.activeMissions.count) missions, \(executionTracking.activeExecutionStatuses.count) execution statuses, and \(risks.count) risk records locally.",
+            summary: "Executive Command reads \(projects.count) projects, \(missionPlanner.activeMissions.count) missions, \(executionTracking.activeExecutionStatuses.count) execution statuses, and \(risks.count) risk records locally.",
             healthMetrics: health,
             executiveSummary: summary,
             briefing: briefing,
@@ -241,7 +241,7 @@ enum HFExecutiveCommandCenterEngine {
 
     private static func commandActions() -> [HFExecutiveCommandAction] {
         [
-            HFExecutiveCommandAction(id: "open-brain", title: "Open Brain", detail: "Navigate to HigherKey Brain.", targetWorkspace: .higherKeyBrain, systemImage: "brain.head.profile"),
+            HFExecutiveCommandAction(id: "open-brain", title: "Open HigherKey Brain", detail: "Navigate back to the local Brain operating view.", targetWorkspace: .higherKeyBrain, systemImage: "brain.head.profile"),
             HFExecutiveCommandAction(id: "open-mission-planner", title: "Open Mission Planner", detail: "Review active local mission plans.", targetWorkspace: .higherKeyBrain, systemImage: "checklist.checked"),
             HFExecutiveCommandAction(id: "open-workflow-automation", title: "Open Workflow Automation", detail: "Review local workflow rules.", targetWorkspace: .workflowAutomation, systemImage: "arrow.triangle.branch"),
             HFExecutiveCommandAction(id: "open-packaging-studio", title: "Open Packaging Studio", detail: "Navigate to packaging review.", targetWorkspace: .packagingStudio, systemImage: "shippingbox.fill"),
