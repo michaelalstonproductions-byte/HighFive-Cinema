@@ -504,6 +504,257 @@ extension HFMissionPriority {
     }
 }
 
+enum HFExecutionTaskState: String, Codable, Hashable, Sendable {
+    case notStarted = "Not Started"
+    case inProgress = "In Progress"
+    case blocked = "Blocked"
+    case reviewNeeded = "Review Needed"
+    case complete = "Complete"
+}
+
+enum HFExecutionForecastConfidence: String, Codable, Hashable, Sendable {
+    case high = "High"
+    case medium = "Medium"
+    case low = "Low"
+}
+
+struct HFMissionExecutionStatus: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let status: HFExecutionTaskState
+    let completionPercent: Int
+    let activeTaskCount: Int
+    let blockedTaskCount: Int
+    let ownerPlaceholder: String
+    let systemImage: String
+}
+
+struct HFTaskCompletionState: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let taskID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let workspace: HFOrchestrationWorkspace
+    let state: HFExecutionTaskState
+    let completionPercent: Int
+    let ownerPlaceholder: String
+    let priority: HFMissionPriority
+    let systemImage: String
+}
+
+struct HFProgressHistoryEvent: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sequenceIndex: Int
+    let title: String
+    let detail: String
+    let progressLabel: String
+    let state: HFExecutionTaskState
+    let systemImage: String
+}
+
+struct HFTeamOwnershipPlaceholder: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let ownerName: String
+    let role: String
+    let workspace: HFOrchestrationWorkspace
+    let responsibility: String
+    let state: HFExecutionTaskState
+    let systemImage: String
+}
+
+struct HFTimelineProgress: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sequenceIndex: Int
+    let title: String
+    let workspace: HFOrchestrationWorkspace
+    let progressPercent: Int
+    let blockedCount: Int
+    let state: HFExecutionTaskState
+    let systemImage: String
+}
+
+struct HFCompletionForecast: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let missionID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let forecastLabel: String
+    let confidence: HFExecutionForecastConfidence
+    let blockerRisk: String
+    let nextBestAction: String
+    let projectedCompletionPercent: Int
+    let systemImage: String
+}
+
+struct HFExecutionTrackingSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let activeExecutionStatuses: [HFMissionExecutionStatus]
+    let taskCompletionStates: [HFTaskCompletionState]
+    let progressHistory: [HFProgressHistoryEvent]
+    let ownerPlaceholders: [HFTeamOwnershipPlaceholder]
+    let timelineProgress: [HFTimelineProgress]
+    let completionForecasts: [HFCompletionForecast]
+
+    var blockedTaskCount: Int {
+        taskCompletionStates.filter { $0.state == .blocked }.count
+    }
+
+    var averageCompletionPercent: Int {
+        guard !activeExecutionStatuses.isEmpty else { return 0 }
+        let total = activeExecutionStatuses.reduce(0) { $0 + $1.completionPercent }
+        return total / activeExecutionStatuses.count
+    }
+}
+
+enum HFExecutiveRiskLevel: String, CaseIterable, Codable, Hashable, Sendable {
+    case critical = "Critical"
+    case high = "High"
+    case medium = "Medium"
+    case low = "Low"
+}
+
+enum HFExecutiveResourceArea: String, CaseIterable, Codable, Hashable, Sendable {
+    case creative = "Creative"
+    case packaging = "Packaging"
+    case qa = "QA"
+    case marketing = "Marketing"
+    case engineering = "Engineering"
+
+    var systemImage: String {
+        switch self {
+        case .creative:
+            return "wand.and.stars"
+        case .packaging:
+            return "shippingbox.fill"
+        case .qa:
+            return "checklist.checked"
+        case .marketing:
+            return "megaphone.fill"
+        case .engineering:
+            return "hammer.fill"
+        }
+    }
+}
+
+enum HFExecutiveTimelineStage: String, CaseIterable, Codable, Hashable, Sendable {
+    case development = "Development"
+    case packaging = "Packaging"
+    case qa = "QA"
+    case release = "Release"
+    case marketing = "Marketing"
+
+    var workspace: HFOrchestrationWorkspace {
+        switch self {
+        case .development:
+            return .creatorOS
+        case .packaging:
+            return .packagingStudio
+        case .qa:
+            return .qa
+        case .release:
+            return .release
+        case .marketing:
+            return .marketing
+        }
+    }
+}
+
+struct HFExecutiveHealthMetric: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let score: Int
+    let detail: String
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFExecutiveSummary: Codable, Hashable, Sendable {
+    let projectCount: Int
+    let completedMilestones: Int
+    let blockedProjects: Int
+    let criticalRisks: Int
+    let projectsReadyForReview: Int
+    let projectsReadyForRelease: Int
+}
+
+struct HFExecutiveBriefing: Codable, Hashable, Sendable {
+    let todaysPriorities: String
+    let highestRisk: String
+    let highestOpportunity: String
+    let recommendedFocus: String
+}
+
+struct HFExecutiveRiskRecord: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let level: HFExecutiveRiskLevel
+    let title: String
+    let detail: String
+    let source: String
+    let systemImage: String
+}
+
+struct HFExecutiveResourceAllocation: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let area: HFExecutiveResourceArea
+    let allocationLabel: String
+    let detail: String
+    let loadScore: Int
+    let isPlaceholder: Bool
+    let systemImage: String
+}
+
+struct HFExecutiveTimelineItem: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let stage: HFExecutiveTimelineStage
+    let title: String
+    let detail: String
+    let progressPercent: Int
+    let blockedCount: Int
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFExecutiveCommandAction: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let detail: String
+    let targetWorkspace: HFOrchestrationWorkspace?
+    let systemImage: String
+}
+
+struct HFExecutiveCommandCenterSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let healthMetrics: [HFExecutiveHealthMetric]
+    let executiveSummary: HFExecutiveSummary
+    let briefing: HFExecutiveBriefing
+    let riskMatrix: [HFExecutiveRiskRecord]
+    let resourceAllocation: [HFExecutiveResourceAllocation]
+    let timeline: [HFExecutiveTimelineItem]
+    let commandActions: [HFExecutiveCommandAction]
+
+    var overallStudioScore: Int {
+        healthMetrics.first { $0.id == "overall-studio-score" }?.score ?? 0
+    }
+}
+
 struct HFProject: Identifiable, Codable, Hashable, Sendable {
     let id: HFProjectID
     let movieID: String?

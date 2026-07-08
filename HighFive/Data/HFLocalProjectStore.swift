@@ -57,17 +57,39 @@ enum HFLocalProjectStore {
         )
     }
 
+    static var executionTrackingSnapshot: HFExecutionTrackingSnapshot {
+        HFExecutionTrackingEngine.snapshot(
+            projects: projects,
+            missionPlanner: missionPlannerSnapshot,
+            orchestration: orchestrationSnapshot,
+            workflowAutomation: workflowAutomationSnapshot
+        )
+    }
+
+    static var executiveCommandCenterSnapshot: HFExecutiveCommandCenterSnapshot {
+        HFExecutiveCommandCenterEngine.snapshot(
+            projects: projects,
+            studioIntelligence: autonomousStudioIntelligenceSnapshot,
+            workflowAutomation: workflowAutomationSnapshot,
+            orchestration: orchestrationSnapshot,
+            missionPlanner: missionPlannerSnapshot,
+            executionTracking: executionTrackingSnapshot
+        )
+    }
+
     static var higherKeyBrainSnapshot: HFProjectBrainSnapshot {
         let active = creatorOSProject
         let intelligence = autonomousStudioIntelligenceSnapshot
         let workflowAutomation = workflowAutomationSnapshot
         let orchestration = orchestrationSnapshot
         let missionPlanner = missionPlannerSnapshot
+        let executionTracking = executionTrackingSnapshot
+        let executiveCommand = executiveCommandCenterSnapshot
         return HFProjectBrainSnapshot(
             projectCount: projects.count,
             primaryProjectTitle: active.title,
             sourceLabel: "HFLocalProjectStore",
-            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) studio signals, \(workflowAutomation.totalSignalCount) workflow automation signals, \(orchestration.queue.count) orchestration queue items, and \(missionPlanner.activeMissions.count) active mission plans.",
+            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) studio signals, \(workflowAutomation.totalSignalCount) workflow automation signals, \(orchestration.queue.count) orchestration queue items, \(missionPlanner.activeMissions.count) active mission plans, \(executionTracking.activeExecutionStatuses.count) execution status records, and an executive score of \(executiveCommand.overallStudioScore)%.",
             toolSignals: [
                 HFProjectToolSignal(id: "packaging", title: "Packaging Studio", value: packagingProject.shortTitle, detail: packagingProject.packageStatus, systemImage: "shippingbox.fill"),
                 HFProjectToolSignal(id: "creator-os", title: "Creator OS", value: active.readinessPercentLabel, detail: active.workflowStage, systemImage: "command"),
@@ -75,6 +97,8 @@ enum HFLocalProjectStore {
                 HFProjectToolSignal(id: "workflow-automation", title: "Workflow Automation", value: "\(workflowAutomation.triggeredSuggestions.count)", detail: "Local triggered suggestions", systemImage: "arrow.triangle.branch"),
                 HFProjectToolSignal(id: "orchestration", title: "Orchestration", value: "\(orchestration.queue.count)", detail: "Local handoff queue derived", systemImage: "point.3.connected.trianglepath.dotted"),
                 HFProjectToolSignal(id: "mission-planner", title: "Mission Planner", value: "\(missionPlanner.activeMissions.count)", detail: "Local mission plans derived", systemImage: "checklist.checked"),
+                HFProjectToolSignal(id: "execution-tracking", title: "Execution Tracking", value: "\(executionTracking.averageCompletionPercent)%", detail: "Local execution progress derived", systemImage: "chart.line.uptrend.xyaxis"),
+                HFProjectToolSignal(id: "executive-command", title: "Executive Command", value: "\(executiveCommand.overallStudioScore)%", detail: "Read-only executive operating view", systemImage: "gauge.with.dots.needle.50percent"),
                 HFProjectToolSignal(id: "operator-runtime", title: "Operator Runtime", value: "Signal", detail: "Graph remains intact with project-state input only", systemImage: "point.3.connected.trianglepath.dotted")
             ]
         )

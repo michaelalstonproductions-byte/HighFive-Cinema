@@ -1500,22 +1500,101 @@ private struct HFHighFiveOSView: View {
     }
 
     private var executiveDashboardSurface: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+        let snapshot = HFLocalProjectStore.executiveCommandCenterSnapshot
+        let summary = snapshot.executiveSummary
+
+        return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: 36, strokeColor: HFColors.gold.opacity(0.50)) {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                    osSectionHeader(title: "Executive Dashboard", detail: "One read-only platform cockpit for the HighFive ecosystem.")
-                    HStack(alignment: .top, spacing: HFSpacing.sm) {
-                        executiveTile("Platform Health", "Ready", "Local visual state", HFColors.cyanGlow)
-                        executiveTile("Growth", "\(savedCount) saved", "Local library signal", HFColors.gold)
-                    }
-                    HStack(alignment: .top, spacing: HFSpacing.sm) {
-                        executiveTile("Creator Status", "Draft", "Studio surfaces staged", HFColors.violet)
-                        executiveTile("Launch Status", "Review", "Distribution center preview", HFColors.gold)
+                    osSectionHeader(title: "Executive Command Center", detail: "One read-only operating view derived from local HigherKey OS systems.")
+                    insightCard("Executive Snapshot", snapshot.summary, "gauge.with.dots.needle.50percent", HFColors.gold)
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        ForEach(snapshot.healthMetrics) { metric in
+                            commandMetricCard(HFCommandMetric(title: metric.title, value: "\(metric.score)%", detail: metric.detail, accent: brainAccent(for: metric.severity), systemImage: metric.systemImage))
+                        }
                     }
                 }
                 .padding(HFSpacing.lg)
             }
-            roomStatusGrid
+
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.36)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Executive Summary", detail: "Local project, mission, risk, release, and review counts.")
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        commandMetricCard(HFCommandMetric(title: "Projects", value: "\(summary.projectCount)", detail: "Local project state", accent: HFColors.cyanGlow, systemImage: "square.stack.3d.up.fill"))
+                        commandMetricCard(HFCommandMetric(title: "Milestones", value: "\(summary.completedMilestones)", detail: "Completed locally", accent: HFColors.gold, systemImage: "flag.checkered"))
+                        commandMetricCard(HFCommandMetric(title: "Blocked", value: "\(summary.blockedProjects)", detail: "Blocked projects", accent: summary.blockedProjects > 0 ? HFColors.redAccent : HFColors.cyanGlow, systemImage: "exclamationmark.triangle.fill"))
+                        commandMetricCard(HFCommandMetric(title: "Critical", value: "\(summary.criticalRisks)", detail: "Critical risks", accent: summary.criticalRisks > 0 ? HFColors.redAccent : HFColors.cyanGlow, systemImage: "lock.trianglebadge.exclamationmark.fill"))
+                        commandMetricCard(HFCommandMetric(title: "Review", value: "\(summary.projectsReadyForReview)", detail: "Ready for review", accent: HFColors.violet, systemImage: "checklist.checked"))
+                        commandMetricCard(HFCommandMetric(title: "Release", value: "\(summary.projectsReadyForRelease)", detail: "Ready for release", accent: HFColors.gold, systemImage: "sparkles.tv.fill"))
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    osSectionHeader(title: "Executive Briefing", detail: "Deterministic local summary with no AI, network, persistence, upload, or publish path.")
+                    brainSignalRow(title: "Today's Priorities", detail: snapshot.briefing.todaysPriorities, status: "Priority", systemImage: "target", accent: HFColors.gold)
+                    brainSignalRow(title: "Highest Risk", detail: snapshot.briefing.highestRisk, status: "Risk", systemImage: "exclamationmark.triangle.fill", accent: HFColors.redAccent)
+                    brainSignalRow(title: "Highest Opportunity", detail: snapshot.briefing.highestOpportunity, status: "Opportunity", systemImage: "sparkles", accent: HFColors.cyanGlow)
+                    brainSignalRow(title: "Recommended Focus", detail: snapshot.briefing.recommendedFocus, status: "Focus", systemImage: "scope", accent: HFColors.violet)
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.redAccent.opacity(0.30)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    osSectionHeader(title: "Risk Matrix", detail: "Critical, high, medium, and low risks grouped by project from local engines.")
+                    ForEach(HFExecutiveRiskLevel.allCases, id: \.rawValue) { level in
+                        let risks = snapshot.riskMatrix.filter { $0.level == level }
+                        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                            Text("\(level.rawValue) (\(risks.count))")
+                                .font(HFTypography.cardTitle)
+                                .foregroundStyle(executiveRiskAccent(for: level))
+                            ForEach(risks.prefix(4)) { risk in
+                                brainSignalRow(title: "\(risk.projectTitle): \(risk.title)", detail: "\(risk.detail) Source: \(risk.source).", status: risk.level.rawValue, systemImage: risk.systemImage, accent: executiveRiskAccent(for: risk.level))
+                            }
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Resource Allocation", detail: "Placeholder allocation only. No staffing, CRM, backend, or persistence is connected.")
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 148), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        ForEach(snapshot.resourceAllocation) { resource in
+                            commandMetricCard(HFCommandMetric(title: resource.area.rawValue, value: resource.allocationLabel, detail: "\(resource.loadScore)% load. \(resource.detail)", accent: resourceAccent(for: resource.loadScore), systemImage: resource.systemImage))
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: HFSpacing.md) {
+                    osSectionHeader(title: "Executive Timeline", detail: "Development, Packaging, QA, Release, and Marketing timeline from Mission Planner and Execution Tracking.")
+                    ForEach(snapshot.timeline) { item in
+                        brainSignalRow(title: "\(item.stage.rawValue) \(item.progressPercent)%", detail: "\(item.detail) \(item.blockedCount) blockers.", status: item.blockedCount > 0 ? "Blocked" : "Local", systemImage: item.systemImage, accent: brainAccent(for: item.severity))
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
+
+            HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.34)) {
+                VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                    osSectionHeader(title: "Command Center", detail: "Local navigation only. Buttons do not publish, upload, persist, or call a backend.")
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        ForEach(snapshot.commandActions) { action in
+                            executiveCommandButton(action)
+                        }
+                    }
+                }
+                .padding(HFSpacing.lg)
+            }
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.command.center.executiveDashboard")
@@ -1536,6 +1615,7 @@ private struct HFHighFiveOSView: View {
         let workflowAutomation = HFLocalProjectStore.workflowAutomationSnapshot
         let orchestration = HFLocalProjectStore.orchestrationSnapshot
         let missionPlanner = HFLocalProjectStore.missionPlannerSnapshot
+        let executionTracking = HFLocalProjectStore.executionTrackingSnapshot
 
         return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
@@ -1547,12 +1627,14 @@ private struct HFHighFiveOSView: View {
                     insightCard("Workflow Automation", workflowAutomation.summary, "arrow.triangle.branch", HFColors.cyanGlow)
                     insightCard("Orchestration Engine", orchestration.summary, "point.3.connected.trianglepath.dotted", HFColors.violet)
                     insightCard("Mission Planner", missionPlanner.summary, "checklist.checked", HFColors.gold)
+                    insightCard("Execution Tracking", executionTracking.summary, "chart.line.uptrend.xyaxis", HFColors.cyanGlow)
                 }
                 .padding(HFSpacing.lg)
             }
             brainDashboardSection(studioIntelligence)
             orchestrationSection(orchestration)
             missionPlannerSection(missionPlanner)
+            executionTrackingSection(executionTracking)
             workflowAutomationSection(workflowAutomation)
             activitySignalsPanel
         }
@@ -1746,6 +1828,77 @@ private struct HFHighFiveOSView: View {
             .padding(HFSpacing.lg)
         }
         .accessibilityIdentifier("hf.command.center.missionPlanner")
+    }
+
+    private func executionTrackingSection(_ snapshot: HFExecutionTrackingSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Execution Tracking Foundation", detail: "Local execution status turns mission plans into task state, progress history, ownership placeholders, timeline progress, and completion forecasts.")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Execution", value: "\(snapshot.activeExecutionStatuses.count)", detail: "Active statuses", accent: HFColors.cyanGlow, systemImage: "chart.line.uptrend.xyaxis"))
+                    commandMetricCard(HFCommandMetric(title: "Completion", value: "\(snapshot.averageCompletionPercent)%", detail: "Average progress", accent: HFColors.gold, systemImage: "gauge.with.dots.needle.67percent"))
+                    commandMetricCard(HFCommandMetric(title: "Tasks", value: "\(snapshot.taskCompletionStates.count)", detail: "Tracked states", accent: HFColors.violet, systemImage: "checklist.checked"))
+                    commandMetricCard(HFCommandMetric(title: "Blocked", value: "\(snapshot.blockedTaskCount)", detail: "Execution holds", accent: snapshot.blockedTaskCount > 0 ? HFColors.redAccent : HFColors.cyanGlow, systemImage: "exclamationmark.triangle.fill"))
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Active Execution Status")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.activeExecutionStatuses.prefix(3)) { status in
+                        brainSignalRow(title: status.title, detail: "\(status.completionPercent)% complete. \(status.activeTaskCount) active tasks, \(status.blockedTaskCount) blocked. Owner: \(status.ownerPlaceholder).", status: status.status.rawValue, systemImage: status.systemImage, accent: executionAccent(for: status.status))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Task Completion")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.taskCompletionStates.prefix(5)) { task in
+                        brainSignalRow(title: task.title, detail: "\(task.projectTitle) -> \(task.workspace.rawValue). \(task.completionPercent)% complete. Owner: \(task.ownerPlaceholder).", status: task.state.rawValue, systemImage: task.systemImage, accent: executionAccent(for: task.state))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Progress History")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.progressHistory.prefix(5)) { event in
+                        brainSignalRow(title: "\(event.sequenceIndex). \(event.title)", detail: "\(event.projectTitle) - \(event.detail)", status: event.progressLabel, systemImage: event.systemImage, accent: executionAccent(for: event.state))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Owner Placeholders")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.ownerPlaceholders.prefix(5)) { owner in
+                        brainSignalRow(title: owner.ownerName, detail: "\(owner.role) for \(owner.projectTitle): \(owner.responsibility)", status: owner.state.rawValue, systemImage: owner.systemImage, accent: executionAccent(for: owner.state))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Timeline Progress")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.timelineProgress.prefix(6)) { progress in
+                        brainSignalRow(title: "\(progress.sequenceIndex). \(progress.title)", detail: "\(progress.projectTitle) -> \(progress.workspace.rawValue). \(progress.progressPercent)% timeline progress, \(progress.blockedCount) blockers.", status: progress.state.rawValue, systemImage: progress.systemImage, accent: executionAccent(for: progress.state))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Completion Forecast")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.completionForecasts.prefix(3)) { forecast in
+                        brainSignalRow(title: forecast.forecastLabel, detail: "\(forecast.projectTitle): \(forecast.projectedCompletionPercent)% projected. \(forecast.blockerRisk). Next: \(forecast.nextBestAction).", status: forecast.confidence.rawValue, systemImage: forecast.systemImage, accent: forecastAccent(for: forecast.confidence))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.executionTracking")
     }
 
     private func workflowAutomationSection(_ snapshot: HFWorkflowAutomationSnapshot) -> some View {
@@ -2282,6 +2435,55 @@ private struct HFHighFiveOSView: View {
         .accessibilityIdentifier("hf.command.center.orchestration.\(action.id)")
     }
 
+    private func executiveCommandButton(_ action: HFExecutiveCommandAction) -> some View {
+        let accent = action.targetWorkspace.map(executiveWorkspaceAccent) ?? HFColors.gold
+
+        return Button {
+            openExecutiveCommandAction(action)
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: action.systemImage)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 38, height: 38)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Text(action.title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(action.targetWorkspace?.rawValue ?? "Local")
+                    .font(HFTypography.micro)
+                    .foregroundStyle(accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text(action.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+            .padding(HFSpacing.sm)
+            .background(Color.black.opacity(0.28))
+            .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("hf.command.center.executive.\(action.id)")
+    }
+
+    private func openExecutiveCommandAction(_ action: HFExecutiveCommandAction) {
+        switch action.id {
+        case "open-packaging-studio", "open-creator-os":
+            selectedRoom = .createRoom
+            selectedMode = .missionControl
+        default:
+            selectedMode = .intelligence
+        }
+    }
+
     private func openOrchestrationWorkspace(_ workspace: HFOrchestrationWorkspace) {
         switch workspace {
         case .unifiedProjectState, .studioIntelligence, .workflowAutomation, .higherKeyBrain:
@@ -2295,6 +2497,38 @@ private struct HFHighFiveOSView: View {
         }
     }
 
+    private func executiveWorkspaceAccent(for workspace: HFOrchestrationWorkspace) -> Color {
+        switch workspace {
+        case .unifiedProjectState, .studioIntelligence, .workflowAutomation, .higherKeyBrain:
+            return HFColors.cyanGlow
+        case .packagingStudio, .release, .marketing:
+            return HFColors.gold
+        case .creatorOS:
+            return HFColors.violet
+        case .qa:
+            return HFColors.redAccent
+        }
+    }
+
+    private func executiveRiskAccent(for level: HFExecutiveRiskLevel) -> Color {
+        switch level {
+        case .critical:
+            return HFColors.redAccent
+        case .high:
+            return HFColors.gold
+        case .medium:
+            return HFColors.violet
+        case .low:
+            return HFColors.cyanGlow
+        }
+    }
+
+    private func resourceAccent(for loadScore: Int) -> Color {
+        if loadScore >= 75 { return HFColors.redAccent }
+        if loadScore >= 50 { return HFColors.gold }
+        return HFColors.cyanGlow
+    }
+
     private func missionAccent(for priority: HFMissionPriority) -> Color {
         switch priority {
         case .critical:
@@ -2305,6 +2539,32 @@ private struct HFHighFiveOSView: View {
             return HFColors.violet
         case .normal:
             return HFColors.cyanGlow
+        }
+    }
+
+    private func executionAccent(for state: HFExecutionTaskState) -> Color {
+        switch state {
+        case .notStarted:
+            return HFColors.violet
+        case .inProgress:
+            return HFColors.cyanGlow
+        case .blocked:
+            return HFColors.redAccent
+        case .reviewNeeded:
+            return HFColors.gold
+        case .complete:
+            return HFColors.cyanGlow
+        }
+    }
+
+    private func forecastAccent(for confidence: HFExecutionForecastConfidence) -> Color {
+        switch confidence {
+        case .high:
+            return HFColors.cyanGlow
+        case .medium:
+            return HFColors.gold
+        case .low:
+            return HFColors.redAccent
         }
     }
 
