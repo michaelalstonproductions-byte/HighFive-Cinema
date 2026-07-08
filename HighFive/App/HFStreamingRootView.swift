@@ -1532,23 +1532,76 @@ private struct HFHighFiveOSView: View {
 
     private var intelligenceSurface: some View {
         let brainSnapshot = HFLocalProjectStore.higherKeyBrainSnapshot
+        let studioIntelligence = HFLocalProjectStore.autonomousStudioIntelligenceSnapshot
 
         return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                    osSectionHeader(title: "Intelligence Layer", detail: "Recommendations, insights, and activity signals remain local visual previews.")
+                    osSectionHeader(title: "Intelligence Layer", detail: "HigherKey Brain derives local events, dependencies, readiness, and next actions from the shared project model.")
                     insightCard("HigherKey Brain", brainSnapshot.summary, "brain.head.profile", HFColors.violet)
                     insightCard("Project State", "\(brainSnapshot.sourceLabel) feeds \(brainSnapshot.projectCount) local projects into studio tools.", "square.stack.3d.up.fill", HFColors.cyanGlow)
-                    insightCard("Recommendations", "Feature \(featuredMovie.title) beside creator-room and launch-review surfaces.", "sparkles", HFColors.gold)
-                    insightCard("Insights", "Viewer, creator, and release signals are aligned in one command layer.", "lightbulb.fill", HFColors.cyanGlow)
-                    insightCard("Activity Signals", "Recent watch, room, pass, and launch events stay read-only and local.", "waveform.path.ecg", HFColors.violet)
+                    insightCard("Autonomous Studio Signals", studioIntelligence.summary, "waveform.path.ecg", HFColors.gold)
                 }
                 .padding(HFSpacing.lg)
             }
+            brainDashboardSection(studioIntelligence)
             activitySignalsPanel
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.command.center.intelligenceLayer")
+    }
+
+    private func brainDashboardSection(_ snapshot: HFStudioIntelligenceSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "HigherKey Brain Dashboard", detail: "Safe local-only studio intelligence. Actions prepare review notes and do not publish, upload, or call a backend.")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Events", value: "\(snapshot.events.count)", detail: "Project activity", accent: HFColors.violet, systemImage: "waveform.path.ecg"))
+                    commandMetricCard(HFCommandMetric(title: "Dependencies", value: "\(snapshot.dependencySignals.count)", detail: "Local blockers", accent: HFColors.gold, systemImage: "point.3.connected.trianglepath.dotted"))
+                    commandMetricCard(HFCommandMetric(title: "Readiness", value: "\(snapshot.readinessChanges.count)", detail: "State changes", accent: HFColors.cyanGlow, systemImage: "gauge.with.dots.needle.67percent"))
+                    commandMetricCard(HFCommandMetric(title: "Suggestions", value: "\(snapshot.automationSuggestions.count)", detail: "Local next actions", accent: HFColors.gold, systemImage: "sparkles"))
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Project Events")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.events.prefix(3)) { event in
+                        brainSignalRow(title: event.title, detail: "\(event.projectTitle) - \(event.detail)", status: event.kind.rawValue, systemImage: event.systemImage, accent: brainAccent(for: event.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Dependencies")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.dependencySignals.prefix(3)) { signal in
+                        brainSignalRow(title: signal.dependencyTitle, detail: "\(signal.upstreamWorkspace) to \(signal.downstreamWorkspace) - \(signal.detail)", status: signal.status, systemImage: signal.systemImage, accent: brainAccent(for: signal.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Readiness Changes")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.readinessChanges.prefix(3)) { change in
+                        brainSignalRow(title: "\(change.projectTitle) \(change.readinessLabel)", detail: change.detail, status: change.deltaLabel, systemImage: change.systemImage, accent: brainAccent(for: change.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Automation Suggestions")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.automationSuggestions.prefix(3)) { suggestion in
+                        brainSignalRow(title: suggestion.title, detail: "\(suggestion.projectTitle) - \(suggestion.detail)", status: suggestion.actionLabel, systemImage: suggestion.systemImage, accent: brainAccent(for: suggestion.severity))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.higherKeyBrainDashboard")
     }
 
     private var cinematicControlWall: some View {
@@ -1952,6 +2005,56 @@ private struct HFHighFiveOSView: View {
         .background(Color.black.opacity(0.28))
         .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func brainSignalRow(title: String, detail: String, status: String, systemImage: String, accent: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                .frame(width: 34, height: 34)
+                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                HStack(alignment: .top, spacing: HFSpacing.xs) {
+                    Text(title)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: HFSpacing.xs)
+                    Text(status)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.70)
+                }
+
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.26))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.22), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func brainAccent(for severity: HFStudioSignalSeverity) -> Color {
+        switch severity {
+        case .info:
+            return HFColors.cyanGlow
+        case .watch:
+            return HFColors.violet
+        case .attention:
+            return HFColors.gold
+        case .blocked:
+            return HFColors.redAccent
+        case .ready:
+            return HFColors.cyanGlow
+        }
     }
 
     private func cinemaOrbit(nodes: [HFCinemaNetworkNode]) -> some View {

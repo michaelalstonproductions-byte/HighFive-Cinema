@@ -32,17 +32,22 @@ enum HFLocalProjectStore {
         )
     }
 
+    static var autonomousStudioIntelligenceSnapshot: HFStudioIntelligenceSnapshot {
+        HFStudioIntelligenceEngine.snapshot(projects: projects)
+    }
+
     static var higherKeyBrainSnapshot: HFProjectBrainSnapshot {
         let active = creatorOSProject
+        let intelligence = autonomousStudioIntelligenceSnapshot
         return HFProjectBrainSnapshot(
             projectCount: projects.count,
             primaryProjectTitle: active.title,
             sourceLabel: "HFLocalProjectStore",
-            summary: "\(projects.count) local projects share one project state source. Active creator project is \(active.creatorPackageTitle) at \(active.readinessPercentLabel) readiness.",
+            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) local studio intelligence signals for events, dependencies, readiness, and next actions.",
             toolSignals: [
                 HFProjectToolSignal(id: "packaging", title: "Packaging Studio", value: packagingProject.shortTitle, detail: packagingProject.packageStatus, systemImage: "shippingbox.fill"),
                 HFProjectToolSignal(id: "creator-os", title: "Creator OS", value: active.readinessPercentLabel, detail: active.workflowStage, systemImage: "command"),
-                HFProjectToolSignal(id: "studio-intelligence", title: "Studio Intelligence", value: "\(projects.count)", detail: "Shared local projects indexed", systemImage: "lightbulb.max.fill"),
+                HFProjectToolSignal(id: "studio-intelligence", title: "Studio Intelligence", value: "\(intelligence.totalSignalCount)", detail: "Local event engine signals derived", systemImage: "lightbulb.max.fill"),
                 HFProjectToolSignal(id: "operator-runtime", title: "Operator Runtime", value: "Signal", detail: "Graph remains intact with project-state input only", systemImage: "point.3.connected.trianglepath.dotted")
             ]
         )

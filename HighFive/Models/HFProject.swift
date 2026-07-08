@@ -84,6 +84,85 @@ struct HFProjectToolSignal: Identifiable, Codable, Hashable, Sendable {
     let systemImage: String
 }
 
+enum HFStudioProjectEventKind: String, Codable, Hashable, Sendable {
+    case activity = "Activity"
+    case readiness = "Readiness"
+    case dependency = "Dependency"
+    case automation = "Automation"
+}
+
+enum HFStudioSignalSeverity: String, Codable, Hashable, Sendable {
+    case info = "Info"
+    case watch = "Watch"
+    case attention = "Attention"
+    case blocked = "Blocked"
+    case ready = "Ready"
+}
+
+struct HFStudioProjectEvent: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let kind: HFStudioProjectEventKind
+    let title: String
+    let detail: String
+    let severity: HFStudioSignalSeverity
+    let workspace: String
+    let systemImage: String
+}
+
+struct HFStudioReadinessChange: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let readinessLabel: String
+    let packageLabel: String
+    let status: String
+    let deltaLabel: String
+    let detail: String
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFStudioDependencySignal: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let dependencyTitle: String
+    let upstreamWorkspace: String
+    let downstreamWorkspace: String
+    let status: String
+    let detail: String
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFStudioAutomationSuggestion: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let detail: String
+    let actionLabel: String
+    let destinationWorkspace: String
+    let isLocalOnly: Bool
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFStudioIntelligenceSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let events: [HFStudioProjectEvent]
+    let readinessChanges: [HFStudioReadinessChange]
+    let dependencySignals: [HFStudioDependencySignal]
+    let automationSuggestions: [HFStudioAutomationSuggestion]
+
+    var totalSignalCount: Int {
+        events.count + readinessChanges.count + dependencySignals.count + automationSuggestions.count
+    }
+}
+
 struct HFProject: Identifiable, Codable, Hashable, Sendable {
     let id: HFProjectID
     let movieID: String?
