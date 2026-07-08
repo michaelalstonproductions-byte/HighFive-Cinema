@@ -232,10 +232,8 @@ private struct HFStreamingTitleDetailView: View {
 
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
                 trailerCard
-                genreRow
                 actionStack
-                synopsisBlock
-                creditsBlock
+                cinematicCastSection
 
                 if metadata.isSeries {
                     episodeList
@@ -251,12 +249,10 @@ private struct HFStreamingTitleDetailView: View {
             heroBand
 
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                titleBlock
+                cinematicMetadataPanel
                 mediaRow
-                genreRow
                 actionStack
-                synopsisBlock
-                creditsBlock
+                cinematicCastSection
 
                 if metadata.isSeries {
                     episodeList
@@ -326,56 +322,65 @@ private struct HFStreamingTitleDetailView: View {
         }
     }
 
-    private var compactTitleInfoBlock: some View {
+    private var cinematicMetadataPanel: some View {
         HStack(alignment: .top, spacing: 12) {
             Capsule()
                 .fill(HFColors.goldGradient)
                 .frame(width: 3)
-                .frame(maxHeight: 74)
+                .frame(maxHeight: .infinity)
                 .opacity(0.78)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text(metadata.displayTitle)
                     .font(.system(size: 36, weight: .black, design: .default))
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .minimumScaleFactor(0.72)
 
+                Text(metadataLine)
+                    .font(HFTypography.caption.weight(.bold))
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(2)
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        metadataBadge(metadata.year)
-                        metadataBadge(metadata.runtimeOrSeason)
-
-                        if metadata.isSeries {
-                            metadataBadge("\(metadata.episodes.count) Episodes")
-                        } else if !metadata.rating.isEmpty {
-                            metadataBadge(metadata.rating)
+                        ForEach(metadata.genres, id: \.self) { genre in
+                            genrePill(genre)
                         }
                     }
                     .padding(.horizontal, 1)
                 }
 
-                VStack(alignment: .leading, spacing: 9) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("HighFive Cinema")
-                            .font(HFTypography.micro)
-                            .foregroundStyle(HFColors.gold)
-                            .lineLimit(1)
-
-                        Text(isUnlocked ? "Access active" : (isLocked ? "Unlock to watch the full title" : "Ready to watch"))
-                            .font(HFTypography.caption)
-                            .foregroundStyle(HFColors.textSecondary)
-                            .lineLimit(2)
+                VStack(alignment: .leading, spacing: 10) {
+                    if let director = metadata.director {
+                        cinematicMetadataRow(label: "Director", value: director)
                     }
 
-                    HStack(spacing: 8) {
-                        ratingCapsule(systemImage: "star.fill", title: "8.6", subtitle: "Rating")
-                        ratingCapsule(systemImage: "chart.line.uptrend.xyaxis", title: "94%", subtitle: "Score")
+                    if !primaryCastNames.isEmpty {
+                        cinematicMetadataRow(label: "Cast", value: primaryCastNames.prefix(4).joined(separator: "  •  "))
                     }
+
+                    if !metadata.productionCompanies.isEmpty {
+                        cinematicMetadataRow(label: "Companies", value: metadata.productionCompanies.joined(separator: "  •  "))
+                    }
+                }
+
+                Text(metadata.synopsis)
+                    .font(HFTypography.body)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    ratingCapsule(systemImage: "star.fill", title: "8.6", subtitle: "Rating")
+                    ratingCapsule(systemImage: "chart.line.uptrend.xyaxis", title: "94%", subtitle: "Score")
                 }
             }
         }
         .accessibilityIdentifier("hf.titleDetail.compactTitleInfo")
+    }
+
+    private var compactTitleInfoBlock: some View {
+        cinematicMetadataPanel
     }
 
     private var mediaRow: some View {
@@ -399,45 +404,103 @@ private struct HFStreamingTitleDetailView: View {
     }
 
     private var trailerCard: some View {
-        return ZStack {
-            if let trailerPreviewURL {
-                HFInlineTrailerPreviewView(url: trailerPreviewURL)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
+        Button(action: onWatchTrailer) {
+            ZStack {
                 detailArtwork(named: movie.backdropAssetName ?? movie.posterAssetName, verticalOffset: 18)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
+
+                DepthMotionProvider(
+                    isEnabled: true,
+                    clamp: 1,
+                    geometryInfluence: HFCinematicDepthDirector.profile(for: .focusedCard).geometryInfluence,
+                    role: .focusedCard
+                ) { motion in
+                    HFLayer4UltraDepthFX(
+                        motion: motion,
+                        role: .focusedCard,
+                        tint: HFColors.gold,
+                        showDust: true,
+                        showFocusBreath: true
+                    )
+                    .opacity(0.72)
+                }
+
+                LinearGradient(
+                    colors: [.black.opacity(0.10), .black.opacity(0.22), .black.opacity(0.72)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                VStack {
+                    HStack {
+                        Text("Trailer")
+                            .font(.system(size: 11, weight: .black, design: .default))
+                            .textCase(.uppercase)
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 10)
+                            .frame(height: 24)
+                            .background(HFColors.goldGradient, in: Capsule())
+                        Spacer()
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 12) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 20, weight: .black))
+                            .foregroundStyle(.black)
+                            .frame(width: 54, height: 54)
+                            .background(HFColors.goldGradient, in: Circle())
+                            .shadow(color: HFColors.amberGlow.opacity(0.44), radius: 18, x: 0, y: 0)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Watch Trailer")
+                                .font(HFTypography.cardTitle)
+                                .foregroundStyle(HFColors.textPrimary)
+                            Text("Premium preview")
+                                .font(HFTypography.caption.weight(.semibold))
+                                .foregroundStyle(HFColors.textSecondary)
+                        }
+
+                        Spacer()
+                    }
+                }
+                .padding(14)
             }
-
-            LinearGradient(
-                colors: [.black.opacity(0.08), .black.opacity(0.42)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            Text("Preview")
-                .font(.system(size: 11, weight: .black, design: .default))
-                .textCase(.uppercase)
-                .foregroundStyle(.black)
-                .padding(.horizontal, 10)
-                .frame(height: 24)
-                .background(HFColors.goldGradient, in: Capsule())
-                .padding(10)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
-        .frame(height: 188)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .frame(height: 206)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.white.opacity(0.16), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            HFColors.gold.opacity(0.34),
+                            Color.white.opacity(0.13),
+                            HFColors.gold.opacity(0.12)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: .black.opacity(0.44), radius: 24, x: 0, y: 16)
+        .shadow(color: HFColors.gold.opacity(0.10), radius: 22, x: 0, y: 8)
         .background(
             Color.clear
                 .frame(width: 1, height: 1)
                 .accessibilityIdentifier("hf.titleDetail.previewCard")
         )
         .accessibilityIdentifier("hf.titleDetail.trailerPreview")
+        .background(
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityIdentifier("hf.v13.detail.trailer")
+        )
     }
 
     private var genreRow: some View {
@@ -545,6 +608,25 @@ private struct HFStreamingTitleDetailView: View {
         .accessibilityIdentifier("hf.titleDetail.synopsis")
     }
 
+    private var cinematicCastSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Cast")
+                .font(HFTypography.cardTitle)
+                .foregroundStyle(HFColors.textPrimary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(cinematicCastCards) { person in
+                        cinematicActorCard(person)
+                    }
+                }
+                .padding(.horizontal, 1)
+                .padding(.vertical, 3)
+            }
+        }
+        .accessibilityIdentifier("hf.v13.detail.cast")
+    }
+
     private var creditsBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let director = metadata.director {
@@ -588,64 +670,18 @@ private struct HFStreamingTitleDetailView: View {
                     .foregroundStyle(HFColors.textMuted)
             }
 
-            VStack(spacing: 0) {
+            VStack(spacing: 12) {
                 ForEach(metadata.episodes) { episode in
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.08))
-                            Text("\(episode.id)")
-                                .font(.system(size: 22, weight: .black, design: .default))
-                                .foregroundStyle(HFColors.gold)
-                        }
-                        .frame(width: 74, height: 50)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(episode.title)
-                                .font(HFTypography.cardTitle)
-                                .foregroundStyle(HFColors.textPrimary)
-                            Text(episode.runtime)
-                                .font(HFTypography.caption)
-                                .foregroundStyle(HFColors.textMuted)
-                        }
-
-                        Spacer()
-
-                        Button {
-                            onEpisodeAction(episode.id)
-                        } label: {
-                            Label(episodeActionTitle(for: episode.id), systemImage: episodeActionSystemImage(for: episode.id))
-                                .font(HFTypography.micro.weight(.black))
-                                .foregroundStyle(isEpisodeUnlocked(episode.id) ? .black : HFColors.gold)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.72)
-                                .frame(width: 116, height: 36)
-                                .background(isEpisodeUnlocked(episode.id) ? HFColors.gold : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                        .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-
-                    if episode.id != metadata.episodes.last?.id {
-                        Rectangle()
-                            .fill(.white.opacity(0.08))
-                            .frame(height: 1)
-                            .padding(.leading, 98)
-                    }
+                    episodeCard(episode)
                 }
             }
-            .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(.white.opacity(0.08), lineWidth: 1)
-            )
         }
         .accessibilityIdentifier("hf.titleDetail.episodeList")
+        .background(
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityIdentifier("hf.v13.detail.episodes")
+        )
     }
 
     private var primaryActionTitle: String {
@@ -675,6 +711,215 @@ private struct HFStreamingTitleDetailView: View {
             .frame(height: 26)
             .background(.black.opacity(0.38), in: Capsule())
             .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 1))
+    }
+
+    private var metadataLine: String {
+        if metadata.isSeries {
+            return [metadata.year, metadata.rating, "\(metadata.episodes.count) Episodes"]
+                .filter { !$0.isEmpty }
+                .joined(separator: "  •  ")
+        }
+        return [metadata.year, metadata.rating, metadata.runtimeOrSeason]
+            .filter { !$0.isEmpty }
+            .joined(separator: "  •  ")
+    }
+
+    private var primaryCastNames: [String] {
+        if !metadata.stars.isEmpty {
+            return metadata.stars
+        }
+        if !metadata.executiveProducers.isEmpty {
+            return metadata.executiveProducers
+        }
+        if let director = metadata.director {
+            return [director]
+        }
+        return metadata.productionCompanies
+    }
+
+    private struct CinematicCastPerson: Identifiable {
+        let id = UUID()
+        let name: String
+        let role: String
+    }
+
+    private var cinematicCastCards: [CinematicCastPerson] {
+        let stars = metadata.stars.map { CinematicCastPerson(name: $0, role: "Cast") }
+        if !stars.isEmpty {
+            return stars
+        }
+
+        var people: [CinematicCastPerson] = []
+        if let director = metadata.director {
+            people.append(CinematicCastPerson(name: director, role: "Director"))
+        }
+        people.append(contentsOf: metadata.executiveProducers.prefix(4).map { CinematicCastPerson(name: $0, role: "Executive Producer") })
+        people.append(contentsOf: metadata.productionCompanies.prefix(2).map { CinematicCastPerson(name: $0, role: "Studio") })
+        return people
+    }
+
+    private func genrePill(_ text: String) -> some View {
+        Text(text)
+            .font(HFTypography.caption.weight(.bold))
+            .foregroundStyle(HFColors.textPrimary)
+            .padding(.horizontal, 12)
+            .frame(height: 34)
+            .background(Color.white.opacity(0.08), in: Capsule())
+            .overlay(Capsule().stroke(HFColors.gold.opacity(0.18), lineWidth: 1))
+    }
+
+    private func cinematicMetadataRow(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .textCase(.uppercase)
+            Text(value)
+                .font(HFTypography.caption.weight(.semibold))
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func cinematicActorCard(_ person: CinematicCastPerson) -> some View {
+        DepthMotionProvider(
+            isEnabled: true,
+            clamp: 0.65,
+            geometryInfluence: HFCinematicDepthDirector.profile(for: .rowCard).geometryInfluence,
+            role: .rowCard
+        ) { motion in
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    HFColors.gold.opacity(0.22),
+                                    Color.white.opacity(0.07),
+                                    Color.black.opacity(0.36)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: HFColors.gold.opacity(0.14), radius: 16, x: 0, y: 8)
+
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 29, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .offset(x: motion.isActive ? motion.x * 2 : 0, y: motion.isActive ? motion.y * 2 : 0)
+                }
+                .frame(width: 74, height: 74)
+
+                VStack(spacing: 3) {
+                    Text(person.name)
+                        .font(HFTypography.caption.weight(.black))
+                        .foregroundStyle(HFColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                    Text(person.role)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.textMuted)
+                        .lineLimit(1)
+                }
+            }
+            .frame(width: 132, height: 154)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.white.opacity(0.055))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.13),
+                                HFColors.gold.opacity(0.18),
+                                Color.white.opacity(0.04)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: .black.opacity(0.34), radius: 16, x: 0, y: 10)
+            .overlay(
+                HFLayer4GlassSweep(motion: motion, tint: HFColors.gold, intensity: 0.35)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            )
+        }
+    }
+
+    private func episodeCard(_ episode: HFTitleEpisodeDetail) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.10),
+                                Color.black.opacity(0.22)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Text("\(episode.id)")
+                    .font(.system(size: 24, weight: .black, design: .default))
+                    .foregroundStyle(HFColors.gold)
+            }
+            .frame(width: 70, height: 58)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(episode.title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(episode.runtime)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textMuted)
+            }
+
+            Spacer()
+
+            Button {
+                onEpisodeAction(episode.id)
+            } label: {
+                Label(episodeActionTitle(for: episode.id), systemImage: episodeActionSystemImage(for: episode.id))
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(isEpisodeUnlocked(episode.id) ? .black : HFColors.gold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .frame(width: 116, height: 38)
+                    .background(isEpisodeUnlocked(episode.id) ? HFColors.gold : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(HFColors.gold.opacity(0.32), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.050))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            HFColors.gold.opacity(0.22),
+                            Color.white.opacity(0.08),
+                            Color.white.opacity(0.03)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: .black.opacity(0.32), radius: 18, x: 0, y: 10)
     }
 
     private func ratingCapsule(systemImage: String, title: String, subtitle: String) -> some View {
@@ -895,6 +1140,11 @@ private struct HFStreamingTitleDetailView: View {
         .frame(maxWidth: .infinity)
         .frame(height: framedHeight + 36)
         .accessibilityIdentifier("hf.titleDetail.primaryPosterSection")
+        .background(
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityIdentifier("hf.v13.detail.hero")
+        )
     }
 
     private var compactPrimaryHeroHeight: CGFloat {
@@ -1244,13 +1494,12 @@ struct MovieDetailView: View {
                     lockedTitleAccessBand
                 }
                 relatedSection
-                castSection
             }
             .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.root")
         .accessibilityIdentifier("hf.streaming.premium.movieDetail")
-        .background(HFColors.screenBackground.ignoresSafeArea())
+        .background(movieDetailCinematicBackground)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -1301,6 +1550,63 @@ struct MovieDetailView: View {
             if ProcessInfo.processInfo.arguments.contains("--hf-start-paywall"), isHighFivePassLockedTitle {
                 showsPaywall = true
             }
+        }
+    }
+
+    private var movieDetailCinematicBackground: some View {
+        ZStack {
+            HFColors.screenBackground
+                .ignoresSafeArea()
+
+            LinearGradient(
+                colors: [
+                    Color.black,
+                    HFColors.background.opacity(0.96),
+                    Color(red: 0.030, green: 0.026, blue: 0.020)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            DepthMotionProvider(
+                isEnabled: true,
+                clamp: 0.75,
+                geometryInfluence: HFCinematicDepthDirector.profile(for: .backgroundAtmosphere).geometryInfluence,
+                role: .backgroundAtmosphere
+            ) { motion in
+                HFLayer4UltraDepthFX(
+                    motion: motion,
+                    role: .backgroundAtmosphere,
+                    tint: catalogMovie.id == "paranormall-s1" ? HFColors.cyanGlow : HFColors.gold,
+                    showDust: true,
+                    showFocusBreath: false
+                )
+                .opacity(0.42)
+            }
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    (catalogMovie.id == "paranormall-s1" ? HFColors.cyanGlow : HFColors.gold).opacity(0.12),
+                    .clear
+                ],
+                center: .top,
+                startRadius: 24,
+                endRadius: 620
+            )
+            .ignoresSafeArea()
+
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.32),
+                    .clear,
+                    .black.opacity(0.76)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
         }
     }
 
@@ -2295,6 +2601,11 @@ struct MovieDetailView: View {
             }
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
+        .background(
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityIdentifier("hf.v13.detail.recommendations")
+        )
     }
 
     private var castSection: some View {
