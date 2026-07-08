@@ -1454,6 +1454,14 @@ struct ProfileView: View {
 
                     VStack(spacing: HFSpacing.sm) {
                         NavigationLink {
+                            StudioIntelligenceDashboardView()
+                        } label: {
+                            HFProfileHubRouteRow(title: "Studio Intelligence", subtitle: "Local Command Center", systemImage: "brain.head.profile")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("hf.profile.studioIntelligence")
+
+                        NavigationLink {
                             CreatorOSWorkspaceView()
                         } label: {
                             HFProfileHubRouteRow(title: "Creator OS", subtitle: "Local Operating System", systemImage: "rectangle.3.group.fill")
