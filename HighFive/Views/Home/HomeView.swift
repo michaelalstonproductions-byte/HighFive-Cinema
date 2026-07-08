@@ -67,6 +67,7 @@ struct HomeView: View {
                     movies: availableNowMovies,
                     identifier: "hf.home.availableNow"
                 )
+                .background(Color.clear.accessibilityIdentifier("hf.v13.home.availableNow"))
                 curatedPosterRail(
                     title: "Coming Soon",
                     movies: comingSoonMovies,
@@ -128,16 +129,20 @@ struct HomeView: View {
     }
 
     private var figmaHomeHero: some View {
-        DepthHeroStage(height: 540, depthEnabled: true, atmosphereTint: HFColors.gold) {
+        DepthHeroStage(height: 600, depthEnabled: true, atmosphereTint: HFColors.gold) {
             markOfTheWestHeroMedia
                 .accessibilityIdentifier("hf.home.hero.video")
         } foreground: { motion in
-            markOfTheWestHeroContent(motion: motion)
+            ZStack(alignment: .bottomLeading) {
+                markOfTheWestCinematicDepthPlanes(motion: motion)
+                markOfTheWestHeroContent(motion: motion)
+            }
         }
         .clipShape(RoundedRectangle(cornerRadius: 0, style: .continuous))
         .accessibilityElement(children: .contain)
         .background(Color.clear.accessibilityIdentifier("hf.rsf02.home.hero"))
         .accessibilityIdentifier("hf.home.hero")
+        .background(Color.clear.accessibilityIdentifier("hf.v13.home.hero"))
     }
 
     private var markOfTheWestHeroMedia: some View {
@@ -271,6 +276,58 @@ struct HomeView: View {
         .accessibilityHidden(true)
     }
 
+    private func markOfTheWestCinematicDepthPlanes(motion: DepthMotionValues) -> some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            let motionX = motion.isActive ? motion.x : 0
+            let motionY = motion.isActive ? motion.y : 0
+
+            ZStack {
+                RadialGradient(
+                    colors: [
+                        Color(red: 1.0, green: 0.68, blue: 0.22).opacity(0.30),
+                        HFColors.gold.opacity(0.10),
+                        .clear
+                    ],
+                    center: UnitPoint(x: max(0.18, min(0.88, 0.72 - motionX * 0.08)), y: max(0.12, min(0.62, 0.34 - motionY * 0.06))),
+                    startRadius: 6,
+                    endRadius: max(size.width, size.height) * 0.55
+                )
+                .offset(x: -motionX * 18, y: -motionY * 10)
+
+                westernMountainLayer(size: size, verticalOffset: size.height * 0.48, opacity: 0.55)
+                    .fill(Color.black.opacity(0.26))
+                    .offset(x: -motionX * 8, y: -motionY * 4)
+                    .blur(radius: 0.6)
+
+                westernMountainLayer(size: size, verticalOffset: size.height * 0.57, opacity: 0.82)
+                    .fill(Color.black.opacity(0.48))
+                    .offset(x: -motionX * 14, y: -motionY * 5)
+
+                desertHazeLayer(size: size)
+                    .offset(x: -motionX * 22, y: -motionY * 8)
+                    .opacity(0.92)
+
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            Color(red: 0.42, green: 0.22, blue: 0.055).opacity(0.16),
+                            Color.black.opacity(0.86)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: size.height * 0.42)
+                    .offset(y: motionY * 6)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
     private func markOfTheWestHeroContent(motion: DepthMotionValues) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
@@ -391,6 +448,7 @@ struct HomeView: View {
                         CompactImportSlateButton {
                             showsImportSourcePicker = true
                         }
+                        .background(Color.clear.accessibilityIdentifier("hf.v13.home.compactImport"))
                     }
                 }
                 .padding(.top, 10)
@@ -398,6 +456,7 @@ struct HomeView: View {
             .frame(maxWidth: 360, alignment: .leading)
             .offset(x: motion.isActive ? -motion.x * 5 : 0, y: motion.isActive ? -motion.y * 4 : 0)
             .padding(.bottom, 42)
+            .background(Color.clear.accessibilityIdentifier("hf.v13.home.hero.markWest"))
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
