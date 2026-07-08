@@ -2,28 +2,19 @@ import Combine
 import Foundation
 
 final class HFCreatorWorkflowStore: ObservableObject {
-    @Published var currentProjectTitle = "The Friendly — Creator Package"
-    @Published var selectedWorkflowStage = "Team Review"
-    @Published var openReviewNotes = 5
-    @Published var completionPercent = 0.72
-    @Published var reviewReadinessPercent = 0.68
-    @Published var marketplaceInterest = 48
-    @Published var teamMembersCount = 4
-    @Published var recentActivities: [HFCreatorWorkflowActivity] = [
-        HFCreatorWorkflowActivity(title: "Poster artwork approved", detail: "Creative Lead cleared the package artwork.", systemImage: "checkmark.seal.fill"),
-        HFCreatorWorkflowActivity(title: "Trailer cut flagged for review", detail: "Opening sequence needs one more pass.", systemImage: "film.fill"),
-        HFCreatorWorkflowActivity(title: "Metadata updated", detail: "Synopsis and cast details were refreshed.", systemImage: "text.badge.checkmark"),
-        HFCreatorWorkflowActivity(title: "Team permissions reviewed", detail: "Reviewer roles are ready for preview.", systemImage: "checkmark.shield.fill"),
-        HFCreatorWorkflowActivity(title: "Marketplace preview generated", detail: "Listing signals are ready for the mock marketplace.", systemImage: "storefront.fill")
-    ]
+    private static let activeProject = HFLocalProjectStore.creatorOSProject
+
+    @Published var currentProjectTitle = HFCreatorWorkflowStore.activeProject.creatorPackageTitle
+    @Published var selectedWorkflowStage = HFCreatorWorkflowStore.activeProject.workflowStage
+    @Published var openReviewNotes = HFCreatorWorkflowStore.activeProject.reviewNotes
+    @Published var completionPercent = HFCreatorWorkflowStore.activeProject.readiness.overall
+    @Published var reviewReadinessPercent = HFCreatorWorkflowStore.activeProject.readiness.package
+    @Published var marketplaceInterest = HFCreatorWorkflowStore.activeProject.marketplaceInterest
+    @Published var teamMembersCount = HFCreatorWorkflowStore.activeProject.teamMembers
+    @Published var recentActivities: [HFCreatorWorkflowActivity] = HFCreatorWorkflowStore.activeProject.activitySignals.map(HFCreatorWorkflowActivity.init(projectSignal:))
 
     let releaseReadiness = HFCreatorReleaseReadiness(
-        overall: 0.72,
-        package: 0.68,
-        assets: 0.75,
-        teamReview: 0.72,
-        blockers: 2,
-        status: "On track"
+        projectReadiness: HFCreatorWorkflowStore.activeProject.readiness
     )
 
     let workflowStages: [HFCreatorWorkflowStageState] = [
@@ -45,26 +36,14 @@ final class HFCreatorWorkflowStore: ObservableObject {
         HFCreatorCriticalAction(title: "Check Release Readiness", detail: "Preview blockers and launch path.", systemImage: "gauge.with.dots.needle.67percent")
     ]
 
-    let releaseBlockers: [HFCreatorReleaseBlocker] = [
-        HFCreatorReleaseBlocker(title: "Trailer opening needs review", status: "Blocking", systemImage: "film.fill"),
-        HFCreatorReleaseBlocker(title: "Cast credits need confirmation", status: "Blocking", systemImage: "person.2.fill"),
-        HFCreatorReleaseBlocker(title: "Submission notes incomplete", status: "Pending", systemImage: "note.text"),
-        HFCreatorReleaseBlocker(title: "Team sign-off pending", status: "Pending", systemImage: "person.3.fill")
-    ]
+    let releaseBlockers = HFCreatorWorkflowStore.activeProject.blockers.map(HFCreatorReleaseBlocker.init(projectBlocker:))
 
-    let launchReadiness = 0.72
+    let launchReadiness = HFCreatorWorkflowStore.activeProject.readiness.overall
     let accessPreviewStatus = "Mock Only"
-    let audienceSaves = "1.2K"
-    let marketplaceFollows = 48
+    let audienceSaves = HFCreatorWorkflowStore.activeProject.audienceSaves
+    let marketplaceFollows = HFCreatorWorkflowStore.activeProject.marketplaceInterest
 
-    let launchChecklist: [HFCreatorLaunchChecklistItem] = [
-        HFCreatorLaunchChecklistItem(title: "Package complete", status: "In Progress", systemImage: "shippingbox.fill"),
-        HFCreatorLaunchChecklistItem(title: "Assets reviewed", status: "Needs Review", systemImage: "rectangle.stack.fill"),
-        HFCreatorLaunchChecklistItem(title: "Team sign-off", status: "Pending", systemImage: "person.3.fill"),
-        HFCreatorLaunchChecklistItem(title: "Marketplace preview", status: "Preview Only", systemImage: "storefront.fill"),
-        HFCreatorLaunchChecklistItem(title: "Access setup", status: "Mock Only", systemImage: "lock.shield.fill"),
-        HFCreatorLaunchChecklistItem(title: "Release plan", status: "Not Started", systemImage: "flag.checkered")
-    ]
+    let launchChecklist = HFCreatorWorkflowStore.activeProject.launchChecklist.map(HFCreatorLaunchChecklistItem.init(projectChecklistItem:))
 
     let mockAccessPlans: [HFCreatorAccessPlan] = [
         HFCreatorAccessPlan(title: "Viewer Pass", status: "Preview Only", detail: "Coming soon", systemImage: "ticket.fill"),
@@ -123,4 +102,35 @@ struct HFCreatorAccessPlan: Identifiable {
     let status: String
     let detail: String
     let systemImage: String
+}
+
+extension HFCreatorWorkflowActivity {
+    init(projectSignal: HFProjectActivitySignal) {
+        self.init(title: projectSignal.title, detail: projectSignal.detail, systemImage: projectSignal.systemImage)
+    }
+}
+
+extension HFCreatorReleaseReadiness {
+    init(projectReadiness: HFProjectReadiness) {
+        self.init(
+            overall: projectReadiness.overall,
+            package: projectReadiness.package,
+            assets: projectReadiness.assets,
+            teamReview: projectReadiness.teamReview,
+            blockers: projectReadiness.blockers,
+            status: projectReadiness.status
+        )
+    }
+}
+
+extension HFCreatorReleaseBlocker {
+    init(projectBlocker: HFProjectBlocker) {
+        self.init(title: projectBlocker.title, status: projectBlocker.status, systemImage: projectBlocker.systemImage)
+    }
+}
+
+extension HFCreatorLaunchChecklistItem {
+    init(projectChecklistItem: HFProjectChecklistItem) {
+        self.init(title: projectChecklistItem.title, status: projectChecklistItem.status, systemImage: projectChecklistItem.systemImage)
+    }
 }

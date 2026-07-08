@@ -1,12 +1,15 @@
 import SwiftUI
 
 struct CreatorDashboardPreviewView: View {
-    private let snapshotMetrics = [
-        CreatorMetric(title: "Slate readiness", value: "68%", systemImage: "gauge.with.dots.needle.67percent"),
-        CreatorMetric(title: "Draft packages", value: "3", systemImage: "shippingbox.fill"),
-        CreatorMetric(title: "Ready for review", value: "1", systemImage: "checkmark.seal.fill"),
-        CreatorMetric(title: "Audience saves", value: "1.2K", systemImage: "bookmark.fill")
-    ]
+    private var snapshotMetrics: [CreatorMetric] {
+        let snapshot = HFLocalProjectStore.studioIntelligenceSnapshot
+        return [
+            CreatorMetric(title: "Slate readiness", value: snapshot.readinessLabel, systemImage: "gauge.with.dots.needle.67percent"),
+            CreatorMetric(title: "Shared projects", value: "\(snapshot.projectCount)", systemImage: "square.stack.3d.up.fill"),
+            CreatorMetric(title: "Review notes", value: "\(snapshot.reviewNotes)", systemImage: "text.bubble.fill"),
+            CreatorMetric(title: "Marketplace interest", value: "\(snapshot.marketplaceInterest)", systemImage: "person.2.fill")
+        ]
+    }
 
     private let performanceMetrics = [
         CreatorMetric(title: "Views", value: "24.8K", systemImage: "play.rectangle.fill"),
@@ -15,11 +18,9 @@ struct CreatorDashboardPreviewView: View {
         CreatorMetric(title: "Shares", value: "318", systemImage: "square.and.arrow.up.fill")
     ]
 
-    private let topProjects = [
-        "The Friendly — Creator Package",
-        "Paranormall — Season 1 Preview",
-        "Behind the Vision — Short"
-    ]
+    private var topProjects: [String] {
+        HFLocalProjectStore.studioIntelligenceProjects.map(\.creatorPackageTitle)
+    }
 
     private let comingNext = [
         "Real analytics",

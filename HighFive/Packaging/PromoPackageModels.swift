@@ -74,3 +74,55 @@ struct PromoPackage: Identifiable, Codable, Equatable {
     let status: String
     let items: [PromoPackageItem]
 }
+
+extension PromoExportPreset {
+    init?(projectPresetID: String) {
+        switch projectPresetID {
+        case "tikTokVertical": self = .tikTokVertical
+        case "instagramReelStory": self = .instagramReelStory
+        case "instagramSquare": self = .instagramSquare
+        case "linkedInLandscape": self = .linkedInLandscape
+        case "posterExport": self = .posterExport
+        case "pressKitSlide": self = .pressKitSlide
+        default: return nil
+        }
+    }
+}
+
+extension SocialLayoutPreset {
+    init(projectLayout: HFProjectPackagingLayout) {
+        switch projectLayout {
+        case .titleCard: self = .titleCard
+        case .quoteCard: self = .quoteCard
+        case .characterCard: self = .characterCard
+        case .worldLocations: self = .worldLocations
+        case .pitchAtGlance: self = .pitchAtGlance
+        case .budgetInternal: self = .budgetInternal
+        }
+    }
+}
+
+extension PromoPackageItem {
+    init(projectItem: HFProjectPackagingItem) {
+        self.init(
+            id: projectItem.id,
+            title: projectItem.title,
+            subtitle: projectItem.subtitle,
+            layout: SocialLayoutPreset(projectLayout: projectItem.layout),
+            exportPresets: projectItem.exportPresetIDs.compactMap(PromoExportPreset.init(projectPresetID:)),
+            assetName: projectItem.assetName,
+            isInternalOnly: projectItem.isInternalOnly
+        )
+    }
+}
+
+extension PromoPackage {
+    init(project: HFProject) {
+        self.init(
+            id: "\(project.id.rawValue)-promo-kit",
+            title: "\(project.title) Promo Kit",
+            status: project.packageStatus,
+            items: project.packagingItems.map(PromoPackageItem.init(projectItem:))
+        )
+    }
+}

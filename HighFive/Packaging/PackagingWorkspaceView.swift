@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PackagingWorkspaceView: View {
+    private let project = MarkOfTheWestPromoKit.project
     private let package = MarkOfTheWestPromoKit.package
     private let hookGenerator = CaptionHookGenerator()
 
@@ -33,6 +34,10 @@ struct PackagingWorkspaceView: View {
             Text("Internal packaging workspace. No upload, network, CRM, or contact data is connected.")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.62))
+
+            Text("Project state: \(project.shortTitle) from HFLocalProjectStore")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(HFColors.gold.opacity(0.88))
         }
     }
 

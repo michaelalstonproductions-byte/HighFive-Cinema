@@ -1531,10 +1531,14 @@ private struct HFHighFiveOSView: View {
     }
 
     private var intelligenceSurface: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.lg) {
+        let brainSnapshot = HFLocalProjectStore.higherKeyBrainSnapshot
+
+        return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
                     osSectionHeader(title: "Intelligence Layer", detail: "Recommendations, insights, and activity signals remain local visual previews.")
+                    insightCard("HigherKey Brain", brainSnapshot.summary, "brain.head.profile", HFColors.violet)
+                    insightCard("Project State", "\(brainSnapshot.sourceLabel) feeds \(brainSnapshot.projectCount) local projects into studio tools.", "square.stack.3d.up.fill", HFColors.cyanGlow)
                     insightCard("Recommendations", "Feature \(featuredMovie.title) beside creator-room and launch-review surfaces.", "sparkles", HFColors.gold)
                     insightCard("Insights", "Viewer, creator, and release signals are aligned in one command layer.", "lightbulb.fill", HFColors.cyanGlow)
                     insightCard("Activity Signals", "Recent watch, room, pass, and launch events stay read-only and local.", "waveform.path.ecg", HFColors.violet)

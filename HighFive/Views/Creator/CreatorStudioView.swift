@@ -10453,11 +10453,22 @@ struct CreatorStudioView: View {
     }
 
     private var analyticsIntelligenceSection: some View {
-        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
+        let projectSnapshot = HFLocalProjectStore.studioIntelligenceSnapshot
+
+        return HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.28)) {
             VStack(alignment: .leading, spacing: HFSpacing.sm) {
                 Label("Analytics Intelligence", systemImage: "lightbulb.max.fill")
                     .font(HFTypography.cardTitle)
                     .foregroundStyle(HFColors.textPrimary)
+
+                HFCreatorStudioReadinessRow(
+                    title: "Unified Project State",
+                    detail: projectSnapshot.detail,
+                    status: "\(projectSnapshot.projectCount) Projects",
+                    systemImage: "square.stack.3d.up.fill",
+                    accent: HFColors.gold
+                )
+                .accessibilityIdentifier("hf.analytics.projectStateSignal")
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 132), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
                     ForEach(streamingStore.analyticsInsights) { insight in
@@ -10909,7 +10920,9 @@ struct CreatorStudioView: View {
     }
 
     private var dashboardSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+        let project = HFLocalProjectStore.creatorOSProject
+
+        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HFSectionHeader(title: "Current Project", actionTitle: "Tonight on HighFive")
 
             HFGlassPanel(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.gold.opacity(0.36)) {
@@ -10923,7 +10936,7 @@ struct CreatorStudioView: View {
                             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
 
                         VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                            Text("\(streamingStore.featuredMovie.title) Creator Slate")
+                            Text("\(project.title) Creator Slate")
                                 .font(HFTypography.section)
                                 .foregroundStyle(HFColors.textPrimary)
                             Text("Current project, local project status, and creator profile context stay inside this app.")
@@ -10934,8 +10947,8 @@ struct CreatorStudioView: View {
                     }
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), spacing: HFSpacing.xs)], alignment: .leading, spacing: HFSpacing.xs) {
-                        HFCreatorStudioMetric(title: "Current project", detail: streamingStore.featuredMovie.title, systemImage: "sparkles.tv.fill", isActive: true)
-                        HFCreatorStudioMetric(title: "Local project status", detail: "Local Draft", systemImage: "pencil")
+                        HFCreatorStudioMetric(title: "Current project", detail: project.title, systemImage: "sparkles.tv.fill", isActive: true)
+                        HFCreatorStudioMetric(title: "Local project status", detail: project.packageStatus, systemImage: "pencil")
                         HFCreatorStudioMetric(title: "Creator profile", detail: streamingStore.activeViewingProfile.displayName, systemImage: streamingStore.activeViewingProfile.avatarSymbol)
                         HFCreatorStudioMetric(title: "Provider boundary", detail: "Not Connected Yet", systemImage: "network.slash")
                     }

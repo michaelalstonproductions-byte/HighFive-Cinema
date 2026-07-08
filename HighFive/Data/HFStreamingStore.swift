@@ -13098,7 +13098,8 @@ final class HFStreamingStore: ObservableObject {
             HFProductionDependencyGraphRecord(id: "cms-library", title: "CMS -> Library", upstream: "Content IDs", downstream: "Viewer shelves", readiness: "Linked", blocker: "Viewer boundary later", systemImage: "rectangle.stack.person.crop.fill"),
             HFProductionDependencyGraphRecord(id: "series-analytics", title: "Series -> Analytics", upstream: "Episode records", downstream: "Episode metrics", readiness: "Linked", blocker: "Event taxonomy later", systemImage: "chart.bar.xaxis"),
             HFProductionDependencyGraphRecord(id: "marketplace-rights", title: "Marketplace -> Rights", upstream: "Release packages", downstream: "Rights ledger", readiness: "Linked", blocker: "Clearance review later", systemImage: "checkmark.shield.fill"),
-            HFProductionDependencyGraphRecord(id: "revenue-licensing", title: "Revenue -> Licensing", upstream: "Revenue estimates", downstream: "Licensing preview", readiness: "Linked", blocker: "Business policy later", systemImage: "dollarsign.circle.fill")
+            HFProductionDependencyGraphRecord(id: "revenue-licensing", title: "Revenue -> Licensing", upstream: "Revenue estimates", downstream: "Licensing preview", readiness: "Linked", blocker: "Business policy later", systemImage: "dollarsign.circle.fill"),
+            HFProductionDependencyGraphRecord(id: "project-state-operator", title: "Project State -> Operator Runtime", upstream: "\(HFLocalProjectStore.projects.count) local projects", downstream: "Operator graph signal", readiness: "Signal Only", blocker: "No automation path enabled", systemImage: "square.stack.3d.up.fill")
         ]
     }
 
