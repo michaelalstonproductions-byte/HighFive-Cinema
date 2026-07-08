@@ -674,13 +674,14 @@ struct HomeView: View {
 
                 Spacer()
 
-                Text("Local")
+                Text("\(min(railMovies.count, 10)) Local")
                     .font(HFTypography.micro.weight(.black))
                     .foregroundStyle(HFColors.gold)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 26)
                     .background(Color.white.opacity(0.07), in: Capsule())
                     .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
+                    .accessibilityLabel("\(min(railMovies.count, 10)) local titles in \(title)")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
 

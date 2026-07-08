@@ -241,9 +241,22 @@ struct MyListView: View {
         ]
 
         return VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            Text(selectedFilter)
-                .font(.system(size: 22, weight: .black))
-                .foregroundStyle(.white)
+            HStack(alignment: .firstTextBaseline, spacing: HFSpacing.sm) {
+                Text(selectedFilter)
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                Text("\(visibleMovies.count) saved")
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(height: 26)
+                    .background(Color.white.opacity(0.07), in: Capsule())
+                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
+                    .accessibilityLabel("\(visibleMovies.count) saved titles in \(selectedFilter)")
+            }
 
             if visibleMovies.isEmpty {
                 libraryEmptyShelfCard

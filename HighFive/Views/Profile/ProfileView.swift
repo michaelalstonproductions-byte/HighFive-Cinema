@@ -363,6 +363,22 @@ struct ProfileView: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 72)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.12),
+                            HFColors.gold.opacity(0.07),
+                            Color.white.opacity(0.06)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.20), lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -416,8 +432,11 @@ struct ProfileView: View {
             }
             .padding(.horizontal, HFSpacing.lg)
             .frame(height: 64)
-            .background(Color.white.opacity(0.10))
-            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }

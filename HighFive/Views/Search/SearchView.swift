@@ -318,9 +318,22 @@ struct SearchView: View {
         ]
 
         return VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            Text(query.isEmpty ? selectedFilter : "Results")
-                .font(.system(size: 22, weight: .black))
-                .foregroundStyle(.white)
+            HStack(alignment: .firstTextBaseline, spacing: HFSpacing.sm) {
+                Text(query.isEmpty ? selectedFilter : "Results")
+                    .font(.system(size: 22, weight: .black))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                Text("\(min(results.count, 18)) local")
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.gold)
+                    .padding(.horizontal, HFSpacing.xs)
+                    .frame(height: 26)
+                    .background(Color.white.opacity(0.07), in: Capsule())
+                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
+                    .accessibilityLabel("\(min(results.count, 18)) local results shown")
+            }
 
             LazyVGrid(columns: gridColumns, spacing: HFSpacing.md) {
                 ForEach(results.prefix(18)) { movie in

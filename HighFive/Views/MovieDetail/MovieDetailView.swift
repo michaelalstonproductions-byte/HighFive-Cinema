@@ -2391,6 +2391,11 @@ struct MovieDetailView: View {
     private var consumerRecommendationSection: some View {
         VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Recommended For You", actionTitle: "Local")
+            Text("Local picks shaped by this title, your saved shelves, and the current catalog.")
+                .font(HFTypography.caption)
+                .foregroundStyle(HFColors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, HFSpacing.screenHorizontal)
 
             ForEach(consumerRecommendationCollections.prefix(5)) { category in
                 movieDetailRecommendationRail(category)
