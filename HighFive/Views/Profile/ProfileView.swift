@@ -324,6 +324,36 @@ struct ProfileView: View {
                 HFProfileNavigationRow(destination: .helpSupport)
             }
             .buttonStyle(.plain)
+
+            NavigationLink {
+                PackagingWorkspaceView()
+            } label: {
+                HStack(spacing: HFSpacing.md) {
+                    Image(systemName: "shippingbox.and.arrow.backward.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(HFColors.gold)
+                        .frame(width: 34)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Packaging Studio")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.white)
+                        Text("Internal poster, social, press, and launch packages")
+                            .font(HFTypography.caption)
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .black))
+                        .foregroundStyle(HFColors.textMuted)
+                }
+                .padding(.horizontal, HFSpacing.lg)
+                .frame(minHeight: 72)
+                .background(Color.white.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("hf.profile.packagingStudio")
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
