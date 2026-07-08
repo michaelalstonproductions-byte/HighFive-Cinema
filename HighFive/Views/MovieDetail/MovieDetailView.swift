@@ -830,6 +830,23 @@ private struct HFStreamingTitleDetailView: View {
         let framedHeight = posterHeight + HFDepthPosterScale.detail.padding * 2
 
         return ZStack {
+            DepthMotionProvider(
+                isEnabled: true,
+                clamp: 1,
+                geometryInfluence: HFCinematicDepthDirector.profile(for: .detailPoster).geometryInfluence,
+                role: .detailPoster
+            ) { motion in
+                HFLayer4UltraDepthFX(
+                    motion: motion,
+                    role: .detailPoster,
+                    tint: movie.id == "paranormall-s1" ? HFColors.cyanGlow : HFColors.gold,
+                    showDust: true,
+                    showFocusBreath: true
+                )
+            }
+            .frame(height: framedHeight + 92)
+            .opacity(0.58)
+
             DepthAtmosphereLayer(
                 intensity: 0.58,
                 tint: movie.id == "paranormall-s1" ? HFColors.cyanGlow : HFColors.gold

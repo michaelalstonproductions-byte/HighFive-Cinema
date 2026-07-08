@@ -609,6 +609,14 @@ struct DepthHeroStage<Media: View, Foreground: View>: View {
 
                 DepthAtmosphereLayer(motion: motion, intensity: 1, tint: atmosphereTint)
 
+                HFLayer4UltraDepthFX(
+                    motion: motion,
+                    role: role,
+                    tint: atmosphereTint,
+                    showDust: true,
+                    showFocusBreath: false
+                )
+
                 foreground(motion)
                     .offset(
                         x: motion.isActive ? -motion.x * min(5, profile.imageOffsetMax * 0.50) : 0,

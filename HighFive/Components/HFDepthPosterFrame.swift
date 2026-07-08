@@ -142,6 +142,15 @@ struct HFDepthPosterFrame<Poster: View>: View {
                         x: motionActive ? -x * profile.backgroundOffsetMax * 0.70 : 0,
                         y: scale.shadowY
                     )
+
+                HFLayer4UltraDepthFX(
+                    motion: motion,
+                    role: role,
+                    tint: scale == .detail ? HFColors.gold : HFColors.gold.opacity(0.86),
+                    showDust: scale == .detail,
+                    showFocusBreath: scale == .detail
+                )
+                .frame(width: totalWidth + 42, height: totalHeight + 42)
             }
             .frame(width: totalWidth, height: totalHeight)
         }
