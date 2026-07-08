@@ -1534,6 +1534,7 @@ private struct HFHighFiveOSView: View {
         let brainSnapshot = HFLocalProjectStore.higherKeyBrainSnapshot
         let studioIntelligence = HFLocalProjectStore.autonomousStudioIntelligenceSnapshot
         let workflowAutomation = HFLocalProjectStore.workflowAutomationSnapshot
+        let orchestration = HFLocalProjectStore.orchestrationSnapshot
 
         return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
@@ -1543,10 +1544,12 @@ private struct HFHighFiveOSView: View {
                     insightCard("Project State", "\(brainSnapshot.sourceLabel) feeds \(brainSnapshot.projectCount) local projects into studio tools.", "square.stack.3d.up.fill", HFColors.cyanGlow)
                     insightCard("Autonomous Studio Signals", studioIntelligence.summary, "waveform.path.ecg", HFColors.gold)
                     insightCard("Workflow Automation", workflowAutomation.summary, "arrow.triangle.branch", HFColors.cyanGlow)
+                    insightCard("Orchestration Engine", orchestration.summary, "point.3.connected.trianglepath.dotted", HFColors.violet)
                 }
                 .padding(HFSpacing.lg)
             }
             brainDashboardSection(studioIntelligence)
+            orchestrationSection(orchestration)
             workflowAutomationSection(workflowAutomation)
             activitySignalsPanel
         }
@@ -1605,6 +1608,79 @@ private struct HFHighFiveOSView: View {
             .padding(HFSpacing.lg)
         }
         .accessibilityIdentifier("hf.command.center.higherKeyBrainDashboard")
+    }
+
+    private func orchestrationSection(_ snapshot: HFOrchestrationSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.38)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Orchestration Engine Foundation", detail: "Local-only sequencing across project state, intelligence, workflow automation, Brain, Packaging Studio, Creator OS, QA, Release, and Marketing.")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Queue", value: "\(snapshot.queue.count)", detail: "Handoff items", accent: HFColors.violet, systemImage: "list.bullet.rectangle.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Next", value: snapshot.nextHandoff?.targetWorkspace.rawValue ?? "None", detail: snapshot.nextHandoff?.projectTitle ?? "No handoff", accent: HFColors.gold, systemImage: "arrow.turn.down.right"))
+                    commandMetricCard(HFCommandMetric(title: "Blocked", value: "\(snapshot.blockedHandoffs.count)", detail: "Held handoffs", accent: snapshot.blockedHandoffs.isEmpty ? HFColors.cyanGlow : HFColors.redAccent, systemImage: "lock.trianglebadge.exclamationmark.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Pipeline", value: "\(snapshot.projectStates.count)", detail: "Project states", accent: HFColors.cyanGlow, systemImage: "square.stack.3d.up.fill"))
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Orchestration Queue")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.queue.prefix(5)) { item in
+                        brainSignalRow(title: "\(item.position). \(item.title)", detail: "\(item.projectTitle) -> \(item.targetWorkspace.rawValue). \(item.suggestedAction)", status: item.status.rawValue, systemImage: item.systemImage, accent: brainAccent(for: item.severity))
+                    }
+                }
+
+                if let nextHandoff = snapshot.nextHandoff {
+                    VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                        Text("Next Workspace Handoff")
+                            .font(HFTypography.cardTitle)
+                            .foregroundStyle(HFColors.textPrimary)
+                        brainSignalRow(title: nextHandoff.title, detail: "\(nextHandoff.sourceWorkspace.rawValue) -> \(nextHandoff.targetWorkspace.rawValue). \(nextHandoff.detail)", status: nextHandoff.status.rawValue, systemImage: nextHandoff.systemImage, accent: brainAccent(for: nextHandoff.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Blocked Handoffs")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.blockedHandoffs.prefix(4)) { handoff in
+                        brainSignalRow(title: handoff.title, detail: "\(handoff.projectTitle) - \(handoff.blockerSummary). \(handoff.detail)", status: handoff.status.rawValue, systemImage: handoff.systemImage, accent: brainAccent(for: handoff.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Suggested Sequence")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.projectStates.prefix(3)) { state in
+                        brainSignalRow(title: state.projectTitle, detail: state.suggestedSequence, status: state.readinessLabel, systemImage: state.systemImage, accent: brainAccent(for: state.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Project Pipeline State")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.projectStates.prefix(3)) { state in
+                        brainSignalRow(title: state.pipelineState, detail: "\(state.currentWorkspace.rawValue) -> \(state.nextWorkspace.rawValue). \(state.blockedHandoffCount) blocked handoffs.", status: state.status.rawValue, systemImage: state.systemImage, accent: brainAccent(for: state.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Local Actions")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                        ForEach(snapshot.localActions) { action in
+                            orchestrationActionButton(action, nextWorkspace: snapshot.nextHandoff?.targetWorkspace)
+                        }
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.orchestrationEngine")
     }
 
     private func workflowAutomationSection(_ snapshot: HFWorkflowAutomationSnapshot) -> some View {
@@ -2096,6 +2172,62 @@ private struct HFHighFiveOSView: View {
         .background(Color.black.opacity(0.26))
         .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.22), lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+
+    private func orchestrationActionButton(_ action: HFOrchestrationLocalAction, nextWorkspace: HFOrchestrationWorkspace?) -> some View {
+        let accent = action.isPlaceholder ? HFColors.gold : brainAccent(for: action.targetWorkspace == .qa ? .blocked : .info)
+
+        return Button {
+            if action.id == "open-target-workspace" {
+                openOrchestrationWorkspace(nextWorkspace ?? action.targetWorkspace)
+            } else {
+                selectedMode = .intelligence
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                Image(systemName: action.systemImage)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                    .frame(width: 38, height: 38)
+                    .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+                Text(action.title)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(action.isPlaceholder ? "Placeholder" : action.targetWorkspace.rawValue)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                Text(action.detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(maxWidth: .infinity, minHeight: 158, alignment: .topLeading)
+            .padding(HFSpacing.sm)
+            .background(Color.black.opacity(0.28))
+            .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("hf.command.center.orchestration.\(action.id)")
+    }
+
+    private func openOrchestrationWorkspace(_ workspace: HFOrchestrationWorkspace) {
+        switch workspace {
+        case .unifiedProjectState, .studioIntelligence, .workflowAutomation, .higherKeyBrain:
+            selectedMode = .intelligence
+        case .packagingStudio, .creatorOS:
+            selectedRoom = .createRoom
+            selectedMode = .missionControl
+        case .qa, .release, .marketing:
+            selectedRoom = .launchRoom
+            selectedMode = .missionControl
+        }
     }
 
     private func brainAccent(for severity: HFStudioSignalSeverity) -> Color {

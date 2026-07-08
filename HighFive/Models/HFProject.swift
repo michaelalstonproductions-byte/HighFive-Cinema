@@ -235,6 +235,139 @@ struct HFWorkflowAutomationSnapshot: Codable, Hashable, Sendable {
     }
 }
 
+enum HFOrchestrationWorkspace: String, CaseIterable, Codable, Hashable, Sendable {
+    case unifiedProjectState = "Unified Project State"
+    case studioIntelligence = "Studio Intelligence"
+    case workflowAutomation = "Workflow Automation"
+    case higherKeyBrain = "HigherKey Brain"
+    case packagingStudio = "Packaging Studio"
+    case creatorOS = "Creator OS"
+    case qa = "QA"
+    case release = "Release"
+    case marketing = "Marketing"
+
+    var systemImage: String {
+        switch self {
+        case .unifiedProjectState:
+            return "square.stack.3d.up.fill"
+        case .studioIntelligence:
+            return "lightbulb.max.fill"
+        case .workflowAutomation:
+            return "arrow.triangle.branch"
+        case .higherKeyBrain:
+            return "brain.head.profile"
+        case .packagingStudio:
+            return "shippingbox.fill"
+        case .creatorOS:
+            return "command"
+        case .qa:
+            return "checklist.checked"
+        case .release:
+            return "flag.checkered"
+        case .marketing:
+            return "megaphone.fill"
+        }
+    }
+}
+
+enum HFOrchestrationStatus: String, Codable, Hashable, Sendable {
+    case queued = "Queued"
+    case ready = "Ready"
+    case blocked = "Blocked"
+    case reviewNeeded = "Review Needed"
+    case localOnly = "Local Only"
+}
+
+struct HFOrchestrationStep: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sequenceIndex: Int
+    let workspace: HFOrchestrationWorkspace
+    let title: String
+    let detail: String
+    let inputSource: String
+    let outputTarget: String
+    let status: HFOrchestrationStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFCrossWorkspaceHandoff: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let sourceWorkspace: HFOrchestrationWorkspace
+    let targetWorkspace: HFOrchestrationWorkspace
+    let title: String
+    let detail: String
+    let blockerSummary: String
+    let status: HFOrchestrationStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFOrchestrationQueueItem: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let position: Int
+    let stepID: String
+    let handoffID: String?
+    let title: String
+    let targetWorkspace: HFOrchestrationWorkspace
+    let suggestedAction: String
+    let status: HFOrchestrationStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFProjectSequenceState: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let currentWorkspace: HFOrchestrationWorkspace
+    let nextWorkspace: HFOrchestrationWorkspace
+    let pipelineState: String
+    let suggestedSequence: String
+    let readinessLabel: String
+    let blockedHandoffCount: Int
+    let status: HFOrchestrationStatus
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFOrchestrationLocalAction: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let detail: String
+    let targetWorkspace: HFOrchestrationWorkspace
+    let isPlaceholder: Bool
+    let systemImage: String
+}
+
+struct HFOrchestrationSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let steps: [HFOrchestrationStep]
+    let handoffs: [HFCrossWorkspaceHandoff]
+    let queue: [HFOrchestrationQueueItem]
+    let projectStates: [HFProjectSequenceState]
+    let localActions: [HFOrchestrationLocalAction]
+
+    var blockedHandoffs: [HFCrossWorkspaceHandoff] {
+        handoffs.filter { $0.status == .blocked }
+    }
+
+    var nextHandoff: HFCrossWorkspaceHandoff? {
+        handoffs.first { $0.status != .blocked } ?? handoffs.first
+    }
+
+    var suggestedSequenceLabel: String {
+        projectStates.map { "\($0.projectTitle): \($0.suggestedSequence)" }.joined(separator: " / ")
+    }
+}
+
 struct HFProject: Identifiable, Codable, Hashable, Sendable {
     let id: HFProjectID
     let movieID: String?
