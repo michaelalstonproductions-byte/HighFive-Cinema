@@ -1533,18 +1533,21 @@ private struct HFHighFiveOSView: View {
     private var intelligenceSurface: some View {
         let brainSnapshot = HFLocalProjectStore.higherKeyBrainSnapshot
         let studioIntelligence = HFLocalProjectStore.autonomousStudioIntelligenceSnapshot
+        let workflowAutomation = HFLocalProjectStore.workflowAutomationSnapshot
 
         return VStack(alignment: .leading, spacing: HFSpacing.lg) {
             HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.violet.opacity(0.48)) {
                 VStack(alignment: .leading, spacing: HFSpacing.lg) {
-                    osSectionHeader(title: "Intelligence Layer", detail: "HigherKey Brain derives local events, dependencies, readiness, and next actions from the shared project model.")
+                    osSectionHeader(title: "Intelligence Layer", detail: "HigherKey Brain derives local events, workflow rules, dependency thresholds, and readiness movement from the shared project model.")
                     insightCard("HigherKey Brain", brainSnapshot.summary, "brain.head.profile", HFColors.violet)
                     insightCard("Project State", "\(brainSnapshot.sourceLabel) feeds \(brainSnapshot.projectCount) local projects into studio tools.", "square.stack.3d.up.fill", HFColors.cyanGlow)
                     insightCard("Autonomous Studio Signals", studioIntelligence.summary, "waveform.path.ecg", HFColors.gold)
+                    insightCard("Workflow Automation", workflowAutomation.summary, "arrow.triangle.branch", HFColors.cyanGlow)
                 }
                 .padding(HFSpacing.lg)
             }
             brainDashboardSection(studioIntelligence)
+            workflowAutomationSection(workflowAutomation)
             activitySignalsPanel
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -1602,6 +1605,59 @@ private struct HFHighFiveOSView: View {
             .padding(HFSpacing.lg)
         }
         .accessibilityIdentifier("hf.command.center.higherKeyBrainDashboard")
+    }
+
+    private func workflowAutomationSection(_ snapshot: HFWorkflowAutomationSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                osSectionHeader(title: "Workflow Automation Foundation", detail: "Rules and readiness movement are local recommendations only. No state is persisted and no publish or upload path is enabled.")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 154), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    commandMetricCard(HFCommandMetric(title: "Rules", value: "\(snapshot.rules.count)", detail: "Enabled local rules", accent: HFColors.cyanGlow, systemImage: "switch.2"))
+                    commandMetricCard(HFCommandMetric(title: "Triggered", value: "\(snapshot.triggeredSuggestions.count)", detail: "Suggested actions", accent: HFColors.gold, systemImage: "sparkles"))
+                    commandMetricCard(HFCommandMetric(title: "Blocked", value: "\(snapshot.blockedDependencies.count)", detail: "Dependency holds", accent: HFColors.redAccent, systemImage: "lock.trianglebadge.exclamationmark.fill"))
+                    commandMetricCard(HFCommandMetric(title: "Movement", value: "\(snapshot.readinessMovementRecommendations.count)", detail: "Readiness guidance", accent: HFColors.violet, systemImage: "arrow.up.forward.circle.fill"))
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Automation Rules")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.rules.prefix(4)) { rule in
+                        brainSignalRow(title: rule.title, detail: "\(rule.trigger) - \(rule.localAction)", status: rule.kind.rawValue, systemImage: rule.systemImage, accent: brainAccent(for: rule.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Triggered Suggestions")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.triggeredSuggestions.prefix(4)) { suggestion in
+                        brainSignalRow(title: suggestion.title, detail: "\(suggestion.projectTitle) - \(suggestion.detail)", status: suggestion.actionLabel, systemImage: suggestion.systemImage, accent: brainAccent(for: suggestion.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Blocked Dependencies")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.blockedDependencies.prefix(4)) { dependency in
+                        brainSignalRow(title: dependency.dependencyTitle, detail: "\(dependency.projectTitle) - \(dependency.detail)", status: dependency.status, systemImage: dependency.systemImage, accent: brainAccent(for: dependency.severity))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
+                    Text("Readiness Movement")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+                    ForEach(snapshot.readinessMovementRecommendations.prefix(4)) { movement in
+                        brainSignalRow(title: movement.recommendedState, detail: "\(movement.projectTitle) \(movement.readinessLabel) - \(movement.dependencySummary). \(movement.detail)", status: movement.isMovementAllowed ? "Advance" : "Hold", systemImage: movement.systemImage, accent: brainAccent(for: movement.severity))
+                    }
+                }
+            }
+            .padding(HFSpacing.lg)
+        }
+        .accessibilityIdentifier("hf.command.center.workflowAutomation")
     }
 
     private var cinematicControlWall: some View {

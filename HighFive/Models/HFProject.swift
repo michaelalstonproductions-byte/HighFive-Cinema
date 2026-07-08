@@ -163,6 +163,78 @@ struct HFStudioIntelligenceSnapshot: Codable, Hashable, Sendable {
     }
 }
 
+enum HFWorkflowAutomationRuleKind: String, Codable, Hashable, Sendable {
+    case blockerReview = "Blocker Review"
+    case dependencyGate = "Dependency Gate"
+    case readinessMovement = "Readiness Movement"
+    case nextAction = "Next Action"
+}
+
+struct HFWorkflowAutomationRule: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let kind: HFWorkflowAutomationRuleKind
+    let trigger: String
+    let localAction: String
+    let targetWorkspace: String
+    let isEnabled: Bool
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFDependencyThreshold: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let dependencyStatus: String
+    let maximumOpenDependencies: Int
+    let currentOpenDependencies: Int
+    let recommendation: String
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFWorkflowTriggeredSuggestion: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let ruleID: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let title: String
+    let detail: String
+    let actionLabel: String
+    let targetWorkspace: String
+    let isLocalOnly: Bool
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFReadinessTransitionSuggestion: Identifiable, Codable, Hashable, Sendable {
+    let id: String
+    let projectID: HFProjectID
+    let projectTitle: String
+    let fromState: String
+    let recommendedState: String
+    let readinessLabel: String
+    let dependencySummary: String
+    let detail: String
+    let isMovementAllowed: Bool
+    let severity: HFStudioSignalSeverity
+    let systemImage: String
+}
+
+struct HFWorkflowAutomationSnapshot: Codable, Hashable, Sendable {
+    let sourceLabel: String
+    let summary: String
+    let rules: [HFWorkflowAutomationRule]
+    let dependencyThresholds: [HFDependencyThreshold]
+    let triggeredSuggestions: [HFWorkflowTriggeredSuggestion]
+    let blockedDependencies: [HFStudioDependencySignal]
+    let readinessMovementRecommendations: [HFReadinessTransitionSuggestion]
+
+    var totalSignalCount: Int {
+        rules.count + dependencyThresholds.count + triggeredSuggestions.count + blockedDependencies.count + readinessMovementRecommendations.count
+    }
+}
+
 struct HFProject: Identifiable, Codable, Hashable, Sendable {
     let id: HFProjectID
     let movieID: String?

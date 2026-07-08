@@ -36,18 +36,24 @@ enum HFLocalProjectStore {
         HFStudioIntelligenceEngine.snapshot(projects: projects)
     }
 
+    static var workflowAutomationSnapshot: HFWorkflowAutomationSnapshot {
+        HFWorkflowAutomationEngine.snapshot(projects: projects, intelligence: autonomousStudioIntelligenceSnapshot)
+    }
+
     static var higherKeyBrainSnapshot: HFProjectBrainSnapshot {
         let active = creatorOSProject
         let intelligence = autonomousStudioIntelligenceSnapshot
+        let workflowAutomation = workflowAutomationSnapshot
         return HFProjectBrainSnapshot(
             projectCount: projects.count,
             primaryProjectTitle: active.title,
             sourceLabel: "HFLocalProjectStore",
-            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) local studio intelligence signals for events, dependencies, readiness, and next actions.",
+            summary: "\(projects.count) local projects share one project state source. HigherKey Brain has \(intelligence.totalSignalCount) studio signals and \(workflowAutomation.totalSignalCount) workflow automation signals.",
             toolSignals: [
                 HFProjectToolSignal(id: "packaging", title: "Packaging Studio", value: packagingProject.shortTitle, detail: packagingProject.packageStatus, systemImage: "shippingbox.fill"),
                 HFProjectToolSignal(id: "creator-os", title: "Creator OS", value: active.readinessPercentLabel, detail: active.workflowStage, systemImage: "command"),
                 HFProjectToolSignal(id: "studio-intelligence", title: "Studio Intelligence", value: "\(intelligence.totalSignalCount)", detail: "Local event engine signals derived", systemImage: "lightbulb.max.fill"),
+                HFProjectToolSignal(id: "workflow-automation", title: "Workflow Automation", value: "\(workflowAutomation.triggeredSuggestions.count)", detail: "Local triggered suggestions", systemImage: "arrow.triangle.branch"),
                 HFProjectToolSignal(id: "operator-runtime", title: "Operator Runtime", value: "Signal", detail: "Graph remains intact with project-state input only", systemImage: "point.3.connected.trianglepath.dotted")
             ]
         )
