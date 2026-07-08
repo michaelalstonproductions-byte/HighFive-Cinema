@@ -2355,38 +2355,7 @@ private struct HFHighFiveOSView: View {
     }
 
     private func commandMetricCard(_ metric: HFCommandMetric) -> some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
-            HStack(alignment: .top) {
-                Image(systemName: metric.systemImage)
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundStyle(metric.accent == HFColors.gold ? .black : metric.accent)
-                    .frame(width: 42, height: 42)
-                    .background(metric.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(metric.accent.opacity(0.18)))
-                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-                Spacer()
-                Text(metric.title)
-                    .font(HFTypography.micro)
-                    .foregroundStyle(metric.accent)
-                    .multilineTextAlignment(.trailing)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.68)
-            }
-            Text(metric.value)
-                .font(.system(size: 24, weight: .black))
-                .foregroundStyle(HFColors.textPrimary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.64)
-            Text(metric.detail)
-                .font(HFTypography.micro)
-                .foregroundStyle(HFColors.textSecondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
-        }
-        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
-        .padding(HFSpacing.md)
-        .background(Color.black.opacity(0.28))
-        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(metric.accent.opacity(0.25), lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        HFCommandMetricCardView(metric: metric)
     }
 
     private func executiveTile(_ title: String, _ value: String, _ detail: String, _ accent: Color) -> some View {
@@ -2454,64 +2423,11 @@ private struct HFHighFiveOSView: View {
     }
 
     private func insightCard(_ title: String, _ detail: String, _ systemImage: String, _ accent: Color) -> some View {
-        HStack(alignment: .top, spacing: HFSpacing.sm) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .black))
-                .foregroundStyle(accent == HFColors.gold ? .black : accent)
-                .frame(width: 42, height: 42)
-                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-            VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                Text(title)
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                Text(detail)
-                    .font(HFTypography.caption)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(HFSpacing.md)
-        .background(Color.black.opacity(0.28))
-        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        HFCommandInsightCardView(title: title, detail: detail, systemImage: systemImage, accent: accent)
     }
 
     private func brainSignalRow(title: String, detail: String, status: String, systemImage: String, accent: Color) -> some View {
-        HStack(alignment: .top, spacing: HFSpacing.sm) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(accent == HFColors.gold ? .black : accent)
-                .frame(width: 34, height: 34)
-                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
-                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
-
-            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
-                HStack(alignment: .top, spacing: HFSpacing.xs) {
-                    Text(title)
-                        .font(HFTypography.caption)
-                        .foregroundStyle(HFColors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: HFSpacing.xs)
-                    Text(status)
-                        .font(HFTypography.micro)
-                        .foregroundStyle(accent)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.70)
-                }
-
-                Text(detail)
-                    .font(HFTypography.micro)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(HFSpacing.sm)
-        .background(Color.black.opacity(0.26))
-        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.22), lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        HFBrainSignalRowView(title: title, detail: detail, status: status, systemImage: systemImage, accent: accent)
     }
 
     private func emptySignalRow(title: String, detail: String) -> some View {
@@ -3125,6 +3041,129 @@ private struct HFHighFiveOSView: View {
                 .foregroundStyle(HFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+private struct HFCommandMetricCardView: View {
+    let metric: HFCommandMetric
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+            HStack(alignment: .top) {
+                Image(systemName: metric.systemImage)
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(metric.accent == HFColors.gold ? .black : metric.accent)
+                    .frame(width: 42, height: 42)
+                    .background(metric.accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(metric.accent.opacity(0.18)))
+                    .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+                Spacer()
+
+                Text(metric.title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(metric.accent)
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.68)
+            }
+
+            Text(metric.value)
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.64)
+
+            Text(metric.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.28))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(metric.accent.opacity(0.25), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFCommandInsightCardView: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 18, weight: .black))
+                .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                .frame(width: 42, height: 42)
+                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text(title)
+                    .font(HFTypography.cardTitle)
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+
+                Text(detail)
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(HFSpacing.md)
+        .background(Color.black.opacity(0.28))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.24), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+    }
+}
+
+private struct HFBrainSignalRowView: View {
+    let title: String
+    let detail: String
+    let status: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(accent == HFColors.gold ? .black : accent)
+                .frame(width: 34, height: 34)
+                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                .clipShape(RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: HFSpacing.xxs) {
+                HStack(alignment: .top, spacing: HFSpacing.xs) {
+                    Text(title)
+                        .font(HFTypography.caption)
+                        .foregroundStyle(HFColors.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Spacer(minLength: HFSpacing.xs)
+
+                    Text(status)
+                        .font(HFTypography.micro)
+                        .foregroundStyle(accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.70)
+                }
+
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.26))
+        .overlay(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous).stroke(accent.opacity(0.22), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
     }
 }
 

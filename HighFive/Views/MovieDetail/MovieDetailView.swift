@@ -168,6 +168,43 @@ private struct HFTitleTrailerPreview: Identifiable {
     let url: URL
 }
 
+private struct HFCinematicMetadataMetricTile: View {
+    let title: String
+    let value: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(accent)
+                .frame(width: 32, height: 32)
+                .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textMuted)
+                    .lineLimit(1)
+
+                Text(value)
+                    .font(HFTypography.micro.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+}
+
 private struct HFStreamingTitleDetailView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -1544,32 +1581,7 @@ struct MovieDetailView: View {
     }
 
     private func movieDetailMetric(_ title: String, value: String, systemImage: String, accent: Color) -> some View {
-        HStack(spacing: HFSpacing.xs) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(accent)
-                .frame(width: 32, height: 32)
-                .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(HFTypography.micro)
-                    .foregroundStyle(HFColors.textMuted)
-                    .lineLimit(1)
-                Text(value)
-                    .font(HFTypography.micro.weight(.black))
-                    .foregroundStyle(HFColors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.68)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(HFSpacing.xs)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        HFCinematicMetadataMetricTile(title: title, value: value, systemImage: systemImage, accent: accent)
     }
 
     private var hero: some View {
