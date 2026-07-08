@@ -105,7 +105,9 @@ final class HKV1_SpatialPeekViewController: UIViewController,
     // MARK: - Visible Window / Stage
 
     private let maskContainerView = UIView()
+    private let verticalStageDepthAuraView = UIView()
     private let maskWindowView = UIView()
+    private let verticalStageFloatingWindowFrameView = UIView()
     private let stageView = UIView()
     private let playerView = HKV1_PlayerLayerView()
 
@@ -1009,7 +1011,9 @@ final class HKV1_SpatialPeekViewController: UIViewController,
 
     private func buildViewHierarchy() {
         maskContainerView.translatesAutoresizingMaskIntoConstraints = false
+        verticalStageDepthAuraView.translatesAutoresizingMaskIntoConstraints = true
         maskWindowView.translatesAutoresizingMaskIntoConstraints = true
+        verticalStageFloatingWindowFrameView.translatesAutoresizingMaskIntoConstraints = true
         stageView.translatesAutoresizingMaskIntoConstraints = true
         playerView.translatesAutoresizingMaskIntoConstraints = true
         debugLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -1017,9 +1021,11 @@ final class HKV1_SpatialPeekViewController: UIViewController,
         libraryButton.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(maskContainerView)
+        maskContainerView.addSubview(verticalStageDepthAuraView)
         maskContainerView.addSubview(maskWindowView)
         maskWindowView.addSubview(stageView)
         stageView.addSubview(playerView)
+        maskContainerView.addSubview(verticalStageFloatingWindowFrameView)
 
         view.addSubview(debugLabel)
         view.addSubview(controlBar)
@@ -1050,10 +1056,30 @@ final class HKV1_SpatialPeekViewController: UIViewController,
     private func styleViews() {
         maskContainerView.backgroundColor = .black
 
+        verticalStageDepthAuraView.isUserInteractionEnabled = false
+        verticalStageDepthAuraView.backgroundColor = UIColor(red: 1.0, green: 0.62, blue: 0.18, alpha: 0.055)
+        verticalStageDepthAuraView.layer.cornerCurve = .continuous
+        verticalStageDepthAuraView.layer.shadowColor = UIColor(red: 1.0, green: 0.62, blue: 0.18, alpha: 1.0).cgColor
+        verticalStageDepthAuraView.layer.shadowOpacity = 0.24
+        verticalStageDepthAuraView.layer.shadowRadius = 34
+        verticalStageDepthAuraView.layer.shadowOffset = CGSize(width: 0, height: 18)
+        verticalStageDepthAuraView.accessibilityIdentifier = "hf.v13.verticalStage.depthAura"
+
         maskWindowView.backgroundColor = .black
         maskWindowView.layer.cornerRadius = 0.0
         maskWindowView.layer.borderWidth = 0.0
         maskWindowView.clipsToBounds = true
+
+        verticalStageFloatingWindowFrameView.isUserInteractionEnabled = false
+        verticalStageFloatingWindowFrameView.backgroundColor = .clear
+        verticalStageFloatingWindowFrameView.layer.cornerCurve = .continuous
+        verticalStageFloatingWindowFrameView.layer.borderWidth = 1.0
+        verticalStageFloatingWindowFrameView.layer.borderColor = UIColor(red: 1.0, green: 0.72, blue: 0.26, alpha: 0.24).cgColor
+        verticalStageFloatingWindowFrameView.layer.shadowColor = UIColor.black.cgColor
+        verticalStageFloatingWindowFrameView.layer.shadowOpacity = 0.32
+        verticalStageFloatingWindowFrameView.layer.shadowRadius = 22
+        verticalStageFloatingWindowFrameView.layer.shadowOffset = CGSize(width: 0, height: 16)
+        verticalStageFloatingWindowFrameView.accessibilityIdentifier = "hf.v13.verticalStage.floatingWindow"
 
         stageView.backgroundColor = .black
         stageView.clipsToBounds = false
@@ -1083,6 +1109,12 @@ final class HKV1_SpatialPeekViewController: UIViewController,
         libraryButton.addTarget(self, action: #selector(handleOpenLibraryButton), for: .touchUpInside)
 
         controlBar.setChromeVisible(true, animated: false)
+        controlBar.accessibilityIdentifier = "hf.v13.verticalStage.controls"
+        controlBar.layer.cornerCurve = .continuous
+        controlBar.layer.shadowColor = UIColor.black.cgColor
+        controlBar.layer.shadowOpacity = 0.26
+        controlBar.layer.shadowRadius = 18
+        controlBar.layer.shadowOffset = CGSize(width: 0, height: 10)
     }
 
     // MARK: - Control Bar
@@ -2377,7 +2409,17 @@ final class HKV1_SpatialPeekViewController: UIViewController,
         let isPortrait = bounds.height >= bounds.width
         let maskFrame = bounds.integral
 
+        let shellInsetX: CGFloat = isPortrait ? 10 : 18
+        let shellInsetY: CGFloat = isPortrait ? 18 : 12
+        let shellFrame = maskFrame.insetBy(dx: shellInsetX, dy: shellInsetY)
+        let shellCornerRadius: CGFloat = isPortrait ? 34 : 28
+
+        verticalStageDepthAuraView.frame = shellFrame.insetBy(dx: 10, dy: 22)
+        verticalStageDepthAuraView.layer.cornerRadius = shellCornerRadius
+
         maskWindowView.frame = maskFrame
+        verticalStageFloatingWindowFrameView.frame = shellFrame
+        verticalStageFloatingWindowFrameView.layer.cornerRadius = shellCornerRadius
 
         let stageSize = computeStageSize(for: maskFrame.size, isPortrait: isPortrait)
         stageView.bounds = CGRect(origin: .zero, size: stageSize)
