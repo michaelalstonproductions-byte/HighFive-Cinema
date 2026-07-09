@@ -3,6 +3,7 @@ import SwiftUI
 struct HFAccountView: View {
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @State private var restoreStatus: String?
+    @State private var isRestoringPurchases = false
 
     var body: some View {
         ScrollView {
@@ -17,7 +18,7 @@ struct HFAccountView: View {
                     Button {
                         Task { await restorePurchases() }
                     } label: {
-                        Label("Restore Purchases", systemImage: "arrow.clockwise.circle.fill")
+                        Label(isRestoringPurchases ? "Restoring Purchases" : "Restore Purchases", systemImage: "arrow.clockwise.circle.fill")
                             .font(.system(size: 15, weight: .black))
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
@@ -25,6 +26,9 @@ struct HFAccountView: View {
                             .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .disabled(isRestoringPurchases)
+                    .opacity(isRestoringPurchases ? 0.72 : 1)
+                    .accessibilityValue(isRestoringPurchases ? "In progress" : "Ready")
                     .accessibilityIdentifier("hf.account.restorePurchases")
 
                     if let restoreStatus {
@@ -107,9 +111,12 @@ struct HFAccountView: View {
     }
 
     private func restorePurchases() async {
+        guard !isRestoringPurchases else { return }
+        isRestoringPurchases = true
         restoreStatus = "Restoring purchases..."
         let result = await streamingStore.restoreStoreKitPurchases()
         restoreStatus = result
+        isRestoringPurchases = false
     }
 
     private func accessRow(title: String, subtitle: String, isUnlocked: Bool) -> some View {

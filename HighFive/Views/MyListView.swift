@@ -115,11 +115,41 @@ struct MyListView: View {
         }
     }
 
+    private var hasLibraryContent: Bool {
+        !collectionMovies.isEmpty
+            || !progressMovies.isEmpty
+            || !offlineMovies.isEmpty
+            || !streamingStore.libraryWatchLaterMovies.isEmpty
+            || !streamingStore.libraryFavoriteMovies.isEmpty
+            || !streamingStore.libraryViewingHistory.isEmpty
+    }
+
+    private var visibleCountLabel: String {
+        switch selectedFilter {
+        case "Continue Watching":
+            return "\(visibleMovies.count) in progress"
+        case "Watch Later":
+            return "\(visibleMovies.count) later"
+        case "Favorites":
+            return "\(visibleMovies.count) favorites"
+        case "Recently Watched", "History":
+            return "\(visibleMovies.count) recent"
+        case "Downloaded", "Offline":
+            return "\(visibleMovies.count) offline"
+        case "Purchased":
+            return "\(visibleMovies.count) unlocked"
+        case "Collections":
+            return "\(visibleMovies.count) titles"
+        default:
+            return "\(visibleMovies.count) saved"
+        }
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 figmaLibraryHeader
-                if savedMovies.isEmpty {
+                if !hasLibraryContent {
                     figmaLibraryEmpty
                 } else {
                     figmaContinueCard
@@ -261,14 +291,14 @@ struct MyListView: View {
 
                 Spacer()
 
-                Text("\(visibleMovies.count) saved")
+                Text(visibleCountLabel)
                     .font(HFTypography.micro.weight(.black))
                     .foregroundStyle(HFColors.gold)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 26)
                     .background(HFColors.gold.opacity(0.12), in: Capsule())
                     .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
-                    .accessibilityLabel("\(visibleMovies.count) saved titles in \(selectedFilter)")
+                    .accessibilityLabel("\(visibleCountLabel) in \(selectedFilter)")
             }
 
             if visibleMovies.isEmpty {
