@@ -285,7 +285,7 @@ struct SearchView: View {
     }
 
     private var figmaSearchHeader: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: HFSpacing.md) {
             VStack(alignment: .leading, spacing: HFSpacing.xs) {
                 Text("Search")
                     .font(.system(size: 36, weight: .black))
@@ -299,7 +299,10 @@ struct SearchView: View {
 
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.black)
+                .frame(width: 52, height: 52)
+                .background(HFColors.goldGradient, in: Circle())
+                .shadow(color: HFColors.amberGlow.opacity(0.24), radius: 16, x: 0, y: 10)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -311,6 +314,12 @@ struct SearchView: View {
 
             filterRow
         }
+        .padding(HFSpacing.sm)
+        .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.14), lineWidth: 1)
+        )
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
 
@@ -334,7 +343,7 @@ struct SearchView: View {
                     .foregroundStyle(HFColors.gold)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 26)
-                    .background(Color.white.opacity(0.07), in: Capsule())
+                    .background(HFColors.gold.opacity(0.12), in: Capsule())
                     .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
                     .accessibilityLabel("\(min(results.count, 18)) local results shown")
             }
@@ -343,6 +352,7 @@ struct SearchView: View {
                 ForEach(results.prefix(18)) { movie in
                     NavigationLink(value: movie) {
                         HFPosterCard(movie: movie, width: 112, showTitle: false, posterOnly: true)
+                            .accessibilityIdentifier("hf.search.premiumPoster.\(movie.id)")
                     }
                     .buttonStyle(.plain)
                 }
@@ -365,7 +375,12 @@ struct SearchView: View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Recommended Discoveries")
+                    HStack(spacing: 8) {
+                        Capsule()
+                            .fill(HFColors.cyanGlow)
+                            .frame(width: 26, height: 3)
+                        Text("Recommended Discoveries")
+                    }
                         .font(.system(size: 22, weight: .black))
                         .foregroundStyle(.white)
                     Text("Local picks based on the current search focus.")
@@ -381,6 +396,7 @@ struct SearchView: View {
                     ForEach(searchRecommendationMovies) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: 126, showTitle: false, posterOnly: true)
+                                .accessibilityIdentifier("hf.search.recommendation.\(movie.id)")
                         }
                         .buttonStyle(.plain)
                     }
@@ -460,8 +476,9 @@ struct SearchView: View {
             }
             .padding(.horizontal, HFSpacing.sm)
             .frame(height: 50)
-            .background(Color.white.opacity(0.07), in: Capsule())
+            .background(HFColors.cinematicPanelGradient, in: Capsule())
             .overlay(Capsule().stroke(HFColors.gold.opacity(0.24), lineWidth: 1))
+            .shadow(color: .black.opacity(0.14), radius: 8, x: 0, y: 5)
         }
         .buttonStyle(.plain)
     }
@@ -1194,12 +1211,13 @@ struct SearchView: View {
             message: "Try another title, genre, creator, or mood. Search is reading from the local HighFive catalog.",
             recoveryTitle: "Reset Search",
             recovery: {
-            query = ""
-            selectedFilter = "All"
-            selectedFocus = .tonight
+                query = ""
+                selectedFilter = "All"
+                selectedFocus = .tonight
             }
         )
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .shadow(color: HFColors.cyanGlow.opacity(0.10), radius: 18, x: 0, y: 12)
         .accessibilityIdentifier("hf.search.emptyState")
         .accessibilityIdentifier("hf.search.localOnly")
     }

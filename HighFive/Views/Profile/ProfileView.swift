@@ -198,6 +198,7 @@ struct ProfileView: View {
                 .foregroundStyle(.black)
                 .frame(width: 46, height: 46)
                 .background(HFColors.goldGradient, in: Circle())
+                .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 14, x: 0, y: 8)
             Text("Profiles & More")
                 .font(.system(size: 34, weight: .black))
                 .foregroundStyle(.white)
@@ -259,6 +260,7 @@ struct ProfileView: View {
             .padding(HFSpacing.lg)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .shadow(color: HFColors.amberGlow.opacity(0.10), radius: 18, x: 0, y: 12)
         .accessibilityIdentifier("hf.profile.localProfileCard")
     }
 
@@ -294,6 +296,7 @@ struct ProfileView: View {
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .shadow(color: .black.opacity(0.16), radius: 16, x: 0, y: 10)
         .accessibilityIdentifier("hf.consumer.profile.viewerHub")
     }
 
@@ -361,6 +364,11 @@ struct ProfileView: View {
                                     .foregroundStyle(profile.id == selectedProfile.id ? .black : .white)
                             }
                             .frame(width: 78, height: 78)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(profile.id == selectedProfile.id ? HFColors.gold.opacity(0.86) : Color.white.opacity(0.14), lineWidth: 1)
+                            )
+                            .shadow(color: profile.id == selectedProfile.id ? HFColors.amberGlow.opacity(0.18) : .black.opacity(0.12), radius: 10, x: 0, y: 7)
 
                             Text(profile.name)
                                 .font(HFTypography.caption)
@@ -399,8 +407,9 @@ struct ProfileView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(HFColors.gold.opacity(0.20), lineWidth: 1)
+                        .stroke(HFColors.subtleGlassRimGradient, lineWidth: 1)
                 )
+                .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 8)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -465,10 +474,10 @@ struct ProfileView: View {
             }
             .padding(.horizontal, HFSpacing.lg)
             .frame(height: 64)
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    .stroke(HFColors.gold.opacity(0.12), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -1656,11 +1665,11 @@ struct ProfileView: View {
                 .foregroundStyle(HFColors.textPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
-                .background(HFColors.surfaceElevated.opacity(0.72))
+                .background(HFColors.cinematicPanelGradient)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(HFColors.glassStroke, lineWidth: 1)
+                        .stroke(HFColors.glassStroke.opacity(0.80), lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
@@ -1892,7 +1901,7 @@ private struct HFProfileNavigationRow: View {
                 .font(.system(size: 19, weight: .black))
                 .foregroundStyle(HFColors.gold)
                 .frame(width: 42, height: 42)
-                .background(Color.white.opacity(0.07), in: Circle())
+                .background(HFColors.gold.opacity(0.12), in: Circle())
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(destination.title)
@@ -1913,10 +1922,10 @@ private struct HFProfileNavigationRow: View {
                 .foregroundStyle(HFColors.textMuted)
         }
         .padding(16)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                .stroke(HFColors.gold.opacity(0.12), lineWidth: 1)
         )
         .accessibilityIdentifier(destination.accessibilityID)
     }

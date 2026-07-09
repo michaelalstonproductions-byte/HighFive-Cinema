@@ -38,11 +38,22 @@ struct HFSearchBar: View {
         }
         .padding(.horizontal, HFSpacing.md)
         .frame(height: HFSpacing.searchBarHeight)
-        .background(HFColors.surface.opacity(0.94))
+        .background(
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.12),
+                    HFColors.gold.opacity(0.055),
+                    Color.black.opacity(0.40)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(HFColors.glassStroke, lineWidth: 1)
+                .stroke(HFColors.subtleGlassRimGradient, lineWidth: 1)
         )
+        .shadow(color: .black.opacity(0.24), radius: 14, x: 0, y: 10)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .contain)
     }

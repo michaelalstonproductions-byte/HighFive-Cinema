@@ -537,11 +537,12 @@ private struct HFStreamingTitleDetailView: View {
                     .foregroundStyle(HFColors.textPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(.white.opacity(0.16), lineWidth: 1)
+                            .stroke(HFColors.gold.opacity(0.16), lineWidth: 1)
                     )
+                    .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 7)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("hf.titleDetail.watchTrailer")
@@ -555,7 +556,7 @@ private struct HFStreamingTitleDetailView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
                             .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: HFColors.amberGlow.opacity(0.24), radius: 16, x: 0, y: 8)
+                            .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 18, x: 0, y: 9)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("hf.titleDetail.watchFull")
@@ -567,7 +568,7 @@ private struct HFStreamingTitleDetailView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
                             .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .shadow(color: HFColors.amberGlow.opacity(0.24), radius: 16, x: 0, y: 8)
+                            .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 18, x: 0, y: 9)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("hf.titleDetail.unlockSeason")
@@ -578,7 +579,7 @@ private struct HFStreamingTitleDetailView: View {
                             .foregroundStyle(HFColors.gold)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
@@ -595,7 +596,7 @@ private struct HFStreamingTitleDetailView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
                         .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .shadow(color: HFColors.amberGlow.opacity(0.24), radius: 16, x: 0, y: 8)
+                        .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 18, x: 0, y: 9)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier(isUnlocked ? "hf.titleDetail.watchFull" : "hf.titleDetail.unlockFull")
@@ -3233,8 +3234,10 @@ struct HFPlayerServiceSheet: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(HFColors.textPrimary)
                     .frame(width: 42, height: 42)
-                    .background(Color.white.opacity(0.12))
+                    .background(HFColors.cinematicPanelGradient)
+                    .overlay(Circle().stroke(HFColors.gold.opacity(0.16), lineWidth: 1))
                     .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 5)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close Player")
@@ -3325,8 +3328,13 @@ struct HFPlayerServiceSheet: View {
         }
         .padding(HFSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(HFColors.cinematicPanelGradient)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.14), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 10)
         .accessibilityIdentifier("hf.rsf02.player.state")
     }
 
@@ -3377,10 +3385,24 @@ struct HFPlayerServiceSheet: View {
             }
             .frame(height: 390)
             .clipShape(RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous))
+            .overlay(alignment: .bottom) {
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        HFColors.gold.opacity(0.20),
+                        HFColors.cyanGlow.opacity(0.08)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 96)
+                .allowsHitTesting(false)
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
                     .stroke(HFColors.goldStroke, lineWidth: 1)
             )
+            .shadow(color: HFColors.amberGlow.opacity(0.16), radius: 24, x: 0, y: 16)
 
             referenceEpisodeSelector
         }
@@ -3440,6 +3462,7 @@ struct HFPlayerServiceSheet: View {
                                 .padding(.horizontal, HFSpacing.sm)
                                 .frame(height: 34)
                                 .background(reference.isSelected(selectedEpisodeNumber, for: catalogMovie) ? HFColors.gold : Color.white.opacity(0.10))
+                                .overlay(Capsule().stroke(reference.isSelected(selectedEpisodeNumber, for: catalogMovie) ? HFColors.gold.opacity(0.80) : Color.white.opacity(0.12), lineWidth: 1))
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
@@ -4130,6 +4153,7 @@ struct HFPlayerServiceSheet: View {
             }
         }
         .accessibilityIdentifier("hf.player.floatingControls")
+        .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 18, x: 0, y: 12)
     }
 
     private var viewerIntelligenceStrip: some View {
@@ -4250,7 +4274,11 @@ struct HFPlayerServiceSheet: View {
         }
         .padding(HFSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.07))
+        .background(HFColors.cinematicPanelGradient)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.10), lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 

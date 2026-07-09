@@ -44,6 +44,7 @@ struct HFButton: View {
             .overlay(border)
             .clipShape(Capsule())
             .contentShape(Capsule())
+            .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: 8)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -70,15 +71,43 @@ struct HFButton: View {
         }
     }
 
+    private var shadowColor: Color {
+        switch style {
+        case .primary:
+            return HFColors.amberGlow.opacity(0.22)
+        case .secondary:
+            return .black.opacity(0.20)
+        case .outline:
+            return HFColors.gold.opacity(0.10)
+        }
+    }
+
+    private var shadowRadius: CGFloat {
+        switch style {
+        case .primary:
+            return 16
+        case .secondary, .outline:
+            return 10
+        }
+    }
+
     @ViewBuilder
     private var background: some View {
         switch style {
         case .primary:
             HFColors.goldGradient
         case .secondary:
-            HFColors.controlFillStrong
+            HFColors.cinematicPanelGradient
         case .outline:
-            HFColors.quietFill
+            LinearGradient(
+                colors: [
+                    HFColors.gold.opacity(0.12),
+                    Color.white.opacity(0.055),
+                    Color.black.opacity(0.20)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
 
@@ -86,7 +115,7 @@ struct HFButton: View {
     private var border: some View {
         if style == .secondary {
             Capsule()
-                .stroke(HFColors.glassStroke, lineWidth: 1)
+                .stroke(HFColors.subtleGlassRimGradient, lineWidth: 1)
         } else if style == .outline {
             Capsule()
                 .stroke(HFColors.goldStroke, lineWidth: 1)

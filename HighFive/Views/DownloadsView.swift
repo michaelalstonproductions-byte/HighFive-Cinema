@@ -83,14 +83,22 @@ struct DownloadsView: View {
     }
 
     private var figmaDownloadsHeader: some View {
-        HStack(alignment: .center) {
-            Text("Downloads")
-                .font(.system(size: 36, weight: .black))
-                .foregroundStyle(.white)
+        HStack(alignment: .center, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Downloads")
+                    .font(.system(size: 36, weight: .black))
+                    .foregroundStyle(.white)
+                Text("Offline previews and local shelf status.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
             Spacer()
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 25, weight: .black))
+                .foregroundStyle(.black)
+                .frame(width: 52, height: 52)
+                .background(HFColors.goldGradient, in: Circle())
+                .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 16, x: 0, y: 10)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -140,8 +148,9 @@ struct DownloadsView: View {
                     .foregroundStyle(.black)
                     .frame(maxWidth: 252)
                     .frame(height: 48)
-                    .background(HFColors.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(HFColors.goldGradient)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 14, x: 0, y: 8)
             }
             .buttonStyle(.plain)
         }
@@ -252,6 +261,7 @@ struct DownloadsView: View {
             .padding(HFSpacing.md)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .shadow(color: HFColors.cyanGlow.opacity(0.12), radius: 24, x: 0, y: 16)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Offline Preview Capsule for \(selectedMovie.title). Real downloads are not active yet.")
         .accessibilityIdentifier("hf.spatial.downloads.capsule")
@@ -342,12 +352,13 @@ struct DownloadsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(HFSpacing.md)
-        .background(Color.white.opacity(0.06))
+        .background(HFColors.cinematicPanelGradient)
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
                 .stroke(color.opacity(0.26), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.14), radius: 10, x: 0, y: 7)
     }
 
     private var localOfflineShelf: some View {
@@ -359,10 +370,11 @@ struct DownloadsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: HFSpacing.md) {
                         ForEach(downloads) { movie in
-                            NavigationLink(value: movie) {
-                                HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
-                            }
-                            .buttonStyle(.plain)
+                        NavigationLink(value: movie) {
+                            HFPosterCard(movie: movie, width: 132, showProgress: movie.progress != nil)
+                                .accessibilityIdentifier("hf.downloads.poster.\(movie.id)")
+                        }
+                        .buttonStyle(.plain)
                             .accessibilityIdentifier("hf.route.downloadsToMovieDetail")
                         }
                     }

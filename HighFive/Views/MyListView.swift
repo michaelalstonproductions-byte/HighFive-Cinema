@@ -159,13 +159,22 @@ struct MyListView: View {
     }
 
     private var figmaLibraryHeader: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.xs) {
-            Text("Library")
-                .font(.system(size: 36, weight: .black))
-                .foregroundStyle(.white)
-            Text("Collections, recently watched, favorites, purchased titles, downloads, and watch later.")
-                .font(HFTypography.caption)
-                .foregroundStyle(HFColors.textSecondary)
+        HStack(alignment: .center, spacing: HFSpacing.md) {
+            VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                Text("Library")
+                    .font(.system(size: 36, weight: .black))
+                    .foregroundStyle(.white)
+                Text("Collections, recently watched, favorites, purchased titles, downloads, and watch later.")
+                    .font(HFTypography.caption)
+                    .foregroundStyle(HFColors.textSecondary)
+            }
+            Spacer()
+            Image(systemName: "rectangle.stack.fill")
+                .font(.system(size: 24, weight: .black))
+                .foregroundStyle(.black)
+                .frame(width: 52, height: 52)
+                .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: HFColors.amberGlow.opacity(0.22), radius: 16, x: 0, y: 10)
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
     }
@@ -215,9 +224,9 @@ struct MyListView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
+                        .stroke(HFColors.subtleGlassRimGradient, lineWidth: 1)
                 )
-                .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 18, x: 0, y: 12)
+                .shadow(color: HFColors.amberGlow.opacity(0.18), radius: 22, x: 0, y: 14)
             }
             .buttonStyle(.plain)
             .padding(.horizontal, HFSpacing.screenHorizontal)
@@ -257,7 +266,7 @@ struct MyListView: View {
                     .foregroundStyle(HFColors.gold)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 26)
-                    .background(Color.white.opacity(0.07), in: Capsule())
+                    .background(HFColors.gold.opacity(0.12), in: Capsule())
                     .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
                     .accessibilityLabel("\(visibleMovies.count) saved titles in \(selectedFilter)")
             }
@@ -297,11 +306,12 @@ struct MyListView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(HFSpacing.md)
-        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(HFColors.gold.opacity(0.20), lineWidth: 1)
         )
+        .shadow(color: .black.opacity(0.18), radius: 12, x: 0, y: 8)
         .accessibilityIdentifier("hf.consumer.library.emptyShelf")
     }
 
@@ -354,13 +364,16 @@ struct MyListView: View {
             .frame(width: 144, alignment: .topLeading)
             .frame(minHeight: 128, alignment: .topLeading)
             .padding(HFSpacing.sm)
-            .background(selectedFilter == filter ? accent.opacity(0.16) : Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(selectedFilter == filter ? accent.opacity(0.18) : Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke((selectedFilter == filter ? accent : Color.white).opacity(selectedFilter == filter ? 0.42 : 0.10), lineWidth: 1)
             )
+            .shadow(color: selectedFilter == filter ? accent.opacity(0.14) : .black.opacity(0.10), radius: selectedFilter == filter ? 12 : 7, x: 0, y: 7)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(value), \(detail)")
+        .accessibilityValue(selectedFilter == filter ? "Selected" : "Available")
     }
 
     private var figmaLibraryEmpty: some View {
@@ -382,6 +395,7 @@ struct MyListView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .padding(.top, HFSpacing.xxl)
+        .shadow(color: HFColors.gold.opacity(0.10), radius: 18, x: 0, y: 12)
     }
 
     private var header: some View {

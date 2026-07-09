@@ -194,6 +194,7 @@ struct HFPosterCard: View {
 
             premiumPosterFinish
             premiumPosterReflection
+            premiumPosterSelectionSheen
 
             if showProgress, let progress = movie.progress {
                 GeometryReader { proxy in
@@ -232,9 +233,9 @@ struct HFPosterCard: View {
         )
         .background(
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius + 4, style: .continuous)
-                .fill(HFColors.gold.opacity(movie.isOriginal ? 0.16 : 0.075))
-                .blur(radius: 18)
-                .offset(y: 10)
+                .fill(HFColors.gold.opacity(movie.isOriginal ? 0.18 : 0.085))
+                .blur(radius: 20)
+                .offset(y: 11)
         )
         .accessibilityIdentifier("hf.catalog.posterImage.\(movie.id)")
     }
@@ -285,7 +286,7 @@ struct HFPosterCard: View {
     private var premiumPosterReflection: some View {
         ZStack {
             HFColors.posterReflectionGradient
-                .opacity(0.82)
+                .opacity(isPressing ? 0.92 : 0.82)
                 .blendMode(.screen)
 
             Rectangle()
@@ -320,6 +321,25 @@ struct HFPosterCard: View {
         .frame(width: posterArtworkWidth, height: posterArtworkHeight)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private var premiumPosterSelectionSheen: some View {
+        RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+            .stroke(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(isPressing ? 0.36 : 0.18),
+                        HFColors.gold.opacity(isPressing ? 0.54 : 0.18),
+                        HFColors.cyanGlow.opacity(isPressing ? 0.22 : 0.08)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: isPressing ? 1.4 : 0.8
+            )
+            .shadow(color: HFColors.amberGlow.opacity(isPressing ? 0.22 : 0.08), radius: isPressing ? 14 : 8, x: 0, y: 6)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder

@@ -76,8 +76,14 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.xl) {
+            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 figmaHomeHero
+                homeExperiencePulse
+                    .hfCinematicSectionReveal(
+                        isActive: isHeroAwake,
+                        reduceMotion: reduceMotion,
+                        delay: HFSpatialMotionTokens.sectionCascadeDelay
+                    )
                 curatedPosterRail(
                     title: "Continue Watching",
                     detail: consumerSnapshot.continueWatchingDetail,
@@ -121,6 +127,15 @@ struct HomeView: View {
         .accessibilityIdentifier("hf.spatial.home")
         .accessibilityIdentifier("hf.streaming.premium.home")
         .background(HFColors.screenBackground.ignoresSafeArea())
+        .overlay(alignment: .topTrailing) {
+            Circle()
+                .fill(HFColors.cyanGlow.opacity(0.08))
+                .frame(width: 240, height: 240)
+                .blur(radius: 72)
+                .offset(x: 92, y: -86)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
         .fullScreenCover(item: $previewMovie) { movie in
             HFPlayerServiceSheet(movie: movie, startsInVerticalStage: true)
                 .environmentObject(streamingStore)
@@ -504,6 +519,46 @@ struct HomeView: View {
         }
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .accessibilityIdentifier("hf.home.importVideos.cover")
+    }
+
+    private var homeExperiencePulse: some View {
+        HStack(spacing: HFSpacing.sm) {
+            premiumHomeSignal(title: "Continue", value: "\(continueWatching.count)", systemImage: "play.rectangle.fill", color: HFColors.cyanGlow)
+            premiumHomeSignal(title: "Originals", value: "\(featuredOriginalsMovies.count)", systemImage: "sparkles.tv.fill", color: HFColors.gold)
+            premiumHomeSignal(title: "Coming", value: "\(comingSoonMovies.count)", systemImage: "calendar.badge.clock", color: HFColors.orange)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Home overview, \(continueWatching.count) continue watching titles, \(featuredOriginalsMovies.count) originals, \(comingSoonMovies.count) coming soon titles")
+        .accessibilityIdentifier("hf.home.premiumExperiencePulse")
+    }
+
+    private func premiumHomeSignal(title: String, value: String, systemImage: String, color: Color) -> some View {
+        HStack(spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(color)
+                .frame(width: 30, height: 30)
+                .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(HFTypography.caption.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(1)
+                Text(title)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.xs)
+        .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(color.opacity(0.20), lineWidth: 1)
+        )
     }
 
     @ViewBuilder
