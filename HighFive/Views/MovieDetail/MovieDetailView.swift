@@ -1345,7 +1345,7 @@ struct MovieDetailView: View {
         }
         .onAppear {
             guard !isDetailWorldAwake else { return }
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.heroHandoffAnimation) {
                 isDetailWorldAwake = true
             }
             if ProcessInfo.processInfo.arguments.contains("--hf-start-paywall"), isHighFivePassLockedTitle {
@@ -2401,6 +2401,11 @@ struct MovieDetailView: View {
                 movieDetailRecommendationRail(category)
             }
         }
+        .hfCinematicSectionReveal(
+            isActive: isDetailWorldAwake,
+            reduceMotion: reduceMotion,
+            delay: HFSpatialMotionTokens.sectionCascadeDelay * 2
+        )
         .accessibilityIdentifier("hf.consumer.movieDetail.recommendations")
     }
 
@@ -2551,6 +2556,11 @@ struct MovieDetailView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
+        .hfCinematicSectionReveal(
+            isActive: isDetailWorldAwake,
+            reduceMotion: reduceMotion,
+            delay: HFSpatialMotionTokens.sectionCascadeDelay * 3
+        )
     }
 
     @ViewBuilder

@@ -97,10 +97,12 @@ struct ProfileView: View {
     var onOpenMyList: (() -> Void)?
     @EnvironmentObject private var streamingStore: HFStreamingStore
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsProfileSwitcher = false
     @State private var showsSignOutAlert = false
     @State private var mockMessage: ProfileMockMessage?
     @State private var showsMembershipPass = false
+    @State private var isSceneAwake = false
     @State private var didHandleInitialMembershipRoute = false
     @StateObject private var localProfileStore = HFLocalProfileStore()
 
@@ -121,11 +123,17 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
                 figmaProfileHeader
                 localProfileCard
+                    .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
                 premiumProfileOverview
+                    .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 2)
                 figmaProfilesRow
+                    .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 3)
                 figmaManageProfiles
+                    .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 4)
                 figmaProfileMenu
+                    .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 5)
                 signOutButton
+                    .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 6)
             }
             .padding(.top, HFSpacing.screenTop)
             .padding(.bottom, HFResponsiveFit.floatingTabContentClearance(dynamicTypeSize: dynamicTypeSize))
@@ -154,6 +162,11 @@ struct ProfileView: View {
             }
         }
         .onAppear {
+            if !isSceneAwake {
+                withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sectionRevealAnimation) {
+                    isSceneAwake = true
+                }
+            }
             guard startInMembership, !didHandleInitialMembershipRoute else { return }
             didHandleInitialMembershipRoute = true
             showsMembershipPass = true

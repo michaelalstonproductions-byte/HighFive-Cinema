@@ -21,12 +21,22 @@ enum HFSpatialMotionTokens {
     static let microResponse: Double = 0.14
     static let standardTransition: Double = 0.24
     static let sceneEntrance: Double = 0.42
+    static let heroHandoff: Double = 0.58
+    static let sectionReveal: Double = 0.46
+    static let sectionCascadeDelay: Double = 0.045
+    static let posterEntranceDelay: Double = 0.055
     static let focusSpringResponse: Double = 0.34
     static let focusSpringDamping: Double = 0.88
+    static let cinematicSpringResponse: Double = 0.44
+    static let cinematicSpringDamping: Double = 0.86
     static let selectedScale: CGFloat = 1.035
     static let recededScale: CGFloat = 0.965
+    static let posterPressScale: CGFloat = 0.976
+    static let posterEntranceScale: CGFloat = 0.988
     static let selectedLift: CGFloat = -5
     static let recededOffset: CGFloat = 3
+    static let sectionRevealOffset: CGFloat = 12
+    static let posterPressLift: CGFloat = -2
     static let maximumTiltDegrees: Double = 7
     static let maximumDecorativeBlur: CGFloat = 2
 
@@ -42,8 +52,20 @@ enum HFSpatialMotionTokens {
         .easeOut(duration: sceneEntrance)
     }
 
+    static var heroHandoffAnimation: Animation {
+        .spring(response: heroHandoff, dampingFraction: cinematicSpringDamping)
+    }
+
+    static var sectionRevealAnimation: Animation {
+        .spring(response: sectionReveal, dampingFraction: 0.90)
+    }
+
     static var focusAnimation: Animation {
         .spring(response: focusSpringResponse, dampingFraction: focusSpringDamping)
+    }
+
+    static var cinematicFocusAnimation: Animation {
+        .spring(response: cinematicSpringResponse, dampingFraction: cinematicSpringDamping)
     }
 
     static var tabSelectionAnimation: Animation {
@@ -52,6 +74,10 @@ enum HFSpatialMotionTokens {
 
     static var pressAnimation: Animation {
         .spring(response: 0.22, dampingFraction: 0.82)
+    }
+
+    static var posterPressAnimation: Animation {
+        .spring(response: 0.20, dampingFraction: 0.78)
     }
 }
 
@@ -220,6 +246,44 @@ private struct HFSpatialSceneEntranceModifier: ViewModifier {
     }
 }
 
+private struct HFCinematicSectionRevealModifier: ViewModifier {
+    let isActive: Bool
+    let reduceMotion: Bool
+    let delay: Double
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isActive ? 1 : 0)
+            .offset(y: reduceMotion ? 0 : (isActive ? 0 : HFSpatialMotionTokens.sectionRevealOffset))
+            .blur(radius: reduceMotion ? 0 : (isActive ? 0 : 1.4))
+            .animation(
+                reduceMotion
+                    ? .easeOut(duration: 0.01)
+                    : HFSpatialMotionTokens.sectionRevealAnimation.delay(delay),
+                value: isActive
+            )
+            .accessibilityIdentifier(reduceMotion ? "hf.cinematic.motion.section.reduceMotion" : "hf.cinematic.motion.section")
+    }
+}
+
+private struct HFCinematicCardMotionModifier: ViewModifier {
+    let isPressed: Bool
+    let isEntered: Bool
+    let accent: Color
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(reduceMotion ? 1 : (isPressed ? HFSpatialMotionTokens.posterPressScale : (isEntered ? 1 : HFSpatialMotionTokens.posterEntranceScale)))
+            .opacity(isEntered ? (isPressed ? 0.94 : 1) : 0)
+            .offset(y: reduceMotion ? 0 : (isEntered ? (isPressed ? HFSpatialMotionTokens.posterPressLift : 0) : 8))
+            .shadow(color: accent.opacity(reduceMotion ? 0 : (isPressed ? 0.20 : 0.10)), radius: isPressed ? 22 : 14, x: 0, y: isPressed ? 12 : 8)
+            .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.posterPressAnimation, value: isPressed)
+            .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.cinematicFocusAnimation, value: isEntered)
+            .accessibilityIdentifier(reduceMotion ? "hf.cinematic.motion.card.reduceMotion" : "hf.cinematic.motion.card")
+    }
+}
+
 private struct HFSpatialPressButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -258,6 +322,14 @@ extension View {
 
     func hfSpatialSceneEntrance(isActive: Bool, reduceMotion: Bool) -> some View {
         modifier(HFSpatialSceneEntranceModifier(isActive: isActive, reduceMotion: reduceMotion))
+    }
+
+    func hfCinematicSectionReveal(isActive: Bool, reduceMotion: Bool, delay: Double = 0) -> some View {
+        modifier(HFCinematicSectionRevealModifier(isActive: isActive, reduceMotion: reduceMotion, delay: delay))
+    }
+
+    func hfCinematicCardMotion(isPressed: Bool, isEntered: Bool, accent: Color = HFColors.gold, reduceMotion: Bool) -> some View {
+        modifier(HFCinematicCardMotionModifier(isPressed: isPressed, isEntered: isEntered, accent: accent, reduceMotion: reduceMotion))
     }
 }
 

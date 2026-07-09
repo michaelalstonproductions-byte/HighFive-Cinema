@@ -97,6 +97,11 @@ struct HomeView: View {
                     identifier: "hf.home.featuredOriginals"
                 )
                 consumerSignalStrip
+                    .hfCinematicSectionReveal(
+                        isActive: isHeroAwake,
+                        reduceMotion: reduceMotion,
+                        delay: HFSpatialMotionTokens.sectionCascadeDelay * 3
+                    )
                 curatedPosterRail(
                     title: "Coming Soon",
                     detail: consumerSnapshot.comingSoonDetail,
@@ -158,7 +163,7 @@ struct HomeView: View {
         .onAppear {
             importedVideos = HFImportedVideoLibrary.load()
             guard !isHeroAwake else { return }
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.heroHandoffAnimation) {
                 isHeroAwake = true
             }
         }
@@ -705,9 +710,7 @@ struct HomeView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
         }
-        .opacity(isHeroAwake ? 1 : 0)
-        .offset(y: reduceMotion ? 0 : (isHeroAwake ? 0 : 10))
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.38).delay(0.08), value: isHeroAwake)
+        .hfCinematicSectionReveal(isActive: isHeroAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
         .accessibilityIdentifier(identifier)
     }
 

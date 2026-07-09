@@ -61,6 +61,8 @@ struct HFPosterCard: View {
     var showProgress: Bool = false
     var posterOnly: Bool = false
     @GestureState private var isPressing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hasEntered = false
 
     private var posterHeight: CGFloat {
         posterArtworkHeight + depthFramePadding * 2
@@ -113,6 +115,16 @@ struct HFPosterCard: View {
         .accessibilityLabel(accessibilitySummary)
         .accessibilityHint("Opens the title detail when selected")
         .accessibilityIdentifier("hf.catalog.posterCard.\(movie.id)")
+        .onAppear {
+            guard !hasEntered else { return }
+            if reduceMotion {
+                hasEntered = true
+            } else {
+                withAnimation(HFSpatialMotionTokens.cinematicFocusAnimation.delay(HFSpatialMotionTokens.posterEntranceDelay)) {
+                    hasEntered = true
+                }
+            }
+        }
     }
 
     private var accessibilitySummary: String {
@@ -142,15 +154,8 @@ struct HFPosterCard: View {
         ) {
             posterImageContent
         }
-        .scaleEffect(isPressing ? 0.982 : 1)
-        .shadow(
-            color: HFColors.gold.opacity(isPressing ? 0.22 : 0.11),
-            radius: isPressing ? 24 : 14,
-            x: 0,
-            y: isPressing ? 13 : 8
-        )
+        .hfCinematicCardMotion(isPressed: isPressing, isEntered: hasEntered, accent: HFColors.gold, reduceMotion: reduceMotion)
         .shadow(color: Color.black.opacity(0.58), radius: isPressing ? 18 : 12, x: 0, y: 10)
-        .animation(.easeOut(duration: 0.16), value: isPressing)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .updating($isPressing) { _, state, _ in

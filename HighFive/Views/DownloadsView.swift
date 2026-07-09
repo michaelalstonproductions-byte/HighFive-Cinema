@@ -49,8 +49,11 @@ struct DownloadsView: View {
                     figmaDownloadsEmpty
                 } else {
                     capsuleWorld
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
                     premiumCapsuleStats
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 2)
                     localOfflineShelf
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 3)
                 }
             }
             .padding(.top, HFSpacing.screenTop)
@@ -64,7 +67,7 @@ struct DownloadsView: View {
         }
         .onAppear {
             guard !isSceneAwake else { return }
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sectionRevealAnimation) {
                 isSceneAwake = true
             }
         }

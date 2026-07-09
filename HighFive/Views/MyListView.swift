@@ -123,9 +123,13 @@ struct MyListView: View {
                     figmaLibraryEmpty
                 } else {
                     figmaContinueCard
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
                     consumerLibraryOverview
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 2)
                     figmaLibraryFilterRow
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 3)
                     figmaLibraryGrid
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 4)
                 }
             }
             .padding(.top, HFSpacing.screenTop)
@@ -139,7 +143,7 @@ struct MyListView: View {
         }
         .onAppear {
             guard !isSceneAwake else { return }
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sectionRevealAnimation) {
                 isSceneAwake = true
             }
         }

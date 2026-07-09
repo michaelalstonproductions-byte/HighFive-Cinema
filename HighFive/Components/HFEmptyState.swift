@@ -6,6 +6,8 @@ struct HFEmptyState: View {
     var systemImage: String = "film.stack"
     var actionTitle: String?
     var action: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isAwake = false
 
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.goldStroke) {
@@ -13,6 +15,9 @@ struct HFEmptyState: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 36, weight: .bold))
                     .foregroundStyle(HFColors.gold)
+                    .scaleEffect(reduceMotion ? 1 : (isAwake ? 1 : 0.94))
+                    .opacity(isAwake ? 1 : 0.72)
+                    .animation(reduceMotion ? nil : HFSpatialMotionTokens.cinematicFocusAnimation.delay(0.04), value: isAwake)
 
                 VStack(spacing: HFSpacing.xs) {
                     Text(title)
@@ -43,8 +48,19 @@ struct HFEmptyState: View {
             .padding(HFSpacing.xl)
             .frame(maxWidth: .infinity)
         }
+        .hfCinematicSectionReveal(isActive: isAwake, reduceMotion: reduceMotion)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(title). \(message)")
+        .onAppear {
+            guard !isAwake else { return }
+            if reduceMotion {
+                isAwake = true
+            } else {
+                withAnimation(HFSpatialMotionTokens.sectionRevealAnimation) {
+                    isAwake = true
+                }
+            }
+        }
     }
 }
 
@@ -100,6 +116,8 @@ struct HFContentStateCard: View {
     var actionTitle: String?
     var action: (() -> Void)?
     var isCompact = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isAwake = false
 
     var body: some View {
         HFOpticalGlassSurface(cornerRadius: isCompact ? HFSpacing.cardRadius : HFSpacing.panelRadius, strokeColor: kind.accent.opacity(0.38)) {
@@ -152,9 +170,20 @@ struct HFContentStateCard: View {
             }
             .padding(isCompact ? HFSpacing.md : HFSpacing.lg)
         }
+        .hfCinematicSectionReveal(isActive: isAwake, reduceMotion: reduceMotion)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(kind.label): \(title). \(message)")
         .accessibilityIdentifier("hf.state.\(kind.label.lowercased())")
+        .onAppear {
+            guard !isAwake else { return }
+            if reduceMotion {
+                isAwake = true
+            } else {
+                withAnimation(HFSpatialMotionTokens.sectionRevealAnimation.delay(0.03)) {
+                    isAwake = true
+                }
+            }
+        }
     }
 
     private var stateIcon: some View {

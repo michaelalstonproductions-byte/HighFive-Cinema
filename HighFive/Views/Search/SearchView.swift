@@ -247,9 +247,13 @@ struct SearchView: View {
                     emptyState
                 } else {
                     figmaSearchControls
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
                     consumerSearchIntelligence
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 2)
                     searchRecommendationRail
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 3)
                     figmaPosterGrid
+                        .hfCinematicSectionReveal(isActive: isSceneAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay * 4)
                 }
             }
             .padding(.top, HFSpacing.screenTop)
@@ -263,7 +267,7 @@ struct SearchView: View {
         }
         .onAppear {
             guard !isSceneAwake else { return }
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sceneEntranceAnimation) {
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.01) : HFSpatialMotionTokens.sectionRevealAnimation) {
                 isSceneAwake = true
             }
         }
