@@ -321,12 +321,25 @@ private struct HFStreamingTitleDetailView: View {
                 endPoint: .bottom
             )
 
+            RadialGradient(
+                colors: [
+                    HFColors.gold.opacity(0.24),
+                    HFColors.cinematicCopper.opacity(0.10),
+                    .clear
+                ],
+                center: UnitPoint(x: 0.18, y: 0.80),
+                startRadius: 20,
+                endRadius: 330
+            )
+            .blendMode(.screen)
+
             VStack(alignment: .leading, spacing: 8) {
                 Text(metadata.displayTitle)
                     .font(.system(size: 44, weight: .black, design: .default))
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .minimumScaleFactor(0.62)
+                    .shadow(color: .black.opacity(0.58), radius: 14, x: 0, y: 9)
 
                 HStack(spacing: 8) {
                     metadataBadge(metadata.year)
@@ -340,6 +353,22 @@ private struct HFStreamingTitleDetailView: View {
             .padding(.bottom, HFSpacing.lg)
         }
         .frame(height: 270)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            HFColors.gold.opacity(0.26),
+                            HFColors.cyanGlow.opacity(0.08),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+        }
     }
 
     private var titleBlock: some View {
@@ -610,7 +639,7 @@ private struct HFStreamingTitleDetailView: View {
             }
         }
         .padding(.vertical, 2)
-        .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(.white.opacity(0.08), lineWidth: 1)
@@ -618,20 +647,30 @@ private struct HFStreamingTitleDetailView: View {
     }
 
     private var episodeList: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
             HStack {
-                Text("Season 1")
-                    .font(HFTypography.cardTitle)
-                    .foregroundStyle(HFColors.textPrimary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Season 1")
+                        .font(HFTypography.cardTitle)
+                        .foregroundStyle(HFColors.textPrimary)
+
+                    Text("Episode access and previews")
+                        .font(HFTypography.micro)
+                        .foregroundStyle(HFColors.textSecondary)
+                }
 
                 Spacer()
 
                 Text("\(metadata.episodes.count) Episodes")
                     .font(HFTypography.caption.weight(.bold))
-                    .foregroundStyle(HFColors.textMuted)
+                    .foregroundStyle(HFColors.gold)
+                    .padding(.horizontal, 10)
+                    .frame(height: 28)
+                    .background(HFColors.gold.opacity(0.10), in: Capsule())
+                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.18), lineWidth: 1))
             }
 
-            VStack(spacing: 0) {
+            VStack(spacing: 8) {
                 ForEach(metadata.episodes) { episode in
                     HStack(spacing: 12) {
                         ZStack {
@@ -639,8 +678,9 @@ private struct HFStreamingTitleDetailView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            HFColors.gold.opacity(0.16),
-                                            Color.white.opacity(0.07)
+                                            HFColors.gold.opacity(episode.id == selectedEpisodeNumber ? 0.24 : 0.16),
+                                            HFColors.cyanGlow.opacity(0.08),
+                                            Color.white.opacity(0.06)
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -672,7 +712,7 @@ private struct HFStreamingTitleDetailView: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.72)
                                 .frame(width: 116, height: 36)
-                                .background(isEpisodeUnlocked(episode.id) ? HFColors.gold : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                .background(isEpisodeUnlocked(episode.id) ? HFColors.gold : Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 9, style: .continuous)
                                         .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
@@ -684,22 +724,29 @@ private struct HFStreamingTitleDetailView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(episode.id == selectedEpisodeNumber ? HFColors.gold.opacity(0.08) : Color.clear)
+                            .fill(episode.id == selectedEpisodeNumber ? HFColors.gold.opacity(0.10) : Color.white.opacity(0.025))
                     )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(episode.id == selectedEpisodeNumber ? HFColors.gold.opacity(0.22) : Color.white.opacity(0.055), lineWidth: 1)
+                    )
+                    .accessibilityLabel("\(episode.title), \(episode.runtime), \(episodeActionTitle(for: episode.id))")
 
                     if episode.id != metadata.episodes.last?.id {
                         Rectangle()
-                            .fill(.white.opacity(0.08))
+                            .fill(.clear)
                             .frame(height: 1)
                             .padding(.leading, 98)
                     }
                 }
             }
-            .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(8)
+            .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(HFColors.gold.opacity(0.14), lineWidth: 1)
             )
+            .shadow(color: .black.opacity(0.22), radius: 14, x: 0, y: 10)
         }
         .accessibilityIdentifier("hf.titleDetail.episodeList")
     }
@@ -729,8 +776,8 @@ private struct HFStreamingTitleDetailView: View {
             .foregroundStyle(.white.opacity(0.90))
             .padding(.horizontal, 9)
             .frame(height: 26)
-            .background(.black.opacity(0.38), in: Capsule())
-            .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 1))
+            .background(HFColors.cinematicPanelGradient, in: Capsule())
+            .overlay(Capsule().stroke(HFColors.gold.opacity(0.18), lineWidth: 1))
     }
 
     private func ratingCapsule(systemImage: String, title: String, subtitle: String) -> some View {
@@ -2412,7 +2459,7 @@ struct MovieDetailView: View {
     private func movieDetailRecommendationRail(_ category: Category) -> some View {
         VStack(alignment: .leading, spacing: HFSpacing.sm) {
             Text(consumerRecommendationTitle(category.title))
-                .font(HFTypography.cardTitle)
+                .font(.system(size: 18, weight: .black))
                 .foregroundStyle(HFColors.textPrimary)
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
@@ -2435,11 +2482,12 @@ struct MovieDetailView: View {
                                     .frame(width: 132, alignment: .leading)
                             }
                             .padding(HFSpacing.xs)
-                            .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(HFColors.gold.opacity(0.12), lineWidth: 1)
+                                    .stroke(HFColors.gold.opacity(0.16), lineWidth: 1)
                             )
+                            .shadow(color: .black.opacity(0.20), radius: 12, x: 0, y: 8)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open recommendation \(related.title)")
@@ -2519,7 +2567,7 @@ struct MovieDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: HFSpacing.md) {
                     ForEach(cast, id: \.self) { name in
-                        HFGlassPanel(cornerRadius: 18, strokeColor: HFColors.gold.opacity(0.20)) {
+                        HFGlassPanel(cornerRadius: 18, strokeColor: HFColors.gold.opacity(0.24)) {
                             VStack(spacing: HFSpacing.sm) {
                                 ZStack {
                                     Circle()
@@ -2547,10 +2595,13 @@ struct MovieDetailView: View {
                                     .foregroundStyle(HFColors.textPrimary)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(2)
+                                    .minimumScaleFactor(0.82)
                             }
-                            .frame(width: 112)
+                            .frame(width: 118)
                             .padding(HFSpacing.sm)
                         }
+                        .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 7)
+                        .accessibilityLabel("Cast or creator, \(name)")
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)

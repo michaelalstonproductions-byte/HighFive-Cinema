@@ -155,7 +155,8 @@ struct HFPosterCard: View {
             posterImageContent
         }
         .hfCinematicCardMotion(isPressed: isPressing, isEntered: hasEntered, accent: HFColors.gold, reduceMotion: reduceMotion)
-        .shadow(color: Color.black.opacity(0.58), radius: isPressing ? 18 : 12, x: 0, y: 10)
+        .shadow(color: HFColors.amberGlow.opacity(isPressing ? 0.20 : 0.10), radius: isPressing ? 22 : 15, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.58), radius: isPressing ? 20 : 13, x: 0, y: 11)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .updating($isPressing) { _, state, _ in
@@ -218,10 +219,10 @@ struct HFPosterCard: View {
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.26),
-                            HFColors.gold.opacity(movie.isOriginal ? 0.58 : 0.30),
-                            HFColors.cyanGlow.opacity(movie.progress == nil ? 0.06 : 0.16),
-                            Color.white.opacity(0.05)
+                            Color.white.opacity(0.30),
+                            HFColors.gold.opacity(movie.isOriginal ? 0.62 : 0.34),
+                            HFColors.cyanGlow.opacity(movie.progress == nil ? 0.08 : 0.18),
+                            Color.white.opacity(0.06)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -284,16 +285,16 @@ struct HFPosterCard: View {
     private var premiumPosterReflection: some View {
         ZStack {
             HFColors.posterReflectionGradient
-                .opacity(0.76)
+                .opacity(0.82)
                 .blendMode(.screen)
 
             Rectangle()
-                .fill(Color.white.opacity(0.16))
-                .frame(width: posterArtworkWidth * 0.32, height: posterArtworkHeight * 1.25)
+                .fill(Color.white.opacity(0.18))
+                .frame(width: posterArtworkWidth * 0.30, height: posterArtworkHeight * 1.28)
                 .rotationEffect(.degrees(23))
                 .offset(x: -posterArtworkWidth * 0.18, y: -posterArtworkHeight * 0.15)
-                .blur(radius: 10)
-                .opacity(movie.isOriginal ? 0.50 : 0.32)
+                .blur(radius: 9)
+                .opacity(movie.isOriginal ? 0.54 : 0.36)
 
             VStack {
                 Rectangle()
@@ -303,6 +304,17 @@ struct HFPosterCard: View {
                 Rectangle()
                     .fill(Color.black.opacity(0.24))
                     .frame(height: 1)
+            }
+
+            HStack {
+                Rectangle()
+                    .fill(HFColors.gold.opacity(movie.isOriginal ? 0.26 : 0.13))
+                    .frame(width: 1)
+                    .blur(radius: 0.4)
+                Spacer()
+                Rectangle()
+                    .fill(Color.white.opacity(0.09))
+                    .frame(width: 1)
             }
         }
         .frame(width: posterArtworkWidth, height: posterArtworkHeight)

@@ -177,6 +177,22 @@ struct HomeView: View {
             markOfTheWestHeroContent(motion: motion)
         }
         .clipShape(RoundedRectangle(cornerRadius: 0, style: .continuous))
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .clear,
+                            HFColors.gold.opacity(0.30),
+                            HFColors.cyanGlow.opacity(0.08),
+                            .clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+        }
         .accessibilityElement(children: .contain)
         .background(Color.clear.accessibilityIdentifier("hf.rsf02.home.hero"))
         .accessibilityIdentifier("hf.home.hero")
@@ -229,6 +245,20 @@ struct HomeView: View {
             .blendMode(.screen)
             .opacity(isHeroAwake ? 1 : 0.48)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.9), value: isHeroAwake)
+
+            RadialGradient(
+                colors: [
+                    HFColors.cyanGlow.opacity(0.14),
+                    HFColors.cinematicCopper.opacity(0.10),
+                    .clear
+                ],
+                center: UnitPoint(x: 0.78, y: 0.22),
+                startRadius: 12,
+                endRadius: 300
+            )
+            .blendMode(.screen)
+            .opacity(isHeroAwake ? 0.70 : 0.30)
+            .animation(reduceMotion ? nil : .easeOut(duration: 1.05), value: isHeroAwake)
         }
         .background(Color.black)
     }
@@ -352,8 +382,9 @@ struct HomeView: View {
                         .font(.system(size: 25, weight: .bold))
                         .foregroundStyle(.white.opacity(0.94))
                         .frame(width: 48, height: 48)
-                        .background(Color.black.opacity(0.24), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.10), lineWidth: 1))
+                        .background(HFColors.cinematicPanelGradient, in: Circle())
+                        .overlay(Circle().stroke(HFColors.gold.opacity(0.18), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.30), radius: 12, x: 0, y: 8)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Search")
@@ -416,6 +447,11 @@ struct HomeView: View {
                             .padding(.horizontal, 18)
                             .frame(height: 48)
                             .background(HFColors.goldGradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(.white.opacity(0.22), lineWidth: 1)
+                            )
+                            .shadow(color: HFColors.amberGlow.opacity(0.30), radius: 18, x: 0, y: 10)
                             .accessibilityAddTraits(.isStaticText)
                             .accessibilityIdentifier("hf.home.hero.comingSoon")
 
@@ -425,10 +461,10 @@ struct HomeView: View {
                                 .foregroundStyle(.white.opacity(0.92))
                                 .padding(.horizontal, 16)
                                 .frame(height: 48)
-                                .background(Color.black.opacity(0.38), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(.white.opacity(0.16), lineWidth: 1)
+                                        .stroke(.white.opacity(0.18), lineWidth: 1)
                                 )
                         }
                         .buttonStyle(.plain)
@@ -670,12 +706,22 @@ struct HomeView: View {
 
     private func curatedPosterRail(title: String, detail: String? = nil, movies: [Movie], identifier: String) -> some View {
         let railMovies = movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
+        let railLimit = min(railMovies.count, 10)
+        let accent = homeRailAccent(for: title)
         return VStack(alignment: .leading, spacing: HFSpacing.md) {
             HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundStyle(.white)
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 9) {
+                        Capsule()
+                            .fill(accent)
+                            .frame(width: 28, height: 3)
+                            .shadow(color: accent.opacity(0.35), radius: 8, x: 0, y: 4)
+
+                        Text(title)
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(.white)
+                    }
+
                     if let detail, !detail.isEmpty {
                         Text(detail)
                             .font(HFTypography.caption)
@@ -686,14 +732,14 @@ struct HomeView: View {
 
                 Spacer()
 
-                Text("\(min(railMovies.count, 10)) Local")
+                Text("\(railLimit) Local")
                     .font(HFTypography.micro.weight(.black))
-                    .foregroundStyle(HFColors.gold)
+                    .foregroundStyle(accent)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 26)
-                    .background(HFColors.gold.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
-                    .accessibilityLabel("\(min(railMovies.count, 10)) local titles in \(title)")
+                    .background(accent.opacity(0.12), in: Capsule())
+                    .overlay(Capsule().stroke(accent.opacity(0.24), lineWidth: 1))
+                    .accessibilityLabel("\(railLimit) local titles in \(title)")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
@@ -709,9 +755,23 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
             }
+            .accessibilityLabel("\(title), \(railLimit) titles")
         }
         .hfCinematicSectionReveal(isActive: isHeroAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
         .accessibilityIdentifier(identifier)
+    }
+
+    private func homeRailAccent(for title: String) -> Color {
+        if title.localizedCaseInsensitiveContains("Continue") {
+            return HFColors.cyanGlow
+        }
+        if title.localizedCaseInsensitiveContains("Coming") {
+            return HFColors.orange
+        }
+        if title.localizedCaseInsensitiveContains("Available") {
+            return HFColors.gold
+        }
+        return HFColors.gold
     }
 
     private func uniqueMovies(_ movies: [Movie]) -> [Movie] {
