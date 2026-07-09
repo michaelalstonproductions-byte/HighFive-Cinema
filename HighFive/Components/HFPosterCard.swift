@@ -155,10 +155,8 @@ struct HFPosterCard: View {
             posterImageContent
         }
         .hfCinematicCardMotion(isPressed: isPressing, isEntered: hasEntered, accent: HFColors.gold, reduceMotion: reduceMotion)
-        .contentShape(RoundedRectangle(cornerRadius: HFSpacing.cardRadius + 4, style: .continuous))
         .shadow(color: HFColors.amberGlow.opacity(isPressing ? 0.20 : 0.10), radius: isPressing ? 22 : 15, x: 0, y: 10)
         .shadow(color: Color.black.opacity(0.58), radius: isPressing ? 20 : 13, x: 0, y: 11)
-        .hoverEffect(.lift)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .updating($isPressing) { _, state, _ in

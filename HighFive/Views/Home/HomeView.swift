@@ -41,6 +41,18 @@ struct HomeView: View {
         HFLocalProjectStore.consumerExperienceSnapshot
     }
 
+    private var markOfTheWestProject: HFProject {
+        HFLocalProjectStore.project(.markOfTheWest)
+    }
+
+    private var markOfTheWestHeroEyebrow: String {
+        "Coming Soon"
+    }
+
+    private var markOfTheWestHeroDetail: String {
+        markOfTheWestProject.synopsis
+    }
+
     private var continueWatching: [Movie] {
         streamingStore.catalogRuntimeMovies(filter: "Progress", sort: .progress, pageSize: 10)
     }
@@ -426,7 +438,7 @@ struct HomeView: View {
             Spacer()
 
             VStack(alignment: .leading, spacing: 10) {
-                Text(consumerSnapshot.heroEyebrow.uppercased())
+                Text(markOfTheWestHeroEyebrow.uppercased())
                     .font(.system(size: 13, weight: .black, design: .default))
                     .tracking(1.7)
                     .foregroundStyle(HFColors.gold)
@@ -444,7 +456,7 @@ struct HomeView: View {
                     .foregroundStyle(HFColors.gold.opacity(0.94))
                     .textCase(.uppercase)
 
-                Text(consumerSnapshot.heroDetail)
+                Text(markOfTheWestHeroDetail)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.86))
                     .lineLimit(2)
@@ -623,9 +635,7 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, HFSpacing.screenHorizontal)
-                    .scrollTargetLayout()
                 }
-                .scrollTargetBehavior(.viewAligned)
                 .accessibilityIdentifier("hf.categories.results")
             }
         }
@@ -699,9 +709,7 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.rsf02.home.rail.\(title)")
     }
@@ -850,9 +858,7 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, HFSpacing.screenHorizontal)
-                    .scrollTargetLayout()
                 }
-                .scrollTargetBehavior(.viewAligned)
                 .accessibilityLabel("\(title), \(railLimit) titles")
             }
         }
@@ -1207,9 +1213,7 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier(identifier)
     }
@@ -1661,9 +1665,7 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, HFSpacing.screenHorizontal)
-                    .scrollTargetLayout()
                 }
-                .scrollTargetBehavior(.viewAligned)
             }
         }
         .accessibilityIdentifier("hf.streaming.premium.continueWatchingRail")
@@ -1682,9 +1684,7 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.home.curatedRails")
     }

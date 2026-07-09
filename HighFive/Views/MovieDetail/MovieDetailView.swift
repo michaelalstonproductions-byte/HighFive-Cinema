@@ -1114,7 +1114,9 @@ private struct HFTitleTrailerPreviewSheet: View {
 
     init(preview: HFTitleTrailerPreview) {
         self.preview = preview
-        _player = State(initialValue: AVPlayer(url: preview.url))
+        let player = AVPlayer(url: preview.url)
+        player.isMuted = true
+        _player = State(initialValue: player)
     }
 
     var body: some View {
@@ -1124,10 +1126,20 @@ private struct HFTitleTrailerPreviewSheet: View {
             VideoPlayer(player: player)
                 .ignoresSafeArea()
                 .onAppear {
+                    player.isMuted = true
+                    player.seek(to: .zero)
                     player.play()
                 }
                 .onDisappear {
                     player.pause()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { notification in
+                    guard let endedItem = notification.object as? AVPlayerItem,
+                          endedItem === player.currentItem else {
+                        return
+                    }
+                    player.seek(to: .zero)
+                    player.play()
                 }
 
             Button {
@@ -2451,9 +2463,7 @@ struct MovieDetailView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
     }
@@ -2517,9 +2527,7 @@ struct MovieDetailView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.recommendation.\(category.id)")
     }
@@ -2630,9 +2638,7 @@ struct MovieDetailView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
         }
         .hfCinematicSectionReveal(
             isActive: isDetailWorldAwake,
