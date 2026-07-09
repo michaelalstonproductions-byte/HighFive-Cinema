@@ -421,11 +421,16 @@ struct MyListView: View {
                 onBrowseDiscover?()
             }
             .frame(maxWidth: 240)
+            .accessibilityLabel("Browse movies")
+            .accessibilityHint("Opens discovery to find titles for your library")
+            .accessibilityIdentifier("hf.library.empty.browseMovies")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, HFSpacing.screenHorizontal)
         .padding(.top, HFSpacing.xxl)
         .shadow(color: HFColors.gold.opacity(0.10), radius: 18, x: 0, y: 12)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.library.emptyShelf")
     }
 
     private var header: some View {

@@ -148,14 +148,18 @@ struct DownloadsView: View {
                     .foregroundStyle(.black)
                     .frame(maxWidth: 252)
                     .frame(height: 48)
-            .background(HFColors.goldGradient)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 14, x: 0, y: 8)
+                    .background(HFColors.goldGradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .shadow(color: HFColors.amberGlow.opacity(0.20), radius: 14, x: 0, y: 8)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Browse titles to download")
+            .accessibilityHint("Opens discovery to find titles for the downloads shelf")
+            .accessibilityIdentifier("hf.downloads.empty.browseTitles")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hf.rsf02.downloads.empty")
     }
 
