@@ -306,10 +306,17 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(HFSpacing.xs)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(
+            LinearGradient(
+                colors: [accent.opacity(0.12), Color.white.opacity(0.055), Color.black.opacity(0.10)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(accent.opacity(0.18), lineWidth: 1)
         )
     }
 

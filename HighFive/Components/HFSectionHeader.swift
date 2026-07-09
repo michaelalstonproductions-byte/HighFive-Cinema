@@ -7,9 +7,17 @@ struct HFSectionHeader: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: HFSpacing.sm) {
-            Capsule()
-                .fill(HFColors.goldGradient)
-                .frame(width: 4, height: 20)
+            ZStack {
+                Capsule()
+                    .fill(HFColors.goldGradient)
+                    .frame(width: 4, height: 24)
+                    .shadow(color: HFColors.amberGlow.opacity(0.36), radius: 10, x: 0, y: 0)
+
+                Capsule()
+                    .fill(Color.white.opacity(0.30))
+                    .frame(width: 1, height: 18)
+                    .offset(x: -1)
+            }
                 .accessibilityHidden(true)
 
             Text(title)
@@ -31,9 +39,16 @@ struct HFSectionHeader: View {
                     .font(HFTypography.smallAction)
                     .foregroundStyle(HFColors.gold)
                     .hfSingleLineText(minimumScaleFactor: 0.72)
-                    .padding(.horizontal, HFSpacing.xs)
+                    .padding(.horizontal, HFSpacing.sm)
                     .frame(height: 30)
-                    .background(HFColors.gold.opacity(0.10))
+                    .background(
+                        LinearGradient(
+                            colors: [HFColors.gold.opacity(0.16), Color.white.opacity(0.055)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(Capsule().stroke(HFColors.gold.opacity(0.24), lineWidth: 1))
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)

@@ -750,11 +750,20 @@ struct MyListView: View {
             .padding(.horizontal, HFSpacing.sm)
             .frame(maxWidth: isAccessibilityLayout ? .infinity : nil, alignment: .leading)
             .frame(minHeight: isAccessibilityLayout ? 72 : 50)
-            .background(selectedFilter == shelf.title ? shelf.accent.opacity(0.18) : Color.white.opacity(0.07))
+            .background(
+                LinearGradient(
+                    colors: selectedFilter == shelf.title
+                        ? [shelf.accent.opacity(0.24), Color.white.opacity(0.08), Color.black.opacity(0.16)]
+                        : [Color.white.opacity(0.085), Color.white.opacity(0.045), Color.black.opacity(0.12)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: isAccessibilityLayout ? HFSpacing.xs : 25, style: .continuous)
-                    .stroke(selectedFilter == shelf.title ? shelf.accent.opacity(0.48) : Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(selectedFilter == shelf.title ? shelf.accent.opacity(0.56) : Color.white.opacity(0.15), lineWidth: 1)
             )
+            .shadow(color: selectedFilter == shelf.title ? shelf.accent.opacity(0.13) : Color.black.opacity(0.18), radius: 12, x: 0, y: 7)
             .clipShape(RoundedRectangle(cornerRadius: isAccessibilityLayout ? HFSpacing.xs : 25, style: .continuous))
         }
         .buttonStyle(.plain)

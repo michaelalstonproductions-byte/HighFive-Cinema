@@ -76,7 +76,7 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: HFSpacing.sectionGap) {
+            VStack(alignment: .leading, spacing: HFSpacing.xl) {
                 figmaHomeHero
                 curatedPosterRail(
                     title: "Continue Watching",
@@ -584,7 +584,7 @@ struct HomeView: View {
 
     private func figmaPosterRail(title: String, movies: [Movie]) -> some View {
         let railMovies = movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
-        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
+        return VStack(alignment: .leading, spacing: HFSpacing.md) {
             Text(title)
                 .font(.system(size: 22, weight: .black))
                 .foregroundStyle(.white)
@@ -617,7 +617,7 @@ struct HomeView: View {
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: HFSpacing.sm) {
+                LazyHStack(spacing: HFSpacing.md) {
                     ForEach(consumerSnapshot.trendingSignals.prefix(4)) { signal in
                         localConsumerSignalCard(signal)
                     }
@@ -649,7 +649,14 @@ struct HomeView: View {
         .frame(width: 172, alignment: .topLeading)
         .frame(minHeight: 128, alignment: .topLeading)
         .padding(HFSpacing.sm)
-        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.10), signal.systemImage.contains("sparkle") ? HFColors.gold.opacity(0.11) : HFColors.cyanGlow.opacity(0.055), Color.white.opacity(0.045)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
@@ -658,7 +665,7 @@ struct HomeView: View {
 
     private func curatedPosterRail(title: String, detail: String? = nil, movies: [Movie], identifier: String) -> some View {
         let railMovies = movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
-        return VStack(alignment: .leading, spacing: HFSpacing.sm) {
+        return VStack(alignment: .leading, spacing: HFSpacing.md) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
@@ -666,7 +673,7 @@ struct HomeView: View {
                         .foregroundStyle(.white)
                     if let detail, !detail.isEmpty {
                         Text(detail)
-                            .font(HFTypography.micro)
+                            .font(HFTypography.caption)
                             .foregroundStyle(HFColors.textSecondary)
                             .lineLimit(2)
                     }
@@ -679,17 +686,17 @@ struct HomeView: View {
                     .foregroundStyle(HFColors.gold)
                     .padding(.horizontal, HFSpacing.xs)
                     .frame(height: 26)
-                    .background(Color.white.opacity(0.07), in: Capsule())
+                    .background(HFColors.gold.opacity(0.12), in: Capsule())
                     .overlay(Capsule().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
                     .accessibilityLabel("\(min(railMovies.count, 10)) local titles in \(title)")
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.lg) {
                     ForEach(railMovies) { movie in
                         NavigationLink(value: movie) {
-                            HFPosterCard(movie: movie, width: 148, showTitle: false, posterOnly: true)
+                            HFPosterCard(movie: movie, width: 152, showTitle: false, posterOnly: true)
                                 .accessibilityIdentifier(movie.catalogCardAccessibilityIdentifier)
                         }
                         .buttonStyle(.plain)

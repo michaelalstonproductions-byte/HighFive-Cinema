@@ -2405,7 +2405,7 @@ struct MovieDetailView: View {
     }
 
     private func movieDetailRecommendationRail(_ category: Category) -> some View {
-        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+        VStack(alignment: .leading, spacing: HFSpacing.sm) {
             Text(consumerRecommendationTitle(category.title))
                 .font(HFTypography.cardTitle)
                 .foregroundStyle(HFColors.textPrimary)
@@ -2418,17 +2418,23 @@ struct MovieDetailView: View {
                 .lineLimit(2)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: HFSpacing.md) {
+                LazyHStack(alignment: .top, spacing: HFSpacing.lg) {
                     ForEach(category.movies.prefix(8)) { related in
                         NavigationLink(value: related) {
                             VStack(alignment: .leading, spacing: HFSpacing.xs) {
-                                HFPosterCard(movie: related, width: 126, showProgress: related.progress != nil)
+                                HFPosterCard(movie: related, width: 132, showProgress: related.progress != nil)
                                 Text(consumerSnapshot.recommendationReasons[related.id] ?? "Recommended from your local watch profile.")
                                     .font(HFTypography.micro)
                                     .foregroundStyle(HFColors.textSecondary)
                                     .lineLimit(2)
-                                    .frame(width: 126, alignment: .leading)
+                                    .frame(width: 132, alignment: .leading)
                             }
+                            .padding(HFSpacing.xs)
+                            .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(HFColors.gold.opacity(0.12), lineWidth: 1)
+                            )
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Open recommendation \(related.title)")
@@ -2503,10 +2509,10 @@ struct MovieDetailView: View {
     }
 
     private var castSection: some View {
-        VStack(alignment: .leading, spacing: HFSpacing.sm) {
+        VStack(alignment: .leading, spacing: HFSpacing.md) {
             HFSectionHeader(title: "Cast & Creators", actionTitle: nil)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: HFSpacing.sm) {
+                LazyHStack(spacing: HFSpacing.md) {
                     ForEach(cast, id: \.self) { name in
                         HFGlassPanel(cornerRadius: 18, strokeColor: HFColors.gold.opacity(0.20)) {
                             VStack(spacing: HFSpacing.sm) {
@@ -2521,7 +2527,7 @@ struct MovieDetailView: View {
                                                 ],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
-                                            )
+                                    )
                                         )
                                     Image(systemName: "person.fill")
                                         .font(.system(size: 24, weight: .bold))
@@ -2529,6 +2535,7 @@ struct MovieDetailView: View {
                                 }
                                 .frame(width: 62, height: 62)
                                 .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                                .shadow(color: HFColors.gold.opacity(0.14), radius: 12, x: 0, y: 6)
 
                                 Text(name)
                                     .font(HFTypography.caption)

@@ -32,6 +32,9 @@ enum HFColors {
     static let selectedGoldFill = gold.opacity(0.16)
     static let selectedCyanFill = cyanGlow.opacity(0.16)
     static let selectedVioletFill = violet.opacity(0.18)
+    static let cinematicInk = Color(red: 0.018, green: 0.014, blue: 0.011)
+    static let cinematicCopper = Color(red: 0.440, green: 0.190, blue: 0.060)
+    static let posterEdgeLight = Color.white.opacity(0.18)
 
     static let heroGradient = LinearGradient(
         colors: [
@@ -55,9 +58,32 @@ enum HFColors {
 
     static let opticalGlassGradient = LinearGradient(
         colors: [
-            glassHighlight,
-            glassSurfaceRaised.opacity(0.68),
-            Color.black.opacity(0.80)
+            Color.white.opacity(0.17),
+            gold.opacity(0.08),
+            glassSurfaceRaised.opacity(0.72),
+            Color.black.opacity(0.82)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let cinematicPanelGradient = LinearGradient(
+        colors: [
+            Color.white.opacity(0.12),
+            gold.opacity(0.055),
+            cyanGlow.opacity(0.035),
+            Color.black.opacity(0.70)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let posterReflectionGradient = LinearGradient(
+        colors: [
+            Color.white.opacity(0.22),
+            Color.white.opacity(0.07),
+            Color.clear,
+            gold.opacity(0.08)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -83,9 +109,10 @@ enum HFColors {
     static let screenBackground = LinearGradient(
         colors: [
             Color.black,
-            background,
-            Color(red: 0.030, green: 0.025, blue: 0.018),
-            Color(red: 0.065, green: 0.055, blue: 0.035)
+            cinematicInk,
+            Color(red: 0.033, green: 0.025, blue: 0.018),
+            warmGlow.opacity(0.90),
+            Color(red: 0.055, green: 0.040, blue: 0.028)
         ],
         startPoint: .top,
         endPoint: .bottom

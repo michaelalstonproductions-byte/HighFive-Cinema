@@ -395,7 +395,7 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: HFSpacing.xs) {
+                LazyHStack(spacing: HFSpacing.sm) {
                     ForEach(signals.prefix(6)) { signal in
                         searchIntentButton(title: signal.title, detail: signal.detail, systemImage: signal.systemImage) {
                             query = signal.title
@@ -417,7 +417,7 @@ struct SearchView: View {
                 .padding(.horizontal, HFSpacing.screenHorizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: HFSpacing.xs) {
+                LazyHStack(spacing: HFSpacing.sm) {
                     ForEach(Array(Set(values)).sorted().prefix(6), id: \.self) { value in
                         searchIntentButton(title: value, detail: "Search again", systemImage: "clock.arrow.circlepath") {
                             query = value
@@ -700,12 +700,19 @@ struct SearchView: View {
                             .foregroundStyle(HFColors.textPrimary)
                             .padding(.horizontal, HFSpacing.sm)
                             .frame(height: 48)
-                            .background(suggestion.accent.opacity(0.14))
+                            .background(
+                                LinearGradient(
+                                    colors: [suggestion.accent.opacity(0.20), Color.white.opacity(0.055), Color.black.opacity(0.14)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                             .overlay(
                                 Capsule()
-                                    .stroke(suggestion.accent.opacity(0.32), lineWidth: 1)
+                                    .stroke(suggestion.accent.opacity(0.42), lineWidth: 1)
                             )
                             .clipShape(Capsule())
+                            .shadow(color: suggestion.accent.opacity(0.10), radius: 12, x: 0, y: 6)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Search suggestion \(suggestion.title), \(suggestion.detail)")
@@ -867,7 +874,7 @@ struct SearchView: View {
                     emptyState
                 }
             } else {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.lg) {
+                LazyVGrid(columns: columns, alignment: .leading, spacing: HFSpacing.xl) {
                     ForEach(results) { movie in
                         NavigationLink(value: movie) {
                             HFPosterCard(movie: movie, width: HFSpacing.posterGridWidth, showMetadata: true, showProgress: movie.progress != nil)

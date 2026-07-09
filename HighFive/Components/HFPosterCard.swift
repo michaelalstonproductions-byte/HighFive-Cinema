@@ -144,11 +144,12 @@ struct HFPosterCard: View {
         }
         .scaleEffect(isPressing ? 0.982 : 1)
         .shadow(
-            color: HFColors.gold.opacity(isPressing ? 0.16 : 0.06),
-            radius: isPressing ? 18 : 9,
+            color: HFColors.gold.opacity(isPressing ? 0.22 : 0.11),
+            radius: isPressing ? 24 : 14,
             x: 0,
-            y: isPressing ? 10 : 5
+            y: isPressing ? 13 : 8
         )
+        .shadow(color: Color.black.opacity(0.58), radius: isPressing ? 18 : 12, x: 0, y: 10)
         .animation(.easeOut(duration: 0.16), value: isPressing)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
@@ -186,6 +187,7 @@ struct HFPosterCard: View {
             .frame(width: posterArtworkWidth, height: posterArtworkHeight)
 
             premiumPosterFinish
+            premiumPosterReflection
 
             if showProgress, let progress = movie.progress {
                 GeometryReader { proxy in
@@ -211,8 +213,9 @@ struct HFPosterCard: View {
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.16),
-                            HFColors.gold.opacity(movie.isOriginal ? 0.46 : 0.24),
+                            Color.white.opacity(0.26),
+                            HFColors.gold.opacity(movie.isOriginal ? 0.58 : 0.30),
+                            HFColors.cyanGlow.opacity(movie.progress == nil ? 0.06 : 0.16),
                             Color.white.opacity(0.05)
                         ],
                         startPoint: .topLeading,
@@ -223,9 +226,9 @@ struct HFPosterCard: View {
         )
         .background(
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius + 4, style: .continuous)
-                .fill(HFColors.gold.opacity(movie.isOriginal ? 0.10 : 0.05))
-                .blur(radius: 14)
-                .offset(y: 8)
+                .fill(HFColors.gold.opacity(movie.isOriginal ? 0.16 : 0.075))
+                .blur(radius: 18)
+                .offset(y: 10)
         )
         .accessibilityIdentifier("hf.catalog.posterImage.\(movie.id)")
     }
@@ -254,7 +257,7 @@ struct HFPosterCard: View {
 
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.20),
+                    Color.white.opacity(0.24),
                     Color.white.opacity(0.02),
                     Color.clear
                 ],
@@ -264,12 +267,41 @@ struct HFPosterCard: View {
             .blendMode(.screen)
 
             Capsule()
-                .fill(Color.white.opacity(0.10))
+                .fill(Color.white.opacity(0.14))
                 .frame(width: posterArtworkWidth * 0.74, height: 1)
                 .blur(radius: 2)
                 .offset(y: -posterArtworkHeight * 0.38)
         }
         .frame(width: posterArtworkWidth, height: posterArtworkHeight)
+        .accessibilityHidden(true)
+    }
+
+    private var premiumPosterReflection: some View {
+        ZStack {
+            HFColors.posterReflectionGradient
+                .opacity(0.76)
+                .blendMode(.screen)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.16))
+                .frame(width: posterArtworkWidth * 0.32, height: posterArtworkHeight * 1.25)
+                .rotationEffect(.degrees(23))
+                .offset(x: -posterArtworkWidth * 0.18, y: -posterArtworkHeight * 0.15)
+                .blur(radius: 10)
+                .opacity(movie.isOriginal ? 0.50 : 0.32)
+
+            VStack {
+                Rectangle()
+                    .fill(HFColors.posterEdgeLight)
+                    .frame(height: 1)
+                Spacer()
+                Rectangle()
+                    .fill(Color.black.opacity(0.24))
+                    .frame(height: 1)
+            }
+        }
+        .frame(width: posterArtworkWidth, height: posterArtworkHeight)
+        .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 

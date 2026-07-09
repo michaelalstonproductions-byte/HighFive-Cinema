@@ -96,8 +96,16 @@ struct DownloadsView: View {
         VStack(spacing: HFSpacing.xl) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(
+                        LinearGradient(
+                            colors: [HFColors.gold.opacity(0.14), Color.white.opacity(0.065), HFColors.cyanGlow.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: 238, height: 238)
+                    .overlay(Circle().stroke(HFColors.gold.opacity(0.20), lineWidth: 1))
+                    .shadow(color: HFColors.gold.opacity(0.12), radius: 30, x: 0, y: 18)
 
                 HStack(spacing: -34) {
                     ForEach(Array(streamingStore.catalogRuntimeMovies(pageSize: 3).enumerated()), id: \.element.id) { index, movie in
@@ -126,10 +134,10 @@ struct DownloadsView: View {
             } label: {
                 Text("Browse Titles")
                     .font(HFTypography.smallAction)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .frame(maxWidth: 252)
                     .frame(height: 48)
-                    .background(Color.white.opacity(0.18))
+                    .background(HFColors.goldGradient)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)

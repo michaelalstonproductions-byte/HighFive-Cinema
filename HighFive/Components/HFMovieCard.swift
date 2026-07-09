@@ -5,10 +5,10 @@ struct HFMovieCard: View {
 
     var body: some View {
         HFGlassPanel(cornerRadius: HFSpacing.cardRadius) {
-            HStack(spacing: HFSpacing.md) {
+            HStack(spacing: HFSpacing.lg) {
                 HFPosterCard(movie: movie, width: 102, showTitle: false, showProgress: movie.progress != nil)
 
-                VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                VStack(alignment: .leading, spacing: HFSpacing.sm) {
                     Text(movie.title)
                         .font(HFTypography.cardTitle)
                         .foregroundStyle(HFColors.textPrimary)
@@ -68,12 +68,13 @@ struct HFMovieCard: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(HFSpacing.sm)
+            .padding(HFSpacing.md)
         }
         .overlay(
             RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
-                .stroke(HFColors.gold.opacity(0.18), lineWidth: 1)
+                .stroke(HFColors.gold.opacity(movie.isOriginal ? 0.30 : 0.18), lineWidth: 1)
         )
+        .shadow(color: HFColors.gold.opacity(movie.isOriginal ? 0.10 : 0.04), radius: 18, x: 0, y: 9)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilitySummary)
         .accessibilityHint("Opens the title detail when selected")
