@@ -481,6 +481,22 @@ private struct HFStreamingTitleDetailView: View {
                 endPoint: .bottom
             )
 
+            ZStack {
+                Circle()
+                    .fill(.black.opacity(0.48))
+                    .frame(width: 58, height: 58)
+
+                Circle()
+                    .stroke(HFColors.gold.opacity(0.54), lineWidth: 1)
+                    .frame(width: 58, height: 58)
+
+                Image(systemName: "play.fill")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundStyle(HFColors.gold)
+                    .offset(x: 2)
+            }
+            .accessibilityHidden(true)
+
             Text("Preview")
                 .font(.system(size: 11, weight: .black, design: .default))
                 .textCase(.uppercase)
@@ -504,11 +520,15 @@ private struct HFStreamingTitleDetailView: View {
                 .blur(radius: 0.5)
         )
         .shadow(color: HFColors.amberGlow.opacity(0.18), radius: 18, x: 0, y: 12)
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onTapGesture(perform: onWatchTrailer)
         .background(
             Color.clear
                 .frame(width: 1, height: 1)
                 .accessibilityIdentifier("hf.titleDetail.previewCard")
         )
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens the trailer preview")
         .accessibilityIdentifier("hf.titleDetail.trailerPreview")
     }
 
@@ -2431,7 +2451,9 @@ struct MovieDetailView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.moreLikeThis")
     }
@@ -2495,7 +2517,9 @@ struct MovieDetailView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.consumer.movieDetail.recommendation.\(category.id)")
     }
@@ -2606,7 +2630,9 @@ struct MovieDetailView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
         }
         .hfCinematicSectionReveal(
             isActive: isDetailWorldAwake,
@@ -2743,8 +2769,31 @@ private struct HFHighFivePassPaywallSheet: View {
     var body: some View {
         ZStack {
             HFColors.screenBackground.ignoresSafeArea()
+            LinearGradient(
+                colors: [
+                    HFColors.gold.opacity(0.18),
+                    HFColors.background.opacity(0.72),
+                    Color.black.opacity(0.34)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            Circle()
+                .fill(HFColors.amberGlow.opacity(0.18))
+                .frame(width: 240, height: 240)
+                .blur(radius: 70)
+                .offset(x: 128, y: -180)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: HFSpacing.lg) {
+                Capsule()
+                    .fill(Color.white.opacity(0.18))
+                    .frame(width: 46, height: 5)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: HFSpacing.xs) {
                         Text("HighFive Pass")
@@ -2781,8 +2830,9 @@ private struct HFHighFivePassPaywallSheet: View {
                     paywallBenefit("Restore Purchases", streamingStore.storeKitRestoreStatusMessage)
                 }
                 .padding(HFSpacing.md)
-                .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(HFColors.gold.opacity(0.24), lineWidth: 1))
+                .background(HFColors.glassSurfaceRaised, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(HFColors.gold.opacity(0.28), lineWidth: 1))
+                .shadow(color: HFColors.amberGlow.opacity(0.14), radius: 20, x: 0, y: 12)
 
                 Text(statusMessage)
                     .font(HFTypography.caption)
@@ -2873,6 +2923,7 @@ private struct HFHighFivePassPaywallSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationCornerRadius(28)
         .accessibilityIdentifier("hf.paywall.highFivePass")
     }
 

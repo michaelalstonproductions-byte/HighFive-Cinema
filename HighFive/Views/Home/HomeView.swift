@@ -623,7 +623,9 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, HFSpacing.screenHorizontal)
+                    .scrollTargetLayout()
                 }
+                .scrollTargetBehavior(.viewAligned)
                 .accessibilityIdentifier("hf.categories.results")
             }
         }
@@ -697,7 +699,9 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.rsf02.home.rail.\(title)")
     }
@@ -846,7 +850,9 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, HFSpacing.screenHorizontal)
+                    .scrollTargetLayout()
                 }
+                .scrollTargetBehavior(.viewAligned)
                 .accessibilityLabel("\(title), \(railLimit) titles")
             }
         }
@@ -1201,7 +1207,9 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier(identifier)
     }
@@ -1653,7 +1661,9 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal, HFSpacing.screenHorizontal)
+                    .scrollTargetLayout()
                 }
+                .scrollTargetBehavior(.viewAligned)
             }
         }
         .accessibilityIdentifier("hf.streaming.premium.continueWatchingRail")
@@ -1672,7 +1682,9 @@ struct HomeView: View {
                     }
                 }
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
         }
         .accessibilityIdentifier("hf.home.curatedRails")
     }

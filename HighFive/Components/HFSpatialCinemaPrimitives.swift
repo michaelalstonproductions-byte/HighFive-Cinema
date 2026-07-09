@@ -31,12 +31,12 @@ enum HFSpatialMotionTokens {
     static let cinematicSpringDamping: Double = 0.86
     static let selectedScale: CGFloat = 1.035
     static let recededScale: CGFloat = 0.965
-    static let posterPressScale: CGFloat = 0.976
+    static let posterPressScale: CGFloat = 0.982
     static let posterEntranceScale: CGFloat = 0.988
     static let selectedLift: CGFloat = -5
     static let recededOffset: CGFloat = 3
     static let sectionRevealOffset: CGFloat = 12
-    static let posterPressLift: CGFloat = -2
+    static let posterPressLift: CGFloat = -1
     static let maximumTiltDegrees: Double = 7
     static let maximumDecorativeBlur: CGFloat = 2
 
@@ -77,7 +77,7 @@ enum HFSpatialMotionTokens {
     }
 
     static var posterPressAnimation: Animation {
-        .spring(response: 0.20, dampingFraction: 0.78)
+        .spring(response: 0.16, dampingFraction: 0.88)
     }
 }
 
@@ -275,7 +275,7 @@ private struct HFCinematicCardMotionModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .scaleEffect(reduceMotion ? 1 : (isPressed ? HFSpatialMotionTokens.posterPressScale : (isEntered ? 1 : HFSpatialMotionTokens.posterEntranceScale)))
-            .opacity(isEntered ? (isPressed ? 0.94 : 1) : 0)
+            .opacity(isEntered ? (isPressed ? 0.97 : 1) : 0)
             .offset(y: reduceMotion ? 0 : (isEntered ? (isPressed ? HFSpatialMotionTokens.posterPressLift : 0) : 8))
             .shadow(color: accent.opacity(reduceMotion ? 0 : (isPressed ? 0.20 : 0.10)), radius: isPressed ? 22 : 14, x: 0, y: isPressed ? 12 : 8)
             .animation(reduceMotion ? .easeOut(duration: 0.01) : HFSpatialMotionTokens.posterPressAnimation, value: isPressed)
