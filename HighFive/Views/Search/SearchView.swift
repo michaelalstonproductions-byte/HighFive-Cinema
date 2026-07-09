@@ -438,7 +438,7 @@ struct SearchView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: HFSpacing.sm) {
-                    ForEach(Array(Set(values)).sorted().prefix(6), id: \.self) { value in
+                    ForEach(uniqueSearchValues(values).prefix(6), id: \.self) { value in
                         searchIntentButton(title: value, detail: "Search again", systemImage: "clock.arrow.circlepath") {
                             query = value
                             selectedFilter = "All"
@@ -481,6 +481,13 @@ struct SearchView: View {
             .shadow(color: .black.opacity(0.14), radius: 8, x: 0, y: 5)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail).")
+    }
+
+    private func uniqueSearchValues(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.filter { seen.insert($0).inserted }
     }
 
     private func uniqueMovies(_ movies: [Movie]) -> [Movie] {

@@ -88,7 +88,8 @@ struct HomeView: View {
                     title: "Continue Watching",
                     detail: consumerSnapshot.continueWatchingDetail,
                     movies: continueWatching,
-                    identifier: "hf.home.continueWatching"
+                    identifier: "hf.home.continueWatching",
+                    usesFallbackWhenEmpty: false
                 )
                 curatedPosterRail(
                     title: "Recommended For You",
@@ -759,8 +760,14 @@ struct HomeView: View {
         )
     }
 
-    private func curatedPosterRail(title: String, detail: String? = nil, movies: [Movie], identifier: String) -> some View {
-        let railMovies = movies.isEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
+    private func curatedPosterRail(
+        title: String,
+        detail: String? = nil,
+        movies: [Movie],
+        identifier: String,
+        usesFallbackWhenEmpty: Bool = true
+    ) -> some View {
+        let railMovies = movies.isEmpty && usesFallbackWhenEmpty ? streamingStore.catalogRuntimeMovies(pageSize: 10) : movies
         let railLimit = min(railMovies.count, 10)
         let accent = homeRailAccent(for: title)
         return VStack(alignment: .leading, spacing: HFSpacing.md) {
@@ -787,30 +794,61 @@ struct HomeView: View {
 
                 Spacer()
 
-                Text("\(railLimit) Local")
-                    .font(HFTypography.micro.weight(.black))
-                    .foregroundStyle(accent)
-                    .padding(.horizontal, HFSpacing.xs)
-                    .frame(height: 26)
-                    .background(accent.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().stroke(accent.opacity(0.24), lineWidth: 1))
-                    .accessibilityLabel("\(railLimit) local titles in \(title)")
+                if railLimit > 0 {
+                    Text("\(railLimit) Local")
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(accent)
+                        .padding(.horizontal, HFSpacing.xs)
+                        .frame(height: 26)
+                        .background(accent.opacity(0.12), in: Capsule())
+                        .overlay(Capsule().stroke(accent.opacity(0.24), lineWidth: 1))
+                        .accessibilityLabel("\(railLimit) local titles in \(title)")
+                }
             }
             .padding(.horizontal, HFSpacing.screenHorizontal)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: HFSpacing.lg) {
-                    ForEach(railMovies) { movie in
-                        NavigationLink(value: movie) {
-                            HFPosterCard(movie: movie, width: 152, showTitle: false, posterOnly: true)
-                                .accessibilityIdentifier(movie.catalogCardAccessibilityIdentifier)
-                        }
-                        .buttonStyle(.plain)
+            if railMovies.isEmpty {
+                HStack(spacing: HFSpacing.sm) {
+                    Image(systemName: "play.circle")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(accent)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("No titles in progress")
+                            .font(HFTypography.caption.weight(.black))
+                            .foregroundStyle(HFColors.textPrimary)
+                        Text("Start a title and it will appear here.")
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textSecondary)
                     }
+
+                    Spacer(minLength: 0)
                 }
+                .padding(.horizontal, HFSpacing.md)
+                .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+                .background(HFColors.cinematicPanelGradient, in: RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                        .stroke(accent.opacity(0.22), lineWidth: 1)
+                )
                 .padding(.horizontal, HFSpacing.screenHorizontal)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(title). No titles in progress. Start a title and it will appear here.")
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: HFSpacing.lg) {
+                        ForEach(railMovies) { movie in
+                            NavigationLink(value: movie) {
+                                HFPosterCard(movie: movie, width: 152, showTitle: false, posterOnly: true)
+                                    .accessibilityIdentifier(movie.catalogCardAccessibilityIdentifier)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, HFSpacing.screenHorizontal)
+                }
+                .accessibilityLabel("\(title), \(railLimit) titles")
             }
-            .accessibilityLabel("\(title), \(railLimit) titles")
         }
         .hfCinematicSectionReveal(isActive: isHeroAwake, reduceMotion: reduceMotion, delay: HFSpatialMotionTokens.sectionCascadeDelay)
         .accessibilityIdentifier(identifier)
