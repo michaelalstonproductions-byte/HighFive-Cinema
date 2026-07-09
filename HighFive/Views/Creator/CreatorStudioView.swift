@@ -3240,143 +3240,554 @@ struct CreatorStudioView: View {
     }
 
     private var publishingReviewWorkflowSection: some View {
-        creatorProSpotlight(
-            title: "Publishing Review Workflow",
-            detail: "Creator submit, admin review, approval, publish transaction, and catalog visibility now run through the loopback publishing service.",
-            systemImage: "checkmark.seal.text.page.fill",
-            accent: HFColors.gold,
-            identifier: "hf.publishingReview.workflow"
-        ) {
-            VStack(alignment: .leading, spacing: HFSpacing.sm) {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: HFSpacing.xs)], spacing: HFSpacing.xs) {
-                    creatorProStat(title: "Pending", value: "\(streamingStore.publishingReviewRuntimeSnapshot.pendingCount)")
-                    creatorProStat(title: "Approved", value: "\(streamingStore.publishingReviewRuntimeSnapshot.approvedCount)")
-                    creatorProStat(title: "Published", value: "\(streamingStore.publishingReviewRuntimeSnapshot.publishedCount)")
-                    creatorProStat(title: "Audit", value: "\(streamingStore.publishingReviewRuntimeSnapshot.auditCount)")
-                }
-
-                Text("Draft Workspace -> Submit -> Admin Queue -> Approve -> Publish -> Catalog")
-                    .font(HFTypography.micro.weight(.bold))
-                    .foregroundStyle(HFColors.cyanGlow)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Text(streamingStore.publishingReviewRuntimeSnapshot.detail)
-                    .font(HFTypography.micro)
-                    .foregroundStyle(HFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    Task { await streamingStore.runPublishingReviewWorkflowFixture() }
-                } label: {
-                    Label("Run Review Workflow", systemImage: "play.circle.fill")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(HFColors.gold)
-                .accessibilityIdentifier("hf.publishingReview.runWorkflow")
-            }
-        }
+        professionalReviewSuite(focus: "Overview", identifier: "hf.publishingReview.workflow")
         .task {
             await streamingStore.runPublishingReviewWorkflowFixture()
         }
     }
 
     private var publishingReviewQueueSection: some View {
-        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                sectionLead(
-                    title: "Admin Review Queue",
-                    detail: "Projects enter this queue only after creator submission and readiness validation.",
-                    systemImage: "tray.full.fill",
-                    accent: HFColors.cyanGlow
-                )
-
-                if streamingStore.publishingReviewRecords.isEmpty {
-                    HFCreatorStudioReadinessRow(title: "Review Queue", detail: "Open the workflow route or run the review workflow to load queue records.", status: "Waiting", systemImage: "hourglass", accent: HFColors.gold)
-                } else {
-                    VStack(spacing: HFSpacing.xs) {
-                        ForEach(streamingStore.publishingReviewRecords.prefix(8)) { record in
-                            HFCreatorStudioReadinessRow(
-                                title: record.title,
-                                detail: "\(record.projectID). Catalog \(record.catalogVisible ? "visible" : "private"). \(record.adminNote ?? record.creatorNote ?? "Awaiting decision.")",
-                                status: record.status.replacingOccurrences(of: "_", with: " ").capitalized,
-                                systemImage: record.catalogVisible ? "eye.circle.fill" : "lock.doc.fill",
-                                accent: record.catalogVisible ? HFColors.gold : HFColors.cyanGlow
-                            )
-                        }
-                    }
-                }
-            }
-            .padding(HFSpacing.md)
-        }
+        professionalReviewSuite(focus: "Review", identifier: "hf.publishingReview.queue")
         .task {
             await streamingStore.runPublishingReviewWorkflowFixture()
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("hf.publishingReview.queue")
     }
 
     private var publishingReviewCatalogVisibilitySection: some View {
-        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                sectionLead(
-                    title: "Catalog Visibility Transaction",
-                    detail: "A project remains private through submit and approval, then becomes visible only after admin publish.",
-                    systemImage: "eye.trianglebadge.exclamationmark.fill",
-                    accent: HFColors.gold
-                )
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .top, spacing: HFSpacing.sm) {
-                        ForEach(streamingStore.publishingReviewStatusRows) { row in
-                            contentBackendRailCard(row)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-
-                Text("Catalog visibility: \(streamingStore.publishingReviewRuntimeSnapshot.catalogVisibility)")
-                    .font(HFTypography.caption.weight(.bold))
-                    .foregroundStyle(HFColors.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(HFSpacing.md)
-        }
+        professionalReviewSuite(focus: "Approvals", identifier: "hf.publishingReview.catalogVisibility")
         .task {
             await streamingStore.runPublishingReviewWorkflowFixture()
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("hf.publishingReview.catalogVisibility")
     }
 
     private var publishingReviewAuditTrailSection: some View {
-        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
-            VStack(alignment: .leading, spacing: HFSpacing.md) {
-                sectionLead(
-                    title: "Publishing Review Audit",
-                    detail: "Submit, approve, publish, unpublish, rollback, and revision actions are retained as review audit records.",
-                    systemImage: "list.clipboard.fill",
-                    accent: HFColors.violet
-                )
+        professionalReviewSuite(focus: "History", identifier: "hf.publishingReview.audit")
+        .task {
+            await streamingStore.runPublishingReviewWorkflowFixture()
+        }
+    }
 
-                VStack(spacing: HFSpacing.xs) {
-                    ForEach(streamingStore.publishingReviewAuditRecords.prefix(10)) { record in
-                        HFCreatorStudioReadinessRow(
-                            title: record.action.replacingOccurrences(of: "_", with: " ").capitalized,
-                            detail: "\(record.projectID). \(record.detail)",
-                            status: record.result.capitalized,
-                            systemImage: "checklist.checked",
-                            accent: HFColors.violet
-                        )
+    private func professionalReviewSuite(focus: String, identifier: String) -> some View {
+        let snapshot = streamingStore.publishingReviewRuntimeSnapshot
+        let activeRecord = streamingStore.publishingReviewRecords.first
+
+        return VStack(alignment: .leading, spacing: HFSpacing.lg) {
+            reviewTopToolbar(focus: focus, snapshot: snapshot, record: activeRecord)
+            reviewReferenceViewer(record: activeRecord, snapshot: snapshot)
+            reviewComparisonViewer(record: activeRecord, snapshot: snapshot)
+            reviewEvidenceBoard(record: activeRecord, snapshot: snapshot)
+            reviewDecisionTimeline(snapshot: snapshot)
+            reviewCommentThread(record: activeRecord)
+            reviewInspector(focus: focus, record: activeRecord, snapshot: snapshot)
+            reviewBottomStatus(snapshot: snapshot)
+        }
+        .padding(.horizontal, HFSpacing.screenHorizontal)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func reviewTopToolbar(
+        focus: String,
+        snapshot: HFPublishingReviewRuntimeSnapshot,
+        record: HFPublishingReviewRecord?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            HStack(alignment: .center, spacing: HFSpacing.sm) {
+                Label("Professional Review Suite", systemImage: "rectangle.inset.filled.and.person.filled")
+                    .font(HFTypography.cardTitle.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.74)
+
+                Spacer(minLength: HFSpacing.xs)
+
+                Button {
+                    Task { await streamingStore.runPublishingReviewWorkflowFixture() }
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise.circle.fill")
+                        .font(HFTypography.micro.weight(.black))
+                        .foregroundStyle(.black)
+                        .frame(height: 34)
+                        .padding(.horizontal, HFSpacing.sm)
+                        .background(HFColors.goldGradient, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Refresh review workflow")
+                .accessibilityIdentifier("hf.publishingReview.runWorkflow")
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: HFSpacing.xs) {
+                    reviewModePill(focus, isActive: true, accent: HFColors.gold)
+                    reviewModePill("v\(record?.version ?? 1)", isActive: false, accent: HFColors.cyanGlow)
+                    reviewModePill(snapshot.statusLabel, isActive: false, accent: reviewAccent(for: snapshot.statusLabel))
+                    reviewModePill(snapshot.catalogVisibility, isActive: false, accent: HFColors.violet)
+                }
+            }
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.065), in: RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.gold.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityIdentifier("hf.reviewSuite.topToolbar")
+    }
+
+    private func reviewReferenceViewer(
+        record: HFPublishingReviewRecord?,
+        snapshot: HFPublishingReviewRuntimeSnapshot
+    ) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.panelRadius + 8, strokeColor: HFColors.gold.opacity(0.42)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                HStack(alignment: .top, spacing: HFSpacing.md) {
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        Text("Reference Viewer")
+                            .font(HFTypography.micro.weight(.bold))
+                            .foregroundStyle(HFColors.gold)
+                            .textCase(.uppercase)
+                        Text(record?.title ?? "Review Workflow Premiere")
+                            .font(.system(size: 34, weight: .black))
+                            .foregroundStyle(HFColors.textPrimary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.68)
+                        Text("\(record?.projectID ?? "project-review-workflow") • \(record?.contentID ?? "content-review") • Version \(record?.version ?? 1)")
+                            .font(HFTypography.caption.weight(.bold))
+                            .foregroundStyle(HFColors.textSecondary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.74)
                     }
+
+                    Spacer(minLength: HFSpacing.xs)
+
+                    VStack(alignment: .trailing, spacing: HFSpacing.xs) {
+                        reviewModePill(reviewDecisionLabel(for: record?.status ?? snapshot.statusLabel), isActive: true, accent: reviewAccent(for: record?.status ?? snapshot.statusLabel))
+                        Text(record?.reviewedAt ?? record?.submittedAt ?? snapshot.updatedAtLabel)
+                            .font(HFTypography.micro)
+                            .foregroundStyle(HFColors.textMuted)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.trailing)
+                    }
+                }
+
+                ZStack(alignment: .bottomLeading) {
+                    RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.black.opacity(0.96),
+                                    HFColors.cinematicCopper.opacity(0.34),
+                                    HFColors.cyanGlow.opacity(0.10)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    VStack(spacing: 0) {
+                        Spacer()
+                        HStack(spacing: 0) {
+                            reviewFramePlate(title: "Before", label: "Submission", accent: HFColors.textSecondary)
+                            Rectangle()
+                                .fill(HFColors.gold.opacity(0.65))
+                                .frame(width: 2)
+                            reviewFramePlate(title: "After", label: "Review Grade", accent: HFColors.gold)
+                        }
+                        Spacer()
+                    }
+
+                    VStack(alignment: .leading, spacing: HFSpacing.xs) {
+                        HStack(spacing: HFSpacing.xs) {
+                            reviewModePill("Before", isActive: false, accent: HFColors.textSecondary)
+                            reviewModePill("After", isActive: true, accent: HFColors.gold)
+                            reviewModePill("Split", isActive: true, accent: HFColors.cyanGlow)
+                            reviewModePill("A/B", isActive: false, accent: HFColors.violet)
+                        }
+                        Text("TC 01:12:08:14  •  Shot 014B  •  Reel 03")
+                            .font(HFTypography.micro.weight(.bold))
+                            .foregroundStyle(HFColors.textPrimary)
+                    }
+                    .padding(HFSpacing.md)
+                    .background(Color.black.opacity(0.58), in: RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+                    .padding(HFSpacing.md)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 390)
+                .overlay(
+                    RoundedRectangle(cornerRadius: HFSpacing.panelRadius, style: .continuous)
+                        .stroke(HFColors.gold.opacity(0.28), lineWidth: 1)
+                )
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Reference viewer for \(record?.title ?? "review project"), version \(record?.version ?? 1). Split before and after comparison.")
+        .accessibilityIdentifier("hf.reviewSuite.referenceViewer")
+    }
+
+    private func reviewComparisonViewer(
+        record: HFPublishingReviewRecord?,
+        snapshot: HFPublishingReviewRuntimeSnapshot
+    ) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.34)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                reviewSectionHeader("Comparison Viewer", detail: "Version compare, approval state, and catalog visibility in one scan.", systemImage: "rectangle.split.2x1.fill", accent: HFColors.cyanGlow)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    reviewCompareTile(title: "A", value: "v\(max((record?.version ?? 1) - 1, 1))", detail: "Submitted master", accent: HFColors.textSecondary)
+                    reviewCompareTile(title: "B", value: "v\(record?.version ?? 1)", detail: "Current review", accent: HFColors.gold)
+                    reviewCompareTile(title: "Decision", value: reviewDecisionLabel(for: record?.status ?? snapshot.statusLabel), detail: snapshot.catalogVisibility, accent: reviewAccent(for: record?.status ?? snapshot.statusLabel))
                 }
             }
             .padding(HFSpacing.md)
         }
-        .task {
-            await streamingStore.runPublishingReviewWorkflowFixture()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hf.reviewSuite.comparisonViewer")
+    }
+
+    private func reviewEvidenceBoard(
+        record: HFPublishingReviewRecord?,
+        snapshot: HFPublishingReviewRuntimeSnapshot
+    ) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.32)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                reviewSectionHeader("Evidence Board", detail: "Markers, QC, notes, and catalog proof supporting the decision.", systemImage: "rectangle.stack.badge.play.fill", accent: HFColors.gold)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 146), spacing: HFSpacing.sm)], spacing: HFSpacing.sm) {
+                    reviewEvidenceTile(title: "Shot Marker", value: "014B", detail: "Opening grade reference", systemImage: "flag.fill", accent: HFColors.gold)
+                    reviewEvidenceTile(title: "QC", value: snapshot.state == .failed ? "Blocked" : "Pass", detail: snapshot.lastError ?? "No blocking runtime error", systemImage: snapshot.state == .failed ? "exclamationmark.triangle.fill" : "waveform.path.ecg", accent: snapshot.state == .failed ? HFColors.redAccent : HFColors.cyanGlow)
+                    reviewEvidenceTile(title: "Catalog", value: record?.catalogVisible == true ? "Visible" : snapshot.catalogVisibility, detail: "Publish visibility evidence", systemImage: record?.catalogVisible == true ? "eye.circle.fill" : "lock.doc.fill", accent: record?.catalogVisible == true ? HFColors.gold : HFColors.violet)
+                    reviewEvidenceTile(title: "Audit", value: "\(snapshot.auditCount)", detail: "Retained review actions", systemImage: "list.clipboard.fill", accent: HFColors.violet)
+                }
+            }
+            .padding(HFSpacing.md)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("hf.publishingReview.audit")
+        .accessibilityIdentifier("hf.reviewSuite.evidenceBoard")
+    }
+
+    private func reviewDecisionTimeline(snapshot: HFPublishingReviewRuntimeSnapshot) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.violet.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                reviewSectionHeader("Decision Timeline", detail: "Every state answers what is approved, blocked, and required next.", systemImage: "timeline.selection", accent: HFColors.violet)
+
+                VStack(spacing: HFSpacing.xs) {
+                    reviewTimelineRow("Submit", status: snapshot.pendingCount > 0 || snapshot.approvedCount > 0 || snapshot.publishedCount > 0 ? "Complete" : "Pending", detail: "Creator package entered review.", accent: HFColors.cyanGlow)
+                    reviewTimelineRow("Review", status: snapshot.pendingCount > 0 ? "Pending" : "Resolved", detail: "\(snapshot.pendingCount) decision item(s) awaiting action.", accent: HFColors.gold)
+                    reviewTimelineRow("Approve", status: snapshot.approvedCount > 0 ? "Approved" : "Needs Revision", detail: "\(snapshot.approvedCount) approved item(s).", accent: snapshot.approvedCount > 0 ? HFColors.gold : HFColors.orange)
+                    reviewTimelineRow("Publish", status: snapshot.publishedCount > 0 ? "Published" : "Blocked", detail: snapshot.catalogVisibility, accent: snapshot.publishedCount > 0 ? HFColors.cyanGlow : HFColors.violet)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.reviewSuite.decisionTimeline")
+    }
+
+    private func reviewCommentThread(record: HFPublishingReviewRecord?) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.cyanGlow.opacity(0.28)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                reviewSectionHeader("Comment Thread", detail: "Threaded, timecode-aware, reviewer-aware, and status-aware.", systemImage: "text.bubble.fill", accent: HFColors.cyanGlow)
+
+                VStack(spacing: HFSpacing.xs) {
+                    reviewCommentRow(reviewer: record?.reviewerUserID ?? "Studio Reviewer", timecode: "01:12:08:14", status: reviewDecisionLabel(for: record?.status ?? "pending_review"), text: record?.adminNote ?? "Confirm final grade against approved reference before catalog visibility changes.", accent: HFColors.gold)
+                    reviewCommentRow(reviewer: "QC", timecode: "01:13:22:09", status: record?.revisionRequest == nil ? "Clear" : "Needs Revision", text: record?.revisionRequest ?? "No frame-blocking QC issue attached to the current decision.", accent: record?.revisionRequest == nil ? HFColors.cyanGlow : HFColors.orange)
+                    reviewCommentRow(reviewer: "Creator", timecode: "01:11:44:02", status: "Context", text: record?.creatorNote ?? "Creator note is available for the reviewer before approval.", accent: HFColors.violet)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.reviewSuite.commentThread")
+    }
+
+    private func reviewInspector(
+        focus: String,
+        record: HFPublishingReviewRecord?,
+        snapshot: HFPublishingReviewRuntimeSnapshot
+    ) -> some View {
+        HFOpticalGlassSurface(cornerRadius: HFSpacing.cardRadius, strokeColor: HFColors.gold.opacity(0.30)) {
+            VStack(alignment: .leading, spacing: HFSpacing.md) {
+                reviewSectionHeader("Inspector", detail: "Overview, Review, Evidence, Approvals, Metadata, and History remain available without extra dashboards.", systemImage: "sidebar.right", accent: HFColors.gold)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: HFSpacing.xs) {
+                        ForEach(["Overview", "Review", "Evidence", "Approvals", "Metadata", "History"], id: \.self) { tab in
+                            reviewModePill(tab, isActive: tab == focus, accent: tab == focus ? HFColors.gold : HFColors.textSecondary)
+                        }
+                    }
+                }
+
+                VStack(spacing: HFSpacing.xs) {
+                    reviewInspectorRow("Shot", value: record?.contentID ?? "content-review", detail: record?.title ?? "Review Workflow Premiere")
+                    reviewInspectorRow("Version", value: "v\(record?.version ?? 1)", detail: record?.projectID ?? "project-review-workflow")
+                    reviewInspectorRow("Approval", value: reviewDecisionLabel(for: record?.status ?? snapshot.statusLabel), detail: "Pending, Approved, Rejected, or Needs Revision")
+                    reviewInspectorRow("History", value: "\(snapshot.auditCount) events", detail: snapshot.updatedAtLabel)
+                }
+            }
+            .padding(HFSpacing.md)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hf.reviewSuite.inspector")
+    }
+
+    private func reviewBottomStatus(snapshot: HFPublishingReviewRuntimeSnapshot) -> some View {
+        HStack(alignment: .center, spacing: HFSpacing.sm) {
+            reviewModePill(snapshot.statusLabel, isActive: true, accent: reviewAccent(for: snapshot.statusLabel))
+            Text(snapshot.detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+            Spacer(minLength: HFSpacing.xs)
+            Text("Endpoint: \(snapshot.endpoint)")
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(HFColors.textMuted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.42), in: RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .stroke(HFColors.glassStroke, lineWidth: 1)
+        )
+        .accessibilityIdentifier("hf.reviewSuite.bottomStatus")
+    }
+
+    private func reviewSectionHeader(_ title: String, detail: String, systemImage: String, accent: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.system(size: 17, weight: .black))
+                .foregroundStyle(accent)
+                .frame(width: 36, height: 36)
+                .background(accent.opacity(0.13), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.cardTitle.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func reviewModePill(_ title: String, isActive: Bool, accent: Color) -> some View {
+        Text(title)
+            .font(HFTypography.micro.weight(.black))
+            .foregroundStyle(isActive && accent == HFColors.gold ? .black : accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.62)
+            .padding(.horizontal, HFSpacing.xs)
+            .frame(height: 28)
+            .background(isActive && accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(isActive ? 0.18 : 0.10)))
+            .overlay(Capsule().stroke(accent.opacity(isActive ? 0.38 : 0.22), lineWidth: 1))
+            .clipShape(Capsule())
+    }
+
+    private func reviewFramePlate(title: String, label: String, accent: Color) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: HFSpacing.cardRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.045),
+                            accent.opacity(0.14),
+                            Color.black.opacity(0.22)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    VStack(spacing: 14) {
+                        ForEach(0..<5, id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color.white.opacity(0.035))
+                                .frame(height: 1)
+                        }
+                    }
+                    .padding(HFSpacing.md)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.section.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(label)
+                    .font(HFTypography.micro.weight(.bold))
+                    .foregroundStyle(accent)
+            }
+            .padding(HFSpacing.md)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(HFSpacing.sm)
+    }
+
+    private func reviewCompareTile(title: String, value: String, detail: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Text(title)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(accent)
+            Text(value)
+                .font(.system(size: 23, weight: .black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous)
+                .stroke(accent.opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private func reviewEvidenceTile(title: String, value: String, detail: String, systemImage: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: HFSpacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .black))
+                .foregroundStyle(accent)
+                .frame(width: 32, height: 32)
+                .background(accent.opacity(0.13), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+            Text(value)
+                .font(HFTypography.cardTitle.weight(.black))
+                .foregroundStyle(HFColors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+            Text(title)
+                .font(HFTypography.micro.weight(.bold))
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+            Text(detail)
+                .font(HFTypography.micro)
+                .foregroundStyle(HFColors.textSecondary)
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, minHeight: 142, alignment: .topLeading)
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func reviewTimelineRow(_ title: String, status: String, detail: String, accent: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Circle()
+                .fill(accent)
+                .frame(width: 10, height: 10)
+                .padding(.top, 8)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(HFTypography.caption.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: HFSpacing.xs)
+
+            Text(status)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.70)
+                .padding(.horizontal, HFSpacing.xs)
+                .frame(height: 24)
+                .background(accent.opacity(0.10), in: Capsule())
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.22), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func reviewCommentRow(reviewer: String, timecode: String, status: String, text: String, accent: Color) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Text(String(reviewer.prefix(1)))
+                .font(HFTypography.caption.weight(.black))
+                .foregroundStyle(accent == HFColors.gold ? .black : HFColors.textPrimary)
+                .frame(width: 34, height: 34)
+                .background(accent == HFColors.gold ? AnyShapeStyle(HFColors.goldGradient) : AnyShapeStyle(accent.opacity(0.18)))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: HFSpacing.xs) {
+                    Text(reviewer)
+                        .font(HFTypography.caption.weight(.black))
+                        .foregroundStyle(HFColors.textPrimary)
+                    Text(timecode)
+                        .font(HFTypography.micro.weight(.bold))
+                        .foregroundStyle(HFColors.cyanGlow)
+                    reviewModePill(status, isActive: false, accent: accent)
+                }
+                Text(text)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(HFSpacing.sm)
+        .background(Color.white.opacity(0.052), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func reviewInspectorRow(_ title: String, value: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: HFSpacing.sm) {
+            Text(title)
+                .font(HFTypography.micro.weight(.black))
+                .foregroundStyle(HFColors.gold)
+                .frame(width: 74, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(value)
+                    .font(HFTypography.caption.weight(.black))
+                    .foregroundStyle(HFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(HFTypography.micro)
+                    .foregroundStyle(HFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(HFSpacing.sm)
+        .background(Color.black.opacity(0.20), in: RoundedRectangle(cornerRadius: HFSpacing.xs, style: .continuous))
+    }
+
+    private func reviewDecisionLabel(for status: String) -> String {
+        let normalized = status.replacingOccurrences(of: "_", with: " ").lowercased()
+        if normalized.contains("approved") || normalized.contains("published") || normalized.contains("ready") {
+            return "Approved"
+        }
+        if normalized.contains("reject") || normalized.contains("failed") || normalized.contains("blocked") {
+            return "Rejected"
+        }
+        if normalized.contains("revision") || normalized.contains("pending") || normalized.contains("review") {
+            return "Needs Revision"
+        }
+        return "Pending"
+    }
+
+    private func reviewAccent(for status: String) -> Color {
+        switch reviewDecisionLabel(for: status) {
+        case "Approved":
+            return HFColors.gold
+        case "Rejected":
+            return HFColors.redAccent
+        case "Needs Revision":
+            return HFColors.orange
+        default:
+            return HFColors.cyanGlow
+        }
     }
 
     private var analyticsEventPipelineDashboardSection: some View {
