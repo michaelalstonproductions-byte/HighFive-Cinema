@@ -2816,6 +2816,8 @@ private struct HFHighFivePassPaywallSheet: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(isPurchasing || isCheckingRestore)
+                    .opacity(isPurchasing || isCheckingRestore ? 0.72 : 1)
+                    .accessibilityValue(isPurchasing ? "Opening App Store" : isCheckingRestore ? "Restore check in progress" : "Ready")
                     .accessibilityIdentifier("hf.paywall.purchase")
 
                     Button {
@@ -2843,6 +2845,8 @@ private struct HFHighFivePassPaywallSheet: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(isPurchasing || isCheckingRestore)
+                    .opacity(isPurchasing || isCheckingRestore ? 0.72 : 1)
+                    .accessibilityValue(isCheckingRestore ? "Checking purchases" : isPurchasing ? "Purchase in progress" : "Ready")
                     .accessibilityIdentifier("hf.paywall.restorePurchases")
 
                     if isDebugUnlockAvailable {
